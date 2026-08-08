@@ -15,4 +15,13 @@ Upstream's `talk_like_a_graph/` package and `tutorial/` directory were copied
 here verbatim. Any local modifications made after this point are ours and are
 not reflected upstream.
 
+## Local modifications
+
+- `graph_generators_test.py`, `graph_text_encoders_test.py`: test classes
+  declared `(absltest.TestCase, parameterized.TestCase)`, which is an invalid
+  MRO because `parameterized.TestCase` already subclasses `absltest.TestCase`.
+  Both now inherit from `parameterized.TestCase` alone. Without this the test
+  files fail at collection with `TypeError: Cannot create a consistent method
+  resolution order`.
+
 Original disclaimer: this is not an official Google product.

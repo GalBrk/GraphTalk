@@ -3,7 +3,7 @@ from . import graph_generators
 from absl.testing import absltest
 
 
-class GraphGenerationTest(absltest.TestCase, parameterized.TestCase):
+class GraphGenerationTest(parameterized.TestCase):
 
   @parameterized.named_parameters(
       dict(

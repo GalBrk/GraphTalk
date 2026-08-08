@@ -17,7 +17,7 @@ _G.add_edge(2, 3)
 _G.add_edge(3, 0)
 
 
-class GraphTextEncodersTest(absltest.TestCase, parameterized.TestCase):
+class GraphTextEncodersTest(parameterized.TestCase):
 
   @parameterized.named_parameters(
       dict(
