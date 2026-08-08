@@ -65,6 +65,28 @@ TensorFlow 2.20 / tf-keras / tensorflow-gnn combination that is easy to disturb.
   model was misled, or merely confused by an inconsistent prompt — neither of which is
   the length effect the control exists to isolate. The control states only true,
   structurally vacuous facts, so there is nothing for it to contradict.
+- **A seventh condition: number of connected components.** The rationale is below;
+  `docs/features-considered.md` records the features that were evaluated and rejected.
+
+### Correction to the proposal's task taxonomy
+
+The proposal classifies cycle check as primer-agnostic. Measured on 100 `cycle_check`
+rows, it is not:
+
+- No acyclic graph has any node with clustering > 0 — necessarily, since a forest
+  contains no triangle. So `clustering > 0` ⟹ a cycle exists, at **100% precision**.
+- 83 of the 86 cyclic graphs have some node with clustering > 0 — **97% recall**.
+
+A model reasoning "some node has clustering above zero, so there is a triangle, so there
+is a cycle" therefore scores ~97% against an 86% majority-class baseline. `RWSE(k=3) > 0`
+is the same triangle test and agreed with it on 100/100 graphs. (Even-k carries no such
+signal: any node with a neighbour can walk out and back.)
+
+`node_count` is not agnostic either, for a duller reason — every per-node primer
+re-enumerates all the nodes, handing the model a second surface to count.
+
+Of the three tasks the proposal calls primer-agnostic, only **edge_existence** actually
+is. Anywhere this plan or the analysis refers to "the three agnostic tasks", read one.
 
 ## Approach
 
@@ -84,12 +106,18 @@ Add `graphtalk` to `packages` in `pyproject.toml`, and `tests` to `testpaths`.
 
 ### 2. Statistics (`graphtalk/primers.py`)
 
-Three functions, each returning a dict keyed by node id, nodes in sorted order:
+Three per-node functions, each returning a dict keyed by node id, nodes in sorted order:
 
 - `degrees(graph) -> dict[int, int]` — thin wrapper over `graph.degree`
 - `clustering(graph) -> dict[int, float]` — wrapper over `nx.clustering`
 - `rwse(graph, k_min=2, k_max=5) -> dict[int, list[float]]` — diagonal of `P^k` for
   `P = D⁻¹A`, accumulated by repeated matrix multiply
+
+and one graph-level function:
+
+- `component_count(graph) -> int` — wrapper over `nx.number_connected_components`.
+  Isolated nodes each count as their own component, which is what `networkx` already
+  does and what the circuit-rank identity below requires.
 
 Isolated nodes: degree-0 rows would divide by zero, so clamp the divisor to 1, which
 yields an all-zero RWSE vector. This is a convention, not a fact — a walk from an
@@ -101,33 +129,50 @@ correlation is computed on full precision.
 
 ### 3. Renderer
 
-**One** renderer produces the text for every condition. There is no per-component
-renderer and no combining step. Each component contributes only an object phrase for a
+**One** renderer produces the text for every condition. There is no per-feature renderer
+and no combining step.
+
+**Naming.** The pieces a primer is built from are called **parts**, not "components" —
+"connected components" is now one of the features, and the collision would be confusing
+in code. The renderer parameter is `parts`.
+
+Parts come in two tiers. **Node-level** parts each contribute an object phrase for a
 given node:
 
-| component | phrase |
+| node-level part | phrase |
 |---|---|
 | `degree` | `degree 4` |
 | `clustering` | `clustering coefficient 0.70` |
 | `rwse` | `random-walk return probabilities 0.27, 0.15, 0.19, 0.18` |
 | `filler` | `7 other nodes in this graph` (the length control) |
 
-The renderer Oxford-joins the requested phrases into one sentence per node under a
-shared verb, then joins sentences with a space:
+**Graph-level** parts contribute a whole sentence about the graph:
+
+| graph-level part | sentence |
+|---|---|
+| `components` | `This graph has 3 connected components.` |
+
+The renderer emits graph-level sentences first, then Oxford-joins each node's requested
+phrases into one sentence per node under a shared verb, joining everything with a space:
 
 ```
 Node 0 has degree 4.
 Node 0 has degree 4, clustering coefficient 0.70, and random-walk return probabilities 0.27, 0.15, 0.19, 0.18.
 Node 0 has 7 other nodes in this graph.
+This graph has 3 connected components.
 ```
+
+Use the singular when the count is 1 (`1 connected component`); a grammatical slip in a
+condition that appears in every prompt of its arm is exactly the kind of thing that could
+show up as a spurious effect.
 
 ```python
-render_primer(graph, components=(), k_min=2, k_max=5) -> str
+render_primer(graph, parts=(), k_min=2, k_max=5) -> str
 ```
 
-`components=()` yields the empty string — that is the `none` condition, not a special
-case. `build_primer(graph, condition, ...)` is then a thin mapping from the six
-condition names onto component tuples.
+`parts=()` yields the empty string — that is the `none` condition, not a special case.
+`build_primer(graph, condition, ...)` is then a thin mapping from the seven condition
+names onto part tuples.
 
 This single code path is what makes the comparison mean anything. Fatemi et al.'s
 central result is that phrasing alone moves accuracy by tens of points, so if conditions
@@ -157,22 +202,59 @@ longer condition is wanted, and **always report achieved character counts** so t
 mismatch is visible in analysis rather than assumed away. Approximate matching that is
 measured beats exact matching that is faked.
 
-Note this control is only needed for comparisons against `none`. Contrasts among the
-four real primer conditions are already roughly format-matched, so on the cluster the
-control is worth spending on the three primer-agnostic tasks first, where the
-information-vs-length ambiguity actually bites.
+Note this control is only needed for comparisons against `none`. Contrasts among the real
+primer conditions are already roughly format-matched. Given the taxonomy correction
+above, the task where the information-vs-length ambiguity genuinely bites is
+`edge_existence`, so that is where the control earns its cluster time first.
 
-### 5. Diagnostic
+### 5. The components condition
+
+```
+This graph has 3 connected components.
+```
+
+Why this feature and not another (see `docs/features-considered.md` for the rejected
+ones):
+
+- **It is not the answer to any of the six tasks.** Degree gives away node_degree, edge
+  count gives away edge_count, triangle count all but decides cycle_check. Component
+  count gives away none of them, so a positive result cannot be dismissed as the primer
+  trivially containing the answer.
+- **It completes an exact inference.** A graph has a cycle iff its circuit rank
+  `m − n + c > 0`. Checked against ground truth on 100 rows: **100/100**. The model must
+  still count nodes and edges from the encoding and combine three numbers, which is
+  precisely the "supplies usable ingredients but must still combine them" pattern the
+  proposal is built around.
+- **It costs one sentence, not one per node.** Token cost is negligible, so the length
+  confound that motivated the inert control barely applies here. If a matched control is
+  wanted for this arm specifically, it is a single vacuous graph-level sentence rather
+  than the per-node filler.
+- **The counts are not trivial.** 71% of the sampled graphs are connected, but the tail
+  runs to 15 components, so the statement carries real variance.
+
+The honest risk: models may simply not know the circuit-rank identity, in which case this
+condition is a null. That is still an interesting null — "we supplied the exact
+ingredients for a deterministic inference and the model could not use them" is a sharper
+claim about black-box structural reasoning than another local statistic would produce.
+Expect it to depend heavily on CoT, since the inference is multi-step.
+
+### 6. Diagnostic
 
 `rwse_degree_correlation(graph, k_min, k_max) -> dict[int, float]` returning Pearson r
 per k, computed on unrounded values. Undefined when degree or RWSE is constant across
 nodes (regular graphs, empty graphs) — return `None` for that k rather than a NaN.
 
+Measured reference values, for sanity-checking the implementation: RWSE correlates with
+degree at r≈0.57 (k=2) rising to r≈0.94 (k=5). Clustering, by contrast, is essentially
+independent of degree (r≈−0.16) and varies more across nodes than degree does
+(coefficient of variation 0.49 vs 0.38) — so clustering is the genuinely independent
+feature of the three, and RWSE is the redundant one.
+
 ## Files
 
 - `graphtalk/__init__.py`, `graphtalk/graphqa.py`, `graphtalk/primers.py` — new
 - `scripts/draw_graph.py` — drop its local `parse_graph`/`fetch_rows`, import from `graphtalk.graphqa`
-- `scripts/show_primers.py` — new; prints all six conditions for a few real rows, plus
+- `scripts/show_primers.py` — new; prints all seven conditions for a few real rows, plus
   character counts and the correlation diagnostic, for eyeballing
 - `tests/test_primers.py` — new
 - `pyproject.toml` — add `graphtalk` to packages, `tests` to testpaths
@@ -188,6 +270,14 @@ Analytic tests, no network, in `tests/test_primers.py`:
 - **K4** — clustering 1.0, degree 3
 - **Isolated node** — degree 0, clustering 0, RWSE all zeros
 - **k=1 is 0** whenever `k_min=1` is requested
+- **Component count** — connected graph → 1; two disjoint triangles → 2; a graph with an
+  isolated node counts that node as its own component
+- **Circuit-rank identity** — across a spread of small graphs (trees, forests, cycles,
+  disjoint unions, graphs with isolated nodes), `m − n + c > 0` agrees with
+  `nx.find_cycle`. This is the load-bearing property for the components condition: if it
+  does not hold, the condition supplies no valid inference
+- **Singular/plural** — the sentence reads `1 connected component`, not
+  `1 connected components`
 - **Brute-force cross-check** — enumerate every walk of length k on a small graph and
   compare the return fraction against the matrix-power result. This is the load-bearing
   test: it checks the fast implementation against an independent one rather than against
