@@ -46,6 +46,13 @@ holds without seed management. Without them, it does not.
   repo root) and under the bare `pytest` console script (which, unlike `python -m
   pytest`, does not add the working directory). Both verification commands at the end of
   this document depend on the reinstall.
+- **On this Mac the reinstall cannot take effect, for a reason local to the machine.**
+  Every file in `.venv/.../site-packages` carries the macOS `UF_HIDDEN` flag, and
+  CPython 3.11's `site.addpackage` skips hidden `.pth` files, so
+  `__editable__.graphtalk-0.1.0.pth` never runs (nor do `_virtualenv.pth` or
+  `distutils-precedence.pth`). `chflags nohidden` fixes it and something re-applies the
+  flag within seconds. `UF_HIDDEN` does not exist on Linux, so the cluster is unaffected;
+  locally, prefix commands with `PYTHONPATH=.`.
 
 ## Provenance of the numbers in this document
 

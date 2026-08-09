@@ -29,7 +29,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["talk_like_a_graph"]
+testpaths = ["talk_like_a_graph", "tests"]
 
 [tool.setuptools]
-packages = ["talk_like_a_graph"]
+packages = ["talk_like_a_graph", "graphtalk"]

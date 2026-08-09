@@ -7,6 +7,10 @@ Course project building on
 implementation. See [talk_like_a_graph/UPSTREAM.md](talk_like_a_graph/UPSTREAM.md)
 for the exact upstream commit and our local changes.
 
+`graphtalk/` is this project's own package: `graphqa.py` recovers a networkx
+graph from a GraphQA row and recomputes its gold answer, and `primers.py` holds
+the primer statistics and the single renderer every condition goes through.
+
 ## Setup
 
 ```bash
@@ -36,10 +40,12 @@ cleanly on 3.12+.
 ## Tests
 
 ```bash
-uv run --no-sync pytest talk_like_a_graph/ -q
+uv run --no-sync pytest -q
 ```
 
-27 tests, covering graph generation, text encoders, and metrics.
+165 tests: 27 vendored ones covering graph generation, text encoders and
+metrics, and 138 in `tests/` covering the primer statistics, the renderer, and
+the committed golden primer strings.
 
 Use `--no-sync`: a plain `uv run` re-syncs the environment to the default
 dependencies and would uninstall the optional `pipeline` extras.

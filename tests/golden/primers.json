@@ -1,0 +1,203 @@
+[
+  {
+    "name": "pair",
+    "nodes": [
+      0,
+      1
+    ],
+    "edges": [
+      [
+        0,
+        1
+      ]
+    ],
+    "primers": {
+      "none": "",
+      "components": "This graph has 1 connected component.",
+      "degree": "Node 0 has degree 1. Node 1 has degree 1.",
+      "clustering": "Node 0 has clustering coefficient 0.00. Node 1 has clustering coefficient 0.00.",
+      "rwse": "Node 0 has return probability 1.00 after 2 steps and 0.00 after 3 steps. Node 1 has return probability 1.00 after 2 steps and 0.00 after 3 steps.",
+      "filler": "Node 0 has 1 other node in this graph. Node 1 has 1 other node in this graph.",
+      "all": "Node 0 has degree 1, clustering coefficient 0.00, and return probability 1.00 after 2 steps and 0.00 after 3 steps. Node 1 has degree 1, clustering coefficient 0.00, and return probability 1.00 after 2 steps and 0.00 after 3 steps."
+    }
+  },
+  {
+    "name": "lopsided",
+    "nodes": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "edges": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        2,
+        4
+      ]
+    ],
+    "primers": {
+      "none": "",
+      "components": "This graph has 1 connected component.",
+      "degree": "Node 0 has degree 2. Node 1 has degree 1. Node 2 has degree 3. Node 3 has degree 1. Node 4 has degree 1.",
+      "clustering": "Node 0 has clustering coefficient 0.00. Node 1 has clustering coefficient 0.00. Node 2 has clustering coefficient 0.00. Node 3 has clustering coefficient 0.00. Node 4 has clustering coefficient 0.00.",
+      "rwse": "Node 0 has return probability 0.67 after 2 steps and 0.00 after 3 steps. Node 1 has return probability 0.50 after 2 steps and 0.00 after 3 steps. Node 2 has return probability 0.83 after 2 steps and 0.00 after 3 steps. Node 3 has return probability 0.33 after 2 steps and 0.00 after 3 steps. Node 4 has return probability 0.33 after 2 steps and 0.00 after 3 steps.",
+      "filler": "Node 0 has 4 other nodes in this graph. Node 1 has 4 other nodes in this graph. Node 2 has 4 other nodes in this graph. Node 3 has 4 other nodes in this graph. Node 4 has 4 other nodes in this graph.",
+      "all": "Node 0 has degree 2, clustering coefficient 0.00, and return probability 0.67 after 2 steps and 0.00 after 3 steps. Node 1 has degree 1, clustering coefficient 0.00, and return probability 0.50 after 2 steps and 0.00 after 3 steps. Node 2 has degree 3, clustering coefficient 0.00, and return probability 0.83 after 2 steps and 0.00 after 3 steps. Node 3 has degree 1, clustering coefficient 0.00, and return probability 0.33 after 2 steps and 0.00 after 3 steps. Node 4 has degree 1, clustering coefficient 0.00, and return probability 0.33 after 2 steps and 0.00 after 3 steps."
+    }
+  },
+  {
+    "name": "with_isolated",
+    "nodes": [
+      0,
+      1,
+      2,
+      5
+    ],
+    "edges": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        2
+      ]
+    ],
+    "primers": {
+      "none": "",
+      "components": "This graph has 2 connected components.",
+      "degree": "Node 0 has degree 2. Node 1 has degree 2. Node 2 has degree 2. Node 5 has degree 0.",
+      "clustering": "Node 0 has clustering coefficient 1.00. Node 1 has clustering coefficient 1.00. Node 2 has clustering coefficient 1.00. Node 5 has clustering coefficient 0.00.",
+      "rwse": "Node 0 has return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 1 has return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 2 has return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 5 has return probability 0.00 after 2 steps and 0.00 after 3 steps.",
+      "filler": "Node 0 has 3 other nodes in this graph. Node 1 has 3 other nodes in this graph. Node 2 has 3 other nodes in this graph. Node 5 has 3 other nodes in this graph.",
+      "all": "Node 0 has degree 2, clustering coefficient 1.00, and return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 1 has degree 2, clustering coefficient 1.00, and return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 2 has degree 2, clustering coefficient 1.00, and return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 5 has degree 0, clustering coefficient 0.00, and return probability 0.00 after 2 steps and 0.00 after 3 steps."
+    }
+  },
+  {
+    "name": "two_triangles",
+    "nodes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "edges": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        4
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        4,
+        5
+      ]
+    ],
+    "primers": {
+      "none": "",
+      "components": "This graph has 2 connected components.",
+      "degree": "Node 0 has degree 2. Node 1 has degree 2. Node 2 has degree 2. Node 3 has degree 2. Node 4 has degree 2. Node 5 has degree 2.",
+      "clustering": "Node 0 has clustering coefficient 1.00. Node 1 has clustering coefficient 1.00. Node 2 has clustering coefficient 1.00. Node 3 has clustering coefficient 1.00. Node 4 has clustering coefficient 1.00. Node 5 has clustering coefficient 1.00.",
+      "rwse": "Node 0 has return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 1 has return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 2 has return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 3 has return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 4 has return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 5 has return probability 0.50 after 2 steps and 0.25 after 3 steps.",
+      "filler": "Node 0 has 5 other nodes in this graph. Node 1 has 5 other nodes in this graph. Node 2 has 5 other nodes in this graph. Node 3 has 5 other nodes in this graph. Node 4 has 5 other nodes in this graph. Node 5 has 5 other nodes in this graph.",
+      "all": "Node 0 has degree 2, clustering coefficient 1.00, and return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 1 has degree 2, clustering coefficient 1.00, and return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 2 has degree 2, clustering coefficient 1.00, and return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 3 has degree 2, clustering coefficient 1.00, and return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 4 has degree 2, clustering coefficient 1.00, and return probability 0.50 after 2 steps and 0.25 after 3 steps. Node 5 has degree 2, clustering coefficient 1.00, and return probability 0.50 after 2 steps and 0.25 after 3 steps."
+    }
+  },
+  {
+    "name": "tie",
+    "nodes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "edges": [
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        3
+      ],
+      [
+        0,
+        5
+      ],
+      [
+        1,
+        4
+      ],
+      [
+        1,
+        7
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        2,
+        5
+      ],
+      [
+        3,
+        4
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        3,
+        7
+      ]
+    ],
+    "primers": {
+      "none": "",
+      "components": "This graph has 2 connected components.",
+      "degree": "Node 0 has degree 3. Node 1 has degree 2. Node 2 has degree 3. Node 3 has degree 5. Node 4 has degree 2. Node 5 has degree 3. Node 6 has degree 0. Node 7 has degree 2.",
+      "clustering": "Node 0 has clustering coefficient 1.00. Node 1 has clustering coefficient 0.00. Node 2 has clustering coefficient 1.00. Node 3 has clustering coefficient 0.30. Node 4 has clustering coefficient 0.00. Node 5 has clustering coefficient 1.00. Node 6 has clustering coefficient 0.00. Node 7 has clustering coefficient 0.00.",
+      "rwse": "Node 0 has return probability 0.29 after 2 steps and 0.16 after 3 steps. Node 1 has return probability 0.50 after 2 steps and 0.00 after 3 steps. Node 2 has return probability 0.29 after 2 steps and 0.16 after 3 steps. Node 3 has return probability 0.40 after 2 steps and 0.13 after 3 steps. Node 4 has return probability 0.35 after 2 steps and 0.00 after 3 steps. Node 5 has return probability 0.29 after 2 steps and 0.16 after 3 steps. Node 6 has return probability 0.00 after 2 steps and 0.00 after 3 steps. Node 7 has return probability 0.35 after 2 steps and 0.00 after 3 steps.",
+      "filler": "Node 0 has 7 other nodes in this graph. Node 1 has 7 other nodes in this graph. Node 2 has 7 other nodes in this graph. Node 3 has 7 other nodes in this graph. Node 4 has 7 other nodes in this graph. Node 5 has 7 other nodes in this graph. Node 6 has 7 other nodes in this graph. Node 7 has 7 other nodes in this graph.",
+      "all": "Node 0 has degree 3, clustering coefficient 1.00, and return probability 0.29 after 2 steps and 0.16 after 3 steps. Node 1 has degree 2, clustering coefficient 0.00, and return probability 0.50 after 2 steps and 0.00 after 3 steps. Node 2 has degree 3, clustering coefficient 1.00, and return probability 0.29 after 2 steps and 0.16 after 3 steps. Node 3 has degree 5, clustering coefficient 0.30, and return probability 0.40 after 2 steps and 0.13 after 3 steps. Node 4 has degree 2, clustering coefficient 0.00, and return probability 0.35 after 2 steps and 0.00 after 3 steps. Node 5 has degree 3, clustering coefficient 1.00, and return probability 0.29 after 2 steps and 0.16 after 3 steps. Node 6 has degree 0, clustering coefficient 0.00, and return probability 0.00 after 2 steps and 0.00 after 3 steps. Node 7 has degree 2, clustering coefficient 0.00, and return probability 0.35 after 2 steps and 0.00 after 3 steps."
+    }
+  }
+]
