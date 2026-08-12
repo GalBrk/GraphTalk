@@ -8,8 +8,11 @@ implementation. See [talk_like_a_graph/UPSTREAM.md](talk_like_a_graph/UPSTREAM.m
 for the exact upstream commit and our local changes.
 
 `graphtalk/` is this project's own package: `graphqa.py` recovers a networkx
-graph from a GraphQA row and recomputes its gold answer, and `primers.py` holds
-the primer statistics and the single renderer every condition goes through.
+graph from a GraphQA row and recomputes its gold answer, `primers.py` holds the
+primer statistics and the single renderer every condition goes through, and
+`shortcuts.py` reads a rendered primer back out of its text — the first piece of
+the primer-only solvers described in
+[docs/plans/shortcut-ceilings.md](docs/plans/shortcut-ceilings.md).
 
 ## Setup
 
@@ -43,9 +46,13 @@ cleanly on 3.12+.
 uv run --no-sync pytest -q
 ```
 
-165 tests: 27 vendored ones covering graph generation, text encoders and
-metrics, and 138 in `tests/` covering the primer statistics, the renderer, and
-the committed golden primer strings.
+231 tests: 27 vendored ones covering graph generation, text encoders and
+metrics, 138 covering the primer statistics, the renderer, and the committed
+golden primer strings, and 66 covering the primer parser — mostly the round
+trip, which renders a primer, parses it back, and requires the recovered values
+to equal the rounded originals. That is the only check that notices a renderer
+change nobody meant to make, so `shortcuts.py` deliberately shares no code with
+`primers.py`.
 
 Use `--no-sync`: a plain `uv run` re-syncs the environment to the default
 dependencies and would uninstall the optional `pipeline` extras.
