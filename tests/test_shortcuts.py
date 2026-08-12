@@ -607,3 +607,183 @@ def test_cycle_check_baseline_is_the_yes_rate():
   assert answer == "Yes, there is a cycle"
   # The plan records 83.2% on 500 graphs; a 120-graph sample sits near it.
   assert 0.70 <= accuracy <= 0.95, accuracy
+
+
+# --- fitted rules, the solver, and the exact island -----------------------
+
+SPLIT = shortcuts.Split(fit_seed=FIT_SEED, test_seed=CORPUS_SEED, size=SWEEP_SIZE)
+FIT_GRAPHS = SPLIT.fit_graphs()
+
+
+def test_split_refuses_to_fit_and_score_on_the_same_seed():
+  """Structural, because this is the mistake that reverses the finding's sign."""
+  with pytest.raises(ValueError, match="different seeds"):
+    shortcuts.Split(fit_seed=7, test_seed=7)
+  assert SPLIT.fit_seed != SPLIT.test_seed
+
+
+def test_split_corpora_actually_differ():
+  def signature(graph):
+    return (
+        graph.number_of_nodes(),
+        tuple(sorted(tuple(sorted(e)) for e in graph.edges())),
+    )
+
+  overlap = set(map(signature, FIT_GRAPHS)) & set(map(signature, SWEEP))
+  # Small edgeless graphs can coincide across seeds; anything beyond that would
+  # mean the two seeds are not independent.
+  assert all(edges == () for _, edges in overlap), overlap
+
+
+def test_solve_has_no_graph_parameter():
+  params = list(inspect.signature(shortcuts.solve).parameters)
+  assert "graph" not in params
+  assert params[:2] == ["primer_text", "task"]
+
+
+def test_solve_reads_text_not_statistics():
+  """The public entry point takes the rendered string, so it sees what the model sees."""
+  graph = EDGE_CASES["triangle"]
+  text = primers.build_primer(graph, "components")
+  assert shortcuts.solve(text, "cycle_check", (), n=3, m=3) == "Yes, there is a cycle"
+  path = graphqa.canonical(nx.Graph([(0, 1), (1, 2)]))
+  assert shortcuts.solve(
+      primers.build_primer(path, "components"), "cycle_check", (), n=3, m=2
+  ) == "No, there is no cycle"
+
+
+def test_solver_always_answers():
+  """A cell needs a score, so the solver falls back rather than abstaining."""
+  for task in shortcuts.TASKS:
+    fit_rows = shortcuts.build_rows(FIT_GRAPHS, "none", task, 1, seed=5)
+    fallback = shortcuts.majority_answer([gold for _, gold in fit_rows])
+    for context, _ in shortcuts.build_rows(SWEEP, "none", task, 1, seed=6)[:20]:
+      assert shortcuts.solve_context(context, task, (), fallback) != ""
+
+
+@pytest.mark.parametrize("task", shortcuts.TASKS)
+def test_shortcut_never_falls_below_the_baseline(task):
+  """The solver may not be worse than guessing the majority class.
+
+  It falls back to exactly that answer, so a shortcut below the baseline would
+  mean a rule fired and was wrong more often than abstaining would have been.
+  """
+  for condition in ("none", "degree", "components", "all"):
+    cell = shortcuts.score_cell(condition, task, 3, FIT_GRAPHS, SWEEP)
+    assert cell.shortcut >= cell.baseline - 1e-9, cell
+
+
+def test_none_arm_at_rung_one_is_exactly_the_baseline():
+  """The plan's `none` sanity check: an empty primer buys nothing at rung 1."""
+  for task in shortcuts.TASKS:
+    cell = shortcuts.score_cell("none", task, 1, FIT_GRAPHS, SWEEP)
+    assert cell.shortcut == pytest.approx(cell.baseline), (task, cell)
+
+
+def test_shortcut_is_monotone_in_rung():
+  """Each rung grants strictly more, so the score cannot fall."""
+  for condition in ("components", "degree", "rwse"):
+    for task in shortcuts.TASKS:
+      scores = [
+          shortcuts.score_cell(condition, task, rung, FIT_GRAPHS, SWEEP).shortcut
+          for rung in shortcuts.RUNGS
+      ]
+      assert scores[0] <= scores[1] + 1e-9 <= scores[2] + 1e-9, (
+          condition, task, scores
+      )
+
+
+def test_components_cycle_ladder_matches_the_plan():
+  """The anchor the whole rung design is built on."""
+  rung1 = shortcuts.score_cell("components", "cycle_check", 1, FIT_GRAPHS, SWEEP)
+  rung3 = shortcuts.score_cell("components", "cycle_check", 3, FIT_GRAPHS, SWEEP)
+  assert rung1.shortcut > rung1.baseline, "rung 1 should already beat the baseline"
+  assert rung3.shortcut == 1.0, "circuit rank is exact"
+
+
+def test_fitted_rules_do_not_see_their_evaluation_set():
+  """In-sample fitting inflates the bar, and more table rows inflate it more.
+
+  Uses its own larger split: at 120 graphs the effect is inside the noise, and
+  this is the measurement the whole design rests on.
+  """
+  split = shortcuts.Split(fit_seed=FIT_SEED, test_seed=CORPUS_SEED, size=400)
+  fit_graphs, test_graphs = split.fit_graphs(), split.test_graphs()
+
+  results = {}
+  for name in ("cycle_lookup_c", "cycle_lookup_c_n"):
+    rule = next(r for r in shortcuts.FITTED if r.name == name)
+    results[name] = shortcuts.inflation(
+        "components", "cycle_check", 3, rule, fit_graphs, test_graphs
+    )
+
+  for name, result in results.items():
+    assert result["in_sample"] > result["out_of_sample"], (name, result)
+
+  small, large = results["cycle_lookup_c"], results["cycle_lookup_c_n"]
+  assert large["table_rows"] > small["table_rows"]
+  assert (large["in_sample"] - large["out_of_sample"]) > (
+      small["in_sample"] - small["out_of_sample"]
+  ), results
+
+
+# --- the exact island -----------------------------------------------------
+
+
+def test_exact_island_bounds_the_hand_written_rules():
+  """No rule may beat the information-theoretic ceiling.
+
+  A rule above it is reading something the primer does not state, which is a bug
+  rather than a discovery.
+  """
+  small = [g for g in SWEEP if g.number_of_nodes() <= 6]
+  assert small, "no small graphs in the corpus to bound"
+
+  for task in ("edge_existence", "cycle_check", "connected_nodes"):
+    island = shortcuts.exact_island(SWEEP, task)
+    # Answering with the majority over consistent graphs is at least as good as
+    # only answering where they all agree, so the ceiling dominates the
+    # determined fraction. A violation means the enumeration is wrong.
+    assert island["determined"] <= island["bayes_optimal"] + 1e-9, island
+
+    # And no hand-written rule may beat the ceiling. Scored on the same small
+    # graphs the island covers, with the same query draw.
+    for condition in ("degree", "all"):
+      for rung in shortcuts.RUNGS:
+        rows = shortcuts.build_rows(small, condition, task, rung, seed=5)
+        fit_rows = shortcuts.build_rows(FIT_GRAPHS, condition, task, rung, seed=5)
+        fitted = shortcuts.rank_rules(
+            shortcuts.fit_rules(
+                shortcuts.HEURISTICS + shortcuts.FITTED, fit_rows, task
+            ),
+            fit_rows,
+            task,
+        )
+        fallback = shortcuts.majority_answer([g for _, g in fit_rows])
+        ours = shortcuts.score_solver(rows, task, fitted, fallback)
+        assert ours <= island["bayes_optimal"] + 1e-9, (
+            task, condition, rung, ours, island
+        )
+
+
+def test_exact_island_is_exact_on_a_hand_checked_case():
+  """A 4-cycle: degrees are all 2, and the consistent set is the three 4-cycles."""
+  square = graphqa.canonical(nx.cycle_graph(4))
+  island = shortcuts.exact_island([square], "cycle_check")
+  # Every graph on 4 nodes with all degrees 2 is a 4-cycle, so a cycle is certain.
+  assert island["rows"] == 1
+  assert island["determined"] == 1.0
+  assert island["bayes_optimal"] == 1.0
+
+  # Degrees (1,1,1,1) admit three different perfect matchings, so which node is
+  # adjacent to which is genuinely undetermined.
+  matching = graphqa.canonical(nx.Graph([(0, 1), (2, 3)]))
+  island = shortcuts.exact_island([matching], "connected_nodes")
+  assert island["determined"] == 0.0
+
+
+def test_exact_island_skips_graphs_it_cannot_enumerate():
+  big = [g for g in SWEEP if g.number_of_nodes() > 6]
+  island = shortcuts.exact_island(big, "cycle_check")
+  assert island["rows"] == 0
+  assert island["skipped"] == len(big)

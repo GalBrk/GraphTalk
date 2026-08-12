@@ -249,6 +249,75 @@ Then use the table to triage the sweep:
 That inverts the cost problem: the table is not extra work on top of the experiment, it is
 what tells you which parts of the experiment not to run.
 
+## Measured results
+
+Computed by `scripts/shortcut_table.py --graphs 500`, fitted on seed 999 and scored on
+seed 1234. Shortcut score at rung 3, against the majority baseline.
+
+| task | baseline | best arm | shortcut | verdict |
+|---|---|---|---|---|
+| `node_count` | 6.4% | every node-level arm | **100%** | decided |
+| `edge_count` | 1.8% | `degree`, `all` | **100%** | decided |
+| `node_degree` | 8.2% | `degree`, `all` | **100%** | decided (manipulation check) |
+| `cycle_check` | 83.2% | `components` | **100%** | decided |
+| `edge_existence` | 49.8% | `degree`, `all` | 79.4% | real headroom |
+| `connected_nodes` | 8.2% | none of them | 8.2% | wide open |
+
+**Four of the six tasks are already decided by a program that never sees the graph.**
+Running a model on those cells cannot inform the hypothesis: `node_count` because the
+primer emits one sentence per node, `edge_count` because `sum(degrees)/2 = m`,
+`node_degree` because the primer states the answer, and `cycle_check` on the `components`
+arm because circuit rank is exact.
+
+Two findings that were not anticipated:
+
+- **`cycle_check` gains nothing on any per-node arm.** `clustering > 0` fires at 80.8%
+  coverage and `m >= n` at 78.6%, both at precision 1, but both answer only *Yes* — and
+  the majority baseline is already "always Yes" at 83.2%. A one-directional rule cannot
+  beat a baseline that agrees with it. Only `components` can answer *No*, which is a
+  sharper argument for that arm than the plan originally made.
+- **`connected_nodes` has no shortcut at all.** The gold answer is a neighbour list, and a
+  primer-only solver can produce nothing but `" No nodes."`, which is already the
+  majority answer. Shortcut equals baseline on all seven arms, so every point a model
+  scores above 8.2% is genuine. This is the cleanest cell in the design.
+
+The `none` arm equals its baseline exactly at rung 1 on all six tasks, as the sanity check
+requires.
+
+### The ladder, and the fitted-rule inflation
+
+`components` x `cycle_check` reproduces the anchor: 83.2% baseline, 92.6% at rung 1,
+94.6% at rung 2, 100% at rung 3. It is the only cell where all three rungs separate.
+
+In-sample fitting inflates as predicted, and more table rows inflate more:
+
+| rule | table rows | fitted in-sample | fitted honestly | inflation |
+|---|---|---|---|---|
+| `c` -> Yes/No | 15 | 94.4% | 92.6% | +1.8pp |
+| `(c, n)` -> Yes/No | 95 | 97.6% | 90.6% | +7.0pp |
+
+Both in-sample figures match the values the plan recorded (94.4% and 97.6%). The honest
+figures are lower here than the plan's because the fitting set is 500 graphs rather than
+4000.
+
+### The exact island says rules remain unfound
+
+On n <= 6 (9.2% of rows), enumerating every labelled graph consistent with the stated
+degrees gives the exact ceiling for *any* primer-only solver:
+
+| task | determined | exact ceiling | our best | gap |
+|---|---|---|---|---|
+| `edge_existence` | 67.4% | 93.5% | 91.3% | tight |
+| `cycle_check` | 97.8% | 100% | 65.2% | **35pp unfound** |
+| `connected_nodes` | 56.5% | 69.6% | 10.9% | **59pp unfound** |
+
+No rule exceeds its bound, which is the correctness check. But two gaps are large, and
+both are diagnosable: the degree sequence determines the component count on small graphs,
+so a rule that reconstructs `c` from the stated degrees would feed circuit rank and close
+most of the `cycle_check` gap; and the degree sequence often determines the neighbour list
+outright, which no rule here attempts. **The floor is loose, and the table should be read
+as "at least this good" rather than as the ceiling.**
+
 ## Anchors already measured
 
 Seeds for the table, all on `generate_graphs(500, "er", False, random_seed=1234)` with

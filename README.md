@@ -10,9 +10,23 @@ for the exact upstream commit and our local changes.
 `graphtalk/` is this project's own package: `graphqa.py` recovers a networkx
 graph from a GraphQA row and recomputes its gold answer, `primers.py` holds the
 primer statistics and the single renderer every condition goes through, and
-`shortcuts.py` reads a rendered primer back out of its text — the first piece of
-the primer-only solvers described in
-[docs/plans/shortcut-ceilings.md](docs/plans/shortcut-ceilings.md).
+`shortcuts.py` holds the primer-only solvers: a strict parser that reads a
+rendered primer back out of its text, thirteen theorem rules, one heuristic and
+eight fitted rules, and the exact enumeration bound for small graphs. See
+[docs/plans/shortcut-ceilings.md](docs/plans/shortcut-ceilings.md) for what the
+resulting numbers mean.
+
+## The shortcut table
+
+```bash
+PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500
+```
+
+Scores a solver that reads only the primer and never the graph, across 7
+conditions x 6 tasks x 3 rungs. That score is the bar a model has to clear: a
+model at or below it did the primer arithmetic and nothing more. Four of the six
+tasks turn out to be already decided this way, which is what makes the table
+worth running before any cluster time — it says which cells not to run.
 
 ## Setup
 
@@ -46,13 +60,19 @@ cleanly on 3.12+.
 uv run --no-sync pytest -q
 ```
 
-231 tests: 27 vendored ones covering graph generation, text encoders and
+289 tests: 27 vendored ones covering graph generation, text encoders and
 metrics, 138 covering the primer statistics, the renderer, and the committed
-golden primer strings, and 66 covering the primer parser — mostly the round
-trip, which renders a primer, parses it back, and requires the recovered values
-to equal the rounded originals. That is the only check that notices a renderer
-change nobody meant to make, so `shortcuts.py` deliberately shares no code with
-`primers.py`.
+golden primer strings, and 124 covering the shortcut solvers.
+
+Two of those deserve mention because they are what the rest rests on. The
+**round trip** renders a primer, parses it back, and requires the recovered
+values to equal the rounded originals — the only check that notices a renderer
+change nobody meant to make, which is why `shortcuts.py` shares no code with
+`primers.py`. And **theorem precision** must be exactly 1.0 over both an ER
+corpus and an adversarial one of trees, forests, cycles and complete bipartite
+graphs; the adversarial corpus exists because the ER generator produces no tree
+at all, so a false rule keyed on the m = n-1 boundary scored a clean 1.0 without
+it.
 
 Use `--no-sync`: a plain `uv run` re-syncs the environment to the default
 dependencies and would uninstall the optional `pipeline` extras.
