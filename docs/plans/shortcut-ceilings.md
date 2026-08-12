@@ -72,6 +72,35 @@ the encoding are not equally cheap:
 | 2 | + n | the encoding's first line always ends `and <n-1>.`, verified 500/500. One token. |
 | 3 | + n and m | m requires counting neighbour-mentions in the body and halving, because the incident encoding prints every edge twice. Real work. |
 
+### The ladder does not separate on every arm
+
+Measured once the parser existed, and not anticipated when the rungs were written: **a
+node-level primer emits one sentence per node, so counting sentences recovers n at rung
+1.** That applies to `degree`, `clustering`, `rwse`, `filler` and `all`. For the `degree`
+arm m comes free at rung 1 too, since `sum(degrees) / 2 = m` is one of the theorem rules
+below — verified on a 14-node graph: 14 sentences give n, and the stated degrees sum to
+2·9 for m = 9.
+
+| condition | what actually separates |
+|---|---|
+| `degree`, `all` | nothing — n and m are both rung-1, so all three rungs coincide |
+| `clustering`, `rwse`, `filler` | rung 1 = rung 2 (n is free); rung 3 still adds m |
+| `components`, `none` | all three rungs distinct, as designed |
+
+This is a property of the ladder as a measuring instrument, not a leak, and it is not
+worth redesigning the primer over. n was never secret: the encoding's first line reads
+`G describes a graph among nodes 0, 1, ..., and 13.`, which is the same fact and the
+justification for granting it at rung 2 in the first place. Nor would repackaging help —
+combining the three features into one sentence per node is exactly what `all` already
+does, and any primer that states a fact about every node reveals how many nodes there
+are regardless of how the sentences are cut. Suppressing per-node sentences to avoid it
+was already rejected under "Remove the information" above.
+
+The consequence is for reading the table, not for building it: **rung 1 must not be
+described as "the solver does not know n."** Report the collapse per arm. It also
+sharpens why `components` is the arm the ladder was built for — it is the only one where
+the three rungs measure three different things.
+
 Report all three per cell. The ladder is the most informative part of the design, because
 the `components` condition is *built* to require rung 3 — circuit rank `m − n + c > 0` is
 its entire justification. Measured on 500 graphs:
@@ -239,10 +268,11 @@ current environment. See the provenance section of the primer plan.
 
 ## Files
 
-- `graphtalk/shortcuts.py` — new; rule definitions, the solver, the primer parser
+- `graphtalk/shortcuts.py` — rule definitions, the solver, the primer parser. **The
+  parser has landed**; rules and solver are still to come.
 - `scripts/shortcut_table.py` — new; computes and prints the 36-cell table at all three
   rungs, with coverage for theorems and accuracy for the rest
-- `tests/test_shortcuts.py` — new
+- `tests/test_shortcuts.py` — **landed** for the parser; grows with each later piece
 - depends on `graphtalk.graphqa.expected_answer` and `normalize` for gold answers, which
   is why the primer plan moves them into the package
 
@@ -259,7 +289,18 @@ current environment. See the provenance section of the primer plan.
   `shortcuts.solve` accepts no graph argument, so the guarantee survives refactoring.
 - **Round trip.** Render a primer, parse it back, and assert the recovered values equal
   the rounded originals exactly, on a corpus. This checks renderer and parser against each
-  other.
+  other — **which requires that they share no code.** A first draft validated the RWSE
+  step list by calling the renderer's own `_join`, so mutating that function mutated the
+  check with it and the two agreed under any change. `shortcuts.py` now imports nothing
+  from `primers.py` and restates the join rule independently in `_expected_separators`.
+  The parser is also strict about which join style it accepts: tolerating both `a, b and
+  c` and `a, b, and c` made a change to the join rule invisible.
+
+  Established by mutation testing rather than by inspection. Seven deliberate renderer
+  breakages — decimal places, both join-rule variants, dropped RWSE step labels, wrong
+  plurals, a wrong noun, and misaligned node values — are all caught; the first pass
+  caught five of seven, which is how both defects above were found. Re-run that check
+  after any change to either side.
 - **`none` sanity.** The shortcut score for the `none` condition must equal the
   majority-class baseline, since the primer is empty. If it does not, the solver is
   reading something it should not.
