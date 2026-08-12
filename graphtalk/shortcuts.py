@@ -17,7 +17,11 @@ rather than by discipline:
 The parser's second job is a round-trip check on the renderer: render, parse, and
 the recovered values must equal the rounded originals exactly. That test checks
 `primers.render_primer` and `parse_primer` against each other, and it is the only
-check that would catch a renderer change nobody meant to make.
+check that would catch a renderer change nobody meant to make. For it to be a
+cross-check rather than a tautology, **the parser and the rules call nothing in
+`primers`** -- the join rule is restated here in `_expected_separators`. The
+evaluation harness at the foot of this file does render primers, which is the
+point of it; nothing above that section does.
 
 Parsing is deliberately **strict**. Every sentence must be fully accounted for,
 and a conflicting repeat of a value raises. A parser that silently skipped text
@@ -31,8 +35,13 @@ therefore rung-1 information for every condition except `none` and an unpadded
 `components`.
 """
 
+import collections
 import dataclasses
+import random
 import re
+
+from graphtalk import graphqa
+from graphtalk import primers
 
 # A sentence ends at a period followed by whitespace or by end of string. Decimal
 # points are always followed by a digit, so they are never a split point.
@@ -287,3 +296,353 @@ def parse_primer(text: str) -> ParsedPrimer:
   return ParsedPrimer(
       components, degree, clustering, rwse, filler, tuple(sorted(nodes))
   )
+
+
+# --- tasks, queries, gold answers ----------------------------------------
+
+TASKS = (
+    "node_count",
+    "edge_count",
+    "node_degree",
+    "connected_nodes",
+    "edge_existence",
+    "cycle_check",
+)
+
+# How many query nodes each task samples. The vendored generator draws a uniform
+# pair for `edge_existence` (graph_tasks.py:136) and one uniform node for
+# `connected_nodes` (:393) and `node_degree` (:264); the other three emit one row
+# per graph with no query at all. Any rate quoted per row has to say which of
+# these it used, because they count different things.
+QUERY_ARITY = {
+    "node_count": 0,
+    "edge_count": 0,
+    "cycle_check": 0,
+    "node_degree": 1,
+    "connected_nodes": 1,
+    "edge_existence": 2,
+}
+
+
+def sample_query(graph, task: str, rng) -> tuple[int, ...]:
+  """Draws a task's query nodes, without replacement, in the vendored style."""
+  arity = QUERY_ARITY[task]
+  if arity == 0:
+    return ()
+  return tuple(rng.sample(sorted(graph.nodes()), k=arity))
+
+
+# --- what a solver is allowed to see -------------------------------------
+
+
+@dataclasses.dataclass(frozen=True)
+class Context:
+  """Everything a primer-only solver may read.
+
+  There is deliberately no graph field. That is the guarantee the whole design
+  rests on, and making it structural means it cannot be lost by forgetting: a
+  rule cannot consult the graph because the graph is not here to consult.
+
+  `n` and `m` are what the rung grants from the encoding, None meaning withheld.
+  Rules that are entitled to a granted value read `known_n` / `known_m`; rules
+  measuring what the *primer* contributes read `n_from_sentences` /
+  `m_from_degrees`, which never fall back to a grant.
+  """
+
+  primer: ParsedPrimer
+  targets: tuple[int, ...] = ()
+  n: int | None = None
+  m: int | None = None
+
+  @property
+  def n_from_sentences(self) -> int | None:
+    """n recovered from the primer alone, by counting node sentences.
+
+    The renderer emits exactly one sentence per node, including the isolated ones
+    the encoding body omits, so this is exact for every node-level condition --
+    which is why the rung ladder does not separate on those arms. See the rung
+    section of docs/plans/shortcut-ceilings.md.
+
+    It assumes the renderer's one-sentence-per-node contract, which `_pad` breaks
+    for a *graph-level* primer padded with per-node filler. The table is computed
+    on unpadded primers for that reason.
+    """
+    return len(self.primer.nodes) or None
+
+  @property
+  def m_from_degrees(self) -> int | None:
+    """m recovered from the primer alone, as sum(degrees) / 2."""
+    if self.primer.degree and set(self.primer.degree) == set(self.primer.nodes):
+      return sum(self.primer.degree.values()) // 2
+    return None
+
+  @property
+  def known_n(self) -> int | None:
+    return self.n if self.n is not None else self.n_from_sentences
+
+  @property
+  def known_m(self) -> int | None:
+    return self.m if self.m is not None else self.m_from_degrees
+
+
+@dataclasses.dataclass(frozen=True)
+class Rule:
+  """A named deterministic route from primer text to an answer.
+
+  `solve` returns an answer string, or None to abstain. Abstention is how a rule
+  says the primer it was handed does not carry what it needs -- which is also how
+  a rule confines itself to the conditions it applies to, without anyone having
+  to maintain a list of them.
+  """
+
+  name: str
+  task: str
+  kind: str
+  why: str
+  solve: object
+
+
+# --- theorems -------------------------------------------------------------
+#
+# Every rule below is exact: when it fires, it is right, and the phase-2 test
+# asserts precision is 1.0 over a corpus rather than taking that on trust. What
+# varies between them is coverage.
+#
+# Rounding cuts one way only. A statistic that is exactly zero renders as "0.00",
+# so a rendered positive can never come from a true zero and the "> 0" tests keep
+# their precision. A true positive small enough to round to "0.00" costs coverage
+# instead, which is the harmless direction.
+
+
+def _all_zero_rwse(ctx: Context, node: int) -> bool | None:
+  """Whether the primer's RWSE vector for `node` is all zeros.
+
+  Equivalent to degree 0 under the clamp convention, but only when k=2 is in the
+  rendered range: the k=2 return probability of a node with a neighbour is at
+  least 1/(n-1), which is 0.06 at n=19 and so can never round to 0.00, while odd
+  k alone is exactly 0 for every node of a triangle-free graph -- 19% of them.
+  """
+  table = ctx.primer.rwse.get(node)
+  if not table or 2 not in table:
+    return None
+  return all(value == 0.0 for value in table.values())
+
+
+def _degree_zero_no_edge(ctx):
+  a, b = ctx.targets
+  if ctx.primer.degree.get(a) == 0 or ctx.primer.degree.get(b) == 0:
+    return "No"
+  return None
+
+
+def _degree_full_edge(ctx):
+  n = ctx.known_n
+  if n is None:
+    return None
+  # Query nodes are drawn without replacement, so a node of degree n-1 is
+  # adjacent to every other node including its partner.
+  if any(ctx.primer.degree.get(t) == n - 1 for t in ctx.targets):
+    return "Yes"
+  return None
+
+
+def _rwse_zero_no_edge(ctx):
+  if any(_all_zero_rwse(ctx, t) for t in ctx.targets):
+    return "No"
+  return None
+
+
+def _degree_zero_no_nodes(ctx):
+  if ctx.primer.degree.get(ctx.targets[0]) == 0:
+    return "No nodes"
+  return None
+
+
+def _rwse_zero_no_nodes(ctx):
+  if _all_zero_rwse(ctx, ctx.targets[0]):
+    return "No nodes"
+  return None
+
+
+def _clustering_triangle(ctx):
+  if any(value > 0.0 for value in ctx.primer.clustering.values()):
+    return "Yes, there is a cycle"
+  return None
+
+
+def _rwse_triangle(ctx):
+  if any(table.get(3, 0.0) > 0.0 for table in ctx.primer.rwse.values()):
+    return "Yes, there is a cycle"
+  return None
+
+
+def _circuit_rank(ctx):
+  c, n, m = ctx.primer.components, ctx.known_n, ctx.known_m
+  if c is None or n is None or m is None:
+    return None
+  # Exact in both directions, which makes this the only cycle_check theorem that
+  # can answer No. It is the entire justification for the components condition.
+  return "Yes, there is a cycle" if m - n + c > 0 else "No, there is no cycle"
+
+
+def _edges_at_least_nodes(ctx):
+  n, m = ctx.known_n, ctx.known_m
+  if n is None or m is None or m < n:
+    return None
+  # A forest has at most n-1 edges, so m >= n cannot be a forest.
+  return "Yes, there is a cycle"
+
+
+def _count_sentences(ctx):
+  n = ctx.n_from_sentences
+  return None if n is None else str(n)
+
+
+def _components_edgeless(ctx):
+  c, m = ctx.primer.components, ctx.known_m
+  if c is None or m is None or m != 0:
+    return None
+  # c = n exactly when m = 0. Dominated by simply knowing n, so it only ever
+  # fires at a rung that already grants n -- kept because the *information* is
+  # what the components arm's node_count caveat is about.
+  return str(c)
+
+
+def _degree_sum(ctx):
+  m = ctx.m_from_degrees
+  return None if m is None else str(m)
+
+
+def _stated_degree(ctx):
+  degree = ctx.primer.degree.get(ctx.targets[0])
+  return None if degree is None else str(degree)
+
+
+THEOREMS = (
+    Rule("degree_zero_no_edge", "edge_existence", "theorem",
+         "degree 0 forces No", _degree_zero_no_edge),
+    Rule("degree_full_edge", "edge_existence", "theorem",
+         "degree n-1 forces Yes", _degree_full_edge),
+    Rule("rwse_zero_no_edge", "edge_existence", "theorem",
+         "all-zero RWSE means degree 0", _rwse_zero_no_edge),
+    Rule("degree_zero_no_nodes", "connected_nodes", "theorem",
+         "degree 0 means No nodes", _degree_zero_no_nodes),
+    Rule("rwse_zero_no_nodes", "connected_nodes", "theorem",
+         "all-zero RWSE means No nodes", _rwse_zero_no_nodes),
+    Rule("clustering_triangle", "cycle_check", "theorem",
+         "clustering > 0 means a triangle", _clustering_triangle),
+    Rule("rwse_triangle", "cycle_check", "theorem",
+         "RWSE(k=3) > 0 means a triangle", _rwse_triangle),
+    Rule("circuit_rank", "cycle_check", "theorem",
+         "m - n + c > 0 iff a cycle", _circuit_rank),
+    Rule("edges_at_least_nodes", "cycle_check", "theorem",
+         "m >= n cannot be a forest", _edges_at_least_nodes),
+    Rule("count_sentences", "node_count", "theorem",
+         "one sentence per node", _count_sentences),
+    Rule("components_edgeless", "node_count", "theorem",
+         "c = n when m = 0", _components_edgeless),
+    Rule("degree_sum", "edge_count", "theorem",
+         "sum(degrees) / 2 = m", _degree_sum),
+    Rule("stated_degree", "node_degree", "theorem",
+         "the primer states the degree", _stated_degree),
+)
+
+
+# --- evaluation harness ---------------------------------------------------
+#
+# Everything below renders primers, which is why it sits under the rules rather
+# than among them: the parser and the rules above import nothing from `primers`,
+# and the round trip is only a cross-check for as long as that stays true.
+
+RUNGS = (1, 2, 3)
+
+
+def make_context(
+    graph, condition: str, targets: tuple[int, ...], rung: int,
+    k_min: int = 2, k_max: int = 3,
+) -> Context:
+  """Renders a primer, parses it back, and grants what the rung allows.
+
+  The grants come off the graph because they are facts the *encoding* shows: n is
+  one token at the end of its first line, and m is a count of neighbour-mentions
+  halved. Reading them here rather than making a rule find them keeps the rule
+  honest about which rung it needs.
+  """
+  if rung not in RUNGS:
+    raise ValueError(f"unknown rung: {rung}; known: {list(RUNGS)}")
+  parsed = parse_primer(
+      primers.build_primer(graph, condition, k_min=k_min, k_max=k_max)
+  )
+  return Context(
+      primer=parsed,
+      targets=targets,
+      n=graph.number_of_nodes() if rung >= 2 else None,
+      m=graph.number_of_edges() if rung >= 3 else None,
+  )
+
+
+def build_rows(
+    graphs, condition: str, task: str, rung: int, seed: int = 0,
+    k_min: int = 2, k_max: int = 3,
+) -> list[tuple[Context, str]]:
+  """Pairs a solver context with its gold answer, one row per graph.
+
+  Graphs too small to supply the task's query are dropped rather than raising:
+  the generator's minimum is 5 nodes, so this only ever bites on hand-built test
+  graphs, and dropping them is better than a corpus that cannot include them.
+  """
+  rng = random.Random(seed)
+  rows = []
+  for graph in graphs:
+    if graph.number_of_nodes() < QUERY_ARITY[task]:
+      continue
+    targets = sample_query(graph, task, rng)
+    rows.append((
+        make_context(graph, condition, targets, rung, k_min, k_max),
+        graphqa.gold_answer(graph, task, targets),
+    ))
+  return rows
+
+
+def score_theorem(rule: Rule, rows) -> dict:
+  """Coverage and precision for a theorem rule.
+
+  Precision is 1 by construction for a correct theorem, so it is reported in
+  order to be *asserted*: a value below 1 is a bug in the rule or in
+  `graphqa.gold_answer`, and either way the run should fail rather than quietly
+  publish a number. Coverage -- the share of rows where the rule fires -- is the
+  quantity that actually varies.
+  """
+  fired = correct = 0
+  for context, gold in rows:
+    answer = rule.solve(context)
+    if answer is None:
+      continue
+    fired += 1
+    correct += graphqa.normalize(answer) == graphqa.normalize(gold)
+  return {
+      "rule": rule.name,
+      "task": rule.task,
+      "fired": fired,
+      "total": len(rows),
+      "coverage": fired / len(rows) if rows else 0.0,
+      "precision": correct / fired if fired else None,
+  }
+
+
+def majority_answer(golds) -> str:
+  """The most common gold answer, ties broken lexicographically for determinism."""
+  counts = collections.Counter(golds)
+  return max(counts.items(), key=lambda item: (item[1], item[0]))[0]
+
+
+def baseline_accuracy(fit_golds, test_golds) -> tuple[str, float]:
+  """Majority-class accuracy, fitted and evaluated on disjoint graph sets.
+
+  One bit of fitted information, so the inflation from fitting in-sample would be
+  negligible -- but the split costs nothing here and the whole design rests on
+  the bar being honest, so it is done the same way everywhere.
+  """
+  answer = majority_answer(fit_golds)
+  hits = sum(gold == answer for gold in test_golds)
+  return answer, hits / len(test_golds) if test_golds else 0.0

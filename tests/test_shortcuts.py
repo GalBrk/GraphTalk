@@ -13,6 +13,10 @@ awkward cases (isolated nodes, triangle-free graphs, multi-component graphs)
 rather than trusting the seed.
 """
 
+import dataclasses
+import inspect
+import random
+
 import networkx as nx
 import pytest
 
@@ -316,3 +320,290 @@ def test_rejects_wrong_join(text):
   """
   with pytest.raises(ValueError, match="do not match the rule"):
     shortcuts.parse_primer(text)
+
+
+# --- theorem rules --------------------------------------------------------
+#
+# The load-bearing assertion in this section is that every theorem has precision
+# exactly 1.0. A theorem that is ever wrong is not a theorem, and a bar built on
+# it would be wrong in the direction that makes a model look like it failed to
+# reach something that was never there.
+
+FIT_SEED = 999
+SWEEP_SIZE = 120
+
+SWEEP = [
+    graphqa.canonical(g)
+    for g in graph_generators.generate_graphs(
+        SWEEP_SIZE, "er", False, random_seed=CORPUS_SEED
+    )
+]
+
+def adversarial_graphs() -> list[nx.Graph]:
+  """Structures the ER generator effectively never produces.
+
+  Precision 1.0 is only as strong as the corpus it is asserted over, and the ER
+  sweep turned out to contain no tree at all: every forest in it sits at
+  m <= n-2, and both graphs at m = n-1 have a cycle. So a false rule keyed on
+  that boundary -- "m >= n-1 implies a cycle", wrong on exactly the trees --
+  scored a clean 1.0 over 120 ER graphs. This corpus sits on those boundaries
+  deliberately.
+  """
+  out = [
+      nx.complete_bipartite_graph(3, 3),  # cycles but no triangle
+      nx.complete_bipartite_graph(2, 4),
+      nx.empty_graph(5),
+      nx.disjoint_union(nx.path_graph(4), nx.path_graph(3)),  # forest, c = 2
+      nx.disjoint_union(nx.star_graph(3), nx.path_graph(5)),
+      nx.disjoint_union(nx.cycle_graph(4), nx.path_graph(3)),  # cycle plus tree
+  ]
+  for size in range(2, 10):
+    out.append(nx.path_graph(size))  # tree: m = n-1, no cycle
+    out.append(nx.star_graph(size))  # tree
+    out.append(nx.complete_graph(size))
+    if size >= 3:
+      out.append(nx.cycle_graph(size))  # unicyclic: m = n
+  for seed in range(6):
+    out.append(nx.random_labeled_tree(8, seed=seed))
+
+  # Trees and cycles with isolated nodes bolted on, which moves c without moving
+  # m and so separates circuit rank from the edge-count rules.
+  for base in (nx.path_graph(5), nx.cycle_graph(5), nx.complete_graph(4)):
+    graph = base.copy()
+    graph.add_nodes_from([90, 91])
+    out.append(graph)
+  return [graphqa.canonical(g) for g in out]
+
+
+ADVERSARIAL = adversarial_graphs()
+CORPORA = {"er": SWEEP, "adversarial": ADVERSARIAL}
+
+_PARSED: dict[tuple[str, int, str], shortcuts.ParsedPrimer] = {}
+
+
+def parsed(corpus: str, index: int, condition: str) -> shortcuts.ParsedPrimer:
+  """Renders and parses once per (graph, condition); the sweep reuses it."""
+  key = (corpus, index, condition)
+  if key not in _PARSED:
+    _PARSED[key] = shortcuts.parse_primer(
+        primers.build_primer(CORPORA[corpus][index], condition)
+    )
+  return _PARSED[key]
+
+
+def rows_for(corpus: str, condition: str, task: str, rung: int, seed: int = 5):
+  rng = random.Random(seed)
+  rows = []
+  for index, graph in enumerate(CORPORA[corpus]):
+    if graph.number_of_nodes() < shortcuts.QUERY_ARITY[task]:
+      continue
+    targets = shortcuts.sample_query(graph, task, rng)
+    rows.append((
+        shortcuts.Context(
+            primer=parsed(corpus, index, condition),
+            targets=targets,
+            n=graph.number_of_nodes() if rung >= 2 else None,
+            m=graph.number_of_edges() if rung >= 3 else None,
+        ),
+        graphqa.gold_answer(graph, task, targets),
+    ))
+  return rows
+
+
+def sweep_rows(condition: str, task: str, rung: int, seed: int = 5):
+  return rows_for("er", condition, task, rung, seed)
+
+
+@pytest.mark.parametrize("corpus", sorted(CORPORA))
+@pytest.mark.parametrize("rule", shortcuts.THEOREMS, ids=lambda r: r.name)
+def test_theorem_precision_is_exactly_one(rule, corpus):
+  for condition in sorted(primers.CONDITIONS):
+    for rung in shortcuts.RUNGS:
+      result = shortcuts.score_theorem(
+          rule, rows_for(corpus, condition, rule.task, rung)
+      )
+      assert result["precision"] in (None, 1.0), (corpus, condition, rung, result)
+
+
+def test_adversarial_corpus_covers_the_boundaries():
+  """Without these structures the precision assertion has little power."""
+  trees = [g for g in ADVERSARIAL if nx.is_tree(g)]
+  assert trees, "no tree: the m = n-1 boundary is untested"
+  assert any(
+      g.number_of_edges() == g.number_of_nodes() - 1 and nx.is_forest(g)
+      for g in ADVERSARIAL
+  ), "no graph at m = n-1 without a cycle"
+  assert any(
+      g.number_of_edges() == g.number_of_nodes() for g in ADVERSARIAL
+  ), "no unicyclic graph at m = n"
+  assert any(
+      sum(nx.triangles(g).values()) == 0 and not nx.is_forest(g)
+      for g in ADVERSARIAL
+  ), "no triangle-free graph that still has a cycle"
+  assert any(
+      nx.number_connected_components(g) > 1 for g in ADVERSARIAL
+  ), "no disconnected graph"
+
+
+def test_every_theorem_fires_somewhere():
+  """A rule that never fires anywhere is dead code, not a zero-coverage result."""
+  for rule in shortcuts.THEOREMS:
+    fired = max(
+        shortcuts.score_theorem(rule, sweep_rows(condition, rule.task, rung))["fired"]
+        for condition in primers.CONDITIONS
+        for rung in shortcuts.RUNGS
+    )
+    assert fired > 0, f"{rule.name} never fires on any condition or rung"
+
+
+def test_no_theorem_fires_on_the_none_arm_at_rung_one():
+  """The plan's `none` sanity check, which holds only at rung 1."""
+  for rule in shortcuts.THEOREMS:
+    result = shortcuts.score_theorem(rule, sweep_rows("none", rule.task, 1))
+    assert result["fired"] == 0, (rule.name, result)
+
+
+def test_the_none_arm_is_not_inert_above_rung_one():
+  """Above rung 1 the `none` arm is an encoding-only bar, not the baseline.
+
+  Granting n and m is independent of the primer, so `m >= n` fires on the empty
+  primer at rung 3. That is not a leak -- it is what n and m alone are worth, and
+  it means the plan's "`none` must equal the majority baseline" check has to be
+  read as a rung-1 statement.
+  """
+  rule = next(r for r in shortcuts.THEOREMS if r.name == "edges_at_least_nodes")
+  assert shortcuts.score_theorem(rule, sweep_rows("none", "cycle_check", 1))["fired"] == 0
+  assert shortcuts.score_theorem(rule, sweep_rows("none", "cycle_check", 3))["fired"] > 0
+
+
+def test_coverage_is_monotone_in_rung():
+  """Each rung grants strictly more, so a rule cannot fire less often."""
+  for rule in shortcuts.THEOREMS:
+    for condition in sorted(primers.CONDITIONS):
+      coverage = [
+          shortcuts.score_theorem(rule, sweep_rows(condition, rule.task, rung))[
+              "coverage"
+          ]
+          for rung in shortcuts.RUNGS
+      ]
+      assert coverage[0] <= coverage[1] <= coverage[2], (rule.name, condition, coverage)
+
+
+def test_solver_cannot_read_the_graph():
+  """Structural, so the guarantee survives refactoring rather than review."""
+  names = {field.name for field in dataclasses.fields(shortcuts.Context)}
+  assert names == {"primer", "targets", "n", "m"}, names
+  for rule in shortcuts.THEOREMS:
+    params = list(inspect.signature(rule.solve).parameters)
+    assert params == ["ctx"], (rule.name, params)
+
+
+# --- individual theorems, on graphs whose answers are known by hand -------
+
+
+def theorem(name: str) -> shortcuts.Rule:
+  return next(r for r in shortcuts.THEOREMS if r.name == name)
+
+
+def test_circuit_rank_answers_in_both_directions():
+  path = graphqa.canonical(nx.Graph([(0, 1), (1, 2), (2, 3)]))
+  triangle = EDGE_CASES["triangle"]
+  rule = theorem("circuit_rank")
+  assert rule.solve(shortcuts.make_context(path, "components", (), 3)) == (
+      "No, there is no cycle"
+  )
+  assert rule.solve(shortcuts.make_context(triangle, "components", (), 3)) == (
+      "Yes, there is a cycle"
+  )
+  # It is the only cycle_check theorem that needs m, so rung 1 cannot run it.
+  assert rule.solve(shortcuts.make_context(path, "components", (), 1)) is None
+
+
+def test_triangle_theorems_agree_and_abstain_on_forests():
+  path = graphqa.canonical(nx.Graph([(0, 1), (1, 2), (2, 3)]))
+  triangle = EDGE_CASES["triangle"]
+  for name, condition in (("clustering_triangle", "clustering"),
+                          ("rwse_triangle", "rwse")):
+    rule = theorem(name)
+    assert rule.solve(shortcuts.make_context(triangle, condition, (), 1)) == (
+        "Yes, there is a cycle"
+    )
+    # One-directional: no triangle means no answer, not "no cycle".
+    assert rule.solve(shortcuts.make_context(path, condition, (), 1)) is None
+
+
+def test_degree_theorems_on_edge_existence():
+  star = graphqa.canonical(nx.Graph([(0, 1), (0, 2), (0, 3)]))
+  star.add_node(4)
+  zero = theorem("degree_zero_no_edge")
+  full = theorem("degree_full_edge")
+  # Node 4 is isolated, so no edge touches it.
+  assert zero.solve(shortcuts.make_context(star, "degree", (1, 4), 1)) == "No"
+  assert zero.solve(shortcuts.make_context(star, "degree", (1, 2), 1)) is None
+  # Node 0 has degree 3 out of 5 nodes, so it is not adjacent to everything.
+  assert full.solve(shortcuts.make_context(star, "degree", (0, 4), 1)) is None
+  clique = graphqa.canonical(nx.complete_graph(4))
+  assert full.solve(shortcuts.make_context(clique, "degree", (0, 1), 1)) == "Yes"
+
+
+def test_rwse_zero_needs_k_two_in_range():
+  """Odd k alone is 0 for every node of a triangle-free graph, 19% of them."""
+  path = graphqa.canonical(nx.Graph([(0, 1), (1, 2), (2, 3)]))
+  rule = theorem("rwse_zero_no_nodes")
+  assert rule.solve(
+      shortcuts.make_context(path, "rwse", (1,), 1, k_min=3, k_max=3)
+  ) is None
+  assert rule.solve(shortcuts.make_context(path, "rwse", (1,), 1)) is None
+  isolated = EDGE_CASES["isolated"]
+  assert rule.solve(shortcuts.make_context(isolated, "rwse", (9,), 1)) == "No nodes"
+
+
+def test_degree_sum_recovers_edge_count_without_a_grant():
+  for graph in SWEEP[:20]:
+    context = shortcuts.make_context(graph, "degree", (), 1)
+    assert context.m_from_degrees == graph.number_of_edges()
+    assert theorem("degree_sum").solve(context) == str(graph.number_of_edges())
+
+
+# --- baselines ------------------------------------------------------------
+
+
+def test_majority_answer_is_deterministic_under_ties():
+  assert shortcuts.majority_answer(["b", "a"]) == "b"
+  assert shortcuts.majority_answer(["a", "b"]) == "b"
+  assert shortcuts.majority_answer(["a", "a", "b"]) == "a"
+
+
+def test_baseline_is_fitted_and_scored_on_disjoint_seeds():
+  """The split has to be structural; this asserts the two corpora differ."""
+  fit = [
+      graphqa.canonical(g)
+      for g in graph_generators.generate_graphs(
+          SWEEP_SIZE, "er", False, random_seed=FIT_SEED
+      )
+  ]
+  assert FIT_SEED != CORPUS_SEED
+
+  def signature(g):
+    return (tuple(sorted(g.nodes())), tuple(sorted(map(tuple, map(sorted, g.edges())))))
+
+  overlap = set(map(signature, fit)) & set(map(signature, SWEEP))
+  # Tiny edgeless graphs can coincide across seeds; anything more would mean the
+  # seeds are not actually independent.
+  assert len(overlap) <= 2, len(overlap)
+  assert all(len(edges) == 0 for _, edges in overlap), overlap
+
+
+def test_cycle_check_baseline_is_the_yes_rate():
+  fit = [
+      graphqa.canonical(g)
+      for g in graph_generators.generate_graphs(
+          SWEEP_SIZE, "er", False, random_seed=FIT_SEED
+      )
+  ]
+  fit_golds = [graphqa.gold_answer(g, "cycle_check", ()) for g in fit]
+  test_golds = [graphqa.gold_answer(g, "cycle_check", ()) for g in SWEEP]
+  answer, accuracy = shortcuts.baseline_accuracy(fit_golds, test_golds)
+  assert answer == "Yes, there is a cycle"
+  # The plan records 83.2% on 500 graphs; a 120-graph sample sits near it.
+  assert 0.70 <= accuracy <= 0.95, accuracy

@@ -64,17 +64,21 @@ def _target_nodes(task_description: str) -> list[int]:
   return [int(tok) for tok in re.findall(r"\d+", task_description)]
 
 
-def expected_answer(graph: nx.Graph, config: str, task_description: str) -> str:
-  """Recomputes a task's ground-truth answer straight from the parsed graph."""
+def gold_answer(graph: nx.Graph, config: str, targets: tuple[int, ...] = ()) -> str:
+  """Recomputes a task's ground-truth answer from the graph and its query nodes.
+
+  Separate from `expected_answer` because the shortcut table samples its own
+  queries against generated graphs and so has targets in hand, with no question
+  string to recover them from.
+  """
   if config == "node_degree":
-    return str(graph.degree(_target_nodes(task_description)[0]))
+    return str(graph.degree(targets[0]))
   if config == "node_count":
     return str(graph.number_of_nodes())
   if config == "edge_count":
     return str(graph.number_of_edges())
   if config == "connected_nodes":
-    target = _target_nodes(task_description)[0]
-    neighbors = sorted(graph.neighbors(target))
+    neighbors = sorted(graph.neighbors(targets[0]))
     # The dataset spells an isolated target as "No nodes." rather than "".
     return ", ".join(str(n) for n in neighbors) if neighbors else "No nodes"
   if config == "cycle_check":
@@ -84,9 +88,14 @@ def expected_answer(graph: nx.Graph, config: str, task_description: str) -> str:
     except nx.NetworkXNoCycle:
       return "No, there is no cycle"
   if config == "edge_existence":
-    a, b = _target_nodes(task_description)[:2]
+    a, b = targets[:2]
     return "Yes" if graph.has_edge(a, b) else "No"
   raise ValueError(f"no answer check defined for config: {config}")
+
+
+def expected_answer(graph: nx.Graph, config: str, task_description: str) -> str:
+  """Recomputes a task's ground-truth answer straight from the parsed graph."""
+  return gold_answer(graph, config, tuple(_target_nodes(task_description)))
 
 
 def normalize(answer: str) -> str:
