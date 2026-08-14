@@ -9,7 +9,7 @@ The primer plan's taxonomy audit found deterministic routes from primer text int
 one of the six tasks for the `degree` and `all` conditions, and into `node_count` and
 `connected_nodes` for `components`. The sharpest single case: on `edge_existence`, the
 rule "answer Yes iff d_a + d_b > n−1" — one comparison between two numbers the primer
-states — scores 79.2% ± 1.7, against a ≈51.6% majority baseline and the 45.1% the paper
+states — scores 79.2% ± 1.7, against a 53.0% majority baseline and the 45.1% the paper
 reports for PaLM on ER `edge_existence`.
 
 That breaks the question the proposal set out to ask. "Does adding the primer improve
@@ -325,15 +325,20 @@ each task's own query sampling:
 
 | cell | baseline | shortcut | notes |
 |---|---|---|---|
-| `degree` × `edge_existence` | ≈51.6% | 27.9% coverage at 100% precision (theorem); 79.2% accuracy (heuristic) | paper reports 45.1% for a model |
+| `degree` × `edge_existence` | 53.0% | 27.9% coverage at 100% precision (theorem); 79.2% accuracy (heuristic) | paper reports 45.1% for a model |
 | `components` × `cycle_check` | 83.2% | 93.2% at rung 1; 100.0% at rung 3 | the ladder in action |
 | `components` × `node_count` | — | states the answer on 1.2% of rows | c = n ⟺ m = 0 |
 | `components` × `connected_nodes` | — | excludes `" No nodes."` on 73.6% of rows | c = 1 ⟹ no isolated node |
 | `clustering` × `cycle_check` | 83.2% | fires on 80.8% at 100% precision; 97.6% as a rule | clustering > 0 ⟹ triangle |
-| `degree` × `connected_nodes` | — | 9.0% coverage at 100% precision | degree 0 ⟹ `" No nodes."` |
+| `degree` × `connected_nodes` | — | 9.4% coverage at 100% precision | degree 0 ⟹ `" No nodes."` |
 
-Every number here is generator-derived; network access to the rows API is blocked in the
-current environment. See the provenance section of the primer plan.
+Every number here was generator-derived, and has since been checked against the published
+rows by `scripts/measure_real_rows.py`. The graph-level ones are exact rather than
+approximate: `generate_graphs(500, "er", False, random_seed=1234)` and the published
+`zero_shot_test` split are the same multiset of graphs, merely shuffled. Only the rates
+that depend on the per-row query draw moved — `edge_existence` from ≈51.6% to 53.0%, and
+`connected_nodes` degree-0 coverage from 9.0% to 9.4%. See the provenance section of the
+primer plan.
 
 ## Files
 
@@ -398,7 +403,26 @@ Read the table before committing any cluster time.
   would still buy one cell where the proposal's aligned/adjacent/agnostic framing survives
   intact, at the cost of a sampling constraint already verified as distribution-neutral.
   Decide when writing up, not now.
-- **Real-data confirmation.** Every rate here needs re-measuring on the published rows.
-  The generator is the code that produced GraphQA, so it is a good proxy, but it is a
-  proxy — and the plan it supersedes recorded two dataset statistics that turned out to be
-  wrong.
+- ~~**Real-data confirmation.**~~ **Settled.** `scripts/measure_real_rows.py
+  --shortcut-table` re-runs the table with the 500 published `zero_shot_test` graphs as
+  the evaluation set, still fitting on generated seed-999 graphs. Every theorem keeps
+  precision 1.0, all six verdicts hold, and the `components` × `cycle_check` ladder
+  reproduces exactly at 83.2% / 92.6% / 94.6% / 100%. The cells that moved are the ones
+  whose task draws query nodes, and they moved because the published draw differs from
+  the resampled one, not because the data differs: `edge_existence` 49.8% → 48.2%
+  baseline and 79.4% → 77.8% shortcut, `node_degree` and `connected_nodes` 8.2% → 9.6%
+  baseline. The generator turned out to be not merely a good proxy but the same corpus,
+  so there was less here to confirm than the plan assumed.
+
+  One caveat the table cannot shed: `build_rows` resamples queries rather than reading
+  the ones the dataset ships, so `edge_existence`, `connected_nodes` and `node_degree`
+  cells are still scored on a query draw of our own. On the published draw the
+  `edge_existence` baseline is 53.0%, four points above the 48.2% the table reports.
+  Reading a model's score against the table means resampling the model's queries too, or
+  re-deriving the baseline from the published `task_description` fields.
+
+  The n ≤ 6 exact island is too small to confirm anything either way: at 46 rows a single
+  query draw carries a 3–6 point standard deviation, measured over ten seeds, which is
+  wider than the differences between any two draws. In particular the `edge_existence`
+  row's "tight" verdict was never robust — it flips to a 13-point gap on another draw of
+  the same graphs.

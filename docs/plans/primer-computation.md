@@ -56,24 +56,76 @@ holds without seed management. Without them, it does not.
 
 ## Provenance of the numbers in this document
 
-Network access to the HuggingFace rows API is blocked in the current environment
-(403 at the proxy). Every measurement quoted below was therefore taken on
+Every measurement quoted below was originally taken on
 `graph_generators.generate_graphs(500, "er", False, random_seed=1234)` — the upstream
 generator that produced the dataset, at the test-split seed, with node counts 5..19 and
-sparsity uniform on (0, 1).
+sparsity uniform on (0, 1) — because network access to the HuggingFace rows API was
+blocked (403 at the proxy) when this was written. They were recorded as provisional
+pending re-measurement on real rows.
 
-Treat these as provisional. The following need re-measuring on real rows when a
-networked environment is available:
+**That re-measurement is done.** `scripts/measure_real_rows.py` fetches all 500
+`zero_shot_test` rows for all six configs (3000 rows) and re-measures every quantity
+here. The single most important thing it found:
 
-| quantity | generator value | published / recorded |
-|---|---|---|
-| `edge_existence` class balance | near-balanced: Yes 50.3% ± 2.0 across query resamples, so the majority baseline is ≈51.6% | paper says 53.96% No |
-| `cycle_check` "Yes" rate | 83.2% | paper says 81.96% |
-| `connected_nodes` isolated target | 9.0% | earlier draft recorded ~7% |
-| RWSE/degree correlation | see §6 | earlier draft recorded 0.57 → 0.94 for k=2..5 |
+> `generate_graphs(500, "er", False, random_seed=1234)` and the published
+> `zero_shot_test` split are the **same multiset of graphs** — 492 distinct graphs with
+> identical multiplicities, nothing in one and not the other. The published rows are a
+> *shuffle* of the generator's emission order: only 2 of 500 land at the same index.
+> That shuffle is why comparing the first twenty rows index by index looks like a total
+> mismatch and proves nothing, and it is worth knowing before someone spends an
+> afternoon on it.
 
-An earlier draft of this plan recorded 58% and 86% for the first two. Both were wrong;
-the paper's own figures are in `https:::arxiv.org:pdf:2310.04560.pdf`.
+So the generator was never a proxy for the graph distribution; it is the same data.
+Every graph-structural number in this document — component counts, isolation rates,
+density, node counts, primer lengths, the RWSE/degree correlation — is exact on the
+published test split, digit for digit, and is now a real-data measurement rather than a
+provisional one. All 3000 rows also round-trip: `expected_answer(parse_graph(question))`
+matches the shipped `answer` on every row of every config, and `nnodes`/`nedges` match
+the parsed graph on every row.
+
+What the generator cannot reproduce is the per-row **query draw**. `edge_existence`,
+`connected_nodes` and `node_degree` sample query nodes per row, and the published rows
+ship one particular draw that the generator's own `random` stream does not replay. Any
+rate quoted per row must therefore say whether it is the published draw or a resample.
+
+| quantity | generator | published rows | published graphs, resampled queries | paper | status |
+|---|---|---|---|---|---|
+| `edge_existence` Yes rate | 50.3% ± 2.0 | **47.0%** | 50.1% ± 1.8 | 46.0% | corrected |
+| `edge_existence` majority baseline | ≈51.6% | **53.0%**, answering "No" | 50.1% | 54.0% | corrected |
+| `cycle_check` "Yes" rate | 83.2% | **83.2%** | no query sampling | 82.0% | exact |
+| `connected_nodes` isolated target | 9.0% | **9.4%** | 8.7% ± 1.0 | — | confirmed |
+| RWSE/degree r, k=2 | +0.65 on 481/500 | **+0.651 on 481/500** | no query sampling | — | exact |
+| RWSE/degree r, k=3 | +0.89 on 391/500 | **+0.886 on 391/500** | no query sampling | — | exact |
+
+Only one row moved by enough to matter, and it is the `edge_existence` baseline: the
+published query draw is 3 points more "No" than a resample of the same graphs, so the
+majority baseline on the rows we will actually score is **53.0%, not ≈51.6%**. Use 53.0%
+wherever this document or `docs/plans/shortcut-ceilings.md` quotes ≈51.6%. It does not
+change any verdict — the `d_a + d_b > n−1` heuristic still clears it by twenty-five
+points — but it is the number a model's `edge_existence` score has to be read against.
+
+**The paper's two class-balance figures do not reproduce on the published rows, and
+should not be used as this project's baseline.** Over all 2000 `zero_shot` rows the
+published data gives 49.8% No for `edge_existence` (test 53.0%, validation 47.8%, train
+49.2%) against the paper's 53.96%, and 83.6% Yes for `cycle_check` (test 83.2%,
+validation 81.8%, train 84.6%) against the paper's 81.96%. Two things explain the gap
+rather than the data being wrong. The sentence carrying both figures sits in the
+paper's discussion of its *overall* results, and the paper's own results table breaks
+ER out separately from BA, SBM, Star, SFN, Path and Complete — while the published
+HuggingFace dataset ships only ER. And both figures are exactly k/2500 (1349/2500 and
+2049/2500), which is not the size of any published split. Treat them as all-generator
+figures for a corpus we do not have.
+
+An earlier draft of this plan recorded 58% and 86% for the first two quantities, and
+~7% for the third. All three were wrong. The paper's figures are in
+`https:::arxiv.org:pdf:2310.04560.pdf`.
+
+Still generator-derived, because they were measured on corpora other than the 500
+test graphs and were not re-run: the RWSE-misread costs in "Decisions already made",
+the 27.9% ± 1.3 forcing coverage and 79.2% ± 1.7 heuristic accuracy in the taxonomy
+table, and the 4491-row `connected_nodes` leak audit. Since the test split *is* the
+generator at seed 1234, re-running any of them against real rows is now a matter of
+choosing the corpus, not of network access.
 
 ## Dataset facts worth not rediscovering
 
@@ -85,7 +137,14 @@ Fatemi, the paper's first author). Verified properties:
   only as rendered English inside `question`, which is why `parse_graph` exists.
 - It ships **only the `adjacency` encoding** and **only Erdős–Rényi graphs**, despite the
   proposal saying otherwise. Incident encoding must be regenerated from the parsed graph.
-- Test splits hold 500 rows per task. All six tasks the proposal names exist as configs.
+- Test splits hold 500 rows per task, validation 500 and train 1000, in each of the
+  five prompt families (`zero_shot`, `zero_cot`, `few_shot`, `cot`, `cot_bag`). There is
+  no plain `test` split; a wrong split name returns HTTP 500, not a clear error. All six
+  tasks the proposal names exist as configs.
+- **Row i is the same graph in all six configs**, verified on all 500 test rows. So a
+  graph-level statistic can be measured once and quoted for every task.
+- The rows API rate-limits (HTTP 429) well before 3000 rows are fetched. Paginate at 100,
+  pause between pages, back off on 429, and cache to disk.
 - `connected_nodes` spells an isolated target as `" No nodes."`, not an empty list.
 - `edge_count` and `node_count` answers carry a leading space (`" 115."`).
 
@@ -95,8 +154,8 @@ Facts about the vendored code that the primer design depends on:
   `nedges > 1` and `nedges == 1` with no `else` (`graph_text_encoders.py:112-121`). An
   isolated node appears only in the header enumeration. Isolation is therefore conveyed
   **by omission**, which is the single hardest inference in the encoding — and the reason
-  the degree and rwse primers change that task's difficulty. 26% of graphs contain an
-  isolated node.
+  the degree and rwse primers change that task's difficulty. 25.8% of published
+  `zero_shot_test` graphs contain an isolated node.
 - **Question headers are always ascending**, because `create_node_string` iterates
   `sorted(name_dict.keys())` (`graph_text_encoders.py:8-14`). This is why `parse_graph`
   happens to insert nodes in sorted order today (0/300 exceptions). It is a property of
@@ -177,17 +236,24 @@ remained genuinely agnostic. **That conclusion is also wrong.** A systematic aud
 seven conditions against all six tasks found deterministic or near-deterministic routes
 into every task for the `degree` and `all` arms.
 
-Verified routes, measured with each task's own query sampling:
+Verified routes, measured with each task's own query sampling. Rates on tasks that draw
+query nodes are given for the published draw where it has been measured, since that is
+the draw a model will be scored on:
 
 | condition | task | what it gives away | rate |
 |---|---|---|---|
-| `degree`, `rwse`, `all` | `connected_nodes` | degree 0 (equivalently an all-zero RWSE vector) means the answer is `" No nodes."` | 9.0% of rows |
+| `degree`, `rwse`, `all` | `connected_nodes` | degree 0 (equivalently an all-zero RWSE vector) means the answer is `" No nodes."` | 9.4% of published rows (8.7% ± 1.0 resampled) |
 | `degree`, `all` | `edge_existence` | degree 0 forces No; degree n−1 forces Yes | 27.9% ± 1.3 of rows, 100% precision |
-| `degree`, `all` | `edge_existence` | the rule "Yes iff d_a + d_b > n−1", one comparison on two stated numbers | 79.2% ± 1.7 accuracy vs a ≈51.6% baseline |
+| `degree`, `all` | `edge_existence` | the rule "Yes iff d_a + d_b > n−1", one comparison on two stated numbers | 79.2% ± 1.7 accuracy vs a 53.0% published baseline |
 | `clustering`, `rwse`, `all` | `cycle_check` | clustering > 0 and RWSE(k=3) > 0 are the same triangle test; they agree on 100% of graphs | fires on 80.8% at 100% precision; 97.6% accuracy vs 83.2% baseline |
 | `components` | `node_count` | c = n exactly when m = 0, so on an edgeless graph the primer prints the answer | 1.2% of rows, STATED |
 | `components` | `connected_nodes` | c = 1 means no node is isolated, deterministically deleting the `" No nodes."` answer | 73.6% of rows |
-| every per-node condition | `node_count` | the primer emits one sentence per node including isolated ones, while the encoding body omits them | changes a line-count from 74% to 100% correct |
+| every per-node condition | `node_count` | the primer emits one sentence per node including isolated ones, while the encoding body omits them | changes a line-count from 74.2% to 100% correct |
+
+The last two rows quote 73.6% and 74.2%, and they are different quantities: `c = 1` is
+connectedness (368/500), while line-counting succeeds whenever no node is isolated
+(371/500). Three test graphs are disconnected without containing an isolated node, so the
+two must not be quoted for each other.
 
 For scale on the third row: the paper reports 45.1% for PaLM on ER `edge_existence`. A
 one-comparison rule over two numbers the primer states scores 79.2%.
@@ -385,7 +451,9 @@ same renderer as everything else. It contradicts nothing in the encoding and giv
 nothing structural — the encoding's first line already ends `and <n-1>.`, so the numeral
 is not new.
 
-Measured lengths, 500 graphs, final design:
+Measured lengths, final design, on the 500 published `zero_shot_test` graphs. These were
+first taken on the generator and are unchanged to the character, because that corpus and
+this one are the same graphs:
 
 | condition | mean primer chars |
 |---|---|
@@ -426,8 +494,9 @@ The case for it:
 - **It costs one sentence, not one per node** — 37 characters, so the length confound
   barely applies. A matched control for this arm would be a single vacuous graph-level
   sentence, not the per-node filler.
-- **The counts are not trivial.** 74% of graphs are connected, but the mean is 2.09 and
-  the tail runs to 16 components, so the statement carries real variance.
+- **The counts are not trivial.** 73.6% of graphs are connected, but the mean is 2.09 and
+  the tail runs to 16 components, so the statement carries real variance. Confirmed on
+  the published `zero_shot_test` rows, exactly.
 
 Two caveats that an earlier draft did not have. The claim "it is not the answer to any of
 the six tasks" — the reason a positive result could not be dismissed as trivial — does
@@ -446,8 +515,14 @@ Neither is a reason to drop the condition; both are reasons to report `node_coun
 as "not the answer on 98.8% of rows" rather than "not the answer to any task".
 
 Note also why the variance in `c` cannot be preserved while excluding isolated nodes:
-65% of the components in multi-component graphs are lone isolated nodes. Dropping graphs
-that contain one collapses the distribution to mean 1.02, max 5, 98% connected.
+70% of the components in multi-component graphs are lone isolated nodes. Dropping graphs
+that contain one collapses the distribution to mean 1.01, max 2, 99% connected — 371 of
+the 500 test graphs survive.
+
+An earlier draft recorded 65%, and mean 1.02 / max 5 / 98% connected, for that
+collapse. Those came from a 1000-graph generator corpus rather than the 500 test graphs;
+on the rows the experiment will actually score, the numbers above are the right ones and
+the collapse is slightly sharper than claimed, not softer.
 
 The honest risk remains: models may simply not know the circuit-rank identity, in which
 case this condition is a null. That is still an interesting null.
@@ -468,34 +543,40 @@ node-mapping bug in §2, so the two are indistinguishable. The ordering test in
 Verification does that job instead.
 
 **Aggregation must be named, because the choice reverses the conclusion.** Use the mean
-of per-graph r. Measured three ways on the same 1000 graphs at k=2:
+of per-graph r. Measured three ways at k=2, on 1000 generated graphs and again on the
+500 published `zero_shot_test` rows:
 
 ```
-mean of per-graph r = +0.62    Fisher-z mean = +0.87    pooling all nodes = -0.45
+1000 generated      mean of per-graph r = +0.62    Fisher-z = +0.87    pooling = -0.45
+500 published rows  mean of per-graph r = +0.65    Fisher-z = +0.91    pooling = -0.45
 ```
 
-Pooling every node of every graph flips the sign, because within a graph higher degree
-means higher return probability, while across graphs larger graphs have both higher
-degrees and lower return probabilities (small graphs: mean degree 2.7, mean return 0.34;
-large graphs: mean degree 8.8, mean return 0.15). Pooling measures graph size instead of
-node degree.
+The sign reversal under pooling is not an artefact of the generator; it survives on real
+data at the same magnitude. Pooling every node of every graph flips the sign because
+within a graph higher degree means higher return probability, while across graphs larger
+graphs have both higher degrees and lower return probabilities (small graphs: mean degree
+2.7, mean return 0.34; large graphs: mean degree 8.8, mean return 0.15). Pooling measures
+graph size instead of node degree.
 
-Reference values, mean of per-graph r over 500 graphs:
+Reference values, mean of per-graph r. Measured on the 500 published `zero_shot_test`
+graphs; the generator at seed 1234 gives the identical figures, because it is the same
+corpus:
 
 | k | mean r | defined on | acceptance window (≈3 batch sd, batches of 100) |
 |---|---|---|---|
-| 2 | +0.65 | 481/500 (4% undefined) | [0.50, 0.75] |
-| 3 | +0.89 | 391/500 (22% undefined) | [0.83, 0.94] |
+| 2 | +0.651 | 481/500 (4% undefined) | [0.50, 0.75] |
+| 3 | +0.886 | 391/500 (22% undefined) | [0.83, 0.94] |
 
 The k=3 undefined rate is not noise: odd-k return is exactly 0 for every node of a
-triangle-free graph, and 19% of graphs are triangle-free. So the k=2 and k=3 means are
-computed over **different populations**, and any statement comparing them across k must
-say so. Do not describe r as "rising" — with two values that framing invites a trend
-claim the data does not support.
+triangle-free graph, and 19.2% of published test graphs are triangle-free. So the k=2 and
+k=3 means are computed over **different populations**, and any statement comparing them
+across k must say so. Do not describe r as "rising" — with two values that framing invites
+a trend claim the data does not support.
 
-Clustering, by contrast, correlates with degree at r ≈ −0.24 and varies more across nodes
-than degree does (coefficient of variation 0.44 vs 0.39) — so clustering is the genuinely
-independent feature of the three, and RWSE is the redundant one.
+Clustering, by contrast, correlates with degree at r = −0.239 (mean of per-graph r,
+defined on 391/500 published rows) and varies more across nodes than degree does
+(coefficient of variation 0.44 vs 0.39) — so clustering is the genuinely independent
+feature of the three, and RWSE is the redundant one.
 
 ## Files
 
@@ -504,6 +585,9 @@ independent feature of the three, and RWSE is the redundant one.
   `normalize`, import from `graphtalk.graphqa`
 - `scripts/show_primers.py` — new; prints all seven conditions for a few real rows, plus
   character counts and the correlation diagnostic, for eyeballing
+- `scripts/measure_real_rows.py` — new; re-measures every quantity in the provenance
+  section against the published rows, caching them under `.cache/graphqa_rows`. Optional
+  `--shortcut-table` re-runs the shortcut cells with real graphs as the evaluation set.
 - `tests/test_primers.py` — new
 - `tests/golden/` — new; a handful of graphs and their exact expected primer strings
 - `pyproject.toml` — add `graphtalk` to packages, `tests` to testpaths
@@ -598,3 +682,15 @@ refactored to import from the new package:
 ```bash
 .venv/bin/python scripts/draw_graph.py --config connected_nodes --index 0 --count 20
 ```
+
+And the provenance check, which is the one that touches the network:
+
+```bash
+PYTHONPATH=. .venv/bin/python scripts/measure_real_rows.py
+```
+
+It exits non-zero if any of the 3000 rows fails to parse, disagrees with its own
+`nnodes`/`nedges`, or disagrees with `expected_answer`. Its section 0 also re-asserts
+that the published split is the generator's seed-1234 corpus; if that ever stops being
+true, every "exact" claim in the provenance table drops back to being a proxy and has to
+be re-read as one.
