@@ -337,11 +337,12 @@ current environment. See the provenance section of the primer plan.
 
 ## Files
 
-- `graphtalk/shortcuts.py` — rule definitions, the solver, the primer parser. **The
-  parser has landed**; rules and solver are still to come.
-- `scripts/shortcut_table.py` — new; computes and prints the 36-cell table at all three
-  rungs, with coverage for theorems and accuracy for the rest
-- `tests/test_shortcuts.py` — **landed** for the parser; grows with each later piece
+- `graphtalk/shortcuts.py` — **landed in full**: the primer parser, thirteen theorem
+  rules, one parameter-free heuristic, eight fitted rules with the train/test split, the
+  solver, and the exact enumeration bound.
+- `scripts/shortcut_table.py` — **landed**; computes and prints the 36-cell table at all
+  three rungs, with coverage for theorems and accuracy for the rest
+- `tests/test_shortcuts.py` — **landed**, 124 tests covering all of the above
 - depends on `graphtalk.graphqa.expected_answer` and `normalize` for gold answers, which
   is why the primer plan moves them into the package
 
