@@ -11,10 +11,16 @@ for the exact upstream commit and our local changes.
 graph from a GraphQA row and recomputes its gold answer, `primers.py` holds the
 primer statistics and the single renderer every condition goes through, and
 `shortcuts.py` holds the primer-only solvers: a strict parser that reads a
-rendered primer back out of its text, thirteen theorem rules, one heuristic and
+rendered primer back out of its text, sixteen theorem rules, one heuristic and
 eight fitted rules, and the exact enumeration bound for small graphs. See
 [docs/plans/shortcut-ceilings.md](docs/plans/shortcut-ceilings.md) for what the
 resulting numbers mean.
+
+Three of those theorems *reconstruct* rather than compare: the stated degree
+sequence constrains which graphs are possible, often to exactly one, so a primer
+that states no adjacency at all still gives away whole neighbour lists. That is
+what makes `connected_nodes` a 35.2% cell rather than the 8.2% one it was first
+measured as.
 
 ## The shortcut table
 
@@ -60,9 +66,9 @@ cleanly on 3.12+.
 uv run --no-sync pytest -q
 ```
 
-289 tests: 27 vendored ones covering graph generation, text encoders and
+310 tests: 27 vendored ones covering graph generation, text encoders and
 metrics, 138 covering the primer statistics, the renderer, and the committed
-golden primer strings, and 124 covering the shortcut solvers.
+golden primer strings, and 145 covering the shortcut solvers.
 
 Two of those deserve mention because they are what the rest rests on. The
 **round trip** renders a primer, parses it back, and requires the recovered

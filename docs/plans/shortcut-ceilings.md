@@ -157,11 +157,27 @@ nothing fitted and nothing to overfit.
 - `m − n + c > 0` ⟺ a cycle exists
 - `c = n` ⟺ `m = 0`
 - `m ≥ n` → a cycle exists (a forest has at most n−1 edges)
+- `m ≥ n'` → a cycle exists, where `n'` counts nodes of degree ≥ 1
+- fewer than three nodes of degree ≥ 2 → no cycle exists
+- the degree-sequence peel forces a node's whole neighbour list
+- degree, clustering and RWSE together leave one possible neighbour set
+
+The last four are *reconstruction* theorems and differ in kind from the rest: the others
+read a stated value and compare it, while these narrow the set of graphs the primer admits
+until one answer is left. They are exact for a structural reason worth stating once —
+**every filter they apply is one-sided**, so the true graph is never excluded and a single
+survivor is the truth rather than a best guess.
 
 **Parameter-free heuristics.** Can be wrong, but nothing was fitted, so no split is
 needed. Report accuracy on the test rows.
 
 - `d_a + d_b > n−1` → Yes for `edge_existence` (79.2% ± 1.7 over 200 query resamples)
+- Chung-Lu mode for `connected_nodes` — answer with the `d_t` other nodes of largest
+  degree. **Measured but deliberately not landed**: 31.4% on `degree` and 40.0% on `all`,
+  and it attains the exact Bayes ceiling on the `degree` arm. Left out because the landed
+  theorems already settle how those cells must be read, and this is the one rule here with
+  no precision guarantee. Recorded because the `degree` arm's true bar is 31.4%, not the
+  20.8% its theorem reaches.
 
 **Fitted rules.** Contain numbers or lookup tables derived from data. These **must** be
 fitted on a disjoint set of graphs — a different generator seed — and evaluated on the
@@ -261,7 +277,7 @@ seed 1234. Shortcut score at rung 3, against the majority baseline.
 | `node_degree` | 8.2% | `degree`, `all` | **100%** | decided (manipulation check) |
 | `cycle_check` | 83.2% | `components` | **100%** | decided |
 | `edge_existence` | 49.8% | `degree`, `all` | 79.4% | real headroom |
-| `connected_nodes` | 8.2% | none of them | 8.2% | wide open |
+| `connected_nodes` | 8.2% | `all` | 35.2% | headroom, but not the clean cell it looked |
 
 **Four of the six tasks are already decided by a program that never sees the graph.**
 Running a model on those cells cannot inform the hypothesis: `node_count` because the
@@ -269,17 +285,62 @@ primer emits one sentence per node, `edge_count` because `sum(degrees)/2 = m`,
 `node_degree` because the primer states the answer, and `cycle_check` on the `components`
 arm because circuit rank is exact.
 
-Two findings that were not anticipated:
+### Degree-sequence reconstruction, and two claims it falsified
 
-- **`cycle_check` gains nothing on any per-node arm.** `clustering > 0` fires at 80.8%
-  coverage and `m >= n` at 78.6%, both at precision 1, but both answer only *Yes* — and
-  the majority baseline is already "always Yes" at 83.2%. A one-directional rule cannot
-  beat a baseline that agrees with it. Only `components` can answer *No*, which is a
-  sharper argument for that arm than the plan originally made.
-- **`connected_nodes` has no shortcut at all.** The gold answer is a neighbour list, and a
-  primer-only solver can produce nothing but `" No nodes."`, which is already the
-  majority answer. Shortcut equals baseline on all seven arms, so every point a model
-  scores above 8.2% is genuine. This is the cleanest cell in the design.
+An earlier version of this section recorded two findings in the cells above. Both were
+artefacts of the rules we had implemented, and both are now false. They are kept here
+rather than deleted, because the way they failed is the most useful thing this document
+records: **an absent shortcut is never evidence that no shortcut exists.**
+
+> ~~`cycle_check` gains nothing on any per-node arm.~~ `clustering > 0` fires at 80.8%
+> coverage and `m >= n` at 78.6%, both at precision 1, but both answer only *Yes* — and
+> the majority baseline is already "always Yes" at 83.2%. A one-directional rule cannot
+> beat a baseline that agrees with it.
+>
+> ~~`connected_nodes` has no shortcut at all.~~ The gold answer is a neighbour list, and a
+> primer-only solver can produce nothing but `" No nodes."`. Shortcut equals baseline on
+> all seven arms, so every point a model scores above 8.2% is genuine. This is the
+> cleanest cell in the design.
+
+The diagnosis in the exact-island section below was right: the stated degree sequence
+constrains which graphs are possible, and often constrains them to one. Three theorems now
+exploit that, all at **rung 1** — none needs a granted `n` or `m`:
+
+- **`degree_peel`.** Repeatedly remove a vertex whose residual degree is `0` or `|S|-1`;
+  each such removal decides that vertex's adjacency to the entire remaining set, so a
+  peeled vertex has its *whole* neighbour list determined even when the peel later stalls.
+  This is the threshold-graph construction, it is `O(n^2)`, and it does not care how large
+  `n` is. Worth 20.8% on `connected_nodes`, up from 8.2%.
+- **`all_arm_reconstruction`.** Four one-sided filters over candidate neighbour sets: the
+  peel's forced adjacencies, then `d_i * RWSE_2(i) = sum over neighbours of 1/d_j` as a
+  closed rounding interval, then clustering and `RWSE(k=3)` bounding the inverse-degree
+  product sum inside the neighbourhood, then every *other* node's stated `RWSE_2` as a
+  feasibility bound. No filter can exclude the truth, so a single survivor **is** the
+  answer. Worth 35.2% on the `all` arm — the k=2 return probability is the load-bearing
+  signal, because it constrains *which* neighbours a node has and not merely how many.
+- **`cycle_from_degrees`.** Two halves: `m >= n'` where `n'` counts nodes of degree >= 1
+  (strictly stronger than `m >= n`, since the primer names the isolated nodes and they
+  carry no edges), and `#{i : d_i >= 2} <= 2` implies no cycle, since every cycle needs
+  three vertices of degree >= 2. Takes `cycle_check` on the `degree` arm from 83.2% to
+  **94.6% at rung 1**.
+
+Consequences for the design, in descending order of how much they cost:
+
+- **`connected_nodes` is not the clean cell.** On the `all` arm a model must clear 35.2%,
+  not 8.2%, and all of that is theorem with no fitted content. Every point between the two
+  that the earlier reading treated as genuine graph reasoning is not.
+- **The argument for the `components` arm weakens.** `degree` reaches 94.6% on
+  `cycle_check` at rung 1 with no circuit-rank reasoning at all, so `components` is no
+  longer the only arm that can answer *No* — `cycle_from_degrees` can, which was the whole
+  reason the landed triangle tests scored exactly the baseline. `components` keeps a real
+  advantage, but it is now "100% at rung 3 versus 94.6% at rung 1", not "the only arm that
+  works".
+- **`degree` x `connected_nodes` is not merely leaky but solved.** A parameter-free
+  Chung-Lu heuristic — answer with the `d_t` other nodes of largest degree — attains the
+  Bayes ceiling on that arm to four significant figures. It is deliberately **not landed**:
+  it is the one rule here with no precision guarantee, and the theorems are enough to
+  settle how the cell must be read. Recorded so nobody reports the 20.8% theorem figure as
+  the ceiling for that arm.
 
 The `none` arm equals its baseline exactly at rung 1 on all six tasks, as the sanity check
 requires.
@@ -300,23 +361,41 @@ Both in-sample figures match the values the plan recorded (94.4% and 97.6%). The
 figures are lower here than the plan's because the fitting set is 500 graphs rather than
 4000.
 
-### The exact island says rules remain unfound
+### The exact island, and the gaps it correctly predicted
 
 On n <= 6 (9.2% of rows), enumerating every labelled graph consistent with the stated
-degrees gives the exact ceiling for *any* primer-only solver:
+degrees gives the exact ceiling for *any* primer-only solver. The island did its job: it
+said rules were missing, it said where, and both gaps closed once someone looked.
 
-| task | determined | exact ceiling | our best | gap |
+| task | determined | exact ceiling | our best | before reconstruction |
 |---|---|---|---|---|
-| `edge_existence` | 67.4% | 93.5% | 91.3% | tight |
-| `cycle_check` | 97.8% | 100% | 65.2% | **35pp unfound** |
-| `connected_nodes` | 56.5% | 69.6% | 10.9% | **59pp unfound** |
+| `edge_existence` | 67.4% | 93.5% | 91.3% | 91.3% |
+| `cycle_check` | 97.8% | 100% | **97.8%** | 65.2% |
+| `connected_nodes` | 56.5% | 69.6% | **76.1%** | 10.9% |
 
-No rule exceeds its bound, which is the correctness check. But two gaps are large, and
-both are diagnosable: the degree sequence determines the component count on small graphs,
-so a rule that reconstructs `c` from the stated degrees would feed circuit rank and close
-most of the `cycle_check` gap; and the degree sequence often determines the neighbour list
-outright, which no rule here attempts. **The floor is loose, and the table should be read
-as "at least this good" rather than as the ceiling.**
+`cycle_from_degrees` is not an approximation of its bound but a closed-form `O(n)`
+evaluation of it: on 773 rows at n <= 8 it fires on precisely the rows the enumeration
+determines, with no disagreement in either direction. The residual 2.2pp is the margin
+between "determined by the degrees" and "merely guessable", which no precision-1 rule can
+reach.
+
+**Read the `our best` column with care — it is not a bound violation.** The 76.1% on
+`connected_nodes` sits above the 69.6% ceiling because both are accuracies against the one
+graph that happened to be drawn, and the Bayes rule maximises only *expected* hits, so a
+single draw over 46 rows can hand another rule a few extra. The soundness check is now a
+separate `excess` column computed pointwise in posterior mass, where Bayes is maximal by
+definition; it reads `+0.0000` for every task. See the verification section.
+
+**The floor is still a floor.** Two of three gaps closed on the first attempt, which is
+evidence that the remaining ones are worth attacking rather than evidence that the table is
+now tight. The `all` arm keeps roughly 10pp of unfound headroom at n <= 8.
+
+One observation that falls out of the island work and belongs in the write-up rather than
+here: conditioning on the full `all` primer text leaves a **mean of 1.45 consistent
+labelled graphs at n <= 6, and 63.8% of those graphs are determined outright** (max 3
+survivors; at n <= 8, mean 1.72). On small graphs the `all` primer does not describe the
+graph so much as very nearly *be* it. That is a stronger statement about the condition than
+any single cell of the table.
 
 ## Anchors already measured
 
@@ -342,12 +421,13 @@ primer plan.
 
 ## Files
 
-- `graphtalk/shortcuts.py` — **landed in full**: the primer parser, thirteen theorem
-  rules, one parameter-free heuristic, eight fitted rules with the train/test split, the
-  solver, and the exact enumeration bound.
+- `graphtalk/shortcuts.py` — **landed in full**: the primer parser, sixteen theorem rules
+  (thirteen comparison rules and three degree-sequence reconstruction rules), one
+  parameter-free heuristic, eight fitted rules with the train/test split, the solver, the
+  exact enumeration bound, and `island_posterior` for bounding a solver pointwise.
 - `scripts/shortcut_table.py` — **landed**; computes and prints the 36-cell table at all
   three rungs, with coverage for theorems and accuracy for the rest
-- `tests/test_shortcuts.py` — **landed**, 124 tests covering all of the above
+- `tests/test_shortcuts.py` — **landed**, 152 tests covering all of the above
 - depends on `graphtalk.graphqa.expected_answer` and `normalize` for gold answers, which
   is why the primer plan moves them into the package
 
@@ -379,8 +459,30 @@ primer plan.
 - **`none` sanity.** The shortcut score for the `none` condition must equal the
   majority-class baseline, since the primer is empty. If it does not, the solver is
   reading something it should not.
-- **Exact island cross-check.** For n ≤ 6, the heuristic ceiling must not exceed the exact
-  enumeration bound, and a large gap below it is a signal that rules are missing.
+- **Exact island cross-check, compared in posterior mass and not in accuracy.** For n ≤ 6,
+  no rule may beat the exact enumeration bound. The obvious way to check that is wrong:
+  scoring both sides against the single graph that was drawn compares two accuracies over
+  ~46 rows, and since the Bayes rule maximises only *expected* hits, one draw can hand a
+  correct rule several points of apparent excess. That is not hypothetical — it fired on
+  `degree_peel` and `all_arm_reconstruction`, both of which have precision 1.0 over the
+  adversarial corpus, and it is why the table's `our best` column for `connected_nodes`
+  legitimately reads 76.1% against a 69.6% ceiling.
+
+  `island_posterior` does it pointwise instead: for a row whose primer admits R consistent
+  graphs, a rule answering `a` is right on the share of those R that produce `a`, and Bayes
+  is by definition the maximum of that share. An excess on even one row is then a genuine
+  defect rather than luck. This is exact because ER conditioned on a degree sequence is
+  uniform over realisations, so counting them is integrating the posterior.
+
+  A large gap *below* the bound is still the signal that rules are missing — it correctly
+  predicted both reconstruction theorems before either existed — but it is a hint about
+  where to look, never a verdict.
+- **Reconstruction theorems keep the truth in the candidate set.** The precision of the
+  reconstruction rules rests entirely on every filter being one-sided, and the failure mode
+  is silent: an interval taken open rather than closed would start excluding the true
+  neighbour set, and the rule would return confident wrong answers instead of abstaining.
+  Assert containment directly — the true neighbour set must appear among the enumerated
+  candidates on every row — so the defect surfaces where it happens.
 - **Rung monotonicity.** Rung 3 ≥ rung 2 ≥ rung 1 for every cell, since each rung grants
   strictly more. A violation means a fitted rule is overfitting or a rung is leaking.
 

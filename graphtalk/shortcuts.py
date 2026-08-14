@@ -523,6 +523,309 @@ def _stated_degree(ctx):
   return None if degree is None else str(degree)
 
 
+# --- degree-sequence reconstruction ---------------------------------------
+#
+# The rules above read a stated value and compare it to something. The three
+# below reconstruct part of the graph from the degree sequence, which is a
+# different kind of route and a much larger one: a degree sequence constrains
+# which graphs are possible, and often constrains them down to one.
+#
+# All three are exact for the same structural reason. Every filter they apply is
+# *one-sided* -- it can only exclude a graph the primer rules out -- so the true
+# graph is never excluded, and a single survivor is therefore the truth rather
+# than a best guess. Precision is 1.0 by construction, and the phase-2 test
+# asserts it over the adversarial corpus as well as the ER one, because the ER
+# generator emits no trees and these rules are at their most aggressive on
+# sparse graphs.
+
+# Ceiling on how many candidate neighbour sets to enumerate before giving up.
+# Abstaining costs coverage; the alternative is an unbounded binomial.
+_CANDIDATE_CAP = 400000
+
+
+def _stated_degrees(primer: ParsedPrimer) -> dict[int, int] | None:
+  """The degree sequence, but only when the primer states one for every node.
+
+  All three rules below count vertices -- the peel needs the size of the residual
+  set, the cycle rule needs how many nodes have degree 0 -- so a primer that
+  named a node without stating its degree would make them silently wrong rather
+  than abstain. The renderer always states all of them, which is exactly why this
+  guard is explicit: it protects against a future renderer, not the current one.
+  `Context.m_from_degrees` guards the same way.
+  """
+  if not primer.degree or set(primer.degree) != set(primer.nodes):
+    return None
+  return primer.degree
+
+
+def _peel(degrees: dict[int, int]) -> tuple[dict[int, set], set]:
+  """Forced adjacency from a degree sequence, by repeated forced removal.
+
+  Works on the residual degree sequence of a shrinking vertex set S. If some v in
+  S has residual degree |S| - 1 it is adjacent to every other vertex of S in
+  *every* realisation; if its residual degree is 0 it is adjacent to none of them.
+  Either way v's adjacency to all of S is decided, so v can be removed and the
+  residual degrees of the rest updated.
+
+  Because every earlier removal already decided v's adjacency to the vertex it
+  removed, a peeled vertex has its **entire** neighbour list determined, not just
+  its adjacency inside S. That is what makes this a neighbour-list rule rather
+  than a whole-graph rule: it fires for the peeled vertices even when the peel
+  later stalls, which is the common case.
+
+  Returns (neighbours, settled). Peeling every vertex means the degree sequence
+  has a unique labelled realisation, which is the classical characterisation of
+  threshold graphs -- this is that construction, at O(n^2), so it does not care
+  how large n is.
+  """
+  residual = dict(degrees)
+  remaining = set(degrees)
+  neighbours: dict[int, set] = {v: set() for v in degrees}
+  settled: set = set()
+
+  while remaining:
+    size = len(remaining)
+    dominating = [v for v in remaining if residual[v] == size - 1]
+    isolated = [v for v in remaining if residual[v] == 0]
+    if dominating:
+      v = min(dominating)
+      remaining.discard(v)
+      for u in remaining:
+        neighbours[v].add(u)
+        neighbours[u].add(v)
+        residual[u] -= 1
+    elif isolated:
+      v = min(isolated)
+      remaining.discard(v)
+    else:
+      break
+    settled.add(v)
+
+  return neighbours, settled
+
+
+def _as_node_list(found) -> str:
+  """The `connected_nodes` answer format: a sorted list, or the isolated spelling."""
+  listed = sorted(found)
+  return ", ".join(str(v) for v in listed) if listed else "No nodes"
+
+
+def _forced_adjacency(degrees: dict[int, int], target: int) -> tuple[set, set]:
+  """Adjacencies of `target` the peel decides even when it never reaches it.
+
+  Each peel step decides the peeled vertex's adjacency to the whole remaining
+  set, and so also to `target`. Returns (must_be, must_not_be), both subsets of
+  the peeled vertices.
+  """
+  neighbours, settled = _peel(degrees)
+  inside = {v for v in settled if v != target and target in neighbours[v]}
+  outside = {v for v in settled if v != target and target not in neighbours[v]}
+  return inside, outside
+
+
+def _peel_neighbours(ctx):
+  degrees = _stated_degrees(ctx.primer)
+  if degrees is None:
+    return None
+  target = ctx.targets[0]
+  if target not in degrees:
+    return None
+  neighbours, settled = _peel(degrees)
+  if target not in settled:
+    return None
+  return _as_node_list(neighbours[target])
+
+
+def _cycle_from_degrees(ctx):
+  """Exact cycle answers that follow from the stated degrees alone.
+
+  Two independent halves, both theorems:
+
+    Yes  m >= n', where n' counts the nodes of degree >= 1. A forest on n'
+         vertices has at most n'-1 edges, and isolated vertices carry no edges,
+         so this is strictly stronger than `edges_at_least_nodes`: it subtracts
+         the isolated nodes, which the primer names and the encoding body omits.
+    No   at most two vertices have degree >= 2. Every cycle contains at least
+         three such vertices, so no realisation of this sequence holds one.
+
+  The second half is the only route to *No* on a per-node arm. That matters more
+  than its coverage: the majority baseline is "always Yes", so a rule that can
+  only say Yes cannot beat it however often it fires, which is why the landed
+  triangle tests score exactly the baseline.
+  """
+  degrees = _stated_degrees(ctx.primer)
+  if not degrees:
+    return None
+  live = sum(1 for d in degrees.values() if d >= 1)
+  edges = sum(degrees.values()) // 2
+  if live > 0 and edges >= live:
+    return "Yes, there is a cycle"
+  if sum(1 for d in degrees.values() if d >= 2) <= 2:
+    return "No, there is no cycle"
+  return None
+
+
+def _neighbour_sum_from_rwse(degree: int, rwse2: float) -> float:
+  """Sum over the neighbours j of 1/d_j, from the stated RWSE(k=2).
+
+  RWSE_2(i) = sum_j P_ij P_ji = (1/d_i) * sum over neighbours of 1/d_j, so
+  multiplying the stated return probability by the stated degree recovers that
+  sum. The value read is the two-decimal one the prompt showed, so the recovered
+  sum carries an uncertainty of d_i * 0.005 -- which is why every comparison
+  against it below is an interval and never an equality.
+  """
+  return degree * rwse2
+
+
+def _candidate_neighbour_sets(degrees, target, rwse2, cap=_CANDIDATE_CAP):
+  """Neighbour sets of `target` consistent with the degrees and its own RWSE.
+
+  Returns None when the candidate space is too large to enumerate. The rounding
+  interval is closed and widened by an epsilon: an exact two-decimal tie rounds
+  to even, and an open interval would then exclude the truth, which is the one
+  error that would break precision rather than merely cost coverage.
+  """
+  degree = degrees.get(target)
+  if degree is None or degree == 0:
+    return None
+
+  inside, outside = _forced_adjacency(degrees, target)
+  free = [
+      v for v in sorted(degrees)
+      if v != target and degrees[v] >= 1 and v not in inside and v not in outside
+  ]
+  need = degree - len(inside)
+  if need < 0 or len(free) < need:
+    return None
+
+  total = 1
+  for i in range(need):
+    total = total * (len(free) - i) // (i + 1)
+    if total > cap:
+      return None
+
+  tolerance = 0.005 * degree + 1e-9
+  wanted = _neighbour_sum_from_rwse(degree, rwse2)
+  base = sum(1.0 / degrees[v] for v in inside)
+
+  out = []
+  for chosen in itertools.combinations(free, need):
+    value = base + sum(1.0 / degrees[v] for v in chosen)
+    if abs(value - wanted) <= tolerance:
+      out.append(tuple(sorted(inside | set(chosen))))
+  return out
+
+
+def _extreme_sums(values: list[float], count: int) -> tuple[float, float]:
+  """Smallest and largest achievable sum of `count` of these values."""
+  ordered = sorted(values)
+  return sum(ordered[:count]), sum(ordered[len(ordered) - count:])
+
+
+def _neighbour_rwse_feasible(degrees, target, chosen, rwse2) -> bool:
+  """Necessary condition from every *other* node's stated RWSE(k=2).
+
+  Each node j states d_j * RWSE_2(j) = sum over its neighbours of 1/d_k. If j
+  neighbours the target then one of those terms is 1/d_target and the other
+  d_j - 1 come from elsewhere; if not, all d_j do. Either way the residual must
+  lie between the smallest and largest sum that many inverse degrees can make.
+
+  A bound rather than an exact check, and one-sided in the safe direction: the
+  true neighbour set always satisfies it, so nothing that survives can be wrong.
+  """
+  inverse_target = 1.0 / degrees[target]
+  chosen = set(chosen)
+  for j, degree_j in degrees.items():
+    if j == target or degree_j == 0:
+      continue
+    stated = rwse2.get(j)
+    if stated is None:
+      continue
+    pool = [1.0 / degrees[k] for k in degrees
+            if k not in (j, target) and degrees[k] >= 1]
+    need = degree_j - 1 if j in chosen else degree_j
+    if need < 0 or need > len(pool):
+      return False
+    low, high = _extreme_sums(pool, need)
+    wanted = degree_j * stated - (inverse_target if j in chosen else 0.0)
+    slack = 0.005 * degree_j + 1e-9
+    if wanted < low - slack or wanted > high + slack:
+      return False
+  return True
+
+
+def _triangle_feasible(degrees, target, chosen, clustering_t, rwse3_t) -> bool:
+  """Necessary condition from the target's own clustering and RWSE(k=3).
+
+  Clustering fixes the number of edges inside the neighbourhood,
+  e = C * d(d-1)/2, and RWSE_3(t) = (2/d) * sum over those edges of 1/(d_j*d_k).
+  So the inverse-degree-product sum over e edges of the candidate set has to be
+  achievable, bounded below by the e smallest products available inside the set
+  and above by the e largest. Again a one-sided bound: the true set always passes.
+  """
+  degree = degrees[target]
+  if degree < 2 or clustering_t is None or rwse3_t is None:
+    return True
+  pairs = degree * (degree - 1) / 2.0
+  low_edges = max(0, int(((clustering_t - 0.005) * pairs) - 1e-9 + 1))
+  high_edges = int((clustering_t + 0.005) * pairs + 1e-9)
+  if high_edges < low_edges:
+    low_edges = high_edges = int(round(clustering_t * pairs))
+
+  products = sorted(
+      1.0 / (degrees[a] * degrees[b])
+      for a, b in itertools.combinations(sorted(chosen), 2)
+  )
+  slack = 0.005 * degree / 2.0 + 1e-9
+  wanted = degree * rwse3_t / 2.0
+  for count in range(low_edges, min(high_edges, len(products)) + 1):
+    low, high = sum(products[:count]), sum(products[len(products) - count:])
+    if low - slack <= wanted <= high + slack:
+      return True
+  return False
+
+
+def _reconstruct_neighbours(ctx):
+  """`connected_nodes` from the whole `all` primer: degree, clustering, RWSE.
+
+  Layers four one-sided filters over the candidate neighbour sets -- the peel's
+  forced adjacencies, the target's own RWSE(k=2), then the two bound checks
+  above -- and fires only when exactly one candidate survives all of them.
+
+  It re-runs the peel rather than assuming `degree_peel` already did. Ordering in
+  THEOREMS is an efficiency choice, and a rule that silently depended on another
+  rule having run first would break the moment that order changed.
+  """
+  degrees = _stated_degrees(ctx.primer)
+  if degrees is None:
+    return None
+  target = ctx.targets[0]
+  if target not in degrees:
+    return None
+  peeled = _peel_neighbours(ctx)
+  if peeled is not None:
+    return peeled
+  rwse2 = {v: table.get(2) for v, table in ctx.primer.rwse.items()}
+  if rwse2.get(target) is None:
+    return None
+  candidates = _candidate_neighbour_sets(degrees, target, rwse2[target])
+  if candidates is None:
+    return None
+
+  survivors = []
+  for chosen in candidates:
+    if not _triangle_feasible(degrees, target, chosen,
+                              ctx.primer.clustering.get(target),
+                              ctx.primer.rwse.get(target, {}).get(3)):
+      continue
+    if not _neighbour_rwse_feasible(degrees, target, chosen, rwse2):
+      continue
+    survivors.append(chosen)
+    if len(survivors) > 1:
+      return None
+  return _as_node_list(survivors[0]) if len(survivors) == 1 else None
+
+
 THEOREMS = (
     Rule("degree_zero_no_edge", "edge_existence", "theorem",
          "degree 0 forces No", _degree_zero_no_edge),
@@ -534,6 +837,15 @@ THEOREMS = (
          "degree 0 means No nodes", _degree_zero_no_nodes),
     Rule("rwse_zero_no_nodes", "connected_nodes", "theorem",
          "all-zero RWSE means No nodes", _rwse_zero_no_nodes),
+    # Listed after the two cheap degree-0 tests and before the reconstruction,
+    # because the solver takes the first theorem that fires and these three
+    # ascend steeply in cost. Any order is correct; this one is fastest.
+    Rule("degree_peel", "connected_nodes", "theorem",
+         "the degree sequence forces this node's whole neighbour list",
+         _peel_neighbours),
+    Rule("all_arm_reconstruction", "connected_nodes", "theorem",
+         "degree, clustering and RWSE leave one possible neighbour set",
+         _reconstruct_neighbours),
     Rule("clustering_triangle", "cycle_check", "theorem",
          "clustering > 0 means a triangle", _clustering_triangle),
     Rule("rwse_triangle", "cycle_check", "theorem",
@@ -542,6 +854,9 @@ THEOREMS = (
          "m - n + c > 0 iff a cycle", _circuit_rank),
     Rule("edges_at_least_nodes", "cycle_check", "theorem",
          "m >= n cannot be a forest", _edges_at_least_nodes),
+    Rule("cycle_from_degrees", "cycle_check", "theorem",
+         "m >= live nodes forces a cycle; fewer than three nodes of degree >= 2 "
+         "forbid one", _cycle_from_degrees),
     Rule("count_sentences", "node_count", "theorem",
          "one sentence per node", _count_sentences),
     Rule("components_edgeless", "node_count", "theorem",
@@ -1268,4 +1583,67 @@ def exact_island(graphs, task: str, seed: int = 5,
       "coverage": total / (total + skipped) if total + skipped else 0.0,
       "determined": determined / total if total else None,
       "bayes_optimal": optimal / total if total else None,
+  }
+
+
+def island_posterior(graphs, condition: str, task: str, answer_fn, rung: int = 1,
+                     seed: int = 5, max_nodes: int = _MAX_ISLAND_NODES) -> dict:
+  """Bounds a solver against the posterior instead of against one drawn graph.
+
+  `exact_island`'s `bayes_optimal` is an accuracy: it scores the Bayes answer
+  against the single graph that happened to be drawn. Comparing a rule's accuracy
+  with it is noisy in both directions, because the Bayes rule maximises the
+  *expected* number of hits and one draw out of the posterior can hand any rule a
+  few extra. At the 46 rows the n <= 6 island covers, that noise is worth several
+  points -- enough to report a provably correct rule as reading something
+  unstated, which is what it did when `degree_peel` landed.
+
+  This is the noise-free version. For a row whose primer admits R consistent
+  graphs, a rule answering `a` is right on the share of those R that produce `a`,
+  and the Bayes answer is by definition the maximum of that share. So the
+  comparison is *pointwise*: `worst_excess` above zero on even one row is a real
+  bug, and no draw of the truth can manufacture one.
+
+  Counting realisations is the same as integrating the posterior because ER
+  conditioned on a degree sequence is uniform over realisations -- ER(n, p) gives
+  equal weight to every graph with the same edge count, and the degrees fix the
+  edge count, so mixing over the generator's uniform p preserves it.
+
+  `answer_fn` takes a Context and returns an answer string or None; None is
+  scored as a miss, which is what a solver with no fallback would earn.
+  """
+  rng = random.Random(seed)
+  bayes_mass = rule_mass = 0.0
+  worst_excess = -1.0
+  total = skipped = 0
+  for graph in graphs:
+    n = graph.number_of_nodes()
+    if (n > max_nodes or sorted(graph.nodes()) != list(range(n))
+        or n < QUERY_ARITY[task]):
+      skipped += 1
+      continue
+    targets = sample_query(graph, task, rng)
+    key = tuple(graph.degree(node) for node in range(n))
+    counts = collections.Counter(
+        graphqa.normalize(graphqa.gold_answer(_rebuild(n, edges), task, targets))
+        for edges in _labelled_index(n)[key]
+    )
+    size = sum(counts.values())
+    context = make_context(graph, condition, targets, rung)
+    answer = answer_fn(context)
+    share = counts[graphqa.normalize(answer)] / size if answer is not None else 0.0
+    best = max(counts.values()) / size
+    total += 1
+    bayes_mass += best
+    rule_mass += share
+    worst_excess = max(worst_excess, share - best)
+
+  return {
+      "task": task,
+      "condition": condition,
+      "rows": total,
+      "skipped": skipped,
+      "bayes_expected": bayes_mass / total if total else None,
+      "rule_expected": rule_mass / total if total else None,
+      "worst_excess": worst_excess if total else None,
   }

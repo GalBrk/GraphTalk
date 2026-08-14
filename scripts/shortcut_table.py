@@ -124,32 +124,69 @@ def best_on_small(task, small, fit_graphs):
   return best
 
 
+def worst_posterior_excess(task, test_graphs, fit_graphs):
+  """How far our solver ever beats the Bayes rule in posterior mass.
+
+  This is the soundness check, and it is deliberately not the accuracy
+  comparison printed alongside it. Both `bayes` and `our best` below are scored
+  against the single graph that happened to be drawn, and at these row counts
+  that is noisy enough for a correct rule to come out above the bound by luck --
+  it did exactly that for the two reconstruction theorems. Bayes maximises the
+  posterior share pointwise, so an excess here cannot be luck.
+  """
+  worst = -1.0
+  for condition in ("degree", "all"):
+    for rung in shortcuts.RUNGS:
+      fit_rows = shortcuts.build_rows(fit_graphs, condition, task, rung, seed=5)
+      fitted = shortcuts.rank_rules(
+          shortcuts.fit_rules(
+              shortcuts.HEURISTICS + shortcuts.FITTED, fit_rows, task
+          ),
+          fit_rows,
+          task,
+      )
+      fallback = shortcuts.majority_answer([gold for _, gold in fit_rows])
+      result = shortcuts.island_posterior(
+          test_graphs, condition, task,
+          lambda ctx: shortcuts.solve_context(ctx, task, fitted, fallback),
+          rung=rung,
+      )
+      if result["worst_excess"] is not None:
+        worst = max(worst, result["worst_excess"])
+  return worst
+
+
 def print_island(test_graphs, fit_graphs):
   print(f"\n{BAR}\nEXACT BOUND ON SMALL GRAPHS  (n <= 6, every consistent graph enumerated)")
   print("  Conditions on the stated degrees, so it bounds the degree/all arms.")
   print("  determined = answer identical across all consistent graphs")
   print("  bayes      = exact ceiling for ANY primer-only solver")
-  print("  our best   = strongest hand-written solver, on these same rows\n")
+  print("  our best   = strongest hand-written solver, on these same rows")
+  print("  excess     = worst pointwise posterior excess over Bayes; > 0 is a bug\n")
   print(f"  {'task':<17} {'rows':>5} {'determined':>11} {'bayes':>7} "
-        f"{'our best':>9}  verdict")
-  small = [g for g in test_graphs if g.number_of_nodes() <= 6]
+        f"{'our best':>9} {'excess':>8}  verdict")
   for task in shortcuts.TASKS:
     result = shortcuts.exact_island(test_graphs, task)
     if not result["rows"]:
       continue
+    small = [g for g in test_graphs if g.number_of_nodes() <= 6]
     ours = best_on_small(task, small, fit_graphs)
     bayes = result["bayes_optimal"]
-    if ours > bayes + 1e-9:
+    excess = worst_posterior_excess(task, test_graphs, fit_graphs)
+    if excess > 1e-9:
       verdict = "ABOVE BOUND -- rule reads something unstated"
     elif bayes - ours > 0.05:
-      verdict = f"loose by {100*(bayes-ours):.0f}pp: rules remain unfound"
+      verdict = f"gap {100*(bayes-ours):.0f}pp: rules may remain unfound"
     else:
-      verdict = "tight"
+      verdict = "no gap worth chasing"
     print(
         f"  {task:<17} {result['rows']:>5} {result['determined']:>10.1%} "
-        f"{bayes:>6.1%} {ours:>8.1%}  {verdict}"
+        f"{bayes:>6.1%} {ours:>8.1%} {excess:>+8.4f}  {verdict}"
     )
   print(f"\n  (small graphs are {result['coverage']:.1%} of rows)")
+  print("  The gap column is a single query draw over a few dozen rows and carries")
+  print("  a 3-6 point standard deviation, so read it as a hint about where to look")
+  print("  for rules, never as a verdict. Only the excess column is exact.")
 
 
 def main(argv=None):

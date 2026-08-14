@@ -260,12 +260,23 @@ one-comparison rule over two numbers the primer states scores 79.2%.
 
 Two findings that bound the damage rather than extend it:
 
-- **`connected_nodes` leak-hunting is closed.** Under the incident encoding, the gold
-  answer string is byte-identical to the node list on the queried node's own line for
-  every non-isolated target (4491/4491 rows). So rows partition into ~90% where the
-  answer is a verbatim sentence of the prompt and ~10% where it is conveyed only by an
-  absent sentence. There is no third kind, and only the second can be a primer effect.
-- **The `filler` control is genuinely inert** on every route tested.
+- **`connected_nodes` leak-hunting is closed *for the encoding*.** Under the incident
+  encoding, the gold answer string is byte-identical to the node list on the queried
+  node's own line for every non-isolated target (4491/4491 rows). So rows partition into
+  ~90% where the answer is a verbatim sentence of the prompt and ~10% where it is conveyed
+  only by an absent sentence. There is no third kind, and only the second can be a primer
+  effect.
+
+  This was once read as closing the question for the *primer* too, on the grounds that a
+  primer stating no adjacency cannot give away a neighbour list. That inference was wrong.
+  The stated degree sequence constrains which graphs are possible, and often to exactly
+  one: a degree-sequence peel recovers whole neighbour lists on 20.8% of rows, and the
+  full `all` primer does so on 35.2%, both at precision 1. See the reconstruction section
+  of `docs/plans/shortcut-ceilings.md`. **A primer route can exist with no stated fact
+  pointing at it**, which is the general lesson and the reason that plan measures rather
+  than argues.
+- **The `filler` control is genuinely inert** on every route tested. This one survives the
+  above: reconstruction needs stated degrees, and the filler states none.
 
 **Consequence for the design.** There is no reliable agnostic tier, so the taxonomy
 cannot be asserted; it has to be measured. That is what `docs/plans/shortcut-ceilings.md`

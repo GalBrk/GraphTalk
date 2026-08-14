@@ -445,6 +445,173 @@ def test_adversarial_corpus_covers_the_boundaries():
   ), "no disconnected graph"
 
 
+# --- degree-sequence reconstruction ---------------------------------------
+#
+# The three reconstruction theorems get their precision assertion for free from
+# the parametrised test above, since it iterates THEOREMS. What that test cannot
+# show is *why* they are exact, so these check the structural property each one
+# rests on rather than the score it happens to reach.
+
+
+def _degrees_of(graph) -> dict[int, int]:
+  return {node: graph.degree(node) for node in sorted(graph.nodes())}
+
+
+@pytest.mark.parametrize(
+    "graph",
+    [nx.star_graph(5), nx.complete_graph(5), nx.empty_graph(4),
+     nx.complete_graph(4), nx.path_graph(2)],
+    ids=["star", "complete", "empty", "k4", "single_edge"],
+)
+def test_peel_settles_every_vertex_of_a_threshold_graph(graph):
+  """These have a unique labelled realisation, so the peel must reach all of them."""
+  graph = graphqa.canonical(graph)
+  degrees = _degrees_of(graph)
+  neighbours, settled = shortcuts._peel(degrees)
+  assert settled == set(degrees), (settled, degrees)
+  for node in degrees:
+    assert neighbours[node] == set(graph.neighbors(node)), node
+
+
+@pytest.mark.parametrize(
+    "graph",
+    [nx.cycle_graph(5), nx.disjoint_union(nx.path_graph(2), nx.path_graph(2))],
+    ids=["c5", "perfect_matching"],
+)
+def test_peel_stalls_where_the_realisation_is_not_unique(graph):
+  """Regular sequences force nothing, and the peel must abstain rather than guess.
+
+  A 5-cycle and a perfect matching are both 2-regular and 1-regular respectively,
+  so no vertex ever has residual degree 0 or |S|-1 and every vertex has several
+  possible neighbour sets. A peel that settled anything here would be wrong.
+  """
+  graph = graphqa.canonical(graph)
+  _, settled = shortcuts._peel(_degrees_of(graph))
+  assert settled == set()
+
+
+def test_peel_only_fires_where_the_enumeration_agrees():
+  """Every row the peel answers is one the exact island calls determined.
+
+  This is the containment the precision claim rests on: the peel is a closed-form
+  under-approximation of the determined set, so it may abstain where enumeration
+  succeeds but must never fire where enumeration finds two possible answers.
+  """
+  checked = fired = 0
+  for graph in [g for g in SWEEP if g.number_of_nodes() <= 6]:
+    n = graph.number_of_nodes()
+    degrees = _degrees_of(graph)
+    consistent = [
+        shortcuts._rebuild(n, edges)
+        for edges in shortcuts._labelled_index(n)[
+            tuple(graph.degree(node) for node in range(n))
+        ]
+    ]
+    for target in range(n):
+      answer = shortcuts._peel_neighbours(
+          shortcuts.Context(
+              primer=shortcuts.parse_primer(
+                  primers.build_primer(graph, "degree")
+              ),
+              targets=(target,),
+          )
+      )
+      checked += 1
+      if answer is None:
+        continue
+      fired += 1
+      possible = {
+          graphqa.normalize(
+              graphqa.gold_answer(candidate, "connected_nodes", (target,))
+          )
+          for candidate in consistent
+      }
+      assert len(possible) == 1, (target, possible)
+      assert graphqa.normalize(answer) in possible
+  assert fired > 0, "the peel never fired, so this test proved nothing"
+
+
+def test_cycle_from_degrees_fires_where_the_edge_count_rule_abstains():
+  """A 5-cycle plus two isolated nodes: m = 5, n = 7, but only 5 nodes are live.
+
+  `edges_at_least_nodes` needs m >= n and so abstains at 5 < 7. Subtracting the
+  isolated nodes the primer names is what makes the new rule strictly stronger.
+  """
+  graph = nx.cycle_graph(5)
+  graph.add_nodes_from([90, 91])
+  graph = graphqa.canonical(graph)
+  ctx = shortcuts.Context(
+      primer=shortcuts.parse_primer(primers.build_primer(graph, "degree")),
+      targets=(),
+      n=graph.number_of_nodes(),
+      m=graph.number_of_edges(),
+  )
+  assert shortcuts._edges_at_least_nodes(ctx) is None
+  assert shortcuts._cycle_from_degrees(ctx) == "Yes, there is a cycle"
+
+
+@pytest.mark.parametrize("size", [3, 5, 8])
+def test_cycle_from_degrees_is_the_only_per_node_route_to_no(size):
+  """On a star, every landed per-node cycle rule abstains and this one says No.
+
+  That direction is the whole point: the majority answer is "always Yes", so a
+  rule that can only answer Yes cannot beat the baseline however often it fires.
+  """
+  graph = graphqa.canonical(nx.star_graph(size))
+  ctx = shortcuts.Context(
+      primer=shortcuts.parse_primer(
+          primers.build_primer(graph, "all")
+      ),
+      targets=(),
+  )
+  assert shortcuts._clustering_triangle(ctx) is None
+  assert shortcuts._rwse_triangle(ctx) is None
+  assert shortcuts._edges_at_least_nodes(ctx) is None
+  assert shortcuts._cycle_from_degrees(ctx) == "No, there is no cycle"
+
+
+def test_candidate_neighbour_sets_always_contain_the_truth():
+  """The one-sidedness the reconstruction's precision rests on.
+
+  Every filter may only exclude a neighbour set the primer rules out, so the true
+  set must survive all of them -- that is what makes "exactly one survivor" an
+  answer rather than a guess. If a rounding interval were ever taken open, or a
+  bound computed the wrong way round, the truth would start being filtered out
+  and precision would break silently. Asserting containment catches that at the
+  point of failure instead of as a wrong answer much later.
+  """
+  checked = 0
+  for graph in [g for g in SWEEP if g.number_of_nodes() <= 10]:
+    primer = shortcuts.parse_primer(primers.build_primer(graph, "all"))
+    degrees = primer.degree
+    for target in sorted(graph.nodes()):
+      if degrees[target] == 0:
+        continue
+      rwse2 = primer.rwse.get(target, {}).get(2)
+      if rwse2 is None:
+        continue
+      candidates = shortcuts._candidate_neighbour_sets(degrees, target, rwse2)
+      if candidates is None:
+        continue
+      checked += 1
+      assert tuple(sorted(graph.neighbors(target))) in candidates, (
+          graph.number_of_nodes(), target
+      )
+  assert checked > 0, "no candidate set was enumerated, so this proved nothing"
+
+
+def test_reconstruction_abstains_without_clustering_and_rwse():
+  """On a degree-only primer it must fall back to the peel and nothing more."""
+  graph = graphqa.canonical(nx.cycle_graph(6))
+  ctx = shortcuts.Context(
+      primer=shortcuts.parse_primer(primers.build_primer(graph, "degree")),
+      targets=(0,),
+  )
+  # 2-regular, so the peel stalls and there is no RWSE to reconstruct from.
+  assert shortcuts._peel_neighbours(ctx) is None
+  assert shortcuts._reconstruct_neighbours(ctx) is None
+
+
 def test_every_theorem_fires_somewhere():
   """A rule that never fires anywhere is dead code, not a zero-coverage result."""
   for rule in shortcuts.THEOREMS:
@@ -730,27 +897,34 @@ def test_fitted_rules_do_not_see_their_evaluation_set():
 # --- the exact island -----------------------------------------------------
 
 
-def test_exact_island_bounds_the_hand_written_rules():
+def test_exact_island_ceiling_dominates_its_determined_fraction():
+  """Answering with the majority is at least as good as answering only when all agree.
+
+  A violation means the enumeration itself is wrong, so this one is about the
+  island rather than about any rule.
+  """
+  for task in ("edge_existence", "cycle_check", "connected_nodes"):
+    island = shortcuts.exact_island(SWEEP, task)
+    assert island["determined"] <= island["bayes_optimal"] + 1e-9, island
+
+
+def test_no_rule_beats_the_ceiling_in_posterior_mass():
   """No rule may beat the information-theoretic ceiling.
 
   A rule above it is reading something the primer does not state, which is a bug
   rather than a discovery.
+
+  Compared in posterior mass rather than in accuracy. The accuracy version of
+  this test scored both sides against the single drawn graph, and at the ~46 rows
+  the island covers that is noisy enough to fail on rules that are provably
+  correct -- it did exactly that when `degree_peel` and `all_arm_reconstruction`
+  landed, both of which have precision 1.0 over the adversarial corpus. Bayes
+  maximises the posterior share pointwise, so this version cannot false-alarm:
+  any excess at all is a real defect.
   """
-  small = [g for g in SWEEP if g.number_of_nodes() <= 6]
-  assert small, "no small graphs in the corpus to bound"
-
   for task in ("edge_existence", "cycle_check", "connected_nodes"):
-    island = shortcuts.exact_island(SWEEP, task)
-    # Answering with the majority over consistent graphs is at least as good as
-    # only answering where they all agree, so the ceiling dominates the
-    # determined fraction. A violation means the enumeration is wrong.
-    assert island["determined"] <= island["bayes_optimal"] + 1e-9, island
-
-    # And no hand-written rule may beat the ceiling. Scored on the same small
-    # graphs the island covers, with the same query draw.
     for condition in ("degree", "all"):
       for rung in shortcuts.RUNGS:
-        rows = shortcuts.build_rows(small, condition, task, rung, seed=5)
         fit_rows = shortcuts.build_rows(FIT_GRAPHS, condition, task, rung, seed=5)
         fitted = shortcuts.rank_rules(
             shortcuts.fit_rules(
@@ -760,10 +934,14 @@ def test_exact_island_bounds_the_hand_written_rules():
             task,
         )
         fallback = shortcuts.majority_answer([g for _, g in fit_rows])
-        ours = shortcuts.score_solver(rows, task, fitted, fallback)
-        assert ours <= island["bayes_optimal"] + 1e-9, (
-            task, condition, rung, ours, island
+        result = shortcuts.island_posterior(
+            SWEEP, condition, task,
+            lambda ctx: shortcuts.solve_context(ctx, task, fitted, fallback),
+            rung=rung,
         )
+        assert result["rows"] > 0, result
+        assert result["worst_excess"] <= 1e-9, (task, condition, rung, result)
+        assert result["rule_expected"] <= result["bayes_expected"] + 1e-9, result
 
 
 def test_exact_island_is_exact_on_a_hand_checked_case():
