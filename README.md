@@ -39,6 +39,32 @@ Python program scores, not what a model scores — on `node_count` the shortcut 
 decided cell still answers a question, just a narrower one: whether the model
 uses a fact it was handed, rather than whether it reasoned about the graph.
 
+## The sweep
+
+Three stages, and only the middle one needs a GPU. See
+[cluster/README.md](cluster/README.md) for running it on the TAU CS cluster.
+
+```bash
+# 1. build every prompt to a file, on the laptop
+PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 30
+
+# 2. generate, on a GPU node, once per model
+sbatch cluster/sweep.sbatch gemma4-12b
+
+# 3. score, back on the laptop
+PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500 --json shortcuts.json
+PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.json
+```
+
+The prompt set is written to a file first so it can be read and diffed before any
+GPU time is spent, and so every model in the sweep is handed the identical file.
+The design is paired — the same graph and query appear under all seven conditions
+and both prompt styles — which is what the proposal's McNemar test requires.
+
+At the proposal's 30 rows per task that is 2,520 prompts per model: 180 instances
+x 7 conditions x 2 prompt styles (`zero_shot` and `zero_cot`, both using the
+published dataset's own wording).
+
 ## Setup
 
 ```bash
@@ -71,9 +97,10 @@ cleanly on 3.12+.
 uv run --no-sync pytest -q
 ```
 
-310 tests: 27 vendored ones covering graph generation, text encoders and
+345 tests: 27 vendored ones covering graph generation, text encoders and
 metrics, 138 covering the primer statistics, the renderer, and the committed
-golden primer strings, and 145 covering the shortcut solvers.
+golden primer strings, 145 covering the shortcut solvers, and 35 covering prompt
+assembly and answer scoring.
 
 Two of those deserve mention because they are what the rest rests on. The
 **round trip** renders a primer, parses it back, and requires the recovered

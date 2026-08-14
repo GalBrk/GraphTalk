@@ -9,3 +9,11 @@ build/
 dist/
 figures/
 .cache/
+# Sweep artefacts: the prompt file and the raw model responses. Both are
+# regenerable -- prompts.jsonl from build_prompts.py at a given --count, and the
+# responses only by re-running the models -- so keep them out of git but keep
+# them somewhere backed up on the cluster.
+prompts.jsonl
+runs/
+out/
+shortcuts.json

@@ -2,17 +2,20 @@
 
 7 conditions x 6 tasks x 3 rungs, plus theorem coverage, the in-sample inflation
 measurement, and the exact enumeration bound on small graphs. No model queries --
-this is plain Python over graphs the vendored generator produces, and the point
-of it is to say which cells are worth spending cluster time on.
+this is plain Python over graphs the vendored generator produces.
 
-Read the table before committing any cluster time. Cells where the shortcut
-already scores ~100% are decided before a model runs; cells with real headroom
-between baseline and shortcut are where a model run buys information.
+The table says how to read each cell's model result, not which cells to run. A
+~100% shortcut is what a *program* scores; the paper's models get 18.8% on
+`node_count`, whose shortcut is 100%, so a high shortcut bounds the interpretation
+of a win rather than predicting where a model lands. See the four regimes section
+of docs/plans/shortcut-ceilings.md.
 
   PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500
+  PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --json shortcuts.json
 """
 
 import argparse
+import json
 import sys
 
 from graphtalk import primers
@@ -194,6 +197,11 @@ def main(argv=None):
   parser.add_argument("--graphs", type=int, default=500)
   parser.add_argument("--fit-seed", type=int, default=999)
   parser.add_argument("--test-seed", type=int, default=1234)
+  parser.add_argument("--json", default=None,
+                      help="also write {'task/condition': shortcut} for "
+                           "scripts/score_sweep.py --shortcuts")
+  parser.add_argument("--json-rung", type=int, default=3,
+                      choices=shortcuts.RUNGS)
   args = parser.parse_args(argv)
 
   split = shortcuts.Split(
@@ -221,6 +229,19 @@ def main(argv=None):
   print_inflation(split, fit_graphs, test_graphs)
   print_island(test_graphs, fit_graphs)
   print(f"\n{BAR}")
+
+  if args.json:
+    # Rung 3 is the bar to print beside a model result: the model is shown the
+    # encoding, so n and m are available to it by reading and counting. Rung 1
+    # would understate what the primer plus the prompt make derivable.
+    export = {
+        f"{task}/{condition}": cells[(condition, task, args.json_rung)].shortcut
+        for condition in primers.CONDITIONS
+        for task in shortcuts.TASKS
+    }
+    with open(args.json, "w") as handle:
+      json.dump(export, handle, indent=2, sort_keys=True)
+    print(f"wrote rung-{args.json_rung} shortcut scores to {args.json}")
   return 0
 
 
