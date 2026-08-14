@@ -31,8 +31,13 @@ PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500
 Scores a solver that reads only the primer and never the graph, across 7
 conditions x 6 tasks x 3 rungs. That score is the bar a model has to clear: a
 model at or below it did the primer arithmetic and nothing more. Four of the six
-tasks turn out to be already decided this way, which is what makes the table
-worth running before any cluster time — it says which cells not to run.
+tasks turn out to be already decided this way.
+
+The table sorts the sweep rather than pruning it. A 100% shortcut is what a
+Python program scores, not what a model scores — on `node_count` the shortcut is
+100% and the paper reports 18.8% for PaLM 2 on the encoding GraphQA ships. So a
+decided cell still answers a question, just a narrower one: whether the model
+uses a fact it was handed, rather than whether it reasoned about the graph.
 
 ## Setup
 

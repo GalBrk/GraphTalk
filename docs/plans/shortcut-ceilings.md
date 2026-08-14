@@ -140,6 +140,47 @@ exploit explicitly stated structural facts even when doing so is trivially suffi
 That is a stronger claim about black-box structural reasoning than "the primer helped by
 four points."
 
+### The shortcut score is a program's capability, not a model's
+
+The four regimes above describe how to read a result. They say nothing about where a model
+will actually land, and an earlier version of this plan quietly assumed the two were
+related — that a cell with a 100% shortcut would see a model near 100%, so running it was
+pointless. **That assumption is false, and the paper this project builds on is the
+counterexample.**
+
+`node_count` is the sharpest case. The shortcut is 100% on every node-level arm, for the
+most mechanical reason available: the renderer emits one sentence per node, so counting
+sentences gives `n`. The encoding hands it over even more directly — its first line reads
+`G describes a graph among nodes 0, 1, ..., and 13.`, so the answer is enumerated in the
+prompt before the primer is even added.
+
+Fatemi et al. report, for PaLM 2 on that task:
+
+| setting | node count accuracy |
+|---|---|
+| zero-shot, adjacency encoding (what GraphQA ships) | **18.8%** |
+| zero-shot, incident encoding | 15.6% |
+| zero-shot, mean over nine encoders | 21.7% |
+| PaLM 2-XXS, zero-shot | 5.4% |
+| PaLM 62B, zero-shot | 23.0% |
+| few-shot, incident (best in their main tables) | 51.2% |
+
+A Python program scores 100% by counting sentences. The models score 19%. The two numbers
+measure different things, and the gap is not a rounding error — it is four fifths of the
+task. LLMs are bad at counting, which the paper says itself when it explains that integer
+node encoding helps because it puts input and output in the same space.
+
+The consequence is that **"decided" bounds the interpretation of a win, not the value of
+running the cell**:
+
+- a model scoring *above* the shortcut on a leaky cell tells you nothing about graph
+  reasoning, because reading would have produced the same number;
+- a model scoring *below* it still tells you something real, and on a 100% cell it tells
+  you the most: the fact was stated, in the prompt, and the model did not use it.
+
+So a leaky cell loses half the inference space rather than all of it. See the Scope section
+for what that does to the sweep.
+
 ## Rule taxonomy, and the methodology each kind needs
 
 Three kinds, reported separately. Mixing them produces a number that means nothing.
@@ -252,18 +293,39 @@ majority baseline by definition. **36 cells.**
 
 Compute all of them. There are no model queries involved — it is plain Python over graphs
 we already generate, seconds of CPU. The temptation is to compute only the cells that look
-interesting, but the cheap ones are exactly the ones that justify skipping expensive work.
+interesting, but a cell's shortcut score is what makes its model result readable, so a
+missing one is a result you cannot interpret later.
 
-Then use the table to triage the sweep:
+### The table sorts the sweep; it does not prune it
 
-- Cells where the shortcut already scores ~100% (`degree` × `node_degree`, `degree` ×
-  `edge_count`) tell you nothing a model run would add. The comparison is decided before
-  you start. Skip them, or run them only as manipulation checks.
-- Cells with real headroom between baseline and shortcut are where cluster time buys
-  information.
+An earlier version of this section used the table as a filter — skip the cells whose
+shortcut is ~100%, spend the cluster time on the rest, "the table is what tells you which
+parts of the experiment not to run." That rested on the assumption corrected in the four
+regimes section: that a 100% shortcut predicts a model near 100%. On `node_count` the
+shortcut is 100% and PaLM 2 scores 18.8%, so the filter would have discarded the single
+sharpest demonstration in the design of a model failing to use a fact it was handed.
 
-That inverts the cost problem: the table is not extra work on top of the experiment, it is
-what tells you which parts of the experiment not to run.
+**Run every cell. Use the table to decide what each result means, not whether to collect
+it.** Cells then sort into three questions rather than being kept or dropped:
+
+| shortcut vs baseline | what a result there can answer |
+|---|---|
+| shortcut = baseline | does the primer help the model *reason*? — the proposal's thesis |
+| shortcut > baseline | does the model exploit stated facts at all? — real, but weaker |
+| shortcut ≈ 100% | manipulation check: does the model read the primer? |
+
+`node_degree` × `degree` is the cleanest manipulation check available, because the primer
+states the answer verbatim. A model that does not reach ~100% there constrains how every
+other cell in the sweep should be read, and the old filter proposed skipping it.
+
+The cost argument that motivated pruning is worth re-checking rather than inheriting. The
+full sweep is 7 x 6 x 500 = 21,000 queries, or 4,200 at 100 rows per cell. If that is API
+calls rather than booked cluster time, pruning saves little and costs the null results —
+which, per the four regimes, are the findings this design is best placed to produce.
+
+One discipline point that replaces the cost discipline: 42 cells invites cherry-picking.
+Decide before the sweep which cells test the thesis and which are secondary, and report
+all of them either way.
 
 ## Measured results
 
@@ -279,11 +341,15 @@ seed 1234. Shortcut score at rung 3, against the majority baseline.
 | `edge_existence` | 49.8% | `degree`, `all` | 79.4% | real headroom |
 | `connected_nodes` | 8.2% | `all` | 35.2% | headroom, but not the clean cell it looked |
 
-**Four of the six tasks are already decided by a program that never sees the graph.**
-Running a model on those cells cannot inform the hypothesis: `node_count` because the
-primer emits one sentence per node, `edge_count` because `sum(degrees)/2 = m`,
-`node_degree` because the primer states the answer, and `cycle_check` on the `components`
-arm because circuit rank is exact.
+**Four of the six tasks are already decided by a program that never sees the graph:**
+`node_count` because the primer emits one sentence per node, `edge_count` because
+`sum(degrees)/2 = m`, `node_degree` because the primer states the answer, and `cycle_check`
+on the `components` arm because circuit rank is exact.
+
+"Decided" means a model *win* there cannot be attributed to graph reasoning, since reading
+would produce the same number. It does not mean the cell is uninformative, and it does not
+predict where a model lands — see the four regimes section, where the paper's 18.8% on
+`node_count` against this table's 100% is the standing counterexample.
 
 ### Degree-sequence reconstruction, and two claims it falsified
 
@@ -491,15 +557,28 @@ uv run --no-sync pytest tests/ -q
 .venv/bin/python scripts/shortcut_table.py --graphs 500
 ```
 
-Read the table before committing any cluster time.
+Read the table before analysing any sweep. Every cell's model result is interpreted
+against its shortcut score, so the table has to exist first — but it decides how the
+results are read, not which of them get collected.
 
 ## What this does not settle
 
-- **Whether the table is a paper result or internal triage.** It is being built to the
+- **Whether the table is a paper result or internal scaffolding.** It is being built to the
   standard needed for the former — train/test discipline throughout — because that costs
   almost nothing in code and is the difference between a number that can be published and
   one that cannot. Promoting it additionally needs the n ≤ 6 exact check done carefully,
-  which is scoped here but should be treated as a follow-on.
+  which is scoped here but should be treated as a follow-on. Note that it can no longer be
+  *purely* internal: since every cell is now run, every cell's model result is reported
+  against its shortcut score, so the table appears in the analysis whether or not it
+  appears as a result in its own right.
+- **Whether the clean arms are clean or merely unexamined.** The exact island conditions on
+  the stated *degree sequence*, so it bounds the `degree` and `all` arms and says nothing
+  about `clustering`-only or `rwse`-only. Those arms currently read shortcut = baseline on
+  several tasks, which is exactly what `connected_nodes` read on all seven arms before the
+  reconstruction theorems existed. The same enumeration can be pointed at any arm — keep
+  the realisations whose rendered clustering-only primer matches, and count how many
+  distinct answers survive — and until that is run, "clean" on those arms means "nobody has
+  attacked it", not "no shortcut exists".
 - **Whether to also report a leak-free `edge_existence` stratum.** Reporting the shortcut
   score covers the interpretation problem, so the sampling filter is now optional. It
   would still buy one cell where the proposal's aligned/adjacent/agnostic framing survives
