@@ -4,11 +4,15 @@
 #SBATCH --gpus=1
 #SBATCH --constraint="a6000|l40s|h100"
 #SBATCH --cpus-per-task=8
-# 96G rather than 48G: the weights are read through the page cache by the warm-up
-# below, and the cache has to hold the whole checkpoint (29.6 GB for Qwen3-14B)
-# alongside the loader's own buffers. At 48G the cache is evicted while it is
-# still being filled and the random-access reads go back to the netapp.
-#SBATCH --mem=96G
+# Sized to hold the largest checkpoint in the page cache the warm-up below fills:
+# 29.6 GB for Qwen3-14B, plus the loader's buffers. The weights land on the GPU
+# rather than staying resident here, so the headroom above 30 GB is comfortable.
+#
+# Not larger. An earlier 96G was guesswork and cost real queue time: the nodes
+# with a spare GPU had 40-47 GB of RAM free while the ones with RAM free had no
+# GPU, so nothing could satisfy gpu=1 + mem=96G and all twelve jobs sat on
+# Reason=Resources. 64G is what the budget measurement actually ran at.
+#SBATCH --mem=64G
 # The partition ceiling. A full model needs roughly 45 h at the measured
 # zero_shot budget, so no single job finishes one: submit a chain and let the
 # resume logic below carry the work across them.
