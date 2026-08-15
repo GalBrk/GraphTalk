@@ -9,7 +9,10 @@
 # alongside the loader's own buffers. At 48G the cache is evicted while it is
 # still being filled and the random-access reads go back to the netapp.
 #SBATCH --mem=96G
-#SBATCH --time=12:00:00
+# The partition ceiling. A full model needs roughly 45 h at the measured
+# zero_shot budget, so no single job finishes one: submit a chain and let the
+# resume logic below carry the work across them.
+#SBATCH --time=24:00:00
 #SBATCH --job-name=graphtalk_sweep
 #SBATCH --output=out/slurm-%j.out
 #SBATCH --signal=USR1@120
@@ -62,15 +65,49 @@ export PYTHONPATH="$SLURM_SUBMIT_DIR"
 mkdir -p runs out
 nvidia-smi
 
+# Nothing left to do? Exit before warming. A chain is submitted with more links
+# than the work usually needs, so the last ones find the file already complete --
+# and the warm-up costs ~20 min whether or not there is anything to generate.
+REMAINING="$(python - "$OUT" <<'PY'
+import json, os, sys
+
+out = sys.argv[1]
+with open("prompts.jsonl") as handle:
+  todo = {(r["instance_id"], r["condition"], r["style"])
+          for r in map(json.loads, filter(str.strip, handle))}
+if os.path.exists(out):
+  with open(out) as handle:
+    for line in handle:
+      try:
+        record = json.loads(line)
+      except json.JSONDecodeError:
+        continue  # a preempted job leaves one truncated line; it is regenerated
+      todo.discard(
+          (record["instance_id"], record["condition"], record["style"]))
+print(len(todo))
+PY
+)"
+echo "$REMAINING generations still to do for $MODEL"
+if [[ "$REMAINING" == "0" ]]; then
+  echo "nothing to do; exiting before the page-cache warm-up"
+  exit 0
+fi
+
 # Warm the page cache with one sequential pass over the checkpoint before the
 # loader touches it.
 #
-# The lab netapp serves this tree at ~29 MB/s sequential, and `safetensors`
-# mmaps the file and reads tensor offsets in checkpoint order rather than in
-# file order. Those scattered reads measured ~3.6 MB/s over NFS, which put
-# gemma4-e4b's 16 GB at a nine-hour load and made the job die on its time limit
-# before writing a single row. Reading the blobs end to end first costs one
-# sequential pass and turns every later mmap fault into a RAM hit.
+# `safetensors` mmaps the file and reads tensor offsets in checkpoint order
+# rather than file order, and those scattered reads are pathological over NFS:
+# gemma4-e4b's 16 GB projected to a nine-hour load and the job died on its time
+# limit before writing a row. Reading the blobs end to end first costs one
+# sequential pass and turns every later mmap fault into a RAM hit -- loading then
+# takes about two seconds.
+#
+# Read throughput varies by node far more than expected, so the warm-up is worth
+# 20 min on a good node and much more on a bad one. Measured with 2 GiB of direct
+# I/O, twice each: n-802 and n-805 served ~31 MB/s, while n-801 managed 12.4 MB/s
+# idle and 3.4 MB/s under load, on a 195-day uptime. Both stalls in this project
+# landed on n-801. Pass `--exclude=n-801` until someone reboots it.
 #
 # `cat` and not python: this has to happen before `import torch`, and the point
 # is the kernel's cache, not anything in the process.
