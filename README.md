@@ -56,6 +56,12 @@ PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500 --json shor
 PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.json
 ```
 
+Step 2 is written as one job per model for readability. On the TAU cluster a
+model needs more than the 24-hour partition limit, so it is really a *chain* of
+resuming jobs with a per-model memory request — see
+[cluster/README.md](cluster/README.md), which is the authority on how the sweep
+is actually launched.
+
 The prompt set is written to a file first so it can be read and diffed before any
 GPU time is spent, and so every model in the sweep is handed the identical file.
 The design is paired — the same graph and query appear under all seven conditions
