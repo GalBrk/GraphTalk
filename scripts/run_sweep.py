@@ -78,6 +78,7 @@ def main() -> None:
       response = hf_backend.generate(
           tokenizer, model, record["prompt"],
           models.MAX_NEW_TOKENS[record["style"]],
+          spec.chat_kwargs,
       )
       handle.write(json.dumps({
           "instance_id": record["instance_id"],

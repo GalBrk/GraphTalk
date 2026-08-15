@@ -33,12 +33,16 @@ def load(spec: models.ModelSpec):
   return tokenizer, model
 
 
-def generate(tokenizer, model, prompt: str, max_new_tokens: int) -> str:
+def generate(tokenizer, model, prompt: str, max_new_tokens: int,
+             chat_kwargs: dict | None = None) -> str:
   """One greedy completion, with the prompt stripped from the return value.
 
   `do_sample=False` is the proposal's temperature 0. Slicing the generated ids
   past `prompt_len` rather than string-stripping the prompt afterwards avoids a
   whole class of off-by-one bugs when the chat template rewrites whitespace.
+
+  `chat_kwargs` comes from the model's spec and reaches the template unchanged;
+  see `ModelSpec.chat_kwargs` for why Qwen3 must be asked not to think.
   """
   messages = [{"role": "user", "content": prompt}]
   inputs = tokenizer.apply_chat_template(
@@ -47,6 +51,7 @@ def generate(tokenizer, model, prompt: str, max_new_tokens: int) -> str:
       tokenize=True,
       return_dict=True,
       return_tensors="pt",
+      **(chat_kwargs or {}),
   ).to(model.device)
 
   prompt_len = inputs["input_ids"].shape[-1]
