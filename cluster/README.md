@@ -111,6 +111,41 @@ seconds**.
 The warm-up cost is paid per job on a cold node, and it dominates short
 diagnostic runs — budget for it before submitting anything small.
 
+## Half the partition has a driver this torch build cannot use
+
+`killable` spans two driver generations, and the env's torch is a **cu130** build
+that needs **580 or newer**:
+
+| node | driver | usable |
+|---|---|---|
+| n-602 | 595.84 | yes |
+| n-805 | 580.173.02 | yes |
+| t-806 | 580.105.08 | yes |
+| **n-802, n-803, n-804** | **535.183.01** (CUDA 12.2) | **no** |
+
+On an old node `device_map="auto"` finds no usable CUDA device and puts the model
+on the **CPU** — with no error and no warning, at roughly a fortieth of the
+speed. Three jobs ran that way for sixteen hours before it was spotted, and the
+symptom is indistinguishable from a busy filer or a contended card, so it costs a
+long detour to diagnose. The tell is `nvidia-smi` reporting **0 MiB used on your
+own assigned device** while the process holds the weights in host RAM.
+
+`sweep.sbatch` now refuses to start on such a node. Submit with the old nodes
+excluded so the scheduler does not waste a link finding out:
+
+```bash
+sbatch --exclude=n-801,n-802,n-803,n-804 --mem=32G cluster/sweep.sbatch qwen3-8b
+```
+
+Do not check the driver on the login node and assume it generalises — the login
+node is on 580 while three compute nodes are not, and that mistake is what let
+this through in the first place. A smoke test passing proves only that *that*
+job's node was fine.
+
+The longer-term fix is a cu12 torch build, which runs on both generations and
+would restore the full node pool; it means reinstalling into the env and
+re-running the 345 tests.
+
 ### n-801 is slow; exclude it
 
 Read throughput varies by node far more than expected. Measured with 2 GiB of

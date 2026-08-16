@@ -97,6 +97,38 @@ if [[ "$REMAINING" == "0" ]]; then
   exit 0
 fi
 
+# Refuse to run on a node whose driver this torch build cannot use.
+#
+# `device_map="auto"` falls back to CPU when no CUDA device is usable, silently:
+# no error, no warning, just a model doing transformer inference on the host at
+# roughly a fortieth of the speed. Three jobs ran that way for sixteen hours here
+# before anyone noticed, and the symptom -- everything is mysteriously slow --
+# looks exactly like a busy filer or an oversubscribed card, so it sends you
+# chasing the wrong thing.
+#
+# The cause is that `killable` spans two driver generations: n-802, n-803 and
+# n-804 are on 535.x (CUDA 12.2) while n-602, n-805 and t-806 are on 580+/595.
+# The env's torch is a cu130 build and needs 580 or newer. Landing on an old node
+# is luck of the scheduler, which is why the first smoke test passed.
+#
+# Checking costs one torch import against hours of silent waste. Exiting non-zero
+# is deliberate: the job fails visibly and the chain's next link gets another
+# roll of the scheduler, rather than the sweep filling up with CPU-generated rows.
+python - <<'PY' || exit 1
+import sys
+import torch
+
+if torch.cuda.is_available():
+  print(f"cuda ok: {torch.cuda.get_device_name(0)}  torch {torch.__version__}")
+  sys.exit(0)
+print(f"FATAL: torch {torch.__version__} sees no usable CUDA device on this node.",
+      file=sys.stderr)
+print("The driver is probably too old for this build; check `nvidia-smi` and",
+      file=sys.stderr)
+print("exclude the 535.x nodes (n-802, n-803, n-804).", file=sys.stderr)
+sys.exit(1)
+PY
+
 # Warm the page cache with one sequential pass over the checkpoint before the
 # loader touches it.
 #
