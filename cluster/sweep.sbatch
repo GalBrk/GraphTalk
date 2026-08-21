@@ -65,6 +65,14 @@ fi
 # at runs/*.jsonl and they are pooled automatically.
 SHARD="${SLURM_ARRAY_TASK_ID:-0}"
 NSHARDS="${SLURM_ARRAY_TASK_COUNT:-1}"
+# If Slurm ever hands us a task id without a count, every task would fall back to
+# NSHARDS=1, write to the same unsuffixed file, and regenerate each other's work
+# in silence. Refuse instead.
+if [[ -n "${SLURM_ARRAY_TASK_ID:-}" && "$NSHARDS" == "1" ]]; then
+  echo "FATAL: SLURM_ARRAY_TASK_ID set but SLURM_ARRAY_TASK_COUNT is not;" >&2
+  echo "shards would collide on one output file. Pass --num-shards by hand." >&2
+  exit 1
+fi
 if [[ "$NSHARDS" -gt 1 ]]; then
   OUT="${OUT%.jsonl}.shard${SHARD}of${NSHARDS}.jsonl"
   EXTRA+=(--shard "$SHARD" --num-shards "$NSHARDS")
