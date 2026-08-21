@@ -9,12 +9,16 @@ build/
 dist/
 figures/
 .cache/
-# Sweep artefacts: the prompt file and the raw model responses. Both are
-# regenerable -- prompts.jsonl from build_prompts.py at a given --count, and the
-# responses only by re-running the models -- so keep them out of git but keep
-# them somewhere backed up on the cluster.
-prompts.jsonl
-prompts_zero_shot.jsonl
-runs/
+# Sweep artefacts are tracked, not ignored. They were excluded as "regenerable",
+# but that only ever applied to the prompt files: the responses are regenerable
+# solely by re-running the models, which cost ~40 GPU-hours, and "backed up
+# somewhere on the cluster" is not access for anyone without an account here.
+# 17 MB is a small price for a collaborator being able to clone the results.
+#
+# The prompt files are tracked too, and deliberately: a response is only
+# interpretable against the exact prompt that produced it, and `--count` is a
+# prefix, so the file is the record of which rows the sweep actually used.
+#
+# Slurm logs stay out -- they are per-job noise, and the numbers worth keeping
+# from them are written up in docs/sweep-findings.md instead.
 out/
-shortcuts.json
