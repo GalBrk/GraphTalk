@@ -14,6 +14,7 @@ figures/
 # responses only by re-running the models -- so keep them out of git but keep
 # them somewhere backed up on the cluster.
 prompts.jsonl
+prompts_zero_shot.jsonl
 runs/
 out/
 shortcuts.json

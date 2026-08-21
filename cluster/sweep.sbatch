@@ -42,6 +42,11 @@ set -euo pipefail
 MODEL="${1:?usage: sbatch cluster/sweep.sbatch <model-key> [limit]}"
 LIMIT="${2:-}"
 
+# The prompt file is overridable so an arm can run a subset. The thinking arm
+# uses a zero_shot-only file whose 1260 rows are byte-identical to the zero_shot
+# half of the main one, so the two arms are comparable row for row.
+PROMPTS="${GRAPHTALK_PROMPTS:-prompts.jsonl}"
+
 # A smoke test writes to its own file. Sharing the sweep's output would make its
 # rows count as done, so a smoke run that revealed a broken chat template would
 # leave twenty bad generations that the full sweep then skips.
@@ -72,11 +77,11 @@ nvidia-smi
 # Nothing left to do? Exit before warming. A chain is submitted with more links
 # than the work usually needs, so the last ones find the file already complete --
 # and the warm-up costs ~20 min whether or not there is anything to generate.
-REMAINING="$(python - "$OUT" <<'PY'
+REMAINING="$(python - "$OUT" "$PROMPTS" <<'PY'
 import json, os, sys
 
-out = sys.argv[1]
-with open("prompts.jsonl") as handle:
+out, prompts = sys.argv[1], sys.argv[2]
+with open(prompts) as handle:
   todo = {(r["instance_id"], r["condition"], r["style"])
           for r in map(json.loads, filter(str.strip, handle))}
 if os.path.exists(out):
@@ -156,6 +161,6 @@ echo "page cache warmed in $(( (SECONDS - WARM_START) / 60 ))m $(( (SECONDS - WA
 
 python scripts/run_sweep.py \
   --model "$MODEL" \
-  --prompts prompts.jsonl \
+  --prompts "$PROMPTS" \
   --out "$OUT" \
   "${EXTRA[@]}"
