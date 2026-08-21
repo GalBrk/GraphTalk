@@ -51,10 +51,24 @@ def main() -> None:
   parser.add_argument("--out", required=True)
   parser.add_argument("--limit", type=int, default=None,
                       help="stop after this many generations, for smoke tests")
+  parser.add_argument("--shard", type=int, default=0,
+                      help="which shard of the prompt file this job generates")
+  parser.add_argument("--num-shards", type=int, default=1,
+                      help="split the prompts across this many concurrent jobs")
   args = parser.parse_args()
+
+  if not 0 <= args.shard < args.num_shards:
+    parser.error(f"--shard must be in [0, {args.num_shards})")
 
   spec = models.MODELS[args.model]
   records = load_prompts(args.prompts)
+  # Stride, not contiguous blocks. The prompt file is ordered by task, so a block
+  # split would hand one shard every `edge_count` row -- the task that runs an
+  # order of magnitude longer than the rest -- and that shard would still be
+  # generating long after the others had finished. Striding gives every shard the
+  # same task mix, so they finish together.
+  if args.num_shards > 1:
+    records = records[args.shard::args.num_shards]
   already = done_keys(args.out)
   todo = [
       r for r in records
@@ -64,6 +78,8 @@ def main() -> None:
     todo = todo[: args.limit]
 
   print(f"model      {spec.repo_id}", flush=True)
+  if args.num_shards > 1:
+    print(f"shard      {args.shard} of {args.num_shards}", flush=True)
   print(f"prompts    {len(records)} total, {len(already)} done, {len(todo)} to run",
         flush=True)
   if not todo:

@@ -57,6 +57,19 @@ if [[ -n "$LIMIT" ]]; then
   EXTRA=(--limit "$LIMIT")
 fi
 
+# Submitting as a job array shards one model across that many GPUs:
+#   sbatch --array=0-7 cluster/sweep.sbatch qwen3-8b-think
+#
+# Each shard writes its own file. score_sweep.py groups by the `model` field in
+# each row rather than by filename, so the shards need no reassembly -- point it
+# at runs/*.jsonl and they are pooled automatically.
+SHARD="${SLURM_ARRAY_TASK_ID:-0}"
+NSHARDS="${SLURM_ARRAY_TASK_COUNT:-1}"
+if [[ "$NSHARDS" -gt 1 ]]; then
+  OUT="${OUT%.jsonl}.shard${SHARD}of${NSHARDS}.jsonl"
+  EXTRA+=(--shard "$SHARD" --num-shards "$NSHARDS")
+fi
+
 source /home/dcor/galbarak2/anaconda3/etc/profile.d/conda.sh
 conda activate /home/dcor/galbarak2/conda_envs/graphtalk
 
@@ -77,13 +90,18 @@ nvidia-smi
 # Nothing left to do? Exit before warming. A chain is submitted with more links
 # than the work usually needs, so the last ones find the file already complete --
 # and the warm-up costs ~20 min whether or not there is anything to generate.
-REMAINING="$(python - "$OUT" "$PROMPTS" <<'PY'
+REMAINING="$(python - "$OUT" "$PROMPTS" "$SHARD" "$NSHARDS" <<'PY'
 import json, os, sys
 
 out, prompts = sys.argv[1], sys.argv[2]
+shard, nshards = int(sys.argv[3]), int(sys.argv[4])
 with open(prompts) as handle:
-  todo = {(r["instance_id"], r["condition"], r["style"])
-          for r in map(json.loads, filter(str.strip, handle))}
+  records = [json.loads(line) for line in handle if line.strip()]
+# Same stride the run itself uses, or a shard would count the whole file as
+# outstanding and never take the early exit.
+if nshards > 1:
+  records = records[shard::nshards]
+todo = {(r["instance_id"], r["condition"], r["style"]) for r in records}
 if os.path.exists(out):
   with open(out) as handle:
     for line in handle:
