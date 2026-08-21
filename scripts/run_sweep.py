@@ -77,7 +77,7 @@ def main() -> None:
     for index, record in enumerate(todo, 1):
       response = hf_backend.generate(
           tokenizer, model, record["prompt"],
-          models.MAX_NEW_TOKENS[record["style"]],
+          models.budget(spec, record["style"]),
           spec.chat_kwargs,
       )
       handle.write(json.dumps({

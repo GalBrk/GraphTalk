@@ -28,13 +28,20 @@ class ModelSpec:
   pick a `--constraint` on the cluster rather than discovering an OOM an hour into
   the queue.
 
-  `chat_kwargs` are passed to the tokenizer's `apply_chat_template`. Qwen3 needs
-  `enable_thinking=False` there: its template otherwise opens a `<think>` block
-  and the model reasons before answering on *both* prompt styles, which spends
-  1529 tokens on a node_count question Gemma answers in 167 and, worse, makes
-  `zero_shot` and `zero_cot` the same condition for that family -- collapsing the
-  pairing the McNemar test is computed over. Gemma's template has no such switch
-  and takes an empty dict.
+  `chat_kwargs` are passed to the tokenizer's `apply_chat_template`. Both families
+  have a thinking mode and their defaults are opposite: Gemma 4 defaults to
+  thinking off, Qwen3 defaults to thinking on. Left alone that is an accidental
+  asymmetry -- Qwen would reason in a hidden `<think>` channel on *both* prompt
+  styles, spending 1179 tokens on a node_count question it answers in 105 without,
+  and collapsing `zero_shot` and `zero_cot` into one condition for that family
+  only, which is the pairing the McNemar test is computed over. The main specs
+  therefore pin both families to thinking off; the `-think` specs pin both to on,
+  as a separate arm rather than a confound inside the first.
+
+  `max_new_tokens` overrides the module-level budget for this model. Thinking
+  mode needs far more room than the same model without it, and a truncated
+  `<think>` block loses the answer entirely -- the conclusion comes after the
+  reasoning, so the cost of being wrong here is the whole row.
   """
 
   key: str
@@ -44,7 +51,14 @@ class ModelSpec:
   loader: str
   min_vram_gb: int
   chat_kwargs: dict = dataclasses.field(default_factory=dict)
+  max_new_tokens: dict | None = None
 
+
+# Budget for the thinking arm. Placeholder until measured -- see
+# scripts/measure_budget.py; the number below is replaced by the measured one
+# before the arm is launched, because a truncated <think> block loses the answer
+# rather than shortening it.
+THINK_MAX_NEW_TOKENS = {"zero_shot": 8192, "zero_cot": 8192}
 
 MODELS = {
     spec.key: spec
@@ -67,6 +81,29 @@ MODELS = {
         ModelSpec("qwen3-14b", "Qwen/Qwen3-14B", "qwen3", "14B",
                   "AutoModelForCausalLM", 48,
                   {"enable_thinking": False}),
+
+        # The thinking arm. Same checkpoints, same prompt file, same instances --
+        # the only difference is that the model is allowed its native reasoning
+        # channel, so this is comparable row-for-row against the specs above.
+        #
+        # Separate keys rather than a flag because the output path is derived from
+        # the key: `runs/<key>.jsonl`. Sharing a path would let the resume logic
+        # treat a thinking row as satisfying a non-thinking one and silently mix
+        # the two arms in a file nothing could unmix afterwards.
+        #
+        # THINK_MAX_NEW_TOKENS is measured, not guessed; see below.
+        ModelSpec("gemma4-e4b-think", "google/gemma-4-E4B-it", "gemma4", "E4B",
+                  "AutoModelForImageTextToText", 24,
+                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
+        ModelSpec("gemma4-12b-think", "google/gemma-4-12B-it", "gemma4", "12B",
+                  "AutoModelForImageTextToText", 48,
+                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
+        ModelSpec("qwen3-8b-think", "Qwen/Qwen3-8B", "qwen3", "8B",
+                  "AutoModelForCausalLM", 24,
+                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
+        ModelSpec("qwen3-14b-think", "Qwen/Qwen3-14B", "qwen3", "14B",
+                  "AutoModelForCausalLM", 48,
+                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
     )
 }
 
@@ -88,3 +125,14 @@ MODELS = {
 # that, but by truncation rather than by design, which is not a contrast worth
 # keeping.
 MAX_NEW_TOKENS = {"zero_shot": 2048, "zero_cot": 1024}
+
+
+def budget(spec: ModelSpec, style: str) -> int:
+  """New-token budget for one (model, style).
+
+  Falls back to the module-level table, so the non-thinking specs keep exactly
+  the numbers the first sweep was generated with -- changing that silently would
+  make new rows incomparable with the 10,080 already on disk.
+  """
+  table = spec.max_new_tokens or MAX_NEW_TOKENS
+  return table[style]
