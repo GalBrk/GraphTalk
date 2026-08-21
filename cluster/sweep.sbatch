@@ -78,8 +78,26 @@ if [[ "$NSHARDS" -gt 1 ]]; then
   EXTRA+=(--shard "$SHARD" --num-shards "$NSHARDS")
 fi
 
+# Which env, and therefore which half of the cluster is reachable.
+#
+# The default is the cu130 build the first sweep was generated with. It needs
+# driver 580+, which n-602, n-805 and t-806 have and n-802, n-803 and n-804 do
+# not -- so it can only ever use half the partition.
+#
+# graphtalk-cu126 is the same torch 2.13.0 built against CUDA 12.6, and CUDA
+# minor-version compatibility means it runs on both driver generations. Verified
+# on all three 535.183.01 nodes: cuda.is_available() true, L40S detected at
+# sm_89, bf16 matmul finite. Using it doubles the reachable pool to 48 GPUs.
+#
+#   sbatch --export=ALL,GRAPHTALK_ENV=graphtalk-cu126 cluster/sweep.sbatch <model>
+#
+# It cannot drive a B200: the cu126 build stops at sm_90 and Blackwell is sm_100.
+# Irrelevant on `killable`, which has no B200, but it rules the env out if this
+# ever moves to gpu-b200.
+GRAPHTALK_ENV="${GRAPHTALK_ENV:-graphtalk}"
 source /home/dcor/galbarak2/anaconda3/etc/profile.d/conda.sh
-conda activate /home/dcor/galbarak2/conda_envs/graphtalk
+conda activate "/home/dcor/galbarak2/conda_envs/${GRAPHTALK_ENV}"
+echo "env: $GRAPHTALK_ENV"
 
 # Models are pre-fetched on the login node; compute nodes may have no outbound
 # network, and a job that tries to download blocks until it times out.
