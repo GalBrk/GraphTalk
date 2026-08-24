@@ -51,6 +51,9 @@ def main() -> None:
   parser.add_argument("--out", required=True)
   parser.add_argument("--limit", type=int, default=None,
                       help="stop after this many generations, for smoke tests")
+  parser.add_argument("--max-new-tokens", type=int, default=None,
+                      help="override the spec's budget; for regenerating rows "
+                           "that were truncated at a smaller one")
   parser.add_argument("--shard", type=int, default=0,
                       help="which shard of the prompt file this job generates")
   parser.add_argument("--num-shards", type=int, default=1,
@@ -93,7 +96,7 @@ def main() -> None:
     for index, record in enumerate(todo, 1):
       response = hf_backend.generate(
           tokenizer, model, record["prompt"],
-          models.budget(spec, record["style"]),
+          args.max_new_tokens or models.budget(spec, record["style"]),
           spec.chat_kwargs,
       )
       handle.write(json.dumps({

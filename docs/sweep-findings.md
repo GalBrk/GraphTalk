@@ -160,3 +160,84 @@ the four, despite the name.
 2. Decide between pooled analysis and a larger `--count` on the basis of effect
    sizes, not on the per-cell p-values, which n=30 cannot deliver.
 3. If `--count` grows, land batching first.
+
+---
+
+# The thinking arm
+
+The same four checkpoints over the same 1,260 `zero_shot` prompts with the native
+reasoning channel enabled -- so these rows pair against the main sweep row for
+row, with the thinking channel as the only difference. Both families have such a
+channel and their defaults are opposite (Gemma off, Qwen on), which is why the
+main sweep pins both to off; this arm pins both to on. Qwen marks it with
+`<think>` blocks, Gemma with a `thought` section.
+
+## Some responses never terminate, and that is the headline
+
+| model | rows | non-terminating | accuracy (terminating) | accuracy (naive) |
+|---|---|---|---|---|
+| `gemma4-e4b-think` | 1260 | **0** (0.0%) | 90.2% | 90.2% |
+| `gemma4-12b-think` | 1260 | **282** (22.4%) | **99.1%** | 81.2% |
+| `qwen3-8b-think` | 1260 | 49 (3.9%) | 85.7% | 84.8% |
+| `qwen3-14b-think` | 1260 | 19 (1.5%) | 94.8% | 94.1% |
+
+Read the naive column only to see how badly it misleads. A response cut off
+mid-working still *parses*, because the answer extractor finds an integer in the
+abandoned arithmetic, so a non-terminating row scores as a confident wrong answer
+rather than as missing data. On `gemma4-12b` that drags a genuine 99.1% down to a
+reported 81.2%.
+
+**This is not a token budget that was set too low.** The rows were regenerated at
+32,768 tokens, four times the original cap, and **76% of them still hit it**, with
+the median landing exactly on the cap -- the distribution is censored wherever the
+cap is put. Non-terminating rows by task: `edge_count` 203, `connected_nodes` 78,
+`node_degree` 30, `cycle_check` 26, `edge_existence` 13.
+
+Reading one in full shows why. The model enumerates every node's adjacency list
+correctly, verifies all n(n-1)/2 pairs, and then begins re-verifying lists it has
+already checked: *"Wait, let me re-check Node 14's connections one more time…
+Wait, let me re-check Node 15's connections one more time…"*. The answer is
+effectively in hand by the midpoint; what follows is unbounded self-doubt. Each
+pass is fresh text, so a repetition penalty would not fire, and the model never
+emits the `**Answer:**` marker a stop sequence could match. Graph size raises the
+odds without explaining it -- non-terminating rows average 14.0 nodes against
+12.5 for terminating ones, but both span the full 5-19 range.
+
+## Non-termination responds to the primer
+
+Rate by condition, pooled over all four models (n=720 per condition):
+
+| `all` | `degree` | `components` | `rwse` | `none` | `clustering` | `filler` |
+|---|---|---|---|---|---|---|
+| **5.4%** | 6.0% | 6.2% | 6.4% | 7.4% | 7.8% | **9.4%** |
+
+Informative primers sit below the no-primer control; the length-matched
+uninformative `filler` sits above it. On `gemma4-12b`, where the rates are large
+enough to see clearly, `all` is 15.6% against `filler` at 30.0%.
+
+The endpoints separate: `filler` vs `all` is p=0.003 pooled and p=0.001 on
+`gemma4-12b` alone. The individual steps against `none` do not -- `filler` vs
+`none` is p=0.18, `none` vs `all` p=0.10 -- so the monotone ordering across all
+seven conditions is suggestive rather than established, and should be reported
+that way.
+
+This converges with the main sweep's `filler` result, where a length-matched
+uninformative primer scored *below* the no-primer control on accuracy. Two
+independent measures now agree that a primer adding material without adding
+information actively harms the model, and the mechanism is legible: given the
+degree sequence a model can shortcut the pairwise enumeration and commit; given
+padding of the same shape it has more to verify and nothing to verify it with.
+
+**It also gives `gemma4-12b` somewhere to move.** That model's accuracy is pinned
+at 97.5-99.1% with almost no headroom, which is what made its McNemar cells
+useless. Non-termination is an outcome variable that responds to the manipulation
+on precisely the model whose accuracy cannot.
+
+## Provenance
+
+The thinking arm was generated with `graphtalk-cu126` (torch 2.13.0+cu126) while
+the main sweep used the cu130 build; same torch version, same transformers,
+greedy decoding throughout. The regeneration evidence is kept in
+`runs/*.redo.shard*.jsonl` -- 67 rows re-run at 32,768 tokens, retained because
+they are the evidence that the cap was never the cause, not because they are
+usable answers.
