@@ -234,7 +234,7 @@ them and add links to the chain rather than assuming three is enough.
   defaults to `padding_side='left'`, but **`Qwen3-8B` defaults to `'right'`**, so
   a naive implementation would corrupt half the sweep. Wrong padding produces
   fluent garbage, not an error. Verify against the single-stream responses in
-  `/home/dcor/galbarak2/tmp/budget-*.jsonl`: decoding is greedy, so a correct
+  `analysis/budget-*.jsonl`: decoding is greedy, so a correct
   batched implementation reproduces them near-identically.
 - **Ask for a faster card.** The h100s are **not** reachable from `killable` —
   n-102 and t-100 live in `gpu-h100-killable`, so the `h100` term in the
