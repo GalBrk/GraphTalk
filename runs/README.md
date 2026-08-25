@@ -17,6 +17,8 @@ no permissions needed).
 | `../shortcuts.json` | 36 cells | primer-only solver score per (task, condition) |
 | `../prompts.jsonl` | 2520 | the exact prompts these responses answer |
 
+Full schema, field semantics and join keys: **[../docs/DATA.md](../docs/DATA.md)**.
+
 Every model saw the identical prompt file. Each row is one JSON object:
 
 ```json
