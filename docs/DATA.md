@@ -102,6 +102,64 @@ edge_existence   'No.'
 cycle_check      'Yes, there is a cycle.'
 ```
 
+## "Connected" means adjacent, not reachable
+
+`edge_existence` asks *"Is node A connected to node B?"* and `connected_nodes`
+asks *"List all the nodes connected to A"*. In both, the upstream ground truth is
+**direct adjacency**, not reachability. From `talk_like_a_graph/graph_tasks.py`:
+
+```python
+if ((source, target) in graph.edges()) or ((target, source) in graph.edges()):
+    answer = 'Yes.'
+else:
+    answer = 'No.'
+```
+
+No path check, no traversal. `connected_nodes` likewise returns the neighbour
+list, not the reachable set.
+
+The wording is genuinely ambiguous and the distinction is not academic here.
+Across the 30 `edge_existence` instances:
+
+| | count |
+|---|---|
+| gold `Yes` — an edge exists | 12 |
+| gold `No`, but a path exists | **14** |
+| gold `No`, genuinely unreachable | 4 |
+
+**47% of instances would flip under the reachability reading**, almost all at
+shortest-path distance 2, mostly in single-component graphs. A model reading
+"connected" as "reachable" would answer `Yes` on 26 of 30 and score 53.3%, below
+the 60% majority baseline.
+
+**The models do not read it that way.** Share answering `Yes` on the 14
+path-only pairs, where the reachability reading predicts ~100%:
+
+| model | edge (gold Y) | path-only (gold N) | unreachable (gold N) |
+|---|---|---|---|
+| gemma4-12b | 100% | 5% | 5% |
+| gemma4-12b-think | 100% | 6% | 4% |
+| gemma4-e4b | 92% | 20% | 2% |
+| gemma4-e4b-think | 95% | 16% | 7% |
+| qwen3-14b | 100% | 17% | 9% |
+| qwen3-14b-think | 100% | 23% | 7% |
+| qwen3-8b | 99% | 34% | 14% |
+| qwen3-8b-think | 89% | 24% | 4% |
+
+At 5-34% rather than ~100%, all eight resolve the ambiguity the same way the gold
+does. So the benchmark's ambiguity is real but is **not** what drives the error
+rate on this task, and no correction to the data is warranted.
+
+Worth noting the gradient: the path-only `Yes` rate runs inversely to model
+quality, from 5% on gemma4-12b to 34% on qwen3-8b. The weaker models drift toward
+the reachability reading. That is a more specific account of `edge_existence`
+error than "the model cannot check adjacency", and it is a plausible contributor
+to this being one of the two tasks the shortcut table leaves real headroom on.
+
+Caveat on precision: this rests on 30 instances, 14 of them ambiguous. The
+per-model rates are over 14 x 7 conditions = 98 rows each and are stable enough,
+but the instance count is small and a different query draw would move them.
+
 ## Caveats that travel with specific rows
 
 These are properties of the data, not of the analysis, so they belong here:
