@@ -90,15 +90,14 @@ def check_round_trip(graph, condition, k_min=2, k_max=3, target_chars=None):
   else:
     assert parsed.rwse == {}
 
-  others = graph.number_of_nodes() - 1
   if "filler" in parts:
-    assert parsed.filler == {node: others for node in nodes}
+    assert parsed.filler == set(nodes)
   elif padded:
     # Padding repeats the length-control sentence, so filler may appear for a
     # prefix of the nodes even when it is not one of the condition's parts.
-    assert all(value == others for value in parsed.filler.values())
+    assert parsed.filler <= set(nodes)
   else:
-    assert parsed.filler == {}
+    assert parsed.filler == set()
 
   if any(part in primers.NODE_PARTS for part in parts):
     assert parsed.nodes == tuple(nodes)
@@ -231,7 +230,7 @@ def test_isolated_node_rwse_is_all_zero():
         "Node 0 has return probability 0.50 after 2 steps and.",
         "Node 0 has degree 4. And node 1 has degree 2.",
         "This graph has three connected components.",
-        "Node 0 has 4 other vertices in this graph.",
+        "Node 0 is in H.",
     ],
 )
 def test_rejects_malformed_text(text):
@@ -244,8 +243,6 @@ def test_rejects_malformed_text(text):
     [
         "This graph has 1 connected components.",
         "This graph has 2 connected component.",
-        "Node 0 has 1 other nodes in this graph.",
-        "Node 0 has 3 other node in this graph.",
         "Node 0 has return probability 0.00 after 1 steps.",
     ],
 )
@@ -255,10 +252,9 @@ def test_rejects_wrong_plural(text):
 
 
 def test_accepts_correct_singulars():
+  # filler has no singular/plural form to test here: its phrase carries no count.
   parsed = shortcuts.parse_primer("This graph has 1 connected component.")
   assert parsed.components == 1
-  parsed = shortcuts.parse_primer("Node 0 has 1 other node in this graph.")
-  assert parsed.filler == {0: 1}
   parsed = shortcuts.parse_primer("Node 0 has return probability 0.00 after 1 step.")
   assert parsed.rwse == {0: {1: 0.0}}
 
@@ -275,10 +271,10 @@ def test_rejects_conflicting_repeat():
 def test_accepts_consistent_repeat():
   """Padding legitimately repeats a node's filler sentence."""
   parsed = shortcuts.parse_primer(
-      "Node 0 has 3 other nodes in this graph."
-      " Node 0 has 3 other nodes in this graph."
+      "Node 0 is simply present within the graph G."
+      " Node 0 is simply present within the graph G."
   )
-  assert parsed.filler == {0: 3}
+  assert parsed.filler == {0}
   assert parsed.nodes == (0,)
 
 
@@ -303,9 +299,9 @@ def test_rejects_bad_step_join():
         "Node 0 has degree 4, clustering coefficient 0.50 and return probability"
         " 0.10 after 2 steps and 0.20 after 3 steps.",
         # Oxford comma present at two phrases.
-        "Node 0 has degree 4, and 3 other nodes in this graph.",
+        "Node 0 has degree 4, and clustering coefficient 0.50.",
         # Comma instead of a bare "and" at two phrases.
-        "Node 0 has degree 4, 3 other nodes in this graph.",
+        "Node 0 has degree 4, clustering coefficient 0.50.",
         # Same three cases inside the RWSE step list.
         "Node 0 has return probability 0.10 after 1 step, 0.20 after 2 steps and"
         " 0.30 after 3 steps.",

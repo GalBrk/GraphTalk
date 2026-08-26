@@ -53,7 +53,10 @@ from graphtalk import primers
 _SENTENCE_SPLIT = re.compile(r"(?<=\.)\s+")
 
 _COMPONENTS_RE = re.compile(r"This graph has (\d+) connected components?\.$")
-_NODE_RE = re.compile(r"Node (\d+) has (.+)\.$")
+# "is" only ever introduces the filler phrase (`primers._filler_phrase`),
+# which -- unlike degree/clustering/rwse -- does not share the other
+# node-level parts' "has" frame; see that function for why.
+_NODE_RE = re.compile(r"Node (\d+) (?:has|is) (.+)\.$")
 
 # Each node-level phrase has a distinctive opening, and appears at most once in a
 # sentence. Locating those openings partitions the sentence body without having
@@ -64,14 +67,16 @@ _PHRASE_STARTS = (
     ("degree", re.compile(r"degree \d")),
     ("clustering", re.compile(r"clustering coefficient \d")),
     ("rwse", re.compile(r"return probability \d")),
-    ("filler", re.compile(r"\d+ other nodes? in this graph")),
+    ("filler", re.compile(r"simply present")),
 )
 
 _DEGREE_RE = re.compile(r"degree (\d+)$")
 _CLUSTERING_RE = re.compile(r"clustering coefficient (\d+\.\d{2})$")
 _RWSE_RE = re.compile(r"return probability (.+)$")
 _RWSE_STEP_RE = re.compile(r"(\d+\.\d{2}) after (\d+) steps?$")
-_FILLER_RE = re.compile(r"(\d+) other nodes? in this graph$")
+# No capture group: unlike the other node-level phrases, filler carries no
+# value to recover -- it is a presence marker only (see ParsedPrimer.filler).
+_FILLER_RE = re.compile(r"simply present within the graph G$")
 
 # Longest first: ", and " also ends with " and ", so testing the short one first
 # would strip five characters and leave a stray comma behind.
@@ -88,13 +93,17 @@ class ParsedPrimer:
 
   `nodes` lists the nodes that received a sentence, which for a node-level primer
   is every node of the graph -- including isolated ones the encoding body omits.
+
+  `filler` is a presence set, not a value dict like the others: the filler
+  phrase (`primers._filler_phrase`) states no fact about the node, so there is
+  nothing to recover beyond which nodes had one.
   """
 
   components: int | None
   degree: dict[int, int]
   clustering: dict[int, float]
   rwse: dict[int, dict[int, float]]
-  filler: dict[int, int]
+  filler: set[int]
   nodes: tuple[int, ...]
 
   def is_empty(self) -> bool:
@@ -249,7 +258,7 @@ def parse_primer(text: str) -> ParsedPrimer:
   degree: dict[int, int] = {}
   clustering: dict[int, float] = {}
   rwse: dict[int, dict[int, float]] = {}
-  filler: dict[int, int] = {}
+  filler: set[int] = set()
   nodes: list[int] = []
 
   stripped = text.strip()
@@ -291,12 +300,11 @@ def parse_primer(text: str) -> ParsedPrimer:
       elif name == "rwse":
         _merge(rwse, node, _parse_rwse(phrase), "rwse")
       else:
-        match = _FILLER_RE.fullmatch(phrase)
-        if not match:
+        if not _FILLER_RE.fullmatch(phrase):
           raise ValueError(f"malformed filler phrase: {phrase!r}")
-        others = int(match.group(1))
-        _check_plural(others, "other node", phrase)
-        _merge(filler, node, others, "filler")
+        # No `_merge`: a repeat (from `primers._pad`) is always consistent,
+        # since presence cannot disagree with itself the way a value can.
+        filler.add(node)
 
   return ParsedPrimer(
       components, degree, clustering, rwse, filler, tuple(sorted(nodes))

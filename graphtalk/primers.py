@@ -2,10 +2,14 @@
 
 A primer is the project's independent variable: a short preamble of factual
 sentences about each node's local structure, prepended before the graph encoding
-and the question. Every condition comes out of `render_primer`, so the seven arms
-differ in content and never in format -- which is what makes a difference between
-them interpretable at all, given that Fatemi et al.'s central result is that
-phrasing alone moves accuracy by tens of points.
+and the question. Every condition comes out of `render_primer`, so the arms
+differ in content and, with one deliberate exception, never in format -- which
+is what makes a difference between them interpretable at all, given that
+Fatemi et al.'s central result is that phrasing alone moves accuracy by tens of
+points. The exception is `filler`: it does not share the other node-level
+conditions' "Node X has ..." frame, because forcing its content through that
+frame is exactly what made an earlier wording read as a connectivity claim --
+see `_filler_phrase`.
 
 Every function here is a pure function of the graph. Two things are load-bearing
 for that: graphs arrive canonicalised (see `graphqa.canonical`), and every
@@ -154,14 +158,27 @@ def _rwse_phrase(returns: dict[int, float]) -> str:
   return "return probability %s" % _join(steps)
 
 
-def _filler_phrase(graph: nx.Graph) -> str:
+def _filler_phrase() -> str:
   """The length control: true, and structurally vacuous.
 
-  The encoding's own first line already ends `and <n-1>.`, so this introduces no
-  numeral the `none` arm lacks, and it contradicts nothing in the encoding.
+  Deliberately not "has ... [a count of] other nodes" -- the old wording's
+  numeral (n-1) happened to equal the degree every node has in a complete
+  graph, and sat right after the same "has" verb the `degree` condition uses,
+  which is what let it be misread as a clique's degree sequence. Plain graph
+  membership carries no numeral and no relational count, so there is nothing
+  for a "has N neighbours" misreading to latch onto. "G" matches the name the
+  encoding gives the graph immediately after the primer (see
+  `talk_like_a_graph/graph_text_encoders.py`: "G describes a graph among
+  nodes ...").
+
+  The wording is longer than the minimal "is in G" -- measured at 559 mean
+  characters on the same 500-graph corpus `docs/plans/primer-computation.md`
+  §4 uses, against 265 for `degree` and 497 for `clustering` -- because the
+  control has to stay at or above those unpadded for the length argument in
+  that section to hold, and `scripts/build_prompts.py` does not pass
+  `target_chars` in production.
   """
-  others = graph.number_of_nodes() - 1
-  return "%d other node%s in this graph" % (others, "" if others == 1 else "s")
+  return "is simply present within the graph G"
 
 
 def _components_sentence(graph: nx.Graph) -> str:
@@ -189,9 +206,10 @@ def _pad(text: str, graph: nx.Graph, target_chars: int) -> str:
     return text
   pieces = [text] if text else []
   index = 0
+  filler = _filler_phrase()
   while len(" ".join(pieces)) < target_chars:
     node = nodes[index % len(nodes)]
-    pieces.append("Node %d has %s." % (node, _filler_phrase(graph)))
+    pieces.append("Node %d %s." % (node, filler))
     index += 1
   return " ".join(pieces)
 
@@ -231,18 +249,27 @@ def render_primer(
     rwse_by_node = (
         rwse(graph, k_min=k_min, k_max=k_max) if "rwse" in node_parts else {}
     )
-    for node in sorted(graph.nodes()):
-      phrases = []
-      for part in node_parts:
-        if part == "degree":
-          phrases.append(_degree_phrase(degree_by_node[node]))
-        elif part == "clustering":
-          phrases.append(_clustering_phrase(clustering_by_node[node]))
-        elif part == "rwse":
-          phrases.append(_rwse_phrase(rwse_by_node[node]))
-        else:
-          phrases.append(_filler_phrase(graph))
-      sentences.append("Node %d has %s." % (node, _join(phrases)))
+    if node_parts == ["filler"]:
+      # Filler never combines with another node-level part (see CONDITIONS)
+      # and, unlike the others, carries no relational content at all -- so it
+      # does not fit the shared "Node X has ..." frame the way a phrase built
+      # for _join does. Forcing it through that frame with an invented verb
+      # is what made the old wording ("has N other nodes") read as a
+      # connectivity claim; rendering it as its own sentence avoids that.
+      filler = _filler_phrase()
+      for node in sorted(graph.nodes()):
+        sentences.append("Node %d %s." % (node, filler))
+    else:
+      for node in sorted(graph.nodes()):
+        phrases = []
+        for part in node_parts:
+          if part == "degree":
+            phrases.append(_degree_phrase(degree_by_node[node]))
+          elif part == "clustering":
+            phrases.append(_clustering_phrase(clustering_by_node[node]))
+          elif part == "rwse":
+            phrases.append(_rwse_phrase(rwse_by_node[node]))
+        sentences.append("Node %d has %s." % (node, _join(phrases)))
 
   text = " ".join(sentences)
   if target_chars is not None:
