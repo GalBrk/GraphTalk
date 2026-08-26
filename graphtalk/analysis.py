@@ -1,0 +1,188 @@
+"""A queryable table over the whole tracked sweep, and the failure taxonomy
+used to sample cases for manual review.
+
+`scripts/score_sweep.py` scores and prints; nothing before this module
+persisted a table, so there was nothing to slice by condition, join against
+`analysis/truncated_keys.json`, or sample from. This module is the reusable
+layer that does that -- it stays a `graphtalk/` module rather than living
+directly in a script because the non-termination heuristic below is exactly
+the kind of quiet source of measurement error `graphtalk/scoring.py`'s own
+docstring warns about, so it gets the same test-pinned treatment as any other
+rule in this package: see `tests/test_analysis.py`, which pins it against
+`analysis/truncated_keys.json`'s known 350 rows.
+
+Deliberately does not import from `scripts/`: `graphtalk/` is the reusable
+layer scripts are built on, not the other way around. Callers (the
+`scripts/build_sweep_frame.py` CLI) are expected to load and score records
+with `scripts.score_sweep.load`/`score_records` first and pass the already-
+scored records in here.
+"""
+
+import json
+
+import pandas as pd
+
+from graphtalk import scoring
+
+# Files that carry a `model` field but are not part of the tracked sweep, per
+# docs/DATA.md: a smoke test (its 20 rows would pool into gemma4-e4b's
+# results) and the 4x-cap regeneration evidence (not meant to be merged in).
+_EXCLUDE_SUBSTRINGS = ("smoke-", ".redo.shard")
+
+# Precedence when a row could be described more than one way: a non-
+# terminating row is the more actionable label even when it also happens to
+# `parse` (the extractor finds *a* wrong answer in the abandoned working).
+FAILURE_TYPES = ("non_terminating", "unparsed", "wrong", "correct")
+
+# Tukey's extreme-outlier rule (Q3 + 3*IQR), applied per (model, task,
+# condition, style) cell rather than as a fixed length cutoff -- there is no
+# reliable chars-per-token constant to guess (this project deliberately keeps
+# graphtalk/ free of the tokenizer that would give an exact one; see
+# graphtalk/models.py), and typical response length varies enormously by task
+# and by thinking-vs-not, so a per-cell statistical threshold is the honest
+# alternative to a guessed constant.
+_OUTLIER_IQR_MULTIPLIER = 3.0
+
+
+def is_excluded(path: str) -> bool:
+  """Whether `path` is one of the files `docs/DATA.md` says to exclude."""
+  return any(s in path for s in _EXCLUDE_SUBSTRINGS)
+
+
+def load_truncated_keys(path: str) -> set[tuple[str, str, str, str]]:
+  """Ground truth for the 350 known non-terminating thinking-arm rows.
+
+  `analysis/truncated_keys.json` is `{model: [[instance_id, condition, style],
+  ...]}`; flattened here to `(model, instance_id, condition, style)` tuples
+  for O(1) row lookup in `build_frame`.
+  """
+  with open(path) as handle:
+    raw = json.load(handle)
+  return {
+      (model, instance_id, condition, style)
+      for model, keys in raw.items()
+      for instance_id, condition, style in keys
+  }
+
+
+def load_shortcuts(path: str) -> dict[tuple[str, str], float]:
+  """`shortcuts.json` as a `(task, condition) -> score` dict.
+
+  Same parsing `scripts/score_sweep.py`'s `main` does inline; pulled out here
+  so both `scripts/build_sweep_frame.py` and tests can reuse it.
+  """
+  with open(path) as handle:
+    raw = json.load(handle)
+  by_cell = {}
+  for key, value in raw.items():
+    task, condition = key.split("/")
+    by_cell[(task, condition)] = value
+  return by_cell
+
+
+def _failure_type(non_terminating: bool, score: dict) -> str:
+  if non_terminating:
+    return "non_terminating"
+  if not score["parsed"]:
+    return "unparsed"
+  if score["exact"] < 1.0:
+    return "wrong"
+  return "correct"
+
+
+def build_frame(
+    scored_records: list[dict],
+    truncated_keys: set[tuple[str, str, str, str]],
+    shortcuts_by_cell: dict[tuple[str, str], float],
+) -> pd.DataFrame:
+  """The canonical table: one row per scored response.
+
+  `scored_records` is the output of `scripts.score_sweep.score_records` --
+  each record already carries `predicted` and `score` (from
+  `graphtalk.scoring.extract_answer`/`score_one`) alongside the raw
+  `instance_id`/`task`/`condition`/`style`/`gold`/`model`/`response` fields.
+
+  `response` itself is deliberately not a column here: full response text
+  runs to ~11K characters on the longest rows, and keeping it out of the
+  canonical frame keeps every groupby/export cheap. It is re-joined only in
+  `sample_failures`'s companion CLI (`scripts/sample_failures.py`), where full
+  text is the actual point.
+  """
+  rows = []
+  for record in scored_records:
+    model = record["model"]
+    is_think = model.endswith("-think")
+    model_family = model[: -len("-think")] if is_think else model
+    score = record["score"]
+    key = (model, record["instance_id"], record["condition"], record["style"])
+    non_terminating = key in truncated_keys
+    rows.append({
+        "instance_id": record["instance_id"],
+        "task": record["task"],
+        "condition": record["condition"],
+        "style": record["style"],
+        "gold": record["gold"],
+        "model": model,
+        "model_family": model_family,
+        "is_think": is_think,
+        "predicted": record["predicted"],
+        "parsed": score["parsed"],
+        "exact": score["exact"],
+        "primary": score["primary"],
+        "absolute_error": score["absolute_error"],
+        "non_terminating": non_terminating,
+        "has_marker": scoring.has_answer_marker(record["response"]),
+        "shortcut_score": shortcuts_by_cell.get(
+            (record["task"], record["condition"])
+        ),
+        "response_len_chars": len(record["response"]),
+        "failure_type": _failure_type(non_terminating, score),
+    })
+  frame = pd.DataFrame(rows)
+  if not frame.empty:
+    frame["length_outlier"] = _flag_length_outliers(frame)
+  return frame
+
+
+def _flag_length_outliers(frame: pd.DataFrame) -> pd.Series:
+  """Per-(model, task, condition, style) extreme-length flag.
+
+  Unvalidated against any ground truth (unlike `non_terminating`, which comes
+  straight from `analysis/truncated_keys.json`) -- this only extends coverage
+  to rows the ground-truth file doesn't label: non-`-think` models, or any
+  thinking-arm data generated after that file's snapshot. Callers should treat
+  it as "worth a human look," not as a second source of truth.
+  """
+  def threshold(lengths: pd.Series) -> pd.Series:
+    q1, q3 = lengths.quantile(0.25), lengths.quantile(0.75)
+    iqr = q3 - q1
+    return lengths > (q3 + _OUTLIER_IQR_MULTIPLIER * iqr)
+
+  return frame.groupby(
+      ["model", "task", "condition", "style"]
+  )["response_len_chars"].transform(threshold)
+
+
+def sample_failures(
+    frame: pd.DataFrame, n_per_stratum: int = 3, seed: int = 1234
+) -> pd.DataFrame:
+  """A stratified sample of non-`correct` rows, for manual inspection.
+
+  Stratifies on `(model, failure_type)` so every model/failure combination
+  present gets a look, rather than a plain random sample being dominated by
+  whichever failure mode is most common. Fixed `seed` for reproducibility,
+  matching this repo's convention of pinned seeds elsewhere (e.g.
+  `random_seed=1234` in `scripts/measure_real_rows.py`).
+  """
+  failures = frame[frame["failure_type"] != "correct"]
+  if failures.empty:
+    return failures
+  # Direct iteration rather than `.groupby(...).apply(...)`: pandas 3.0 made
+  # `apply` drop the grouping columns from each sub-frame by default
+  # (`include_groups=False`), which would silently strip `model` and
+  # `failure_type` from the output. Iterating the groups keeps every column.
+  sampled = [
+      group.sample(min(len(group), n_per_stratum), random_state=seed)
+      for _, group in failures.groupby(["model", "failure_type"], sort=False)
+  ]
+  return pd.concat(sampled, ignore_index=True)

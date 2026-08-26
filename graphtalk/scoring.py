@@ -59,6 +59,18 @@ def _marker_tail(text: str) -> str | None:
   return found[-1].group(1).strip() if found else None
 
 
+def has_answer_marker(text: str) -> bool:
+  """Whether `text` contains an explicit "answer is/answer:" marker.
+
+  A diagnostic signal only. Most responses in this sweep state their answer as
+  a bare `A: <value>` line rather than through this marker, so its absence
+  does not by itself imply a truncated or non-terminating response -- see
+  `graphtalk/analysis.py` for the length-outlier heuristic actually used to
+  flag suspected non-termination beyond the labelled ground truth.
+  """
+  return _marker_tail(text) is not None
+
+
 def _extract_integer(text: str) -> str | None:
   """The answered integer.
 

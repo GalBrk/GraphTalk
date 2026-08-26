@@ -27,6 +27,11 @@ dev = [
     "absl-py>=2.5",
     "pytest>=8",
 ]
+# Only graphtalk/analysis.py and its scripts (build_sweep_frame.py,
+# sample_failures.py) need this -- scoring itself stays pandas-free.
+analysis = [
+    "pandas>=2.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["talk_like_a_graph", "tests"]
