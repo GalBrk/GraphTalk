@@ -9,7 +9,7 @@ the models and the environments as well, without re-downloading 111 GB.
 git clone git@github.com:ArnavShahor/GraphTalk.git
 ```
 
-Everything needed to score and analyse is tracked: `runs/*.jsonl` (the raw model
+**[DATA.md](DATA.md) documents every file's schema and how they join.** Everything needed to score and analyse is tracked: `runs/*.jsonl` (the raw model
 responses), `prompts.jsonl` (the exact prompts they answer), and `shortcuts.json`
 (the primer-only solver score each cell is read against). See `runs/README.md` for
 the row schema and `docs/sweep-findings.md` for what the numbers do and do not
