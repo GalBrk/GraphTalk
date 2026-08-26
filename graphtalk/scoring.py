@@ -82,15 +82,23 @@ def _extract_boolean(text: str) -> str | None:
   Scans for the last standalone yes/no token, for the same reason as the integer
   rule: CoT states its conclusion at the end. `No nodes` is excluded first so a
   `connected_nodes`-style phrase can never be read as a boolean No.
+
+  Prefers the marker tail but falls back to the full text when the tail holds
+  neither token, mirroring `_extract_integer` -- a marker can fire on real
+  answer-introducing text ("Answer: ") whose immediate continuation still isn't
+  the stated conclusion, and the real Yes/No a few sentences later must not be
+  missed just because a tail was found at all.
   """
   tail = _marker_tail(text)
-  scope = tail if tail else text
-  scope = _NO_NODES.sub(" ", scope)
-  last_yes = max((m.start() for m in _YES.finditer(scope)), default=-1)
-  last_no = max((m.start() for m in _NO.finditer(scope)), default=-1)
-  if last_yes < 0 and last_no < 0:
-    return None
-  return "Yes" if last_yes > last_no else "No"
+  for scope in (tail, text):
+    if not scope:
+      continue
+    scope = _NO_NODES.sub(" ", scope)
+    last_yes = max((m.start() for m in _YES.finditer(scope)), default=-1)
+    last_no = max((m.start() for m in _NO.finditer(scope)), default=-1)
+    if last_yes >= 0 or last_no >= 0:
+      return "Yes" if last_yes > last_no else "No"
+  return None
 
 
 def _best_list(line: str) -> str | None:
