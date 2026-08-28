@@ -66,6 +66,13 @@ def build(count: int, conditions, styles, split: str, cache: str,
             f"{task} row {index}: parsed graph disagrees with the shipped "
             f"answer ({recomputed!r} vs {gold!r})"
         )
+      # Reworded after the check above, not before: `expected_answer` reads
+      # query node ids straight out of this string, and keeping the check on
+      # the dataset's pristine wording means it never has to assume anything
+      # about the reworded text's digit layout.
+      task_description = row["task_description"]
+      if task == "edge_existence":
+        task_description = graphqa.reword_edge_existence(task_description)
       for condition in conditions:
         for style in styles:
           records.append({
@@ -74,7 +81,7 @@ def build(count: int, conditions, styles, split: str, cache: str,
               "condition": condition,
               "style": style,
               "prompt": prompts.build_prompt(
-                  graph, condition, row["task_description"],
+                  graph, condition, task_description,
                   style=style, k_min=k_min, k_max=k_max,
               ),
               "gold": gold,
