@@ -461,15 +461,29 @@ def test_one_sentence_per_node_in_sorted_order(condition):
   graph = TIE_GRAPH
   sentences = _sentences(primers.build_primer(graph, condition))
   assert len(sentences) == graph.number_of_nodes()
+  # filler is the deliberate exception to the shared "has" verb -- see
+  # _filler_phrase for why.
+  verb = "is" if condition == "filler" else "has"
   for node, sentence in zip(sorted(graph.nodes()), sentences):
-    assert sentence.startswith(f"Node {node} has ")
+    assert sentence.startswith(f"Node {node} {verb} ")
 
 
-@pytest.mark.parametrize("condition", NODE_LEVEL_CONDITIONS)
+@pytest.mark.parametrize(
+    "condition", [c for c in NODE_LEVEL_CONDITIONS if c != "filler"]
+)
 def test_node_level_conditions_share_one_sentence_shape(condition):
   # One sentence, `Node N has ...`, whose only interior periods are decimals.
+  # filler is deliberately exempt -- see test_filler_sentence_shape below.
   shape = re.compile(r"^Node \d+ has (?:[^.]|\.\d)+\.$")
   for sentence in _sentences(primers.build_primer(TIE_GRAPH, condition)):
+    assert shape.match(sentence), sentence
+
+
+def test_filler_sentence_shape_is_the_deliberate_exception():
+  # Deliberately exempt from the shared "has" shape above -- see
+  # _filler_phrase for why.
+  shape = re.compile(r"^Node \d+ is simply present within the graph G\.$")
+  for sentence in _sentences(primers.build_primer(TIE_GRAPH, "filler")):
     assert shape.match(sentence), sentence
 
 
@@ -514,13 +528,10 @@ def test_every_float_is_two_decimals(condition):
 
 
 def test_singular_forms():
+  # filler has no singular/plural form to test: "is in G" carries no count.
   pair = _graph([(0, 1)])
   assert primers.build_primer(pair, "components") == (
       "This graph has 1 connected component."
-  )
-  assert primers.build_primer(pair, "filler") == (
-      "Node 0 has 1 other node in this graph."
-      " Node 1 has 1 other node in this graph."
   )
   assert primers.build_primer(TWO_TRIANGLES, "components") == (
       "This graph has 2 connected components."
@@ -550,22 +561,22 @@ def test_filler_states_nothing_structural():
   assert primers.build_primer(three_edges, "filler") == primers.build_primer(
       one_edge, "filler"
   )
-  # The only numeral it introduces is n-1, which the encoding's first line
-  # already ends with.
+  # The only numerals it introduces are the node ids themselves -- no numeral
+  # states a relationship, unlike the old "N other nodes" wording.
   numerals = {int(tok) for tok in re.findall(r"\d+", text)}
-  assert numerals <= set(TIE_GRAPH.nodes()) | {TIE_GRAPH.number_of_nodes() - 1}
+  assert numerals <= set(TIE_GRAPH.nodes())
 
 
 def test_filler_mentions_isolated_nodes_without_describing_them():
   # The salience control: `filler` names node 5 without saying it is isolated.
   text = primers.build_primer(WITH_ISOLATED, "filler")
-  assert "Node 5 has 3 other nodes in this graph." in text
+  assert "Node 5 is simply present within the graph G." in text
 
 
 def test_target_chars_pads_with_inert_filler():
   padded = primers.build_primer(TIE_GRAPH, "filler", target_chars=1500)
   assert len(padded) >= 1500
-  shape = re.compile(r"^Node \d+ has \d+ other nodes? in this graph\.$")
+  shape = re.compile(r"^Node \d+ is simply present within the graph G\.$")
   for sentence in _sentences(padded):
     assert shape.match(sentence), sentence
 

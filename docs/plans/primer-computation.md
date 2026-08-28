@@ -401,7 +401,9 @@ chases it during the hand-check.
 | `degree` | `degree 4` |
 | `clustering` | `clustering coefficient 0.70` |
 | `rwse` | `return probability 0.27 after 2 steps and 0.15 after 3 steps` |
-| `filler` | `7 other nodes in this graph` (the length control) |
+
+`filler`, the length control, is a deliberate exception to this table: it does not
+join as an object phrase under a shared verb. See §4.
 
 **Graph-level** parts contribute a whole sentence:
 
@@ -416,7 +418,7 @@ phrases into one sentence per node under a shared verb, joining everything with 
 Node 0 has degree 4.
 Node 0 has return probability 0.27 after 2 steps and 0.15 after 3 steps.
 Node 0 has degree 12, clustering coefficient 0.70, and return probability 0.08 after 2 steps and 0.05 after 3 steps.
-Node 0 has 7 other nodes in this graph.
+Node 0 is simply present within the graph G.
 This graph has 3 connected components.
 ```
 
@@ -426,9 +428,10 @@ correctly, as the third example shows, and avoids breaking the one-sentence-per-
 property. Dropping to two k values also removed the comma-collision problem an earlier
 draft worried about: there are no longer any commas inside the RWSE phrase.
 
-Use the singular when a count is 1 (`1 connected component`, `1 other node`); a
-grammatical slip in a condition that appears in every prompt of its arm is exactly the
-kind of thing that could show up as a spurious effect.
+Use the singular when a count is 1 (`1 connected component`); a grammatical slip in a
+condition that appears in every prompt of its arm is exactly the kind of thing that
+could show up as a spurious effect. `filler` carries no count, so this does not apply
+to it -- see §4.
 
 ```python
 render_primer(graph, parts=(), k_min=2, k_max=3) -> str
@@ -451,18 +454,44 @@ and is documented rather than fixed.
 
 ### 4. Length control
 
-The `filler` part states a true fact that no task depends on:
+**Revised.** The original wording below is preserved for provenance -- it is what the
+tracked sweep in `runs/*.jsonl` was actually generated with -- but it was replaced after
+real sweep responses showed models sometimes misreading it as a connectivity claim (a
+filler-primed graph read as a clique, since `n-1` is exactly the degree every node has in
+a complete graph, and the phrase sat right after the same `has` verb `degree` uses). See
+`docs/sweep-findings.md` for the measured effect. The current wording is:
+
+```
+Node 0 is simply present within the graph G.
+```
+
+which introduces no numeral at all, and does not share the other node-level parts'
+`Node N has ...` frame -- seeing the same problem happen twice was the reason to stop
+trying to phrase a relational-shaped sentence safely and instead make it not relational-
+shaped at all. A first attempt at the minimal fix, `"Node 0 is in G."`, was too short to
+hold the length property below (measured 200 characters unpadded, well under `degree`'s
+265) and was lengthened to the current wording for that reason -- both are true and
+structurally vacuous; the second is longer on purpose. Measured on the identical
+`generate_graphs(500, "er", False, random_seed=1234)` corpus the table below uses,
+`filler` now averages **559** characters against `degree` (265, unchanged) and
+`clustering` (497, unchanged) -- comfortably above both, restoring the property the
+original wording had. `target_chars` padding, used by neither wording in production,
+remains unnecessary for this property as a result.
+
+Original design, as generated:
 
 ```
 Node 0 has 7 other nodes in this graph.
 ```
 
-The phrasing fits the shared `Node N has ...` template, so the control comes out of the
-same renderer as everything else. It contradicts nothing in the encoding and gives away
-nothing structural — the encoding's first line already ends `and <n-1>.`, so the numeral
-is not new.
+The phrasing fit the shared `Node N has ...` template, so the control came out of the same
+renderer as everything else. It contradicted nothing in the encoding and gave away nothing
+structural — the encoding's first line already ends `and <n-1>.`, so the numeral was not
+new. (This same fact -- restated without qualification, outside the "no *new* numeral"
+framing -- is exactly what let it be misread as a degree statement; see the revision note
+above.)
 
-Measured lengths, final design, on the 500 published `zero_shot_test` graphs. These were
+Measured lengths, original design, on the 500 published `zero_shot_test` graphs. These were
 first taken on the generator and are unchanged to the character, because that corpus and
 this one are the same graphs:
 
@@ -476,17 +505,17 @@ this one are the same graphs:
 | `rwse` | 905 |
 | `all` | 1441 |
 
-The control at 507 chars already exceeds `degree` (265) and matches `clustering` (497),
+The control at 507 chars already exceeded `degree` (265) and matched `clustering` (497),
 which is the safe direction: if 507 characters of inert text move accuracy by *d*, then
 265 characters cannot have moved it by more than *d*. `rwse` and `all` are longer than
 the control, which is what the optional `target_chars` padding exists for. Always report
 achieved character counts so the mismatch is visible in analysis rather than assumed away.
 
-The control also does a second job nobody designed it for. It emits a sentence for every
+The control also did a second job nobody designed it for. It emits a sentence for every
 node, including isolated ones, without stating any structural fact about them. So
 `filler` versus `degree` on isolated-target rows separates "the model was told node 3 is
 isolated" from "node 3 was mentioned at all" — a salience control for the confound in the
-taxonomy section.
+taxonomy section. This property is unaffected by the revision above.
 
 ### 5. The components condition
 
@@ -654,7 +683,8 @@ The rest:
   isolated node counts that node as its own component.
 - **Circuit-rank identity** — across trees, forests, cycles, disjoint unions and graphs
   with isolated nodes, `m − n + c > 0` agrees with `nx.find_cycle`. Load-bearing for §5.
-- **Singular/plural** — `1 connected component`, `1 other node`.
+- **Singular/plural** — `1 connected component`. `filler` no longer has a count to
+  pluralize (§4, revised).
 - **Length control is inert** — its text contains no degree, clustering or RWSE value,
   and is identical for any two graphs with the same node count.
 - **Rendering** — two-decimal formatting via `_fmt` only, one sentence per node, sorted
