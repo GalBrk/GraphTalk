@@ -135,7 +135,7 @@ class EdgeExistence(GraphTask):
     for ind, graph in enumerate(graphs):
       source, target = random.sample(list(graph.nodes()), k=2)
       question = graph_text_encoders.encode_graph(graph, encoding_method)
-      task_description = 'Q: Is node %s connected to node %s?\nA: ' % (
+      task_description = 'Q: Does an edge exist between Node %s and Node %s?\nA: ' % (
           name_dict[source],
           name_dict[target],
       )
@@ -166,7 +166,7 @@ class EdgeExistence(GraphTask):
     )
     source, target = random.sample(list(graph.nodes()), k=2)
     question = graph_text_encoders.encode_graph(graph, encoding_method)
-    question += 'Q: Is node %s connected to node %s?\nA: ' % (
+    question += 'Q: Does an edge exist between Node %s and Node %s?\nA: ' % (
         name_dict[source],
         name_dict[target],
     )

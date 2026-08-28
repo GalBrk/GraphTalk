@@ -98,6 +98,33 @@ def expected_answer(graph: nx.Graph, config: str, task_description: str) -> str:
   return gold_answer(graph, config, tuple(_target_nodes(task_description)))
 
 
+_EDGE_EXISTENCE_QUESTION = re.compile(
+    r"Q: Is node (\d+) connected to node (\d+)\?\nA: $"
+)
+
+
+def reword_edge_existence(task_description: str) -> str:
+  """Rewrites the published dataset's edge_existence question to ask about
+  edge existence explicitly, rather than "connected to".
+
+  "Connected to" is ambiguous with graph connectivity (reachability via any
+  path) even though the task is graded on a single edge only -- see
+  `gold_answer`'s `edge_existence` branch. Asking about "an edge" closes that
+  gap between what the question says and what it is scored on.
+
+  Raises on anything but the exact wording `fetch_rows` is known to return, so
+  a future dataset revision that changes the phrasing is caught here rather
+  than silently reworded into something wrong.
+  """
+  match = _EDGE_EXISTENCE_QUESTION.fullmatch(task_description)
+  if not match:
+    raise ValueError(f"unexpected edge_existence wording: {task_description!r}")
+  source, target = match.groups()
+  return "Q: Does an edge exist between Node %s and Node %s?\nA: " % (
+      source, target,
+  )
+
+
 def normalize(answer: str) -> str:
   return answer.strip().rstrip(".").strip()
 

@@ -63,6 +63,42 @@ def test_unknown_style_raises():
     prompts.build_prompt(GRAPH, "degree", QUESTION, style="few_shot")
 
 
+# --- edge_existence rewording -----------------------------------------------
+
+
+def test_reword_edge_existence_asks_about_an_edge_explicitly():
+  """"Connected to" is ambiguous with reachability; the task grades one edge."""
+  reworded = graphqa.reword_edge_existence(
+      "Q: Is node 14 connected to node 3?\nA: "
+  )
+  assert reworded == "Q: Does an edge exist between Node 14 and Node 3?\nA: "
+
+
+@pytest.mark.parametrize("text", [
+    "Q: Is there a cycle in this graph?\nA: ",
+    "Q: Is node 14 connected to node three?\nA: ",
+    "Is node 14 connected to node 3?",
+])
+def test_reword_edge_existence_rejects_unrecognised_wording(text):
+  """A future dataset revision that changes the phrasing must be caught here,
+  not silently reworded into something wrong."""
+  with pytest.raises(ValueError, match="unexpected edge_existence wording"):
+    graphqa.reword_edge_existence(text)
+
+
+def test_reworded_question_reaches_the_built_prompt():
+  # The graph encoding body legitimately says "is connected to node Y" for
+  # each real edge (talk_like_a_graph's incident encoder), so the "not asked
+  # as a connectivity question" check below has to look only at the question
+  # itself, not the whole built prompt.
+  question = graphqa.reword_edge_existence(
+      "Q: Is node 14 connected to node 3?\nA: "
+  )
+  built = prompts.build_prompt(GRAPH, "none", question)
+  assert built.endswith("Does an edge exist between Node 14 and Node 3?\nA: ")
+  assert "Is node 14 connected to node 3" not in built
+
+
 # --- answer extraction ----------------------------------------------------
 
 
