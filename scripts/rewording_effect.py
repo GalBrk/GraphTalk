@@ -50,9 +50,9 @@ def load_arm(root: str, model: str) -> list[dict]:
   `.redo.shard` and `smoke-` are excluded for the reasons `docs/DATA.md` gives;
   `graphtalk.analysis.is_excluded` holds the same rule for the frame builder.
   """
-  paths = (glob.glob(os.path.join(root, f"{model}.jsonl"))
-           + glob.glob(os.path.join(root, f"{model}.shard*.jsonl"))
-           + glob.glob(os.path.join(root, f"{model}.rerun*.jsonl")))
+  paths = sorted(glob.glob(os.path.join(root, f"{model}.jsonl"))
+                 + glob.glob(os.path.join(root, f"{model}.shard*.jsonl"))
+                 + glob.glob(os.path.join(root, f"{model}.rerun*.jsonl")))
   rows = []
   for path in paths:
     if ".redo.shard" in path or "smoke-" in path:
