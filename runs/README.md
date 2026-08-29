@@ -15,7 +15,9 @@ no permissions needed).
 | `qwen3-14b.jsonl` | 2520 | `Qwen/Qwen3-14B` |
 | `smoke-gemma4-e4b.jsonl` | 20 | a smoke test; **not** part of the sweep |
 | `../shortcuts.json` | 36 cells | primer-only solver score per (task, condition) |
-| `../prompts.jsonl` | 2520 | the exact prompts these responses answer |
+| `<model>.rerun.shardNofM.jsonl` | 360/arm | the prompt-rewording regeneration; part of the arm |
+| `../prompts.jsonl` | 2520 | the prompts these responses answer — **except** the 1,440 un-regenerated `zero_cot` rows |
+| `../prompts.original-wording.jsonl` | 360 | the prompts those 1,440 rows actually answer |
 
 Full schema, field semantics and join keys: **[../docs/DATA.md](../docs/DATA.md)**.
 
@@ -23,8 +25,16 @@ Every model saw the identical prompt file. Each row is one JSON object:
 
 ```json
 {"instance_id": "node_count/7", "task": "node_count", "condition": "degree",
- "style": "zero_shot", "gold": " 18.", "model": "gemma4-12b", "response": "..."}
+ "style": "zero_shot", "gold": " 18.", "model": "gemma4-12b", "response": "...",
+ "n_new_tokens": 143, "hit_cap": false}
 ```
+
+`n_new_tokens` and `hit_cap` exist only on rows generated during or after the
+prompt-rewording re-run. On older rows they are **absent, not false** — for those,
+`analysis/truncated_keys.json` is still the only record of which responses were cut
+off at the budget, and `graphtalk/analysis.py` falls back to it when the fields are
+missing. Treat absence as unknown; reading it as `false` would silently mark 350
+known non-terminating rows as clean.
 
 `instance_id` is the pairing key: the same graph and query appear under all seven
 conditions and both styles, differing only in the primer. That pairing is what
@@ -37,7 +47,12 @@ python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.jso
 ```
 
 Shards from a job array (`runs/<model>.shardNofM.jsonl`) need no reassembly --
-`score_sweep.py` groups by the `model` field on each row, not by filename.
+`score_sweep.py` groups by the `model` field on each row, not by filename. The same
+is true of the `.rerun.` files: they are part of their arm, unlike
+`runs/*.redo.shard*.jsonl`, which `graphtalk/analysis.py` deliberately excludes.
+That is why the regeneration is tagged `rerun` and not `redo` -- the exclusion
+matches on the substring `.redo.shard`, so the wrong tag would drop every
+regenerated row from the frame without raising anything.
 
 ## Read this before drawing conclusions
 
@@ -49,3 +64,8 @@ travel with the data: 955 rows were generated on CPU before a driver mismatch wa
 caught and have not been re-verified against GPU output, and at the 2048-token
 budget both prompt styles reason, so `zero_shot` vs `zero_cot` is a contrast
 about wording rather than about whether reasoning happens.
+
+A third now travels with it: `condition: filler` and the `edge_existence` question
+mean **two different prompts** depending on style, because only the `zero_shot` rows
+were regenerated after the rewording. Group by the frame's `wording` column before
+comparing anything that touches those cells; see `docs/DATA.md`.
