@@ -21,31 +21,64 @@ Exact match, pooled over all six tasks. Pooling mixes tasks of very different
 difficulty and is shown here only for orientation — read the per-task table from
 `score_sweep.py` before drawing conclusions.
 
+> **Revised 2026-08-29, after the prompt-rewording re-run.** Two things changed under
+> these numbers and both are now folded in: `scoring._extract_boolean` gained a
+> fallback that rescues 276 boolean rows sweep-wide, and the `filler` primer and
+> `edge_existence` question were reworded, with 2,880 `zero_shot` rows regenerated
+> against the new text. The originally published table is preserved in git at
+> `3545662`. One of the three patterns below did not survive; see `filler`.
+
 | model | style | `none` | `degree` | `all` | `filler` |
 |---|---|---|---|---|---|
-| gemma4-e4b | zero_shot | 92.2% | 93.9% | 95.0% | 79.4% |
-| gemma4-e4b | zero_cot | 78.3% | 76.1% | 80.0% | 68.9% |
-| gemma4-12b | zero_shot | **98.3%** | **100.0%** | 99.4% | 93.9% |
-| gemma4-12b | zero_cot | 95.6% | 93.9% | 91.7% | 91.1% |
-| qwen3-8b | zero_shot | 82.2% | 88.9% | 90.0% | 81.7% |
-| qwen3-8b | zero_cot | 64.4% | 76.7% | 78.9% | 63.9% |
-| qwen3-14b | zero_shot | 80.0% | 89.4% | 89.4% | 74.4% |
-| qwen3-14b | zero_cot | 71.7% | 78.3% | 75.0% | 69.4% |
+| gemma4-e4b | zero_shot | 95.6% | 96.1% | 95.6% | 96.1% † |
+| gemma4-e4b | zero_cot | 82.8% | 80.0% | 82.8% | 71.7% ‡ |
+| gemma4-12b | zero_shot | 98.3% | **100.0%** | 99.4% | 96.7% † |
+| gemma4-12b | zero_cot | 95.6% | 93.9% | 92.8% | 92.2% ‡ |
+| qwen3-8b | zero_shot | 89.4% | 91.1% | 90.6% | 81.7% † |
+| qwen3-8b | zero_cot | 66.1% | 78.3% | 80.0% | 65.0% ‡ |
+| qwen3-14b | zero_shot | 83.3% | 91.7% | 89.4% | 82.2% † |
+| qwen3-14b | zero_cot | 71.7% | 78.3% | 75.6% | 69.4% ‡ |
 
-Three patterns hold across every model, which is what makes them worth stating
-before any significance testing:
+† revised `filler` wording  ‡ **original** `filler` wording — the obsolete `zero_cot`
+style was not regenerated, so the two `filler` cells in each model's pair answer
+*different prompts* and must not be read down the column. `graphtalk/analysis.py`
+exposes this as the frame's `wording` column; group by it before comparing.
 
-- **Primers help, modestly.** `degree` and `all` beat `none` in seven of eight
-  model-style combinations. The largest gain is qwen3-8b under `zero_cot`, 64.4%
-  to 78.9%.
-- **`filler` hurts.** An uninformative primer of the same shape scores *below*
-  the no-primer control everywhere, by up to 13 points (gemma4-e4b zero_shot,
-  92.2% to 79.4%). Whatever the informative primers do, part of it has to be
-  netted against a penalty for primer presence as such. This is the control
-  earning its place.
-- **`zero_cot` is worse than `zero_shot`.** Everywhere, for every model, by 6 to
-  18 points. Being told to think step by step makes these models *less* accurate
-  on these tasks.
+Three patterns were originally stated here as holding across every model. Two still
+do. The third turned out to be an artefact of the primer's wording rather than a
+property of primers, which is the main thing the 2026-08-29 re-run established:
+
+- **Primers help, modestly.** `degree` or `all` beats `none` in six of eight
+  model-style combinations (seven before the re-scoring). The largest gain is
+  qwen3-8b under `zero_cot`, 66.1% to 80.0%.
+- **`filler` is inert, as the design predicted — the earlier penalty was the
+  control being broken.** The hypothesis for this arm was never that filler would
+  hurt: `docs/plans/primer-computation.md` §"An inert length control" requires it
+  to do nothing, or nothing much, precisely so that the length effect can be
+  isolated. The measured penalty of up to 13 points was a surprise, and it was
+  written up as a property of primers. It was a property of *that primer*.
+
+  That plan also names the failure mode exactly: "an inert length control, **not a
+  misinformation placebo** … a drop in accuracy could mean the model was misled, or
+  merely confused by an inconsistent prompt — neither of which is the length effect
+  the control exists to isolate." The old wording was cleared of that charge three
+  separate times, on the argument that `Node N has <n-1> other nodes` introduces no
+  numeral the `none` arm lacks. That argument was wrong.
+  `analysis/failure_sample.csv` shows models reading the numeral as a degree claim
+  and deriving a complete graph K_n from it in 8 of 9 sampled rows — the placebo the
+  design warned against, produced by the safeguard that was supposed to prevent it.
+
+  With a genuinely content-free primer the penalty collapses from a mean of −5.7
+  points to +0.6 across the eight arms, and on `gemma4-e4b` `zero_shot` it lands at
+  96.1% against 95.6% for `none` — the same thing, which is what the control was
+  specified to be. A small residual may survive in the non-thinking arms
+  (`qwen3-8b` is still 7.7 points below `none`) and is worth checking; the large
+  uniform effect does not. See §"Non-termination responds to the primer", where the
+  same reversal shows up on an independent measure.
+- **`zero_cot` is worse than `zero_shot`.** Still true everywhere, and by more than
+  previously reported: 16 of 16 cells, by 2.8 to 24.4 points. Being told to think
+  step by step makes these models *less* accurate on these tasks. (The widened
+  range is the re-scoring, which lifts `zero_shot` more than `zero_cot`.)
 
 These are far above the paper's numbers — Fatemi et al. report 18.8% for PaLM 2
 on `node_count`, against 98-100% here. The task is not hard for current models,
@@ -207,31 +240,84 @@ odds without explaining it -- non-terminating rows average 14.0 nodes against
 
 Rate by condition, pooled over all four models (n=720 per condition):
 
-| `all` | `degree` | `components` | `rwse` | `none` | `clustering` | `filler` |
+| `filler` | `all` | `degree` | `components` | `rwse` | `none` | `clustering` |
 |---|---|---|---|---|---|---|
-| **5.4%** | 6.0% | 6.2% | 6.4% | 7.4% | 7.8% | **9.4%** |
+| **4.3%** † | 5.6% | 5.8% | 5.8% | 6.2% | 7.4% | **8.1%** |
 
-Informative primers sit below the no-primer control; the length-matched
-uninformative `filler` sits above it. On `gemma4-12b`, where the rates are large
-enough to see clearly, `all` is 15.6% against `filler` at 30.0%.
+† `filler` regenerated under the revised wording; the other six columns are the
+original rows. **The two are measured by different instruments** — `filler` from the
+`hit_cap` flag `scripts/run_sweep.py` now records per row, the rest from the
+hand-labelled `analysis/truncated_keys.json`. Both are meant to mean "hit the token
+cap", but they were produced by different routes and no row carries both, so they
+cannot be cross-validated against each other. Read the `filler` column against the
+others with that in mind.
 
-The endpoints separate: `filler` vs `all` is p=0.003 pooled and p=0.001 on
-`gemma4-12b` alone. The individual steps against `none` do not -- `filler` vs
-`none` is p=0.18, `none` vs `all` p=0.10 -- so the monotone ordering across all
-seven conditions is suggestive rather than established, and should be reported
-that way.
+**This reverses the finding previously stated here, in the direction the design
+expected.** Under the original wording `filler` was the *highest* rate at 9.4%,
+above the `none` control at 7.4%, and that was read as evidence that padding without
+information harms the model — "given padding of the same shape it has more to verify
+and nothing to verify it with." The control was specified to be inert; this was the
+anomaly, not the prediction. Under a genuinely content-free primer `filler` is the
+*lowest* rate at 4.3%, below every informative condition. On `gemma4-12b-think`, where the rates are large enough
+to see clearly, `filler` is 15.0% against `none` at 24.4% and `clustering` at 26.7%.
 
-This converges with the main sweep's `filler` result, where a length-matched
-uninformative primer scored *below* the no-primer control on accuracy. Two
-independent measures now agree that a primer adding material without adding
-information actively harms the model, and the mechanism is legible: given the
-degree sequence a model can shortcut the pairwise enumeration and commit; given
-padding of the same shape it has more to verify and nothing to verify it with.
+The mechanism in that original explanation was wrong because its premise was wrong.
+`Node N has <n-1> other nodes in this graph` is not padding — it is a false
+statement about the graph, and `analysis/failure_sample.csv` catches models spending
+their budget trying to reconcile it (*"If D_i = 12 for all 13 nodes, the graph must
+be a complete graph K_13"*). What raised non-termination was the contradiction, not
+the length. Remove the contradiction and the condition becomes the cheapest of the
+seven.
+
+So the two measures that were said to converge were not independent evidence of a
+shared effect; they were two symptoms of one wording defect. The convergence
+argument should be retired rather than restated with new numbers.
 
 **It also gives `gemma4-12b` somewhere to move.** That model's accuracy is pinned
 at 97.5-99.1% with almost no headroom, which is what made its McNemar cells
 useless. Non-termination is an outcome variable that responds to the manipulation
 on precisely the model whose accuracy cannot.
+
+## The `edge_existence` question was ambiguous, and it mattered
+
+`edge_existence` is graded on a single edge (`graph.has_edge`), but the published
+question asked *"Is node A connected to node B?"* — and "connected to" also means
+reachable-by-any-path. Of the 30 instances, 12 have gold `Yes`, **14 have gold `No`
+with a path present**, and 4 are genuinely unreachable, so 47% of instances flip
+under a reachability reading. The question was reworded to *"Does an edge exist
+between Node A and Node B?"* and all 2,880 affected `zero_shot` rows regenerated.
+
+The effect is large, and it is concentrated exactly where the ambiguity lives:
+
+| arm | prior "Yes" rate on path-only pairs | after | accuracy Δ |
+|---|---|---|---|
+| `gemma4-12b` | 3.6% | 0.0% | +1.7 |
+| `gemma4-12b-think` | 8.3% | 0.0% | +3.9 |
+| `gemma4-e4b-think` | 19.0% | 0.0% | +8.9 |
+| `qwen3-14b` | 17.9% | 0.0% | +8.3 |
+| `gemma4-e4b` | 21.4% | 0.0% | +9.4 |
+| `qwen3-14b-think` | 27.4% | 0.0% | +12.8 |
+| `qwen3-8b-think` | 39.3% | 0.0% | +17.8 |
+| `qwen3-8b` | 38.1% | 0.0% | +18.9 |
+
+Mean +10.2 points, and the gain per arm tracks that arm's prior rate of answering
+`Yes` on path-only pairs at **r = +0.95**. The `edge` and `unreachable` instance
+classes — the ones a reachability reading answers the same way — barely move. Seven
+of the eight arms reach exactly 100%.
+
+Two things are worth keeping from this beyond the number:
+
+**It is a per-model effect, not a uniform one.** The gain runs from +1.7 on
+`gemma4-12b` to +18.9 on `qwen3-8b`, because the stronger models were already
+resolving "connected" as adjacency and the weaker ones were not. An analysis that
+looked only at `gemma4-12b` would have concluded the ambiguity was inert — and one
+did, in `docs/DATA.md`, before the re-run tested it.
+
+**The rewording is not free.** On `qwen3-8b` the `edge (gold Yes)` class regressed
+from 100.0% to 97.2%: two rows in 72 now answer `No` where the old wording got them
+right. The trade is heavily favourable, but it is a trade.
+
+Reproduce with `scripts/rewording_effect.py`.
 
 ## Provenance
 
@@ -241,3 +327,18 @@ greedy decoding throughout. The regeneration evidence is kept in
 `runs/*.redo.shard*.jsonl` -- 67 rows re-run at 32,768 tokens, retained because
 they are the evidence that the cap was never the cause, not because they are
 usable answers.
+
+**The 2026-08-29 prompt-rewording re-run.** 2,880 rows -- the 360 affected
+`zero_shot` rows in each of the eight arms -- were regenerated after the `filler`
+primer and `edge_existence` question were reworded. Each arm's original build was
+kept (cu130 for the four plain arms, cu126 for the four thinking arms), so the
+re-run adds no new torch stratum. The 1,440 affected rows in the obsolete `zero_cot`
+prompt style were **not** regenerated and retain the original wording; the prompts
+that produced them are preserved in `prompts.original-wording.jsonl`, and the frame's
+`wording` column marks which is which. Rows generated from this point carry
+`n_new_tokens` and `hit_cap`, so non-termination is recorded per row rather than
+depending on `analysis/truncated_keys.json`; older rows still depend on it.
+
+Total non-terminating rows is now **316**, not the 350 previously reported: 271 from
+the ground-truth file for rows not regenerated, plus 45 recorded directly. The drop
+is concentrated in `filler`, for the reason given above.

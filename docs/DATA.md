@@ -108,11 +108,15 @@ These are properties of the data, not of the analysis, so they belong here:
 
 - **`runs/smoke-gemma4-e4b.jsonl` carries `model: gemma4-e4b`.** Globbing
   `runs/*.jsonl` pools its 20 rows into that model's results. Exclude it.
-- **350 thinking-arm rows never terminate** and are truncated at the token cap.
+- **316 thinking-arm rows never terminate** and are truncated at the token cap.
   They still *parse*, because the extractor finds an integer in the abandoned
   working, so they score as confident wrong answers rather than as missing. Their
-  exact keys are in `analysis/truncated_keys.json`. Filter them before reporting
-  accuracy: on `gemma4-12b-think` the difference is 81.2% against 99.1%.
+  Of those, 271 predate per-row token counts and their exact keys are in
+  `analysis/truncated_keys.json`; the other 45 are recorded directly on the row as
+  `hit_cap`, and `graphtalk/analysis.py` prefers that when present. Filter them
+  before reporting accuracy: on `gemma4-12b-think` the difference is 81.2% against
+  99.1%. The count fell from 350 because the reworded `filler` primer roughly
+  halved non-termination in that condition -- see `docs/sweep-findings.md`.
 - **`runs/*.redo.shard*.jsonl` are evidence, not answers.** 67 of those rows
   regenerated at a 4x larger cap; 76% still hit it. They exist to show the cap was
   not the cause. Do not merge them into the arm.
@@ -121,8 +125,66 @@ These are properties of the data, not of the analysis, so they belong here:
   they should match GPU output, but this is unverified.
 - **The two arms used different torch builds**, cu130 for the main sweep and
   cu126 for the thinking arm. Same version, same transformers, greedy throughout.
+- **2,880 rows are being regenerated under reworded prompts.** The `filler` primer
+  and the `edge_existence` question were both reworded in `d7cdcf7..3545662`, so the
+  360 affected `zero_shot` rows in each of the eight arms are generated from prompts
+  the rest of the sweep never saw. The 1,440 affected rows in the obsolete `zero_cot`
+  prompt style are **not** regenerated and keep the original wording — so
+  `condition: filler` does not mean one thing across the whole sweep, and the frame
+  carries a `wording` column to say which is which. Never pool the two.
+- **`prompts.original-wording.jsonl` is what produced those un-regenerated rows.**
+  `prompts.jsonl` now holds the revised wording throughout, including for the 360
+  `zero_cot` rows whose responses were *not* regenerated — so for those rows the
+  tracked prompt file no longer matches the tracked response. This file closes that
+  gap: it is the 360 original-wording `zero_cot` prompts, verbatim, and it is the
+  prompt of record for the 1,440 responses (360 x 4 plain models) that keep the old
+  text. Rebuilding it from `build_prompts.py` is not possible; it exists because a
+  response is only interpretable against the exact prompt that produced it.
+
+## A prediction about the `edge_existence` rewording, recorded in advance
+
+The question was reworded from *"Is node A connected to node B?"* to *"Does an edge
+exist between Node A and Node B?"* on the argument that "connected to" is ambiguous
+with reachability. Measured across all 30 `edge_existence` instances before the
+rewording, that ambiguity was real but inert: 12 instances have gold `Yes`, 14 have
+gold `No` with a path present, and 4 are genuinely unreachable — so 47% of instances
+would flip under a reachability reading. On the 14 path-only pairs, where that reading
+predicts a ~100% `Yes` rate, the eight models answered `Yes` on **5% to 34%**
+(`gemma4-12b` 5%, `qwen3-8b` 34%). All eight already resolved the question the way the
+gold does.
+
+**So the prediction is that the rewording moves `edge_existence` accuracy very little.**
+This is written down before the regenerated rows exist. If accuracy is flat, the
+ambiguity was not what drove error on this task and the rewording bought comparability
+loss for nothing; if it moves, the measurement above was wrong about what the models
+were doing. Either outcome is a result — but only because the claim was staked first.
+
+### Outcome: the prediction was wrong, and instructively so
+
+Recorded 2026-08-29, after all eight arms were regenerated. **Accuracy moved a lot** —
+mean **+10.2 points**, from +1.7 on `gemma4-12b` to +18.9 on `qwen3-8b`, with the
+path-only "Yes" rate falling to exactly **0.0% in every arm**. The rewording was
+justified.
+
+The measurement above was not wrong; the inference from it was. Each of the numbers in
+that table is reproduced by the re-run's baseline to within a couple of points, and the
+gradient it noticed — weaker models drifting toward the reachability reading — is
+exactly what predicts the effect size, at **r = +0.95** across the eight arms. What was
+wrong was treating a 5–34% residual as negligible. On `gemma4-12b`, whose rate is 5%,
+the prediction holds precisely: +1.7 points, near enough to nothing. The error was
+generalising the strongest model's behaviour to a sweep whose error mass sits in the
+weaker ones.
+
+The narrower claim in that table survives intact: all eight models *do* resolve
+"connected" as adjacency most of the time. It just turns out that "most of the time" is
+where a tenth of the task's accuracy was hiding. Full analysis in
+`docs/sweep-findings.md`; reproduce with `scripts/rewording_effect.py`.
 
 ## Reproducing
+
+> Since the rewording, `build_prompts.py` reproduces `prompts.jsonl` exactly, but
+> **not** the prompts behind every tracked response: the 1,440 un-regenerated
+> `zero_cot` rows came from `prompts.original-wording.jsonl`. See the caveat above.
 
 ```bash
 python scripts/build_prompts.py --count 30            # -> prompts.jsonl
