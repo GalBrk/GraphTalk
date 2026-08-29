@@ -287,8 +287,15 @@ Two findings that bound the damage rather than extend it:
   of `docs/plans/shortcut-ceilings.md`. **A primer route can exist with no stated fact
   pointing at it**, which is the general lesson and the reason that plan measures rather
   than argues.
-- **The `filler` control is genuinely inert** on every route tested. This one survives the
-  above: reconstruction needs stated degrees, and the filler states none.
+- **The `filler` control is inert against every *solver* route tested.** This one
+  survives the above: reconstruction needs stated degrees, and the filler states none.
+
+  > Scope, added after the 2026-08-29 re-run: "inert" here means a primer-only program
+  > cannot recover structure from it. That is a different claim from being inert to a
+  > *model*, and the original wording was not — models read `Node N has <n-1> other
+  > nodes` as a degree claim and lost accuracy to it. The routes tested in this section
+  > would never have caught that, because they ask what a solver can compute, not what
+  > a reader infers. Both checks are needed; only one was run.
 
 **Consequence for the design.** There is no reliable agnostic tier, so the taxonomy
 cannot be asserted; it has to be measured. That is what `docs/plans/shortcut-ceilings.md`
@@ -475,9 +482,11 @@ evidence is in `analysis/failure_sample.csv`, where 8 of the 9 sampled `filler` 
 the misreading in the model's own words -- `gemma4-e4b-think`: *"If D_i = 12 for all 13
 nodes, the graph must be a complete graph K_13"*; `gemma4-12b-think`: *"Is it possible
 that 'Node 0 has 8 other nodes' means it's connected to all 8 other nodes?"*. What
-`docs/sweep-findings.md` separately records is that `filler` scores *below* the no-primer
-control everywhere; it does not diagnose why, which is what the sample above adds. The
-current wording is:
+`docs/sweep-findings.md` recorded at the time was that `filler` scored *below* the
+no-primer control almost everywhere. That is no longer what it records: the re-run shows
+the penalty was this wording, not primer length, and with the text below `filler` sits at
+the control's own level on accuracy and *lowest* of the seven conditions on
+non-termination. The sample above is what diagnoses why. The current wording is:
 
 ```
 Node 0 is simply present within the graph G.
