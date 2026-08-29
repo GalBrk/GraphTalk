@@ -22,3 +22,9 @@ figures/
 # Slurm logs stay out -- they are per-job noise, and the numbers worth keeping
 # from them are written up in docs/sweep-findings.md instead.
 out/
+
+# Prompt subsets used to drive a partial regeneration. Regenerable by filtering
+# the tracked prompt files (see analysis/README.md), and misleading if committed:
+# they look like a prompt set the sweep used in full, which they never are.
+/prompts.rerun.jsonl
+/prompts.smoke.jsonl

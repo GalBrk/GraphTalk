@@ -94,11 +94,15 @@ def main() -> None:
   started = time.time()
   with open(args.out, "a") as handle:
     for index, record in enumerate(todo, 1):
-      response = hf_backend.generate(
+      completion = hf_backend.generate(
           tokenizer, model, record["prompt"],
           args.max_new_tokens or models.budget(spec, record["style"]),
           spec.chat_kwargs,
       )
+      # `n_new_tokens`/`hit_cap` are new as of the prompt-rewording re-run; rows
+      # generated before it do not carry them, so anything reading these must
+      # treat absence as "unknown" and fall back to
+      # `analysis/truncated_keys.json` -- see `graphtalk/analysis.py`.
       handle.write(json.dumps({
           "instance_id": record["instance_id"],
           "task": record["task"],
@@ -106,7 +110,9 @@ def main() -> None:
           "style": record["style"],
           "gold": record["gold"],
           "model": args.model,
-          "response": response,
+          "response": completion.text,
+          "n_new_tokens": completion.n_new_tokens,
+          "hit_cap": completion.hit_cap,
       }) + "\n")
       # Flushed every row so a preemption loses at most the row in flight.
       handle.flush()

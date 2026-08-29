@@ -67,6 +67,13 @@ GPU time is spent, and so every model in the sweep is handed the identical file.
 The design is paired — the same graph and query appear under all seven conditions
 and both prompt styles — which is what the proposal's McNemar test requires.
 
+**`zero_cot` is retired.** Chain-of-thought is measured by the thinking arm (the
+`-think` specs, native reasoning at `zero_shot`), which superseded it. The 5,040
+`zero_cot` rows in the sweep are kept as a record and are still read by the
+analysis, but nothing new is generated in that style — pass `--styles zero_shot`
+to `build_prompts.py`. See `graphtalk/prompts.py` for what that means when
+reading those rows.
+
 At the proposal's 30 rows per task that is 2,520 prompts per model: 180 instances
 x 7 conditions x 2 prompt styles (`zero_shot` and `zero_cot`, both using the
 published dataset's own wording).
@@ -103,10 +110,15 @@ cleanly on 3.12+.
 uv run --no-sync pytest -q
 ```
 
-345 tests: 27 vendored ones covering graph generation, text encoders and
+359 tests: 27 vendored ones covering graph generation, text encoders and
 metrics, 138 covering the primer statistics, the renderer, and the committed
-golden primer strings, 145 covering the shortcut solvers, and 35 covering prompt
-assembly and answer scoring.
+golden primer strings, 143 covering the shortcut solvers, 40 covering prompt
+assembly and answer scoring, and 11 covering the sweep frame, the failure taxonomy, the
+wording split, and how a row's non-termination flag was obtained.
+
+The last of those need `pandas`, which is not in the base install: without
+`pip install -e ".[analysis]"` the suite fails at *collection* rather than
+skipping, so the whole run aborts and none of the other 348 report.
 
 Two of those deserve mention because they are what the rest rests on. The
 **round trip** renders a primer, parses it back, and requires the recovered

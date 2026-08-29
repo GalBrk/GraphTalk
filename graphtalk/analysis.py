@@ -9,7 +9,7 @@ directly in a script because the non-termination heuristic below is exactly
 the kind of quiet source of measurement error `graphtalk/scoring.py`'s own
 docstring warns about, so it gets the same test-pinned treatment as any other
 rule in this package: see `tests/test_analysis.py`, which pins it against
-`analysis/truncated_keys.json`'s known 350 rows.
+`analysis/truncated_keys.json`'s labelled rows.
 
 Deliberately does not import from `scripts/`: `graphtalk/` is the reusable
 layer scripts are built on, not the other way around. Callers (the
@@ -19,20 +19,43 @@ scored records in here.
 """
 
 import json
+import pathlib
 
 import pandas as pd
 
 from graphtalk import scoring
 
-# Files that carry a `model` field but are not part of the tracked sweep, per
-# docs/DATA.md: a smoke test (its 20 rows would pool into gemma4-e4b's
-# results) and the 4x-cap regeneration evidence (not meant to be merged in).
+# Rows that carry a `model` field but are not part of the tracked sweep now live
+# in `runs/archive/`, so exclusion is a directory rather than a naming
+# convention. That matters: the substrings below were the whole mechanism, and a
+# regeneration tagged `redo` would have been dropped from every frame in silence
+# -- a live footgun that a directory boundary simply removes.
+#
+# The substrings are kept as a safety net for paths that predate the move, or
+# for anyone globbing the archive back in by hand.
+_EXCLUDE_DIR = "archive"
 _EXCLUDE_SUBSTRINGS = ("smoke-", ".redo.shard")
 
 # Precedence when a row could be described more than one way: a non-
 # terminating row is the more actionable label even when it also happens to
 # `parse` (the extractor finds *a* wrong answer in the abandoned working).
 FAILURE_TYPES = ("non_terminating", "unparsed", "wrong", "correct")
+
+# Which wording of the prompt a row was generated from. The `filler` primer and
+# the `edge_existence` question were both reworded, and only the `zero_shot`
+# rows were regenerated -- the obsolete `zero_cot` prompt style keeps the
+# original wording, because it is no longer used and not worth the GPU time.
+#
+# So `condition: filler` does NOT mean one thing across this frame, and pooling
+# it across styles averages two different independent variables. That is exactly
+# the quiet source of measurement error `graphtalk/scoring.py`'s own docstring
+# warns about, which is why this is a column rather than a footnote: group by it,
+# or filter on it, but never sum across it.
+#
+# `unaffected` is the honest label for the 10,800 rows the rewording never
+# touched -- for those the two wordings are byte-identical and the distinction
+# does not arise.
+WORDINGS = ("revised", "original", "unaffected")
 
 # Tukey's extreme-outlier rule (Q3 + 3*IQR), applied per (model, task,
 # condition, style) cell rather than as a fixed length cutoff -- there is no
@@ -44,13 +67,30 @@ FAILURE_TYPES = ("non_terminating", "unparsed", "wrong", "correct")
 _OUTLIER_IQR_MULTIPLIER = 3.0
 
 
+def wording(task: str, condition: str, style: str) -> str:
+  """Which prompt wording produced a row; see `WORDINGS`."""
+  if condition != "filler" and task != "edge_existence":
+    return "unaffected"
+  return "revised" if style == "zero_shot" else "original"
+
+
 def is_excluded(path: str) -> bool:
-  """Whether `path` is one of the files `docs/DATA.md` says to exclude."""
+  """Whether `path` holds rows `docs/DATA.md` says to keep out of the sweep."""
+  parts = pathlib.PurePath(path).parts
+  if _EXCLUDE_DIR in parts:
+    return True
   return any(s in path for s in _EXCLUDE_SUBSTRINGS)
 
 
 def load_truncated_keys(path: str) -> set[tuple[str, str, str, str]]:
-  """Ground truth for the 350 known non-terminating thinking-arm rows.
+  """Ground truth for the non-terminating thinking-arm rows that predate `hit_cap`.
+
+  Originally all 350 known non-terminating rows. Since the 2026-08-29 re-run,
+  rows carry their own `hit_cap` and are judged by it, so this file was pruned to
+  the 271 rows it still governs -- the ones generated before
+  `scripts/run_sweep.py` recorded token counts. It is not a census of
+  non-terminating rows any more (that total is 316); it is the fallback for rows
+  that cannot state the fact themselves.
 
   `analysis/truncated_keys.json` is `{model: [[instance_id, condition, style],
   ...]}`; flattened here to `(model, instance_id, condition, style)` tuples
@@ -115,7 +155,22 @@ def build_frame(
     model_family = model[: -len("-think")] if is_think else model
     score = record["score"]
     key = (model, record["instance_id"], record["condition"], record["style"])
-    non_terminating = key in truncated_keys
+    # The row's own `hit_cap` when it has one, the hand-maintained ground-truth
+    # file otherwise. Rows generated before `scripts/run_sweep.py` started
+    # recording token counts carry no `hit_cap`, and for those
+    # `analysis/truncated_keys.json` remains the only record -- so absence must
+    # fall through to the lookup rather than read as False.
+    recorded_cap = record.get("hit_cap")
+    non_terminating = (
+        bool(recorded_cap) if recorded_cap is not None else key in truncated_keys
+    )
+    # Where the flag came from. Since `scripts/backfill_hit_cap.py` ran, every
+    # tracked row carries one, so `ground_truth_file` should no longer appear --
+    # it stays as the fallback for any row predating both mechanisms.
+    cap_source = (
+        record.get("token_count_source", "generator")
+        if recorded_cap is not None else "ground_truth_file"
+    )
     rows.append({
         "instance_id": record["instance_id"],
         "task": record["task"],
@@ -131,6 +186,11 @@ def build_frame(
         "primary": score["primary"],
         "absolute_error": score["absolute_error"],
         "non_terminating": non_terminating,
+        "non_terminating_source": cap_source,
+        "n_new_tokens": record.get("n_new_tokens"),
+        "wording": wording(
+            record["task"], record["condition"], record["style"]
+        ),
         "has_marker": scoring.has_answer_marker(record["response"]),
         "shortcut_score": shortcuts_by_cell.get(
             (record["task"], record["condition"])
@@ -141,6 +201,11 @@ def build_frame(
   frame = pd.DataFrame(rows)
   if not frame.empty:
     frame["length_outlier"] = _flag_length_outliers(frame)
+    # Nullable Int64, not the float64 a column of ints-and-Nones defaults to: a
+    # token count is an integer, and `4096.0` in the exported CSV invites the
+    # reader to wonder what the fraction means. NA stays NA -- rows generated
+    # before the instrumentation have no count, which is not the same as zero.
+    frame["n_new_tokens"] = frame["n_new_tokens"].astype("Int64")
   return frame
 
 

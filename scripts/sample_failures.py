@@ -31,7 +31,12 @@ _PREVIEW_CHARS = 400
 
 
 def _load_paths(patterns: list[str]) -> list[str]:
-  paths = [p for pattern in patterns for p in glob.glob(pattern)]
+  # Sorted: `glob.glob` returns filesystem order, so without this the row order
+  # of the exported CSV depends on how the directory happens to be laid out. It
+  # changed under a `git checkout`, which made the committed artefact differ from
+  # a fresh rebuild on content that was identical as a set -- a reproducibility
+  # claim that held only by luck.
+  paths = sorted(p for pattern in patterns for p in glob.glob(pattern))
   return [p for p in paths if not analysis.is_excluded(p)]
 
 

@@ -124,6 +124,11 @@ MODELS = {
 # rather than to whether reasoning happens at all. The 64-token cap suppressed
 # that, but by truncation rather than by design, which is not a contrast worth
 # keeping.
+# `zero_cot` is retired -- see `graphtalk/prompts.py`. Its 1024 is half what
+# `zero_shot` gets, which is why that style truncates eight times as often and
+# why a third of its apparent accuracy penalty is this number rather than the
+# prompt. Left as it was so the tracked rows stay reproducible; do not tune it,
+# because nothing should be generated in that style again.
 MAX_NEW_TOKENS = {"zero_shot": 2048, "zero_cot": 1024}
 
 

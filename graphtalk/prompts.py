@@ -13,6 +13,26 @@ wording. `zero_shot` ends the question at `A: `; `zero_cot` appends the dataset'
 own `Let's think step by step. `. Verified against `zero_shot_test` and
 `zero_cot_test` rows of `baharef/GraphQA`.
 
+**`zero_cot` is retired. Do not generate new rows in it.** Chain-of-thought in
+this project is measured by the thinking arm -- the `-think` model specs in
+`graphtalk/models.py`, which enable the model's native reasoning channel at
+`zero_shot`. That arm superseded this prompt style, and the two are not
+alternatives: `zero_cot` asks the model to narrate, the thinking arm lets it
+reason in the channel it was trained for.
+
+The style stays in the code because the sweep contains 5,040 `zero_cot` rows and
+a response is only interpretable against the prompt that produced it. It is a
+historical record, not an option. Three things follow, and all of them bite:
+
+  * its `filler` and `edge_existence` cells answer prompts that **no longer
+    exist** -- those rows were not regenerated in the 2026-08-29 rewording, so
+    `condition` alone does not identify the prompt (see `analysis.wording`);
+  * it was given half the token budget of `zero_shot` (`models.MAX_NEW_TOKENS`)
+    while being asked to reason more, so it is truncated eight times as often and
+    a third of its apparent accuracy penalty is that budget;
+  * `build_prompts.py` still defaults to both styles, so ask for
+    `--styles zero_shot` unless you specifically want the historical set.
+
 The encoding is regenerated rather than taken from the row. The published
 dataset ships only the `adjacency` encoding and this project uses `incident`, so
 the row's `question` field is the wrong encoding and only its `task_description`

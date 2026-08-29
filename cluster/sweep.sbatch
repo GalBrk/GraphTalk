@@ -53,8 +53,34 @@ PROMPTS="${GRAPHTALK_PROMPTS:-prompts.jsonl}"
 OUT="runs/${MODEL}.jsonl"
 EXTRA=()
 if [[ -n "$LIMIT" ]]; then
-  OUT="runs/smoke-${MODEL}.jsonl"
+  # Straight into the archive: a smoke run is never part of the sweep, and
+  # runs/archive/ is excluded by directory rather than by the `smoke-` prefix.
+  mkdir -p runs/archive
+  OUT="runs/archive/smoke-${MODEL}.jsonl"
   EXTRA=(--limit "$LIMIT")
+fi
+
+# An optional run tag gives a partial regeneration its own output files, so the
+# operation is auditable and reversible instead of appending into the arm:
+#
+#   GRAPHTALK_RUN_TAG=rerun sbatch --array=0-3 ... <model>
+#     -> runs/<model>.rerun.shard0of4.jsonl
+#
+# score_sweep.py pools by each row's `model` field rather than by filename, so a
+# tagged file joins its arm with no reassembly.
+#
+# `redo` is still refused. Exclusion is now by directory (runs/archive/) rather
+# than by filename, so the old footgun is mostly gone -- but ".redo.shard" is kept
+# as a safety net in analysis.is_excluded for paths predating that move, and a file
+# named that way would still be dropped from every frame in silence.
+RUN_TAG="${GRAPHTALK_RUN_TAG:-}"
+if [[ -n "$RUN_TAG" ]]; then
+  if [[ "$RUN_TAG" == *redo* ]]; then
+    echo "FATAL: run tag '$RUN_TAG' contains 'redo'. analysis.py excludes" >&2
+    echo "'.redo.shard' paths, so these rows would vanish from every frame." >&2
+    exit 1
+  fi
+  OUT="${OUT%.jsonl}.${RUN_TAG}.jsonl"
 fi
 
 # Submitting as a job array shards one model across that many GPUs:

@@ -3,8 +3,8 @@
 Zeroshot/none baseline, the cross-condition comparison, the thinking-arm
 non-termination breakdown, and an overall failure_type tally. No GPU needed.
 
-Excludes `runs/smoke-gemma4-e4b.jsonl` and `runs/*.redo.shard*.jsonl` per
-`docs/DATA.md` -- neither is part of the tracked sweep.
+Rows that are not part of the tracked sweep live in `runs/archive/` and are
+excluded by directory, so a plain `runs/*.jsonl` glob does not reach them.
 
   PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py \
       --responses runs/*.jsonl --shortcuts shortcuts.json \
@@ -23,7 +23,12 @@ from scripts import score_sweep
 
 
 def _load_paths(patterns: list[str]) -> list[str]:
-  paths = [p for pattern in patterns for p in glob.glob(pattern)]
+  # Sorted: `glob.glob` returns filesystem order, so without this the row order
+  # of the exported CSV depends on how the directory happens to be laid out. It
+  # changed under a `git checkout`, which made the committed artefact differ from
+  # a fresh rebuild on content that was identical as a set -- a reproducibility
+  # claim that held only by luck.
+  paths = sorted(p for pattern in patterns for p in glob.glob(pattern))
   return [p for p in paths if not analysis.is_excluded(p)]
 
 

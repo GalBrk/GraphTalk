@@ -10,10 +10,35 @@ Mirrors the loading pattern already verified on this cluster in the SlidesGen
 template, and greedy decoding.
 """
 
+import dataclasses
+
 import torch
 import transformers
 
 from graphtalk import models
+
+
+@dataclasses.dataclass(frozen=True)
+class Completion:
+  """One generation, plus the two facts about *how* it ended.
+
+  Recorded per row because non-termination is a measurement, not a hunch. A
+  response cut off at the cap still parses -- the extractor finds an integer in
+  the abandoned working -- so it scores as a confident wrong answer rather than
+  as missing data, and `docs/DATA.md` puts the difference on `gemma4-12b-think`
+  at 81.2% against 99.1%. Until now the only record of which rows those were was
+  the hand-maintained `analysis/truncated_keys.json`, derived by a route nothing
+  in the repo scripts; the generator states it directly instead.
+
+  `n_new_tokens` counts generated ids including a trailing EOS, which
+  `skip_special_tokens=True` drops from `text` -- so it can exceed what the
+  visible text accounts for by one. That is the right count for `hit_cap`, which
+  is the question being asked of it.
+  """
+
+  text: str
+  n_new_tokens: int
+  hit_cap: bool
 
 
 def load(spec: models.ModelSpec):
@@ -34,7 +59,7 @@ def load(spec: models.ModelSpec):
 
 
 def generate(tokenizer, model, prompt: str, max_new_tokens: int,
-             chat_kwargs: dict | None = None) -> str:
+             chat_kwargs: dict | None = None) -> Completion:
   """One greedy completion, with the prompt stripped from the return value.
 
   `do_sample=False` is the proposal's temperature 0. Slicing the generated ids
@@ -59,4 +84,10 @@ def generate(tokenizer, model, prompt: str, max_new_tokens: int,
     out = model.generate(
         **inputs, max_new_tokens=max_new_tokens, do_sample=False
     )
-  return tokenizer.decode(out[0][prompt_len:], skip_special_tokens=True)
+  n_new_tokens = out.shape[-1] - prompt_len
+  return Completion(
+      text=tokenizer.decode(out[0][prompt_len:], skip_special_tokens=True),
+      n_new_tokens=n_new_tokens,
+      # `generate` stops *at* the budget, so equality is the cap being reached.
+      hit_cap=n_new_tokens >= max_new_tokens,
+  )
