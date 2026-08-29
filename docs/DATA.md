@@ -13,7 +13,7 @@ structure.
 | `runs/<model>.jsonl` | 2,520 × 4 | main sweep responses, one file per model |
 | `runs/<model>-think.shard<i>of<n>.jsonl` | 1,260 × 4 | thinking-arm responses, split across shard files |
 | `runs/<model>-think.redo.shard<i>of<n>.jsonl` | 67 | evidence only — see caveats |
-| `runs/smoke-gemma4-e4b.jsonl` | 20 | a smoke test; **exclude from analysis** |
+| `runs/archive/smoke-gemma4-e4b.jsonl` | 20 | a smoke test; archived, excluded by directory |
 | `shortcuts.json` | 42 entries | the primer-only solver bar per (task, condition) |
 | `analysis/*.jsonl` | 51 | token-budget measurements; see `analysis/README.md` |
 

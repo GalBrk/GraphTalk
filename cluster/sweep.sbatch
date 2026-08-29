@@ -53,7 +53,10 @@ PROMPTS="${GRAPHTALK_PROMPTS:-prompts.jsonl}"
 OUT="runs/${MODEL}.jsonl"
 EXTRA=()
 if [[ -n "$LIMIT" ]]; then
-  OUT="runs/smoke-${MODEL}.jsonl"
+  # Straight into the archive: a smoke run is never part of the sweep, and
+  # runs/archive/ is excluded by directory rather than by the `smoke-` prefix.
+  mkdir -p runs/archive
+  OUT="runs/archive/smoke-${MODEL}.jsonl"
   EXTRA=(--limit "$LIMIT")
 fi
 

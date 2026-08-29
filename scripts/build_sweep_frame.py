@@ -3,8 +3,8 @@
 Zeroshot/none baseline, the cross-condition comparison, the thinking-arm
 non-termination breakdown, and an overall failure_type tally. No GPU needed.
 
-Excludes `runs/smoke-gemma4-e4b.jsonl` and `runs/*.redo.shard*.jsonl` per
-`docs/DATA.md` -- neither is part of the tracked sweep.
+Rows that are not part of the tracked sweep live in `runs/archive/` and are
+excluded by directory, so a plain `runs/*.jsonl` glob does not reach them.
 
   PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py \
       --responses runs/*.jsonl --shortcuts shortcuts.json \

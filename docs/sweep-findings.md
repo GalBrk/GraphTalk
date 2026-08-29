@@ -371,7 +371,7 @@ Reproduce with `scripts/rewording_effect.py`.
 The thinking arm was generated with `graphtalk-cu126` (torch 2.13.0+cu126) while
 the main sweep used the cu130 build; same torch version, same transformers,
 greedy decoding throughout. The regeneration evidence is kept in
-`runs/*.redo.shard*.jsonl` -- 67 rows re-run at 32,768 tokens, retained because
+`runs/archive/*.redo.shard*.jsonl` -- 67 rows re-run at 32,768 tokens, retained because
 they are the evidence that the cap was never the cause, not because they are
 usable answers.
 

@@ -48,7 +48,7 @@ default `~/.cache/pip` would eat most of the 6 GB home quota.
 
 `pip install -e` works normally here; the `PYTHONPATH=.` prefix in the top-level
 README is a macOS-only workaround for a broken editable install. Verify with
-`pytest -q`, which must report **358 passed** — a different number means the env
+`pytest -q`, which must report **359 passed** — a different number means the env
 is wrong, not the code. Install the `analysis` extra as above and not `[dev]`
 alone: `tests/test_analysis.py` imports `pandas` at module scope, so without it
 pytest aborts during *collection* and reports an error rather than 348 passes.
@@ -85,7 +85,7 @@ python scripts/score_sweep.py --responses runs/*.jsonl
 ```
 
 Smoke-test first. Passing a second argument runs that many generations and
-writes them to `runs/smoke-<model>.jsonl` rather than the sweep's own file, so a
+writes them to `runs/archive/smoke-<model>.jsonl` rather than the sweep's own file, so a
 run that reveals a broken template cannot leave rows the real sweep then skips:
 
 ```bash
@@ -121,8 +121,9 @@ key count -- that is the check that catches a silent skip.
 **Never tag a regeneration `redo`.** `analysis._EXCLUDE_SUBSTRINGS` matches
 `.redo.shard`, so those rows would be dropped from every frame with no error;
 `sweep.sbatch` refuses the tag outright for that reason. The existing
-`runs/*.redo.shard*.jsonl` are a different artefact that `docs/DATA.md`
-deliberately excludes.
+`runs/archive/*.redo.shard*.jsonl` are a different artefact that `docs/DATA.md`
+deliberately excludes -- and since exclusion is now by directory, keeping
+regenerated rows out of `runs/archive/` is what matters more than the tag.
 
 ## Warm the page cache, or the job dies loading
 
@@ -170,7 +171,7 @@ job's node was fine.
 
 The longer-term fix is a cu12 torch build, which runs on both generations and
 would restore the full node pool; it means reinstalling into the env and
-re-running the 358 tests. The `graphtalk-cu126` env is that build, and is
+re-running the 359 tests. The `graphtalk-cu126` env is that build, and is
 already in use — see the env note in `cluster/sweep.sbatch`.
 
 ### n-801 is slow; exclude it

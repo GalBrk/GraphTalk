@@ -103,11 +103,11 @@ cleanly on 3.12+.
 uv run --no-sync pytest -q
 ```
 
-358 tests: 27 vendored ones covering graph generation, text encoders and
+359 tests: 27 vendored ones covering graph generation, text encoders and
 metrics, 138 covering the primer statistics, the renderer, and the committed
 golden primer strings, 143 covering the shortcut solvers, 40 covering prompt
-assembly and answer scoring, and 10 covering the sweep frame, the failure taxonomy, and the
-wording split.
+assembly and answer scoring, and 11 covering the sweep frame, the failure taxonomy, the
+wording split, and how a row's non-termination flag was obtained.
 
 The last of those need `pandas`, which is not in the base install: without
 `pip install -e ".[analysis]"` the suite fails at *collection* rather than

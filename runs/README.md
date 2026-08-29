@@ -51,7 +51,8 @@ python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.jso
 Shards from a job array (`runs/<model>.shardNofM.jsonl`) need no reassembly --
 `score_sweep.py` groups by the `model` field on each row, not by filename. The same
 is true of the `.rerun.` files: they are part of their arm, unlike
-`runs/*.redo.shard*.jsonl`, which `graphtalk/analysis.py` deliberately excludes.
+`runs/archive/*.redo.shard*.jsonl`, which `graphtalk/analysis.py` excludes by
+directory.
 That is why the regeneration is tagged `rerun` and not `redo` -- the exclusion
 matches on the substring `.redo.shard`, so the wrong tag would drop every
 regenerated row from the frame without raising anything.
