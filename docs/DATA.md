@@ -110,12 +110,14 @@ These are properties of the data, not of the analysis, so they belong here:
   test (20 rows carrying `model: gemma4-e4b`) and the 4x-cap regeneration probe.
   `runs/*.jsonl` no longer matches them, and `graphtalk/analysis.py` excludes the
   directory outright rather than matching on filenames.
-- **679 rows never terminate** and are truncated at the token cap — 309 in the
-  thinking arm and **370 in the main sweep**, which was previously believed to have
-  none. Every row now carries `hit_cap`, measured on one instrument (see
-  `scripts/backfill_hit_cap.py`); the main-sweep rows concentrate at `zero_cot`,
-  which is given half the token budget, and materially inflate the `zero_cot`
-  penalty reported in `docs/sweep-findings.md`.
+- **679 rows never terminate** and are truncated at the token cap. Every row now
+  carries `hit_cap`, measured on one instrument (`scripts/backfill_hit_cap.py`).
+  Split by whether the prompt style is still in use: **309** in the thinking arm
+  (`zero_shot`, live, 6.13%), **39** in the plain arms at `zero_shot` (live, 0.77%,
+  of which 34 are `gemma4-e4b`), and **331** at `zero_cot` (obsolete, 6.57% — that
+  style gets half the token budget). Only the first two affect anything current;
+  the `zero_cot` figure mostly explains why that style looks worse than it is, and
+  is not worth correcting for a format nothing uses.
   They still *parse*, because the extractor finds an integer in the abandoned
   working, so they score as confident wrong answers rather than as missing. Their
   Of those, 271 predate per-row token counts and their exact keys are in

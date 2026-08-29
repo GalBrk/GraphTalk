@@ -76,19 +76,20 @@ property of primers, which is the main thing the 2026-08-29 re-run established:
   (`qwen3-8b` is still 7.7 points below `none`) and is worth checking; the large
   uniform effect does not. See §"Non-termination responds to the primer", where the
   same reversal shows up on an independent measure.
-- **`zero_cot` is worse than `zero_shot` — but a third of the gap is a token
-  budget, not reasoning.** The direction holds everywhere. The size does not
-  survive scrutiny: `zero_cot` is given **1024** new tokens against `zero_shot`'s
-  **2048** while being asked to reason more, and it hits that cap **8 times as
-  often** (331 rows against 39). Those rows still parse 84.6% of the time, so they
-  score as confident wrong answers rather than as missing data — the same
-  pathology this document already documents for the thinking arm, in an arm nobody
-  had checked. Excluding them, the mean gap falls from **+13.0 to +8.5 points**,
-  and on `gemma4-12b` it goes to **exactly zero** (98.3% either way): its entire
-  apparent CoT penalty was truncation. On the weaker models a real gap remains
-  (`qwen3-8b` +14.6, `qwen3-14b` +13.2). Report the gap on terminated rows only,
-  or raise the `zero_cot` budget and re-run; as it stands the comparison is
-  partly a measurement of the budget.
+- **`zero_cot` is worse than `zero_shot`, but a third of the gap is a token budget
+  — and the format is obsolete anyway.** The direction holds everywhere. The size
+  does not survive scrutiny: `zero_cot` is given **1024** new tokens against
+  `zero_shot`'s **2048** while being asked to reason more, and hits that cap **8
+  times as often** (331 rows against 39). Those rows parse 84.6% of the time, so
+  they score as confident wrong answers rather than as gaps. Excluding them the
+  mean gap falls from **+13.0 to +8.5 points**, and on `gemma4-12b` to **exactly
+  zero** (98.3% either way) — its entire apparent CoT penalty was truncation.
+
+  This is not worth fixing. `zero_cot` was superseded by the thinking arm, which
+  is how chain-of-thought is actually measured in this project, and its `filler`
+  and `edge_existence` cells answer prompts that no longer exist. Quote the gap
+  on terminated rows only, or drop the claim; do not spend GPU time raising a
+  budget for a prompt style nothing uses.
 
 These are far above the paper's numbers — Fatemi et al. report 18.8% for PaLM 2
 on `node_count`, against 98-100% here. The task is not hard for current models,
@@ -296,23 +297,27 @@ re-tokenizing responses against their own budget, validated at **100% agreement*
 count. That was done to remove an instrument confound from the `filler` comparison
 above. It also turned up something no one was looking for.
 
-**The main sweep has 370 truncated rows.** The thinking arm's non-termination was
-treated as a property of thinking mode; it is not. What the main sweep has is a
-smaller budget — 1024 tokens at `zero_cot` against 2048 at `zero_shot` — and the
-truncation concentrates there, 331 rows against 39.
+**The main sweep has 370 truncated rows**, where non-termination was treated as a
+property of thinking mode. But almost all of them are in `zero_cot`, the obsolete
+prompt style, which gets half the token budget. Split by whether the format is
+still in use:
 
-| model | style | capped | as reported | excluding capped |
-|---|---|---|---|---|
-| `gemma4-e4b` | zero_cot | 201 | 78.0% | **90.5%** |
-| `gemma4-12b` | zero_cot | 64 | 93.7% | 98.3% |
-| `qwen3-8b` | zero_cot | 46 | 71.6% | 74.1% |
-| `qwen3-14b` | zero_cot | 20 | 72.6% | 73.7% |
-| `gemma4-e4b` | zero_shot | 34 | 94.4% | 96.8% |
+| | capped | rate |
+|---|---|---|
+| plain arms, `zero_shot` (live) | 39 / 5,040 | **0.77%** |
+| thinking arm, `zero_shot` (live) | 309 / 5,040 | 6.13% |
+| plain arms, `zero_cot` (obsolete) | 331 / 5,040 | 6.57% |
 
-These rows average **9.5% accuracy while parsing 84.6% of the time**, so they are
-not visible as gaps — they are visible as wrong answers, which is exactly why they
-went unnoticed. `analysis/truncated_keys.json` never covered the main sweep, so
-nothing in the pipeline was looking for them.
+**In the live format this is small.** 34 of those 39 rows are `gemma4-e4b`, which
+gains 2.4 points when they are excluded (94.4% → 96.8%); every other plain arm
+moves by 0.2 points or less, and `qwen3-14b` has none at all. So the practical
+correction is one arm, and the headline `zero_shot` numbers stand.
+
+It is worth knowing anyway, for two reasons. `gemma4-e4b` is the arm this document
+already singles out as anomalous, and 2.4 points of that anomaly is truncation
+rather than capability. And these rows average **9.5% accuracy while parsing 84.6%
+of the time** — they surface as wrong answers, not as gaps, which is why nothing
+caught them: `analysis/truncated_keys.json` never covered the main sweep at all.
 
 The cross-check also found the hand-curated file itself is imperfect: two of its
 271 labelled rows (`gemma4-12b-think` `edge_count/25` and `connected_nodes/19`)
