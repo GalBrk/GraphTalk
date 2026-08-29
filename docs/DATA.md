@@ -90,6 +90,15 @@ primer of the same shape carrying no structural information, which separates
 
 **Styles (2)** — `zero_shot`, `zero_cot`. The thinking arm is `zero_shot` only.
 
+> **`zero_cot` is retired and will not be used again in this project.** Chain-of-thought
+> is measured by the thinking arm (native reasoning at `zero_shot`), which superseded
+> it. The 5,040 `zero_cot` rows are kept because a response is only interpretable
+> against the prompt that produced it, but they are a historical record: their `filler`
+> and `edge_existence` cells answer prompts that no longer exist, and the style ran at
+> half the token budget, so its accuracy is depressed by truncation as well as by the
+> prompt. **Filter on `style == "zero_shot"` for anything current.** See
+> `graphtalk/prompts.py`.
+
 **`gold` formatting varies by task** and keeps the dataset's own punctuation, so
 compare through `graphtalk.scoring`, never by string equality:
 

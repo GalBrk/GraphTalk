@@ -67,6 +67,13 @@ GPU time is spent, and so every model in the sweep is handed the identical file.
 The design is paired — the same graph and query appear under all seven conditions
 and both prompt styles — which is what the proposal's McNemar test requires.
 
+**`zero_cot` is retired.** Chain-of-thought is measured by the thinking arm (the
+`-think` specs, native reasoning at `zero_shot`), which superseded it. The 5,040
+`zero_cot` rows in the sweep are kept as a record and are still read by the
+analysis, but nothing new is generated in that style — pass `--styles zero_shot`
+to `build_prompts.py`. See `graphtalk/prompts.py` for what that means when
+reading those rows.
+
 At the proposal's 30 rows per task that is 2,520 prompts per model: 180 instances
 x 7 conditions x 2 prompt styles (`zero_shot` and `zero_cot`, both using the
 published dataset's own wording).

@@ -290,7 +290,9 @@ every one of them start over.
 ## Sizing
 
 At 30 rows per task the prompt file is **2,520 prompts** per model (180 instances
-x 7 conditions x 2 styles), so 10,080 generations across the four models.
+x 7 conditions x 2 styles), so 10,080 generations across the four models. That
+count is historical: `zero_cot` is retired, so a sweep run today is
+`--styles zero_shot` and half the size, 1,260 prompts per model.
 
 Both styles now generate freely — `zero_shot` at 2048 new tokens and `zero_cot`
 at 1024 — because these instruction-tuned models narrate their working before

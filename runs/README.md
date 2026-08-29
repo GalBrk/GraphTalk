@@ -21,6 +21,10 @@ no permissions needed).
 
 Full schema, field semantics and join keys: **[../docs/DATA.md](../docs/DATA.md)**.
 
+`zero_cot` rows are historical -- that prompt style is retired in favour of the
+thinking arm, and its `filler` and `edge_existence` rows answer prompts that no
+longer exist. Filter on `style == "zero_shot"` for anything current.
+
 Every model saw the identical prompt file. Each row is one JSON object:
 
 ```json

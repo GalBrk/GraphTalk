@@ -40,10 +40,16 @@ difficulty and is shown here only for orientation — read the per-task table fr
 | qwen3-14b | zero_shot | 83.3% | 91.7% | 89.4% | 82.2% † |
 | qwen3-14b | zero_cot | 71.7% | 78.3% | 75.6% | 69.4% ‡ |
 
-† revised `filler` wording  ‡ **original** `filler` wording — the obsolete `zero_cot`
-style was not regenerated, so the two `filler` cells in each model's pair answer
-*different prompts* and must not be read down the column. `graphtalk/analysis.py`
-exposes this as the frame's `wording` column; group by it before comparing.
+† revised `filler` wording  ‡ **original** `filler` wording.
+
+**The `zero_cot` rows are historical.** That prompt style is retired — chain-of-thought
+in this project is the thinking arm, which superseded it — and nothing new will be
+generated in it. Two consequences for reading this table: its `filler` cells were not
+regenerated, so the two `filler` values in each model's pair answer *different prompts*
+and must not be read down the column (`graphtalk/analysis.py` exposes this as the
+`wording` column); and `zero_cot` was given half the token budget, so its numbers are
+depressed by truncation as well as by the prompt. The `zero_shot` rows are the live
+result.
 
 Three patterns were originally stated here as holding across every model. Two still
 do. The third turned out to be an artefact of the primer's wording rather than a
@@ -85,11 +91,12 @@ property of primers, which is the main thing the 2026-08-29 re-run established:
   mean gap falls from **+13.0 to +8.5 points**, and on `gemma4-12b` to **exactly
   zero** (98.3% either way) — its entire apparent CoT penalty was truncation.
 
-  This is not worth fixing. `zero_cot` was superseded by the thinking arm, which
-  is how chain-of-thought is actually measured in this project, and its `filler`
-  and `edge_existence` cells answer prompts that no longer exist. Quote the gap
-  on terminated rows only, or drop the claim; do not spend GPU time raising a
-  budget for a prompt style nothing uses.
+  **This is not worth fixing, because `zero_cot` is retired.** Chain-of-thought
+  in this project is the thinking arm, which superseded it; no further rows will
+  be generated in this style. Quote the gap on terminated rows only, or drop the
+  claim — but do not spend GPU time raising a budget for a prompt style the
+  project no longer uses. The live CoT comparison is thinking arm against plain,
+  both at `zero_shot`, and it is not affected by any of this.
 
 These are far above the paper's numbers — Fatemi et al. report 18.8% for PaLM 2
 on `node_count`, against 98-100% here. The task is not hard for current models,
