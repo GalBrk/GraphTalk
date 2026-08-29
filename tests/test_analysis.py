@@ -3,14 +3,16 @@
 The ground-truth regression is the point of this file: `analysis.build_frame`
 must reproduce `analysis/truncated_keys.json`'s exact per-model non-
 terminating counts on real thinking-arm data. If a future change to the
-detection logic disagrees with any of those 350 labelled rows, that is a bug
+detection logic disagrees with any of those labelled rows, that is a bug
 in the new code, not a new finding -- see `docs/sweep-findings.md`, which
 treats those counts as established.
 """
 
+import collections
 import glob
 import os
 
+import pandas as pd
 import pytest
 
 from graphtalk import analysis
@@ -19,7 +21,14 @@ from scripts import score_sweep
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _TRUNCATED_KEYS = os.path.join(_REPO_ROOT, "analysis", "truncated_keys.json")
 
-_EXPECTED_NON_TERMINATING = {
+# The historical figures, over the complete pre-rewording thinking arm. Kept as
+# documentation, not as the assertion: the prompt-rewording re-run regenerates 79
+# of the originally 350 labelled rows, and those are judged by their own `hit_cap`
+# rather than by this file, so a hardcoded total is wrong for the duration of the
+# re-run and again afterwards. The test below pins the *invariant* instead, which
+# holds before, during and after -- and still reproduces these numbers when the
+# full pre-rewording dataset is what is on disk.
+_HISTORICAL_NON_TERMINATING = {
     "gemma4-e4b-think": 0,
     "gemma4-12b-think": 282,
     "qwen3-8b-think": 49,
@@ -44,12 +53,33 @@ def test_non_terminating_matches_ground_truth():
   truncated = analysis.load_truncated_keys(_TRUNCATED_KEYS)
   frame = analysis.build_frame(records, truncated, {})
 
-  counts = frame[frame["non_terminating"]].groupby("model").size().to_dict()
-  for model, expected in _EXPECTED_NON_TERMINATING.items():
-    assert counts.get(model, 0) == expected, (
-        f"{model}: expected {expected} non-terminating rows, got "
-        f"{counts.get(model, 0)}"
-    )
+  # What the labels imply for the rows actually on disk: a labelled row counts
+  # only while it is still present and still lacks its own `hit_cap`; once
+  # regenerated it carries the measurement and the file no longer governs it.
+  expected = collections.Counter()
+  for record in records:
+    key = (record["model"], record["instance_id"], record["condition"],
+           record["style"])
+    recorded = record.get("hit_cap")
+    if recorded if recorded is not None else key in truncated:
+      expected[record["model"]] += 1
+
+  counts = collections.Counter(
+      frame[frame["non_terminating"]].groupby("model").size().to_dict()
+  )
+  assert counts == expected, f"got {dict(counts)}, expected {dict(expected)}"
+
+  # Not vacuous: every labelled row still on disk and not regenerated must be
+  # flagged. This is what would break if `load`/`is_excluded` started dropping a
+  # shard, or if the key tuple were built in a different order.
+  on_disk = {(r["model"], r["instance_id"], r["condition"], r["style"])
+             for r in records if r.get("hit_cap") is None}
+  still_governed = truncated & on_disk
+  flagged = {(r.model, r.instance_id, r.condition, r.style)
+             for r in frame[frame["non_terminating"]].itertuples()}
+  assert still_governed <= flagged, (
+      f"{len(still_governed - flagged)} labelled rows on disk went unflagged"
+  )
 
 
 def test_is_excluded():
@@ -113,3 +143,62 @@ def test_sample_failures_excludes_correct_and_respects_stratum_cap():
   sample = analysis.sample_failures(frame, n_per_stratum=2, seed=1234)
   assert (sample["failure_type"] != "correct").all()
   assert len(sample) <= 2
+
+
+# --- recorded hit_cap, and the wording split ---------------------------------
+
+
+def test_wording_separates_the_two_filler_primers():
+  """`condition: filler` means two different primers depending on style.
+
+  Only the `zero_shot` rows were regenerated after the rewording; the obsolete
+  `zero_cot` style keeps the original `Node N has <n-1> other nodes` text. A
+  mean over both is a mean over two independent variables.
+  """
+  assert analysis.wording("node_count", "filler", "zero_shot") == "revised"
+  assert analysis.wording("node_count", "filler", "zero_cot") == "original"
+  assert analysis.wording("edge_existence", "none", "zero_shot") == "revised"
+  assert analysis.wording("edge_existence", "none", "zero_cot") == "original"
+  # Untouched by either rewording: both wordings are byte-identical here, so the
+  # distinction does not arise and must not be invented.
+  assert analysis.wording("node_count", "degree", "zero_shot") == "unaffected"
+  assert analysis.wording("node_count", "none", "zero_cot") == "unaffected"
+
+
+def test_recorded_hit_cap_beats_the_ground_truth_file():
+  """A row that states how it ended is believed over the hand-made file."""
+  record = _record("node_count/0", "gemma4-12b-think", "A: 5")
+  record["n_new_tokens"] = 4096
+  record["hit_cap"] = True
+  scored = score_sweep.score_records([record])
+  frame = analysis.build_frame(scored, set(), {})   # not in truncated_keys
+  assert bool(frame.iloc[0]["non_terminating"])
+  assert frame.iloc[0]["non_terminating_source"] == "recorded"
+  assert frame.iloc[0]["n_new_tokens"] == 4096
+
+
+def test_recorded_hit_cap_false_is_not_treated_as_missing():
+  """`hit_cap: false` is a measurement, not an absent field.
+
+  Reading it as missing would send the row to `truncated_keys.json` and let a
+  stale label override what the generator actually observed.
+  """
+  record = _record("node_count/0", "gemma4-12b-think", "A: 5")
+  record["n_new_tokens"] = 120
+  record["hit_cap"] = False
+  scored = score_sweep.score_records([record])
+  stale = {("gemma4-12b-think", "node_count/0", "none", "zero_shot")}
+  frame = analysis.build_frame(scored, stale, {})
+  assert not bool(frame.iloc[0]["non_terminating"])
+  assert frame.iloc[0]["non_terminating_source"] == "recorded"
+
+
+def test_rows_without_hit_cap_still_use_the_ground_truth_file():
+  """The 12,240 rows generated before the instrumentation must not regress."""
+  record = _record("node_count/0", "gemma4-12b-think", "A: 5")
+  scored = score_sweep.score_records([record])
+  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot")}
+  frame = analysis.build_frame(scored, truncated, {})
+  assert bool(frame.iloc[0]["non_terminating"])
+  assert frame.iloc[0]["non_terminating_source"] == "ground_truth_file"
+  assert pd.isna(frame.iloc[0]["n_new_tokens"])

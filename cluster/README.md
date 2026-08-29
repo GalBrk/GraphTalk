@@ -38,7 +38,7 @@ env somewhere `cluster/sweep.sbatch` does not look.
 ```bash
 export PIP_CACHE_DIR=/home/dcor/galbarak2/pip_cache
 export TMPDIR=/home/dcor/galbarak2/tmp
-/home/dcor/galbarak2/conda_envs/graphtalk/bin/pip install -e ".[dev]"
+/home/dcor/galbarak2/conda_envs/graphtalk/bin/pip install -e ".[dev,analysis]"
 /home/dcor/galbarak2/conda_envs/graphtalk/bin/pip install \
     torch transformers accelerate huggingface_hub
 ```
@@ -48,8 +48,10 @@ default `~/.cache/pip` would eat most of the 6 GB home quota.
 
 `pip install -e` works normally here; the `PYTHONPATH=.` prefix in the top-level
 README is a macOS-only workaround for a broken editable install. Verify with
-`pytest -q`, which must report **345 passed** — a different number means the env
-is wrong, not the code.
+`pytest -q`, which must report **358 passed** — a different number means the env
+is wrong, not the code. Install the `analysis` extra as above and not `[dev]`
+alone: `tests/test_analysis.py` imports `pandas` at module scope, so without it
+pytest aborts during *collection* and reports an error rather than 348 passes.
 
 Then pre-download the models **on the login node**, because compute nodes run
 with `HF_HUB_OFFLINE=1`:
@@ -98,6 +100,30 @@ where the extractor picks an integer out of the abandoned working. The first
 smoke test here reported a 100% parse rate while half the sweep was truncated.
 Check a spread of tasks before trusting it.
 
+### Regenerating part of a sweep
+
+When a prompt changes, only the affected rows need re-running. Two overrides make
+that a first-class operation rather than a hand-edit:
+
+```bash
+# 1. strip the affected rows from the arm -- run_sweep.py skips keys it already
+#    has, so a row left in place will NOT be regenerated, silently.
+# 2. point at a subset file and tag the output.
+GRAPHTALK_PROMPTS=prompts.rerun.jsonl GRAPHTALK_RUN_TAG=rerun \
+  sbatch --time=12:00:00 --mem=40G cluster/sweep.sbatch gemma4-12b
+#   -> runs/gemma4-12b.rerun.jsonl   (or .rerun.shardNofM.jsonl under --array)
+```
+
+`score_sweep.py` pools by each row's `model` field, so a tagged file rejoins its
+arm with no reassembly. Verify afterwards that the arm is back to its full unique
+key count -- that is the check that catches a silent skip.
+
+**Never tag a regeneration `redo`.** `analysis._EXCLUDE_SUBSTRINGS` matches
+`.redo.shard`, so those rows would be dropped from every frame with no error;
+`sweep.sbatch` refuses the tag outright for that reason. The existing
+`runs/*.redo.shard*.jsonl` are a different artefact that `docs/DATA.md`
+deliberately excludes.
+
 ## Warm the page cache, or the job dies loading
 
 `sweep.sbatch` reads the whole checkpoint with `cat` before starting Python.
@@ -144,7 +170,8 @@ job's node was fine.
 
 The longer-term fix is a cu12 torch build, which runs on both generations and
 would restore the full node pool; it means reinstalling into the env and
-re-running the 345 tests.
+re-running the 358 tests. The `graphtalk-cu126` env is that build, and is
+already in use — see the env note in `cluster/sweep.sbatch`.
 
 ### n-801 is slow; exclude it
 
@@ -158,6 +185,55 @@ direct I/O, twice each:
 
 n-801 had a 195-day uptime and both stalls in this project landed on it. Pass
 `--exclude=n-801` until someone reboots it.
+
+### Do not put several checkpoint warm-ups on one node at once
+
+Measured during the 2026-08-28 prompt-rewording re-run. Four plain arms were
+submitted together; the scheduler put **three on n-602**, where they each began a
+sequential read of a 14.9 / 22.3 / 27.5 GB checkpoint at the same time. After
+**3.5 hours not one had finished warming**, which puts each stream under
+**1.2 MB/s** and the node's aggregate around 3.6 MB/s -- the same range this file
+already flags n-801 for. The fourth arm, alone on n-601, warmed 15.3 GB in 22
+minutes (~11.8 MB/s) and finished the whole job in 63 minutes.
+
+The warm-up is bandwidth-bound and does not parallelise: N concurrent reads on one
+node finish in the same total time as N sequential ones, except every job finishes
+*late* instead of one finishing early and starting to generate. Stagger them, or
+spread them with `--nodelist`, but do not submit several large arms and let the
+scheduler pack them.
+
+Two things make this hard to diagnose, both worth knowing before you go looking:
+
+- **The warm-up prints nothing until it finishes.** `find ... -exec cat {} +` is a
+  single opaque call, so "no output for three hours" is indistinguishable from a
+  hang. It is almost always just slow.
+- **`sstat` cannot tell you either.** On this cluster it returns the sentinel
+  `213503982+` for CPU fields on a running job, so there is no way to confirm the
+  process is alive from the login node. Reason about it from bytes and elapsed
+  time instead.
+
+### Size `--time` for a contended warm-up, not a measured-alone one
+
+The same re-run submitted the plain arms with `--time=06:00:00`, sized from ~20 min
+of warm-up plus an hour of generation. Under the contention above the warm-up alone
+was heading past 5 hours, so two of the three would have hit the wall having written
+**zero rows**. `--time` is a ceiling, not a reservation -- the job releases the
+allocation when it exits -- so there is no reason to trim it. Use 12 h for anything
+that has to warm a checkpoint it might be sharing bandwidth for.
+
+Slurm will not let you fix this after the fact: `scontrol update jobid=<j>
+TimeLimit=...` upward returns `Access/permission denied` for an ordinary user. The
+only remedy is `scancel` and resubmit.
+
+A resubmit is a **full re-read** -- do not expect the node's page cache to help.
+It is tempting to send the job back to the same node on the grounds that n-602 has
+1 TB of RAM against ~65 GB of checkpoints, so the bytes already read should still be
+cached. That was tried here and did not work: `qwen3-14b` had read ~14 GB of its
+27.5 GB checkpoint, was cancelled and resubmitted to the same node, and then took
+almost exactly the time that reading all 27.5 GB from scratch at the contended rate
+predicts. Whatever the reason -- NFS client caching, or eviction under the other
+jobs on the node -- budget a restart as if nothing were cached, and pick the node on
+current load rather than on history.
 
 ## Memory is per-model, and it decides whether you are scheduled at all
 

@@ -57,6 +57,30 @@ if [[ -n "$LIMIT" ]]; then
   EXTRA=(--limit "$LIMIT")
 fi
 
+# An optional run tag gives a partial regeneration its own output files, so the
+# operation is auditable and reversible instead of appending into the arm:
+#
+#   GRAPHTALK_RUN_TAG=rerun sbatch --array=0-3 ... <model>
+#     -> runs/<model>.rerun.shard0of4.jsonl
+#
+# score_sweep.py pools by each row's `model` field rather than by filename, so a
+# tagged file joins its arm with no reassembly.
+#
+# `redo` is refused rather than merely discouraged: analysis._EXCLUDE_SUBSTRINGS
+# contains ".redo.shard", so a file named that way is dropped from every frame in
+# silence -- no error, just missing rows. That exclusion belongs to the older
+# 4x-cap probe (docs/DATA.md: "evidence, not answers"), which is the opposite of
+# a regeneration meant to be included.
+RUN_TAG="${GRAPHTALK_RUN_TAG:-}"
+if [[ -n "$RUN_TAG" ]]; then
+  if [[ "$RUN_TAG" == *redo* ]]; then
+    echo "FATAL: run tag '$RUN_TAG' contains 'redo'. analysis.py excludes" >&2
+    echo "'.redo.shard' paths, so these rows would vanish from every frame." >&2
+    exit 1
+  fi
+  OUT="${OUT%.jsonl}.${RUN_TAG}.jsonl"
+fi
+
 # Submitting as a job array shards one model across that many GPUs:
 #   sbatch --array=0-7 cluster/sweep.sbatch qwen3-8b-think
 #
