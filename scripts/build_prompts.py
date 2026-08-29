@@ -18,6 +18,7 @@ import json
 import os
 
 from graphtalk import graphqa
+from graphtalk import node_naming
 from graphtalk import primers
 from graphtalk import prompts
 from graphtalk import scoring
@@ -91,6 +92,50 @@ def build(count: int, conditions, styles, split: str, cache: str,
   return records
 
 
+def build_named(count: int, conditions, styles, split: str, cache: str,
+                 k_min: int, k_max: int, node_naming_scheme: str) -> list[dict]:
+  """Like `build`, but every prompt uses `node_naming_scheme`'s node names.
+
+  Reuses every existing building block unchanged (`load_rows`,
+  `graphqa.parse_graph`, `graphqa.expected_answer`,
+  `graphqa.reword_edge_existence`); only prompt construction and the extra
+  `node_naming` record field differ from `build`.
+  """
+  records = []
+  for task in scoring.TASKS:
+    rows = load_rows(task, count, split, cache)
+    for index, row in enumerate(rows):
+      graph = graphqa.parse_graph(row["question"])
+      name_map = node_naming.build_name_map(graph, node_naming_scheme)
+      gold = row["answer"]
+      recomputed = graphqa.expected_answer(graph, task, row["task_description"])
+      if scoring.normalize(recomputed) != scoring.normalize(gold):
+        raise ValueError(
+            f"{task} row {index}: parsed graph disagrees with the shipped "
+            f"answer ({recomputed!r} vs {gold!r})"
+        )
+      task_description = row["task_description"]
+      if task == "edge_existence":
+        task_description = graphqa.reword_edge_existence(task_description)
+      for condition in conditions:
+        for style in styles:
+          records.append({
+              "instance_id": f"{task}/{index}",
+              "task": task,
+              "condition": condition,
+              "style": style,
+              "prompt": node_naming.build_named_prompt(
+                  graph, condition, task_description, name_map,
+                  style=style, k_min=k_min, k_max=k_max,
+              ),
+              "gold": gold,
+              "nodes": graph.number_of_nodes(),
+              "edges": graph.number_of_edges(),
+              "node_naming": node_naming_scheme,
+          })
+  return records
+
+
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--count", type=int, default=30,
@@ -102,10 +147,15 @@ def main() -> None:
   parser.add_argument("--styles", nargs="+", default=list(prompts.PROMPT_STYLES))
   parser.add_argument("--k-min", type=int, default=2)
   parser.add_argument("--k-max", type=int, default=3)
+  parser.add_argument("--node-naming", default="integer", choices=node_naming.NAMINGS)
   args = parser.parse_args()
 
-  records = build(args.count, args.conditions, args.styles, args.split,
-                  args.cache, args.k_min, args.k_max)
+  if args.node_naming == "integer":
+    records = build(args.count, args.conditions, args.styles, args.split,
+                    args.cache, args.k_min, args.k_max)
+  else:
+    records = build_named(args.count, args.conditions, args.styles, args.split,
+                          args.cache, args.k_min, args.k_max, args.node_naming)
   with open(args.out, "w") as handle:
     for record in records:
       handle.write(json.dumps(record) + "\n")

@@ -40,9 +40,10 @@ uv run --no-sync pytest -q
 ```
 
 Always use `--no-sync` — a plain `uv run` re-syncs to the default dependency set
-and uninstalls the optional `pipeline` extras. 345 tests total. On the cluster,
-`pytest -q` must report exactly **345 passed**; a different number means the env
-is wrong, not the code.
+and uninstalls the optional `pipeline` extras. 345 tests total, plus 23 more in
+`tests/test_node_naming.py` (368). On the cluster, `pytest -q` must report
+exactly that many passed; a different number means the env is wrong, not the
+code.
 
 Run a single test file or test:
 
@@ -64,6 +65,9 @@ running it on the TAU CS cluster):
 ```bash
 # 1. build every prompt to a file, on the laptop/login node
 PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 30
+# node identifiers default to plain integers; pass --node-naming got for
+# Game-of-Thrones character names instead (see graphtalk/node_naming.py) --
+# build and score each naming scheme as a separate run to compare them
 
 # 2. generate, on a GPU node, once per model
 sbatch cluster/sweep.sbatch gemma4-12b
@@ -136,6 +140,16 @@ python scripts/measure_real_rows.py                           # re-measures corp
     tuned for CoT responses that reason before concluding) and the metrics named
     in the proposal: exact match for integer/boolean tasks, set-F1 for
     `connected_nodes`, plus MAE, majority baseline, and exact McNemar.
+  - `node_naming.py` — Game-of-Thrones node naming, additive on top of the
+    integer pipeline rather than a change to it: nothing in `primers.py`,
+    `prompts.py`, `graphqa.py`, or `scoring.py` is modified. A named prompt is
+    built by rendering the ordinary integer primer/encoding/question exactly as
+    today and substituting node-id references for names as a text pass
+    (`build_named_prompt`); a named model response is desubstituted back to
+    integers (`desubstitute_response`) before it reaches the existing,
+    unmodified scorer. Also patches around a vendored bug where
+    `incident_encoder`'s per-node sentence opener hardcodes the raw node id
+    regardless of the name dict it's given.
   - `models.py` — model configs only (`ModelSpec`), deliberately free of `torch`/
     `transformers` so prompt-building and scoring stay importable without a GPU
     stack.
