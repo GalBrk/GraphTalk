@@ -111,6 +111,81 @@ edge_existence   'No.'
 cycle_check      'Yes, there is a cycle.'
 ```
 
+## "Connected" means adjacent, not reachable
+
+`edge_existence` asks *"Is node A connected to node B?"* and `connected_nodes`
+asks *"List all the nodes connected to A"*. In both, the upstream ground truth is
+**direct adjacency**, not reachability. From `talk_like_a_graph/graph_tasks.py`:
+
+```python
+if ((source, target) in graph.edges()) or ((target, source) in graph.edges()):
+    answer = 'Yes.'
+else:
+    answer = 'No.'
+```
+
+No path check, no traversal. `connected_nodes` likewise returns the neighbour
+list, not the reachable set.
+
+The wording is genuinely ambiguous and the distinction is not academic here.
+Across the 30 `edge_existence` instances:
+
+| | count |
+|---|---|
+| gold `Yes` — an edge exists | 12 |
+| gold `No`, but a path exists | **14** |
+| gold `No`, genuinely unreachable | 4 |
+
+**47% of instances would flip under the reachability reading**, almost all at
+shortest-path distance 2, mostly in single-component graphs. A model reading
+"connected" as "reachable" would answer `Yes` on 26 of 30 and score 53.3%, below
+the 60% majority baseline.
+
+**The models do not read it that way.** Share answering `Yes` on the 14
+path-only pairs, where the reachability reading predicts ~100%:
+
+| model | edge (gold Y) | path-only (gold N) | unreachable (gold N) |
+|---|---|---|---|
+| gemma4-12b | 100% | 5% | 5% |
+| gemma4-12b-think | 100% | 6% | 4% |
+| gemma4-e4b | 92% | 20% | 2% |
+| gemma4-e4b-think | 95% | 16% | 7% |
+| qwen3-14b | 100% | 17% | 9% |
+| qwen3-14b-think | 100% | 23% | 7% |
+| qwen3-8b | 99% | 34% | 14% |
+| qwen3-8b-think | 89% | 24% | 4% |
+
+At 5-34% rather than ~100%, all eight resolve the ambiguity the same way the gold
+does *most of the time*. The original conclusion drawn here was that the ambiguity
+therefore does not drive the error rate and no correction was warranted.
+
+**That conclusion was wrong, and the re-run measured it.** The question was
+reworded to *"Does an edge exist between Node A and Node B?"* and all affected rows
+regenerated. Accuracy rose by a mean of **10.2 points**, and the path-only `Yes`
+rate in the table above fell to **exactly 0.0% in every one of the eight arms**.
+The 5-34% residual this section treated as negligible was the entire effect.
+
+What the table got right is the **gradient**, and it turns out to be the whole
+story. The path-only `Yes` rate runs inversely to model quality, from 5% on
+gemma4-12b to 34% on qwen3-8b, and the accuracy gain from rewording tracks that
+rate at **r = +0.95** — from +1.7 on gemma4-12b to +18.9 on qwen3-8b. So the
+measurement here was sound and reproduces against the regenerated rows; the error
+was inferential. gemma4-12b, the model this section leaned on hardest, is the one
+model for which "the ambiguity is inert" holds: it gained 1.7 points, near enough
+to nothing. Generalising from it to a sweep whose error mass sits in the weaker
+models is what produced the wrong recommendation.
+
+The narrower claim survives intact — the models do resolve "connected" as adjacency
+far more often than not. It just turns out that "far more often than not" was
+hiding about a tenth of this task's accuracy.
+
+Full analysis in `docs/sweep-findings.md`; reproduce with
+`scripts/rewording_effect.py`.
+
+Caveat on precision: this rests on 30 instances, 14 of them ambiguous. The
+per-model rates are over 14 x 7 conditions = 98 rows each and are stable enough,
+but the instance count is small and a different query draw would move them.
+
 ## Caveats that travel with specific rows
 
 These are properties of the data, not of the analysis, so they belong here:
