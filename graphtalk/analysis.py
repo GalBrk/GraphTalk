@@ -19,14 +19,21 @@ scored records in here.
 """
 
 import json
+import pathlib
 
 import pandas as pd
 
 from graphtalk import scoring
 
-# Files that carry a `model` field but are not part of the tracked sweep, per
-# docs/DATA.md: a smoke test (its 20 rows would pool into gemma4-e4b's
-# results) and the 4x-cap regeneration evidence (not meant to be merged in).
+# Rows that carry a `model` field but are not part of the tracked sweep now live
+# in `runs/archive/`, so exclusion is a directory rather than a naming
+# convention. That matters: the substrings below were the whole mechanism, and a
+# regeneration tagged `redo` would have been dropped from every frame in silence
+# -- a live footgun that a directory boundary simply removes.
+#
+# The substrings are kept as a safety net for paths that predate the move, or
+# for anyone globbing the archive back in by hand.
+_EXCLUDE_DIR = "archive"
 _EXCLUDE_SUBSTRINGS = ("smoke-", ".redo.shard")
 
 # Precedence when a row could be described more than one way: a non-
@@ -68,7 +75,10 @@ def wording(task: str, condition: str, style: str) -> str:
 
 
 def is_excluded(path: str) -> bool:
-  """Whether `path` is one of the files `docs/DATA.md` says to exclude."""
+  """Whether `path` holds rows `docs/DATA.md` says to keep out of the sweep."""
+  parts = pathlib.PurePath(path).parts
+  if _EXCLUDE_DIR in parts:
+    return True
   return any(s in path for s in _EXCLUDE_SUBSTRINGS)
 
 
@@ -154,6 +164,13 @@ def build_frame(
     non_terminating = (
         bool(recorded_cap) if recorded_cap is not None else key in truncated_keys
     )
+    # Where the flag came from. Since `scripts/backfill_hit_cap.py` ran, every
+    # tracked row carries one, so `ground_truth_file` should no longer appear --
+    # it stays as the fallback for any row predating both mechanisms.
+    cap_source = (
+        record.get("token_count_source", "generator")
+        if recorded_cap is not None else "ground_truth_file"
+    )
     rows.append({
         "instance_id": record["instance_id"],
         "task": record["task"],
@@ -169,9 +186,7 @@ def build_frame(
         "primary": score["primary"],
         "absolute_error": score["absolute_error"],
         "non_terminating": non_terminating,
-        "non_terminating_source": (
-            "recorded" if recorded_cap is not None else "ground_truth_file"
-        ),
+        "non_terminating_source": cap_source,
         "n_new_tokens": record.get("n_new_tokens"),
         "wording": wording(
             record["task"], record["condition"], record["style"]

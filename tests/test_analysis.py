@@ -83,10 +83,17 @@ def test_non_terminating_matches_ground_truth():
 
 
 def test_is_excluded():
-  assert analysis.is_excluded("runs/smoke-gemma4-e4b.jsonl")
-  assert analysis.is_excluded("runs/gemma4-12b-think.redo.shard0of12.jsonl")
+  # Anything under runs/archive/ is out, whatever it is called.
+  assert analysis.is_excluded("runs/archive/smoke-gemma4-e4b.jsonl")
+  assert analysis.is_excluded("runs/archive/gemma4-12b-think.redo.shard0of12.jsonl")
+  assert analysis.is_excluded("runs/archive/anything.jsonl")
+  # The tracked sweep is in, including the regeneration files.
   assert not analysis.is_excluded("runs/gemma4-12b.jsonl")
   assert not analysis.is_excluded("runs/gemma4-12b-think.shard0of4.jsonl")
+  assert not analysis.is_excluded("runs/gemma4-12b.rerun.jsonl")
+  assert not analysis.is_excluded("runs/qwen3-8b-think.rerun.shard0of2.jsonl")
+  # Legacy names still excluded wherever they sit, as a safety net.
+  assert analysis.is_excluded("runs/smoke-gemma4-e4b.jsonl")
 
 
 def _record(instance_id, model, response, gold=" 5.", condition="none"):
@@ -165,6 +172,18 @@ def test_wording_separates_the_two_filler_primers():
   assert analysis.wording("node_count", "none", "zero_cot") == "unaffected"
 
 
+def test_backfilled_rows_are_labelled_as_such():
+  """A re-tokenized flag must not be reported as the generator's own count."""
+  record = _record("node_count/0", "gemma4-12b-think", "A: 5")
+  record["n_new_tokens"] = 8190
+  record["hit_cap"] = True
+  record["token_count_source"] = "retokenized"
+  scored = score_sweep.score_records([record])
+  frame = analysis.build_frame(scored, set(), {})
+  assert bool(frame.iloc[0]["non_terminating"])
+  assert frame.iloc[0]["non_terminating_source"] == "retokenized"
+
+
 def test_recorded_hit_cap_beats_the_ground_truth_file():
   """A row that states how it ended is believed over the hand-made file."""
   record = _record("node_count/0", "gemma4-12b-think", "A: 5")
@@ -173,7 +192,7 @@ def test_recorded_hit_cap_beats_the_ground_truth_file():
   scored = score_sweep.score_records([record])
   frame = analysis.build_frame(scored, set(), {})   # not in truncated_keys
   assert bool(frame.iloc[0]["non_terminating"])
-  assert frame.iloc[0]["non_terminating_source"] == "recorded"
+  assert frame.iloc[0]["non_terminating_source"] == "generator"
   assert frame.iloc[0]["n_new_tokens"] == 4096
 
 
@@ -190,7 +209,7 @@ def test_recorded_hit_cap_false_is_not_treated_as_missing():
   stale = {("gemma4-12b-think", "node_count/0", "none", "zero_shot")}
   frame = analysis.build_frame(scored, stale, {})
   assert not bool(frame.iloc[0]["non_terminating"])
-  assert frame.iloc[0]["non_terminating_source"] == "recorded"
+  assert frame.iloc[0]["non_terminating_source"] == "generator"
 
 
 def test_rows_without_hit_cap_still_use_the_ground_truth_file():

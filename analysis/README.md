@@ -10,7 +10,7 @@ should not have to spend again to check the claim.
 | `budget-gemma4-e4b.jsonl` | 24 `zero_shot` prompts spanning all six tasks, generated at a 2048 cap with exact `n_new_tokens` per row. The measurement that set `MAX_NEW_TOKENS["zero_shot"]`: at 64 tokens this model scored 3/24, at 2048 it scored 24/24 with no row reaching the cap. |
 | `budget-qwen3-8b.jsonl` | the same 24 prompts on Qwen3-8B with `enable_thinking=False` |
 | `budget-qwen3-8b-THINKING.jsonl` | three of those rows with thinking **on**, kept as the before-picture: 1179 mean tokens on a `node_count` question the same model answers in 105 without |
-| `truncated_keys.json` | the exact `(instance_id, condition, style)` of the **271** non-terminating thinking-arm rows that predate per-row token counts, per model |
+| `truncated_keys.json` | historical record of the **271** thinking-arm rows that were hand-labelled non-terminating. No longer consulted: every tracked row now carries `hit_cap`. Kept because it is the provenance of a claim, and because two of its rows turn out to have terminated. |
 | `sweep_frame.csv` | one row per scored response over the whole tracked sweep, 15,120 rows. **Stale — do not cite; see below.** |
 | `failure_sample.csv` | the stratified manual-inspection sample, 56 rows with full response text. **Stale — do not cite; see below.** |
 

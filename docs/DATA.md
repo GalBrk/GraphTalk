@@ -106,9 +106,16 @@ cycle_check      'Yes, there is a cycle.'
 
 These are properties of the data, not of the analysis, so they belong here:
 
-- **`runs/smoke-gemma4-e4b.jsonl` carries `model: gemma4-e4b`.** Globbing
-  `runs/*.jsonl` pools its 20 rows into that model's results. Exclude it.
-- **316 thinking-arm rows never terminate** and are truncated at the token cap.
+- **Anything under `runs/archive/` is not part of the sweep.** It holds the smoke
+  test (20 rows carrying `model: gemma4-e4b`) and the 4x-cap regeneration probe.
+  `runs/*.jsonl` no longer matches them, and `graphtalk/analysis.py` excludes the
+  directory outright rather than matching on filenames.
+- **679 rows never terminate** and are truncated at the token cap — 309 in the
+  thinking arm and **370 in the main sweep**, which was previously believed to have
+  none. Every row now carries `hit_cap`, measured on one instrument (see
+  `scripts/backfill_hit_cap.py`); the main-sweep rows concentrate at `zero_cot`,
+  which is given half the token budget, and materially inflate the `zero_cot`
+  penalty reported in `docs/sweep-findings.md`.
   They still *parse*, because the extractor finds an integer in the abandoned
   working, so they score as confident wrong answers rather than as missing. Their
   Of those, 271 predate per-row token counts and their exact keys are in
@@ -117,9 +124,9 @@ These are properties of the data, not of the analysis, so they belong here:
   before reporting accuracy: on `gemma4-12b-think` the difference is 81.2% against
   99.1%. The count fell from 350 because the reworded `filler` primer roughly
   halved non-termination in that condition -- see `docs/sweep-findings.md`.
-- **`runs/*.redo.shard*.jsonl` are evidence, not answers.** 67 of those rows
-  regenerated at a 4x larger cap; 76% still hit it. They exist to show the cap was
-  not the cause. Do not merge them into the arm.
+- **`runs/archive/*.redo.shard*.jsonl` are evidence, not answers.** 67 of those
+  rows regenerated at a 4x larger cap; 76% still hit it. They exist to show the cap
+  was not the cause. Do not merge them into the arm.
 - **955 main-sweep rows were generated on CPU** before a driver mismatch was
   found — 438 `gemma4-e4b`, 426 `qwen3-14b`, 91 `qwen3-8b`. Greedy decoding means
   they should match GPU output, but this is unverified.

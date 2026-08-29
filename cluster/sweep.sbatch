@@ -66,11 +66,10 @@ fi
 # score_sweep.py pools by each row's `model` field rather than by filename, so a
 # tagged file joins its arm with no reassembly.
 #
-# `redo` is refused rather than merely discouraged: analysis._EXCLUDE_SUBSTRINGS
-# contains ".redo.shard", so a file named that way is dropped from every frame in
-# silence -- no error, just missing rows. That exclusion belongs to the older
-# 4x-cap probe (docs/DATA.md: "evidence, not answers"), which is the opposite of
-# a regeneration meant to be included.
+# `redo` is still refused. Exclusion is now by directory (runs/archive/) rather
+# than by filename, so the old footgun is mostly gone -- but ".redo.shard" is kept
+# as a safety net in analysis.is_excluded for paths predating that move, and a file
+# named that way would still be dropped from every frame in silence.
 RUN_TAG="${GRAPHTALK_RUN_TAG:-}"
 if [[ -n "$RUN_TAG" ]]; then
   if [[ "$RUN_TAG" == *redo* ]]; then

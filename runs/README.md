@@ -13,7 +13,7 @@ no permissions needed).
 | `gemma4-12b.jsonl` | 2520 | `google/gemma-4-12B-it` |
 | `qwen3-8b.jsonl` | 2520 | `Qwen/Qwen3-8B` |
 | `qwen3-14b.jsonl` | 2520 | `Qwen/Qwen3-14B` |
-| `smoke-gemma4-e4b.jsonl` | 20 | a smoke test; **not** part of the sweep |
+| `archive/` | — | rows that carry a `model` field but are **not** part of the sweep: the smoke test and the 4x-cap probe. Excluded by directory, not by filename. |
 | `../shortcuts.json` | 36 cells | primer-only solver score per (task, condition) |
 | `<model>.rerun.shardNofM.jsonl` | 360/arm | the prompt-rewording regeneration; part of the arm |
 | `../prompts.jsonl` | 2520 | the prompts these responses answer — **except** the 1,440 un-regenerated `zero_cot` rows |
@@ -26,15 +26,17 @@ Every model saw the identical prompt file. Each row is one JSON object:
 ```json
 {"instance_id": "node_count/7", "task": "node_count", "condition": "degree",
  "style": "zero_shot", "gold": " 18.", "model": "gemma4-12b", "response": "...",
- "n_new_tokens": 143, "hit_cap": false}
+ "n_new_tokens": 143, "hit_cap": false, "token_count_source": "retokenized"}
 ```
 
-`n_new_tokens` and `hit_cap` exist only on rows generated during or after the
-prompt-rewording re-run. On older rows they are **absent, not false** — for those,
-`analysis/truncated_keys.json` is still the only record of which responses were cut
-off at the budget, and `graphtalk/analysis.py` falls back to it when the fields are
-missing. Treat absence as unknown; reading it as `false` would silently mark 350
-known non-terminating rows as clean.
+`n_new_tokens` and `hit_cap` are now on **every** row. Rows generated during or
+after the prompt-rewording re-run carry the generator's own count; the rest were
+backfilled by `scripts/backfill_hit_cap.py`, which re-tokenizes the response against
+its budget and marks itself with `token_count_source: "retokenized"`. That method
+reproduces the generator's flag on 45/45 capped and 2,835/2,835 non-capped rows.
+`analysis/truncated_keys.json` is no longer consulted for any tracked row; it is kept
+as the historical record of what was hand-labelled, including two rows it labels that
+in fact terminated.
 
 `instance_id` is the pairing key: the same graph and query appear under all seven
 conditions and both styles, differing only in the primer. That pairing is what
