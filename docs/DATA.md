@@ -159,6 +159,17 @@ At 5-34% rather than ~100%, all eight resolve the ambiguity the same way the gol
 does *most of the time*. The original conclusion drawn here was that the ambiguity
 therefore does not drive the error rate and no correction was warranted.
 
+### The prediction, staked before the re-run
+
+Before any row was regenerated, this section's conclusion was written down as a
+falsifiable claim: *"the rewording moves `edge_existence` accuracy very little. If
+accuracy is flat, the ambiguity was not what drove error on this task and the
+rewording bought comparability loss for nothing; if it moves, the measurement above
+was wrong about what the models were doing. Either outcome is a result — but only
+because the claim was staked first."*
+
+### Outcome, recorded 2026-08-29
+
 **That conclusion was wrong, and the re-run measured it.** The question was
 reworded to *"Does an edge exist between Node A and Node B?"* and all affected rows
 regenerated. Accuracy rose by a mean of **10.2 points**, and the path-only `Yes`
@@ -233,45 +244,6 @@ These are properties of the data, not of the analysis, so they belong here:
   prompt of record for the 1,440 responses (360 x 4 plain models) that keep the old
   text. Rebuilding it from `build_prompts.py` is not possible; it exists because a
   response is only interpretable against the exact prompt that produced it.
-
-## A prediction about the `edge_existence` rewording, recorded in advance
-
-The question was reworded from *"Is node A connected to node B?"* to *"Does an edge
-exist between Node A and Node B?"* on the argument that "connected to" is ambiguous
-with reachability. Measured across all 30 `edge_existence` instances before the
-rewording, that ambiguity was real but inert: 12 instances have gold `Yes`, 14 have
-gold `No` with a path present, and 4 are genuinely unreachable — so 47% of instances
-would flip under a reachability reading. On the 14 path-only pairs, where that reading
-predicts a ~100% `Yes` rate, the eight models answered `Yes` on **5% to 34%**
-(`gemma4-12b` 5%, `qwen3-8b` 34%). All eight already resolved the question the way the
-gold does.
-
-**So the prediction is that the rewording moves `edge_existence` accuracy very little.**
-This is written down before the regenerated rows exist. If accuracy is flat, the
-ambiguity was not what drove error on this task and the rewording bought comparability
-loss for nothing; if it moves, the measurement above was wrong about what the models
-were doing. Either outcome is a result — but only because the claim was staked first.
-
-### Outcome: the prediction was wrong, and instructively so
-
-Recorded 2026-08-29, after all eight arms were regenerated. **Accuracy moved a lot** —
-mean **+10.2 points**, from +1.7 on `gemma4-12b` to +18.9 on `qwen3-8b`, with the
-path-only "Yes" rate falling to exactly **0.0% in every arm**. The rewording was
-justified.
-
-The measurement above was not wrong; the inference from it was. Each of the numbers in
-that table is reproduced by the re-run's baseline to within a couple of points, and the
-gradient it noticed — weaker models drifting toward the reachability reading — is
-exactly what predicts the effect size, at **r = +0.95** across the eight arms. What was
-wrong was treating a 5–34% residual as negligible. On `gemma4-12b`, whose rate is 5%,
-the prediction holds precisely: +1.7 points, near enough to nothing. The error was
-generalising the strongest model's behaviour to a sweep whose error mass sits in the
-weaker ones.
-
-The narrower claim in that table survives intact: all eight models *do* resolve
-"connected" as adjacency most of the time. It just turns out that "most of the time" is
-where a tenth of the task's accuracy was hiding. Full analysis in
-`docs/sweep-findings.md`; reproduce with `scripts/rewording_effect.py`.
 
 ## Reproducing
 
