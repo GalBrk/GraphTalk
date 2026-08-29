@@ -147,14 +147,31 @@ path-only pairs, where the reachability reading predicts ~100%:
 | qwen3-8b-think | 89% | 24% | 4% |
 
 At 5-34% rather than ~100%, all eight resolve the ambiguity the same way the gold
-does. So the benchmark's ambiguity is real but is **not** what drives the error
-rate on this task, and no correction to the data is warranted.
+does *most of the time*. The original conclusion drawn here was that the ambiguity
+therefore does not drive the error rate and no correction was warranted.
 
-Worth noting the gradient: the path-only `Yes` rate runs inversely to model
-quality, from 5% on gemma4-12b to 34% on qwen3-8b. The weaker models drift toward
-the reachability reading. That is a more specific account of `edge_existence`
-error than "the model cannot check adjacency", and it is a plausible contributor
-to this being one of the two tasks the shortcut table leaves real headroom on.
+**That conclusion was wrong, and the re-run measured it.** The question was
+reworded to *"Does an edge exist between Node A and Node B?"* and all affected rows
+regenerated. Accuracy rose by a mean of **10.2 points**, and the path-only `Yes`
+rate in the table above fell to **exactly 0.0% in every one of the eight arms**.
+The 5-34% residual this section treated as negligible was the entire effect.
+
+What the table got right is the **gradient**, and it turns out to be the whole
+story. The path-only `Yes` rate runs inversely to model quality, from 5% on
+gemma4-12b to 34% on qwen3-8b, and the accuracy gain from rewording tracks that
+rate at **r = +0.95** — from +1.7 on gemma4-12b to +18.9 on qwen3-8b. So the
+measurement here was sound and reproduces against the regenerated rows; the error
+was inferential. gemma4-12b, the model this section leaned on hardest, is the one
+model for which "the ambiguity is inert" holds: it gained 1.7 points, near enough
+to nothing. Generalising from it to a sweep whose error mass sits in the weaker
+models is what produced the wrong recommendation.
+
+The narrower claim survives intact — the models do resolve "connected" as adjacency
+far more often than not. It just turns out that "far more often than not" was
+hiding about a tenth of this task's accuracy.
+
+Full analysis in `docs/sweep-findings.md`; reproduce with
+`scripts/rewording_effect.py`.
 
 Caveat on precision: this rests on 30 instances, 14 of them ambiguous. The
 per-model rates are over 14 x 7 conditions = 98 rows each and are stable enough,
