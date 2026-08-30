@@ -107,6 +107,35 @@ def test_reworded_question_reaches_the_built_prompt():
     ("There are 15 nodes in this graph.", "15"),
     ("Counting 0,1,2,3,4 and so on. In total there are 12 nodes.", "12"),
     ("Step 1: nodes 0 through 9. Step 2: that is 10.\nThe answer is 10.", "10"),
+    # The value follows the queried node's own id in the same tail sentence.
+    ("** The degree of node 7 is **2**.", "2"),
+    # An incomplete tail ending in ":" doesn't contain the answer -- it's on
+    # a separate line the tail can't reach.
+    ("Since the graph is undirected, the **degree of node 8** is:\n\n"
+     "$$\n\\boxed{2}\n$$", "2"),
+    # A "glued" continuation with no space (a likely generation artifact)
+    # restating the node list must not outrank the value stated right after
+    # the marker -- the first-sentence restriction stops at "18.".
+    ("The answer is 18.The graph is described among the nodes: 0, 1, 2, 3, "
+     "4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, and 17.", "18"),
+    # A parenthetical aside that is its own complete sentence must not
+    # extend the first-sentence scope into the glued continuation after it.
+    ("The answer is: The graph contains 7 nodes. (The return probability "
+     "data is extraneous.)The nodes in the graph are explicitly listed: "
+     "0, 1, 2, 3, 4, 5, and 6.", "7"),
+    # A hedge clause naming a different number must not outrank the value
+    # already stated before it in the first sentence.
+    ("The answer is: it must be 34. If the manual count is correct instead, "
+     "the degree sum must be 66.", "34"),
+    # Plain further reasoning after the stated answer, with no hedge word or
+    # glued artifact -- just more sentences on the same line.
+    ("The answer is: the number of nodes is the count of the labels used, "
+     "which is 11. The sum of the degrees is 4+6+6+7+6+4+8+4+5+7+7 = 64. "
+     "By the Handshaking Lemma, the number of edges is 64 / 2 = 32.", "11"),
+    # A re-verification enumeration after the stated answer must not outrank
+    # it either, even though it isn't glued and isn't a hedge.
+    ("The answer is: it should be 6 nodes. Let me count again: "
+     "0,1,2,3,4,5. Yep, that's six nodes.", "6"),
 ])
 def test_extracts_integers(text, want):
   assert scoring.extract_answer(text, "node_count") == want

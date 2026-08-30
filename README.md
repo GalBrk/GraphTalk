@@ -110,15 +110,15 @@ cleanly on 3.12+.
 uv run --no-sync pytest -q
 ```
 
-384 tests: 27 vendored ones covering graph generation, text encoders and
+391 tests: 27 vendored ones covering graph generation, text encoders and
 metrics, 138 covering the primer statistics, the renderer, and the committed
-golden primer strings, 143 covering the shortcut solvers, 65 covering prompt
+golden primer strings, 143 covering the shortcut solvers, 72 covering prompt
 assembly and answer scoring, and 11 covering the sweep frame, the failure taxonomy, the
 wording split, and how a row's non-termination flag was obtained.
 
 The last of those need `pandas`, which is not in the base install: without
 `pip install -e ".[analysis]"` the suite fails at *collection* rather than
-skipping, so the whole run aborts and none of the other 373 report.
+skipping, so the whole run aborts and none of the other 380 report.
 
 Two of those deserve mention because they are what the rest rests on. The
 **round trip** renders a primer, parses it back, and requires the recovered

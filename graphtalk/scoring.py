@@ -40,6 +40,20 @@ _BOOLEAN_TASKS = ("edge_existence", "cycle_check")
 _INTEGER = re.compile(r"-?\d+")
 # "the answer is 12", "Answer: 12", "final answer: 12" -- checked before falling
 # back to positional heuristics, since an explicit marker is unambiguous.
+#
+# Tried requiring "is"/":"/"-" after "answer" (not optional) to keep a bare
+# verb use ("I can answer this using...") from counting as a label. Reverted:
+# a real response had TWO "answer" occurrences -- an early preamble ("arrive
+# at the answer:") and a later, harmless heading ("Answer the Question:",
+# whose same-line tail held no digits and so already fell through correctly
+# to the full text). The tightened regex no longer matched the harmless
+# later one, which exposed the earlier, harmful one as `_marker_tail`'s
+# `found[-1]` instead -- regressing a `node_degree` row that was already
+# correct. `_MARKER` selecting the *last* matching occurrence assumes any
+# match is as good as any other; that assumption doesn't hold when responses
+# contain multiple "answer" mentions of different quality, and fixing that
+# properly needs a preamble/hedge guard like `_QUESTION_OR_HEDGE_LEADIN`
+# rather than a one-line regex change. Left for a future, narrower fix.
 _MARKER = re.compile(
     r"(?:final\s+answer|answer)\s*(?:is|:)?\s*[:\-]?\s*(.+)", re.IGNORECASE
 )
@@ -158,21 +172,52 @@ def has_answer_marker(text: str) -> bool:
   return _marker_tail(text) is not None
 
 
+# "node 7"/"nodes 12" -- the queried node's own id, referenced by the same
+# sentence that states the answer ("The degree of node 7 is 2."). Blanked
+# out before the tail is searched, since the id and the value can appear in
+# either order and simply preferring "last integer" (or "first") isn't
+# reliable enough on its own -- see `_extract_integer`.
+_NODE_ID_REF = re.compile(r"\bnodes?\s+-?\d+\b", re.IGNORECASE)
+
+
 def _extract_integer(text: str) -> str | None:
   """The answered integer.
 
-  Prefers an explicit marker; otherwise takes the *last* integer in the response.
-  Last rather than first because a CoT response ends with its conclusion while
-  its middle is full of intermediate arithmetic. On a zero-shot response there is
-  usually only one integer, so the two rules agree.
+  Only the tail's *first sentence* (up to its first period, or the whole
+  tail if it has none) is searched, with a "node 7"/"nodes 12" reference to
+  the queried node's own id blanked out first.
+
+  The first-sentence restriction matters because CoT tails routinely
+  continue past the stated answer, all on the same physical line (`_MARKER`'s
+  capture can't cross a newline, but nothing stops several sentences from
+  sharing one): a restated node list glued on with no separator
+  ("18.The graph is described among the nodes..."), a hedge ("...must be 34.
+  If the manual count is correct instead, the degree sum must be 66."), or
+  just further reasoning ("...which is 11. The sum of the degrees is
+  ... = 64. ... = 32."). Every one of those continuations carries its own
+  digits, and two designs that searched the whole tail -- "first integer"
+  and "last integer" -- each regressed real rows for exactly this reason,
+  in opposite directions. Restricting to the first sentence removes the
+  continuation before either rule would see it; taking the *last* integer
+  within that one sentence is still needed for the node-id-mentioned-first
+  shape above.
+
+  A tail ending in ":" is treated as not actually containing the answer --
+  e.g. "...the degree of node 8 is:", whose value follows on a separate line
+  the tail can't reach (commonly a `$$\boxed{n}$$` block) -- and the scope
+  falls through to the full text rather than committing to the queried
+  node's id, which is typically the tail's only integer in that shape.
   """
   tail = _marker_tail(text)
-  for scope in (tail, text):
-    if scope:
-      found = _INTEGER.findall(scope)
-      if found:
-        return found[0] if scope is tail else found[-1]
-  return None
+  if tail and not tail.endswith(":"):
+    period = tail.find(".")
+    first_sentence = tail[:period + 1] if period >= 0 else tail
+    scope = _NODE_ID_REF.sub(" ", first_sentence)
+    found = _INTEGER.findall(scope)
+    if found:
+      return found[-1]
+  found = _INTEGER.findall(text)
+  return found[-1] if found else None
 
 
 def _extract_boolean(text: str, task: str) -> str | None:

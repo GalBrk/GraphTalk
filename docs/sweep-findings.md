@@ -462,6 +462,55 @@ Full writeup, including the two regressions in more detail, is in
 `tests/test_prompts.py::test_extracts_edge_existence_paraphrases` and its
 three regression-specific siblings, and `scripts/build_sweep_frame.py`.
 
+## `_extract_integer` was reading the queried node's own id as the answer
+
+The largest fix this session, and the one that took the most attempts.
+`_extract_integer` (`node_count`/`edge_count`/`node_degree`) preferred a
+marker's tail over the full response, and inside that tail took the *first*
+integer -- which is the queried node's own id whenever the response says
+"The degree of node 7 is 2." (id before value). A 23-row sample of
+`wrong`/`unparsed` rows found this in all 11 sampled `node_degree` rows and
+both sampled `node_count` rows; `edge_count` (5 rows) and `cycle_check`
+(1 row) in the same sample were genuine model errors, extraction already
+correct.
+
+Two intermediate designs shipped-then-reverted before the fix that stuck,
+each caught by the mandatory full-sweep rescore, not by inspection:
+
+- **Take the tail's last integer instead of the first**, plus tightening
+  `_MARKER` so a bare verb "answer" doesn't count as a label: regressed
+  **24 rows**. A response with two "answer" mentions -- a harmful early
+  preamble and a harmless later heading -- had the tightened regex stop
+  matching the harmless one, exposing the harmful one as the selected
+  marker instead (plus a `cycle_check` regression from the same mechanism).
+  The `_MARKER` change was reverted outright. Separately, "last integer"
+  broke exactly when the correct value came *first* in the tail, followed
+  by a glued-on restated node list.
+- **Cut the tail at a glued continuation or a ". If" hedge, blank "node X"
+  references, take the last remainder**: fixed those 24, but found **9
+  more** -- the same "continuation past the real answer" shape recurs in
+  plain sentences with no hedge word or glue artifact to detect.
+
+**What shipped:** restrict the tail to its first sentence, blank a "node X"
+reference within it, take the last remaining integer. One rule, not two
+special-case detectors, and it generalizes to shapes neither detector
+caught. Final rescore: **2** further changes, both a correctly-surfaced
+model error (`node_degree/2`'s `filler` primer, "Node 0 has 8 other nodes,"
+misreads as "every node has degree 8," and the model says so outright --
+the old code was accidentally reading `0` from "node 0" in that sentence,
+not the model's real, wrong answer), not a regression.
+
+**Measured effect: 507 rows**, `node_degree` 480 / `node_count` 28 /
+`edge_count` 1, `wrong`/`unparsed → correct` -- far beyond the ~13-row
+sample's prediction, because the bug wasn't sample-specific; it hit this
+tail shape everywhere it occurred in the tracked sweep. `edge_count`'s much
+smaller share confirms the earlier finding that most of that task's error
+is genuine arithmetic mistakes, not extraction.
+
+Full writeup, including the three-attempt history, is in `docs/DATA.md`;
+reproduce with `tests/test_prompts.py::test_extracts_integers` and
+`scripts/build_sweep_frame.py`.
+
 ## Provenance
 
 The thinking arm was generated with `graphtalk-cu126` (torch 2.13.0+cu126) while

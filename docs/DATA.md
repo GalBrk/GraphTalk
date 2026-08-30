@@ -374,6 +374,86 @@ extractor already handles it. The fix is Yes-only, not a guess at symmetry.
 Reproduce with `tests/test_prompts.py::test_extracts_edge_existence_paraphrases`
 (and its three regression-specific siblings) and `scripts/build_sweep_frame.py`.
 
+## `_extract_integer`'s tail scope picked the wrong number
+
+`_extract_integer` (`node_count`/`edge_count`/`node_degree`) prefers an
+explicit marker's tail over the full response, on the reasoning that "an
+explicit marker is unambiguous." It wasn't: within the tail, it took the
+*first* integer unconditionally, which is the queried node's own id whenever
+a "node X is Y" sentence states the id before the value — "The degree of
+node 7 is 2." read as `['7', '2']`, returning `7` instead of the gold `2`.
+
+### The prediction, staked before the re-score
+
+A sample of 23 `wrong`/`unparsed` rows (`analysis/failure_sample.csv`,
+excluding `non_terminating`) found this bug in all 11 sampled `node_degree`
+rows and both sampled `node_count` rows — 0 in `edge_count` (5 rows, all
+genuinely wrong model arithmetic) or `cycle_check` (1 row, genuine reasoning
+error). Predicted before rescoring: a fix scoped to `_extract_integer` would
+move roughly this many rows, concentrated in `node_degree`.
+
+### Outcome, recorded 2026-08-30 — three designs regressed before this one shipped
+
+**Attempt 1: take the tail's *last* integer instead of the first** (matching
+the full-text scope's existing rule, and also tightening `_MARKER` to
+require `is`/`:`/`-` after "answer" — a bare verb use like "I can **answer**
+this using..." was hijacking the tail on 2 of the sample rows). Rescoring
+this version found **24 regressions**, in two independent mechanisms:
+
+1. **A response with two "answer" mentions.** `_marker_tail` takes the
+   *last* matching occurrence in the whole response, on the assumption any
+   match is as good as another. One real response said "Here's a thinking
+   process to arrive at the **answer**:" early (a preamble) and "**Answer
+   the Question:**" later (a heading whose same-line tail held no digits and
+   already, harmlessly, fell through to the full text). Tightening `_MARKER`
+   stopped matching the harmless heading — exposing the harmful preamble as
+   `found[-1]` instead, and regressing a `cycle_check` row too (a stray "no"
+   in restated reasoning after the tightening exposed a different marker).
+   **Reverted the `_MARKER` change entirely** — the 2-row payoff didn't
+   justify a second failure mode discovered on top of the first.
+2. **"Last integer" breaks exactly when the correct value comes *first* in
+   the tail.** A real response said "18.The graph is described among the
+   nodes: 0, 1, ..., 17." — the marker's own next token (`18`) was already
+   correct, but a restated node list glued on with no separator (a likely
+   generation artifact) made `17` the tail's last integer instead.
+
+**Attempt 2: cut the tail at a "glued" continuation (no-space
+period/paren-before-capital) or a ". If" hedge clause, blank out "node X"
+references, then take the last remaining integer.** Fixed attempt 1's
+regressions, but found **9 more** on rescoring: the same "continuation after
+the real answer" shape recurs with plain sentences that are neither glued
+nor hedges — "...which is 11. The sum of the degrees is ... = 64. ... = 32."
+and "should be 6 nodes. Let me count again: 0,1,2,3,4,5." both continue past
+a correct, already-stated answer with no signal attempt 2's two specific
+detectors were built to catch.
+
+**What shipped: restrict the tail to its first sentence** (up to its first
+period, whole tail if none), *then* blank out a "node X" reference, *then*
+take the last remaining integer. This one rule subsumes both of attempt 2's
+special-case detectors (a glued or hedged continuation is, definitionally,
+not part of the first sentence) and generalizes to the two new shapes found
+against it. Rescoring this version found exactly **2** further changes, and
+both are not a bug: `node_degree/2`'s `filler` condition primes the model
+with "Node 0 has 8 other nodes in this graph" (a node-*count* filler
+sentence, misleading by design for this condition), which the model
+misreads as "every node's degree is 8" and says so outright — the old
+extractor was reading `0` from "node 0" in that same sentence, not the
+model's stated (wrong) conclusion, and happened to match gold `0` by
+coincidence. The fix correctly reads what the model actually said; the row
+newly (and correctly) counts as a model error, not an extraction bug.
+
+Rescoring `runs/*.jsonl` with the shipped version and rebuilding
+`analysis/sweep_frame.csv` flipped **507 rows** from `wrong`/`unparsed` to
+`correct` (480 `node_degree`, 28 `node_count`, 1 `edge_count`) — far more
+than the ~13-row sample predicted, because the bug wasn't specific to the
+sampled rows; it affected this shape everywhere it occurred in the tracked
+sweep. Confirmed against the pre-fix frame that every other change is in
+these three tasks only, and the only two `correct → wrong` transitions are
+the coincidental `node_degree/2` case above, not a regression.
+
+Reproduce with `tests/test_prompts.py::test_extracts_integers` and
+`scripts/build_sweep_frame.py`.
+
 ## Caveats that travel with specific rows
 
 These are properties of the data, not of the analysis, so they belong here:
