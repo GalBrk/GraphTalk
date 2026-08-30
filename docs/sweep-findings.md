@@ -373,6 +373,63 @@ right. The trade is heavily favourable, but it is a trade.
 
 Reproduce with `scripts/rewording_effect.py`.
 
+## `connected_nodes`'s "None" answers were scored wrong, narrowly
+
+A smaller sibling of the previous finding, same root cause -- extraction
+matched the dataset's exact answer spelling and nothing else. `connected_nodes`
+spells an isolated node's gold answer `"No nodes."`; `graphtalk/scoring.py`
+only recognised that literal phrase, so a model answering `"None"`/`"None."`
+fell through to a stray digit earlier in the response and scored `wrong`.
+
+Only one of the 30 instances (`connected_nodes/2`) has gold `No nodes.`, so
+the fix's reach was bounded before it was measured: rescoring `runs/*.jsonl`
+after adding a `"None"`/`"None."` recognizer (anchored to end-of-line so a
+sentence like "None of the nodes are directly connected" is not misread)
+flipped exactly **8 rows** from `wrong` to `correct`, all `connected_nodes/2`,
+7 of them on `gemma4-12b` and 1 on `gemma4-e4b-think`. No other task or
+instance changed, and no non-terminating row was touched. Left out of scope:
+one `connected_nodes/2` row spelled `"A: []"` instead, which the fix does not
+recognise -- a deliberate precision-over-recall boundary, not a miss.
+
+Full writeup in `docs/DATA.md`; reproduce with
+`tests/test_prompts.py::test_extracts_node_lists` and
+`scripts/build_sweep_frame.py`.
+
+## `edge_existence` conclusions stated without "yes"/"no" were unparsed
+
+Same shape of bug, `_extract_boolean` this time: it only recognised a
+standalone `yes`/`no` token, so a response concluding *"An edge exists between
+Node A and Node B."* -- echoing the live question's own wording -- scored
+`unparsed`. 17 of 2,520 tracked rows were affected; only 10 (5 live-`zero_shot`
+"edge exists" rows, 5 retired-`zero_cot` "is connected to" rows) are a
+paraphrase worth fixing -- the rest are genuine refusals or truncations, which
+must stay `unparsed`.
+
+**The obvious fix regressed 44 rows before it shipped.** Feeding the new
+patterns into the same position-based "last occurrence wins" comparison
+already used for bare `yes`/`no` let a mid-response restatement of the
+question ("...to determine **if an edge exists** between X and Y...") outrank
+the response's own correct bare `"No"` when the restatement happened to sit
+later in the text, and separately coerced an explicit refusal ("we cannot
+determine if an edge exists...") into a stated `"Yes"`. A third real row
+defeated the first attempt at a guard too: a true but irrelevant "is connected
+to" sentence about a *different*, real edge, stated early while the response
+summarised the graph before correctly refusing to answer the queried pair.
+
+The fix that shipped: the new patterns are a **fallback only**, consulted
+after both scopes are confirmed to have no bare token anywhere (so they can
+never override an already-resolved answer), gated to exclude a question/hedge
+lead-in ("if", "whether", "determine", ...), and checked only against each
+scope's **last non-empty line** rather than searched anywhere in it -- the
+same rule `_extract_node_list` already uses for `No nodes`. Rescoring against
+this version flipped exactly the predicted 10 rows, `unparsed → correct`, with
+zero rows regressed and the two refusals still correctly `unparsed`.
+
+Full writeup, including the two regressions in more detail, is in
+`docs/DATA.md`; reproduce with
+`tests/test_prompts.py::test_extracts_edge_existence_paraphrases` and its
+three regression-specific siblings, and `scripts/build_sweep_frame.py`.
+
 ## Provenance
 
 The thinking arm was generated with `graphtalk-cu126` (torch 2.13.0+cu126) while

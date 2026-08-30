@@ -197,6 +197,129 @@ Caveat on precision: this rests on 30 instances, 14 of them ambiguous. The
 per-model rates are over 14 x 7 conditions = 98 rows each and are stable enough,
 but the instance count is small and a different query draw would move them.
 
+## `connected_nodes`'s "No nodes" spelling was matched too narrowly
+
+The dataset spells an isolated node's answer `"No nodes."`
+(`graphtalk/graphqa.py`), and `graphtalk/scoring.py` only recognised that
+literal phrase (`_NO_NODES = re.compile(r"\bno\s+nodes?\b")`). A model
+answering the equally correct `"None"`/`"None."` instead matched neither that
+regex nor the digit-list one, so extraction fell through to a stray digit
+earlier in the response (typically a number mentioned in the question text
+itself) and scored the row `wrong` rather than `correct`.
+
+### The prediction, staked before the re-score
+
+Only one of the 30 `connected_nodes` instances (`connected_nodes/2`) has gold
+`No nodes.`, so the fix could only move rows tied to that single instance —
+predicted before rescoring: a handful of rows across the 8 arms, not a
+sweep-wide shift, since every other instance's gold is a non-empty list that
+"None" recognition cannot touch.
+
+### Outcome, recorded 2026-08-30
+
+`graphtalk/scoring.py` gained a second, tightly-anchored regex,
+`_NONE_ANSWER = re.compile(r"(?:^|:)\s*none\.?\s*$")`, wired into
+`_extract_node_list` alongside `_NO_NODES` and canonicalising to the same
+`"No nodes"` string, so nothing downstream (`_node_set`, `set_f1`,
+`score_one`) needed to change. Anchored to end-of-line/end-of-tail (optionally
+after a `"<label>:"` prefix like `"A:"`) rather than searched anywhere, so a
+sentence like *"None of the nodes are directly connected, but node 5 is
+adjacent"* is not misread as the empty-set answer.
+
+Rescoring `runs/*.jsonl` with the fix and rebuilding
+`analysis/sweep_frame.csv` flipped **8 rows** from `wrong` to `correct`, all
+`connected_nodes/2`, spanning 7 (model, condition, style) combinations on
+`gemma4-12b` plus one on `gemma4-e4b-think`. Confirmed against the previous
+committed frame that no other task and no non-terminating row changed. The
+prediction held: a single-instance bug produces a single-instance fix, not a
+sweep-wide accuracy move.
+
+**Known gap, left out of scope on purpose:** one further `connected_nodes/2`
+row (`qwen3-14b`, `condition: all`) answers `"A: []"` — a different spelling
+this fix does not recognise — and a semicolon-prefixed `"...; none."` shape is
+also not caught, since the regex requires `^` or `:` immediately before
+`"none"`. Both are precision-over-recall tradeoffs, not oversights: widening
+further risks the same kind of false positive the anchoring was added to
+avoid.
+
+Reproduce with `tests/test_prompts.py::test_extracts_node_lists` and
+`scripts/build_sweep_frame.py`.
+
+## `edge_existence` responses that never say "yes"/"no" were unparsed
+
+`graphtalk/scoring.py`'s `_extract_boolean` only recognised a standalone
+`\byes\b`/`\bno\b` token. Some responses state their conclusion in prose that
+never contains either word — most commonly `"An edge exists between Node A
+and Node B."`, echoing the live question's own wording (*"Does an edge exist
+between Node A and Node B?"*) — so extraction returned `None` and a
+semantically-correct row scored `unparsed`.
+
+### The prediction, staked before the re-score
+
+Scanning all 2,520 tracked `edge_existence` rows found 17 `unparsed`, in four
+disjoint groups: 5 live-`zero_shot` rows saying "An edge exists..."; 5
+retired-`zero_cot` rows saying "...is connected to..."; 2 genuine refusals
+("Cannot be determined..."); 5 truncated/non-terminating responses with no
+stated conclusion at all. Only the first two groups are a paraphrase to fix —
+predicted before rescoring: **10 rows**, all `unparsed → correct`, nothing
+else in the frame touched.
+
+### Outcome, recorded 2026-08-30 — and two regressions the naive version caused
+
+The first implementation fed the new patterns into the *same* position-based
+comparison already used for bare `yes`/`no` (whichever token's last occurrence
+sits later in the text wins, since CoT states its conclusion at the end). That
+version measured **62 changed rows, not 10** — it was reverted before being
+recorded here, but the mechanism is worth keeping because it shaped the actual
+fix:
+
+1. **A mid-response restatement of the question outranked the real answer.**
+   44 rows that already correctly resolved to `"No"` via a bare token flipped
+   to `"Yes"`, because a later sentence like *"...to determine **if an edge
+   exists** between X and Y, we need to..."* — the CoT restating the question
+   itself as a preamble — sat later in the scanned text than the response's
+   own bare `"No"`, and won the position comparison.
+2. **A refusal was coerced into an answer.** A response that explicitly said
+   *"we cannot determine if an edge exists between Node 0 and Node 1 from the
+   given data"* — the same restatement phrase, this time inside a hedge — was
+   read as a stated `"Yes"` even though the model declined to answer at all.
+
+The fix that shipped addresses both by construction rather than by patching
+around each case: the new patterns (`_EDGE_EXISTS`, `_CONNECTED_YES` in
+`graphtalk/scoring.py`) are consulted **only as a fallback**, after both scopes
+have already been checked for a bare token and found none — so they can turn
+an `unparsed` row into a parsed one but can never override an
+already-resolved answer, which is what (1) was. A `_QUESTION_OR_HEDGE_LEADIN`
+check excludes a match immediately preceded by "if"/"whether"/"determine"/etc.
+(checked against the text before the match, not a `re` lookbehind, since the
+disqualifying word can be separated from "edge" by "an"/"the"), which handles
+the direct form of (2).
+
+That still wasn't sufficient on its own: a third real row showed the fallback
+matching a true, but *irrelevant*, `"is connected to"` sentence — the graph
+encoding's own vocabulary for describing a real, different edge, stated early
+while the response summarises the graph, before it goes on to correctly refuse
+to answer about the queried pair (`"* Node 8 is connected to nodes 4, 5. ...
+A: Cannot be determined..."`). No lead-in word precedes it, so the hedge guard
+doesn't catch it. The fallback is therefore also restricted to each scope's
+**last non-empty line only**, not searched anywhere in it — the same "the
+conclusion is stated last, don't pool across the whole response" rule
+`_extract_node_list` already applies for `No nodes` (see the section above).
+
+With both guards in place, rescoring `runs/*.jsonl` and rebuilding
+`analysis/sweep_frame.csv` flipped exactly the predicted **10 rows** from
+`unparsed` to `correct`, and confirmed against the previous frame that no
+other task, no non-terminating row, and no row that already had a non-null
+`predicted` value changed. The two refusal rows correctly remain `unparsed`.
+
+**No symmetric "No" gap exists in the observed data** — every gold-`No`
+`unparsed` row was a refusal or a truncation, not a "no edge"-style paraphrase,
+because that phrasing already contains the bare word "no" and the existing
+extractor already handles it. The fix is Yes-only, not a guess at symmetry.
+
+Reproduce with `tests/test_prompts.py::test_extracts_edge_existence_paraphrases`
+(and its three regression-specific siblings) and `scripts/build_sweep_frame.py`.
+
 ## Caveats that travel with specific rows
 
 These are properties of the data, not of the analysis, so they belong here:

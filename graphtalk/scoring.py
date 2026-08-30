@@ -46,11 +46,65 @@ _MARKER = re.compile(
 _YES = re.compile(r"\byes\b", re.IGNORECASE)
 _NO = re.compile(r"\bno\b", re.IGNORECASE)
 _NO_NODES = re.compile(r"\bno\s+nodes?\b", re.IGNORECASE)
+# A model answering "None"/"None." in place of the dataset's "No nodes"
+# spelling for an isolated node. Anchored to the end of the scope (optionally
+# after a "<label>:" prefix like "A:" or "Answer:") rather than searched
+# anywhere in free text, so a reasoning sentence like "None of the nodes are
+# directly reachable, but node 5 is adjacent" is not misread as the answer.
+# Known accepted gap: "...; none." (no colon) is not caught -- precision was
+# chosen over recall here rather than widening to a bare `\bnone\b` search.
+_NONE_ANSWER = re.compile(r"(?:^|:)\s*none\.?\s*$", re.IGNORECASE)
 # A run of integers separated by commas and/or "and" -- the connected_nodes
 # shape. The `,\s*and\s+` branch must come first: an Oxford comma makes the
 # separator ", and ", and a plain `,` branch would consume the comma, fail to
 # find a digit after it, and silently truncate the list one element early.
 _NODE_LIST = re.compile(r"\d+(?:\s*(?:,\s*and\s+|,\s*|\s+and\s+)\d+)*")
+# `edge_existence`-only paraphrases of the boolean answer that never say the
+# bare word "yes"/"no". Not applied to `cycle_check`, whose CoT reasoning
+# routinely mentions edges and connectivity without that being the task's
+# actual yes/no answer -- see `_extract_boolean`'s `task` gate. Both are
+# consulted only as a fallback when no bare yes/no exists anywhere in the
+# response (see `_extract_boolean`) -- an earlier version fed them into the
+# same position-based yes/no comparison as the bare tokens and regressed 44
+# real rows: a mid-response restatement of the question ("...to determine if
+# an edge exists between X and Y, we need to...") sometimes sat later in the
+# text than the response's own correct bare "No" and won the comparison.
+_EDGE_EXISTS = re.compile(r"\bedge\s+exists?\b", re.IGNORECASE)
+# "is not connected to"/"isn't connected to" need no special handling: `\s+`
+# between "is"/"are" and "connected" only matches whitespace, and "isn't"/
+# "aren't" aren't the literal word "is"/"are" -- grammar excludes those false
+# positives without extra machinery.
+_CONNECTED_YES = re.compile(r"\b(?:is|are)\s+connected\s+to\b", re.IGNORECASE)
+# Disqualifies a match that is restating the question or hedging rather than
+# stating the model's conclusion -- e.g. "To determine if an edge exists
+# between X and Y, we need to..." (the live question is itself "Does an edge
+# exist between Node A and Node B?", so CoT responses very commonly restate
+# it as a preamble) or "we cannot determine if an edge exists ... from the
+# given data" (an explicit refusal, which must stay `unparsed` rather than
+# become a guessed "Yes" -- this exact phrasing was a second real regression
+# found during development). Checked against the text before a match via a
+# plain regex on the prefix slice rather than a `re` lookbehind, since the
+# disqualifying word can be separated from "edge"/"connected" by "an"/"the"/
+# "node" and Python's `re` module requires lookbehind to be fixed-width.
+_QUESTION_OR_HEDGE_LEADIN = re.compile(
+    r"\b(?:if|whether|does|do|did|can|could|would|should|check|determine|"
+    r"examine|verify|confirm)\b[\w\s]{0,12}$",
+    re.IGNORECASE,
+)
+
+
+def _stated_conclusion_matches(pattern: "re.Pattern[str]", scope: str) -> list[int]:
+  """Start positions of `pattern` in `scope`, excluding question/hedge lead-ins."""
+  return [m.start() for m in pattern.finditer(scope)
+          if not _QUESTION_OR_HEDGE_LEADIN.search(scope[:m.start()])]
+
+
+def _last_nonempty_line(text: str) -> str | None:
+  for line in reversed(text.splitlines()):
+    line = line.strip()
+    if line:
+      return line
+  return None
 
 
 def _marker_tail(text: str) -> str | None:
@@ -88,7 +142,7 @@ def _extract_integer(text: str) -> str | None:
   return None
 
 
-def _extract_boolean(text: str) -> str | None:
+def _extract_boolean(text: str, task: str) -> str | None:
   """Yes or No.
 
   Scans for the last standalone yes/no token, for the same reason as the integer
@@ -100,6 +154,19 @@ def _extract_boolean(text: str) -> str | None:
   answer-introducing text ("Answer: ") whose immediate continuation still isn't
   the stated conclusion, and the real Yes/No a few sentences later must not be
   missed just because a tail was found at all.
+
+  For `edge_existence` only, a response with no bare yes/no anywhere falls
+  back to paraphrases that state the conclusion without that word -- "An edge
+  exists between..." or "...is connected to...". The fallback runs only after
+  both scopes have been checked for a bare token, so it can turn an `unparsed`
+  row into a parsed one but can never override an already-stated answer. It
+  is also checked only against each scope's *last non-empty line*, not
+  searched anywhere in it: the graph encoding's own vocabulary for describing
+  real (but unrelated) edges is this same phrase -- e.g. "Node 8 is connected
+  to nodes 4, 5." stated early while summarising the graph, in a response that
+  goes on to correctly refuse to answer about the queried pair. Restricting to
+  the last line is the same "conclusion is stated last, don't pool across the
+  whole response" rule `_extract_node_list` already applies for `No nodes`.
   """
   tail = _marker_tail(text)
   for scope in (tail, text):
@@ -110,6 +177,14 @@ def _extract_boolean(text: str) -> str | None:
     last_no = max((m.start() for m in _NO.finditer(scope)), default=-1)
     if last_yes >= 0 or last_no >= 0:
       return "Yes" if last_yes > last_no else "No"
+  if task == "edge_existence":
+    for scope in (tail, text):
+      if not scope:
+        continue
+      line = _last_nonempty_line(scope) or scope
+      if (_stated_conclusion_matches(_EDGE_EXISTS, line)
+          or _stated_conclusion_matches(_CONNECTED_YES, line)):
+        return "Yes"
   return None
 
 
@@ -139,17 +214,21 @@ def _extract_node_list(text: str) -> str | None:
   answer names many nodes while reasoning, so pooling every integer in the text
   would return the union of everything it considered. The last line that parses
   as a list is the stated answer.
+
+  A model's own "None"/"None." (`_NONE_ANSWER`) is treated the same as the
+  dataset's "No nodes" (`_NO_NODES`) -- both canonicalize to the same string
+  so nothing downstream needs to know which spelling produced it.
   """
   tail = _marker_tail(text)
   if tail is not None:
-    if _NO_NODES.search(tail):
+    if _NO_NODES.search(tail) or _NONE_ANSWER.search(tail):
       return "No nodes"
     found = _best_list(tail)
     if found:
       return found
 
   for line in reversed([line.strip() for line in text.splitlines() if line.strip()]):
-    if _NO_NODES.search(line):
+    if _NO_NODES.search(line) or _NONE_ANSWER.search(line):
       return "No nodes"
     found = _best_list(line)
     if found:
@@ -176,7 +255,7 @@ def extract_answer(text: str, task: str) -> str | None:
   if task in _INTEGER_TASKS:
     return _extract_integer(text)
   if task in _BOOLEAN_TASKS:
-    return _extract_boolean(text)
+    return _extract_boolean(text, task)
   return _extract_node_list(text)
 
 

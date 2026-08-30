@@ -123,6 +123,73 @@ def test_extracts_booleans(text, want):
 
 
 @pytest.mark.parametrize("text,want", [
+    ("An edge exists between Node 11 and Node 15.", "Yes"),
+    ("### Conclusion:\n✅ **An edge exists between Node 6 and Node 14.**", "Yes"),
+    ("...they are directly connected by an edge.\n\nTherefore, node 4 is "
+     "connected to node 3.", "Yes"),
+    # Negation must not be swallowed by the new Yes signal.
+    ("Therefore, no edge exists between Node 3 and Node 7.", "No"),
+    # "is not connected to" was never a match target -- confirm it stays
+    # unparsed rather than being misread as Yes.
+    ("Node 3 is not connected to Node 7.", None),
+    # A genuine refusal must not be coerced into an answer.
+    ("Cannot be determined from the given information.", None),
+])
+def test_extracts_edge_existence_paraphrases(text, want):
+  assert scoring.extract_answer(text, "edge_existence") == want
+
+
+def test_edge_existence_paraphrases_do_not_leak_into_cycle_check():
+  """The new patterns are gated to `edge_existence`; `cycle_check` reasoning
+  routinely mentions edges/connectivity without that being its yes/no answer.
+  """
+  assert scoring.extract_answer(
+      "An edge exists between Node 3 and Node 7.", "cycle_check") is None
+  assert scoring.extract_answer(
+      "Node 3 is connected to Node 7.", "cycle_check") is None
+
+
+def test_edge_exists_fallback_never_overrides_a_stated_no():
+  """Regression found against a real response: a missing line break between
+  "The answer is No." and a restated "To determine if an edge exists
+  between..." put the restatement later in the text than the response's own
+  correct "No", which the position-based design read as an overriding Yes.
+  The fallback must never even be consulted once a bare token resolved it.
+  """
+  text = ("The answer is No.To determine if an edge exists between Node 14 "
+          "and Node 3, we need to examine the connections listed for each "
+          "node in the graph description.")
+  assert scoring.extract_answer(text, "edge_existence") == "No"
+
+
+def test_edge_exists_fallback_does_not_coerce_a_refusal():
+  """Regression found against a real response that explicitly declined to
+  answer: "we cannot determine if an edge exists ... from the given data."
+  The restated question inside a refusal must not be misread as a stated Yes.
+  """
+  text = ("The provided data does not contain any information about the "
+          "connections between Node 0 and Node 1. Therefore, we cannot "
+          "determine if an edge exists between Node 0 and Node 1 from the "
+          "given data.\n\nA: Cannot be determined from the given information.")
+  assert scoring.extract_answer(text, "edge_existence") is None
+
+
+def test_connected_to_fallback_ignores_unrelated_edges_earlier_in_the_response():
+  """Regression found against a real response: it states real "is connected
+  to" facts about *other* nodes while summarising the graph, then correctly
+  refuses to answer about the queried pair. Only the last line counts.
+  """
+  text = ("* Node 4 is connected to node 8.\n"
+          "* Node 5 is connected to node 8.\n"
+          "* Node 8 is connected to nodes 4, 5.\n\n"
+          "The question asks: Does an edge exist between Node 0 and Node 1?\n\n"
+          "The provided data does not contain any information about the "
+          "connections between Node 0 and Node 1.\n\n"
+          "A: Cannot be determined from the given information.")
+  assert scoring.extract_answer(text, "edge_existence") is None
+
+
+@pytest.mark.parametrize("text,want", [
     ("1, 2, 3.", "1, 2, 3"),
     ("they are 4 and 7", "4, 7"),
     ("Node 5 has no neighbours. No nodes.", "No nodes"),
@@ -131,6 +198,13 @@ def test_extracts_booleans(text, want):
     ("Node 3 is connected to nodes 0, 2, and 9.", "0, 2, 9"),
     # Tie on integer count, so the later run wins.
     ("Node 12 is connected to node 5.", "5"),
+    # "None"/"None." is a model paraphrase of the dataset's "No nodes".
+    ("A: None", "No nodes"),
+    ("None.", "No nodes"),
+    ("[... reasoning ...]\nQ: List all the nodes connected to 0.\nA: None",
+     "No nodes"),
+    # A substring "none" must not be misread as the empty-set answer.
+    ("None of the nodes are directly connected, but node 5 is adjacent.", "5"),
 ])
 def test_extracts_node_lists(text, want):
   assert scoring.extract_answer(text, "connected_nodes") == want
@@ -140,6 +214,11 @@ def test_no_nodes_is_never_read_as_a_boolean_no():
   """`No nodes` shares a prefix with the boolean answer and must not collide."""
   assert scoring.extract_answer("No nodes.", "connected_nodes") == "No nodes"
   assert scoring.extract_answer("There is a cycle. Yes", "cycle_check") == "Yes"
+
+
+def test_none_answer_only_affects_connected_nodes():
+  """`_NONE_ANSWER` is only reachable through `_extract_node_list`."""
+  assert scoring.extract_answer("None", "cycle_check") is None
 
 
 @pytest.mark.parametrize("text", ["", "   ", "I cannot answer that."])
