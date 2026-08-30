@@ -234,15 +234,69 @@ committed frame that no other task and no non-terminating row changed. The
 prediction held: a single-instance bug produces a single-instance fix, not a
 sweep-wide accuracy move.
 
-**Known gap, left out of scope on purpose:** one further `connected_nodes/2`
-row (`qwen3-14b`, `condition: all`) answers `"A: []"` — a different spelling
-this fix does not recognise — and a semicolon-prefixed `"...; none."` shape is
-also not caught, since the regex requires `^` or `:` immediately before
-`"none"`. Both are precision-over-recall tradeoffs, not oversights: widening
-further risks the same kind of false positive the anchoring was added to
-avoid.
+**Known gap, left out of scope on purpose (round one):** one further
+`connected_nodes/2` row (`qwen3-14b`, `condition: all`) answers `"A: []"` — a
+different spelling this fix does not recognise — and a semicolon-prefixed
+`"...; none."` shape is also not caught, since the regex requires `^` or `:`
+immediately before `"none"`. Both were called precision-over-recall
+tradeoffs, not oversights, at the time.
 
-Reproduce with `tests/test_prompts.py::test_extracts_node_lists` and
+### Round two, recorded 2026-08-30
+
+Both "known gaps" above turned out to be worth closing. `analysis/failure_sample.csv`
+(this file now exists and was read directly, unlike the never-present
+`false_examples.csv` earlier sessions were asked about) surfaced the `[]`
+case again plus two more real shapes the original fix missed entirely:
+`"None"` glued onto a sentence with **no separator at all** — `"...the list
+is empty.None"`, a likely generation artifact — and the right token wrapped
+in markdown emphasis or a trailing parenthetical aside — `"**A: None**"`,
+`"A: [] (or None, depending on expected format for an empty list)"`.
+
+Rescanning the tracked sweep found **51 of 84** gold-`No nodes.` rows still
+not scoring `correct`. Before touching the code, the "; none." and `[]`
+precision worry from round one was checked directly against evidence rather
+than left as an assumption: across all 2,436 `connected_nodes` rows whose
+gold is a *non-empty* list, zero have their last line end in `none`/`None.`,
+and zero contain `[]` anywhere. Both gaps were safe to close.
+
+The fix: `_NONE_ANSWER`'s anchor relaxed from `(?:^|:)\s*none\.?\s*$` to
+`\bnone\.?\s*$` (the end-of-line requirement was already what provided the
+safety, not the colon/start prefix); a new `_EMPTY_BRACKETS` pattern for
+`"[]"`/`"[ ]"`; and a `_strip_trailing_decoration` helper that peels off
+markdown emphasis, a trailing parenthetical, or a trailing period before
+either check runs, so `"**[]** (empty list)."` is still read correctly.
+
+**A second, unrelated bug was found and fixed in the same change:**
+`_marker_tail` returns text after the *last* "answer"-labeled mention
+anywhere in the response, which can be a mid-reasoning heading rather than
+the true conclusion. A real response had `"3. **Determine the Answer:** ...
+node 0 has no listed neighbors."` precede the true final `"A: []"` line; the
+old tail-first priority returned a stray digit from the heading ("node 0")
+instead of ever reaching the real answer. `_extract_node_list` now runs its
+per-line scan of the full response *before* consulting the marker tail
+(previously the reverse), making the tail a fallback rather than an override.
+
+**Measured effect was larger than predicted, in a good way.** The prediction
+was that this round would only move rows tied to the single empty-gold
+instance (`connected_nodes/2`). Rescoring instead flipped **53 rows** across
+**12 different instances** — the stale-marker fix turned out to also correct
+several *non-empty*-gold rows that had the identical bug (e.g. gold
+`"1, 2, 3, 4, 5, 6, 7, 8"` was previously extracted as the single stray digit
+`"8"`; now the full, correct list). Confirmed precisely against the pre-fix
+frame: every changed row moved `unparsed → correct` (1 row) or
+`wrong → correct` (52 rows), and zero rows that were already `correct`
+changed to anything else — the broader reach is a bonus from fixing a shared
+bug, not a regression. One cosmetic-only difference (a `correct` row's `predicted`
+string reordered from `"3, 7, 12"` to `"12, 3, 7"`, same set, same score) was
+also observed and is not a behavior change worth chasing further.
+
+**Still out of scope, on purpose:** genuinely wrong/refusal/hedge responses,
+and `\boxed{}`-style LaTeX empty-box notation (2 rows) — not in the reported
+examples and not evidenced beyond that count.
+
+Reproduce with `tests/test_prompts.py::test_extracts_node_lists`,
+`test_stale_answer_marker_does_not_shadow_the_final_line`,
+`test_bracket_answer_survives_a_trailing_period_after_the_decoration`, and
 `scripts/build_sweep_frame.py`.
 
 ## `edge_existence` responses that never say "yes"/"no" were unparsed

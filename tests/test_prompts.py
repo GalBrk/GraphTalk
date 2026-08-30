@@ -205,9 +205,48 @@ def test_connected_to_fallback_ignores_unrelated_edges_earlier_in_the_response()
      "No nodes"),
     # A substring "none" must not be misread as the empty-set answer.
     ("None of the nodes are directly connected, but node 5 is adjacent.", "5"),
+    # ".None"/",None" glued with no separator -- a likely generation artifact,
+    # but still the correct answer.
+    ('Since there are none, the answer is "None".None', "No nodes"),
+    ("...the list is empty.None", "No nodes"),
+    # Empty-bracket notation.
+    ("A: []", "No nodes"),
+    ("**A:** []", "No nodes"),
+    # Trailing parenthetical/markdown decoration around the real token.
+    ("A: [] (or None, depending on expected format for an empty list)",
+     "No nodes"),
+    ("**A: None**", "No nodes"),
+    ("A: None (or Insufficient information)", "No nodes"),
+    # The previously-documented semicolon gap is now closed for free.
+    ("Node 5 has no neighbours; none.", "No nodes"),
 ])
 def test_extracts_node_lists(text, want):
   assert scoring.extract_answer(text, "connected_nodes") == want
+
+
+def test_bracket_answer_survives_a_trailing_period_after_the_decoration():
+  """Regression found against a real response ending "...is: **[]** (empty
+  list).": the trailing period after the closing parenthetical meant the
+  line didn't end in "]", so `_EMPTY_BRACKETS` never matched and extraction
+  fell through to a stray "0" from "connected to 0" earlier on the same line.
+  """
+  text = ("So, the list of nodes connected to 0 is: **[]** (empty list).")
+  assert scoring.extract_answer(text, "connected_nodes") == "No nodes"
+
+
+def test_stale_answer_marker_does_not_shadow_the_final_line():
+  """A mid-response "answer"-labeled heading is not the true conclusion if
+  later lines restate it. `_marker_tail` finds the LAST "answer" mention in
+  the whole response, which here is a heading containing a stray digit
+  ("node 0") -- the old tail-first priority returned that digit instead of
+  scanning on to the real final "A: []" line.
+  """
+  text = ("1. Check the description.\n"
+          "2. No connections listed for node 0.\n"
+          "3. **Determine the Answer:** Based on step 2, node 0 has no "
+          "listed neighbors.\n"
+          "A: []")
+  assert scoring.extract_answer(text, "connected_nodes") == "No nodes"
 
 
 def test_no_nodes_is_never_read_as_a_boolean_no():

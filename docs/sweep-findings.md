@@ -395,6 +395,38 @@ Full writeup in `docs/DATA.md`; reproduce with
 `tests/test_prompts.py::test_extracts_node_lists` and
 `scripts/build_sweep_frame.py`.
 
+**Round two.** Both boundaries called out above turned out to be worth
+closing, plus two more real shapes surfaced by reading
+`analysis/failure_sample.csv` directly: `"None"` glued onto a sentence with
+no separator (`"...the list is empty.None"`) and the token wrapped in
+markdown emphasis or a trailing parenthetical (`"**A: None**"`, `"A: [] (or
+None, depending on expected format for an empty list)"`). Checked for false
+positives *before* changing anything: across all 2,436 non-empty-gold
+`connected_nodes` rows, zero have a last line ending in `none`/`None.`, and
+zero contain `[]` anywhere -- both boundaries were safe to relax.
+
+A second, unrelated bug was found and fixed alongside it: `_marker_tail`
+grabs text after the *last* "answer"-labeled mention anywhere in the
+response, which can be a mid-reasoning heading rather than the true
+conclusion. `_extract_node_list` now scans the full response's last lines
+*before* consulting the marker tail (previously the reverse), so a stray
+digit in a heading like `"3. **Determine the Answer:** ... node 0 has no
+listed neighbors."` can no longer shadow the real answer one line later.
+
+The predicted effect was "a handful more `connected_nodes/2` rows." The
+measured effect was **53 rows across 12 instances**: the stale-marker fix
+also corrected several *non-empty*-gold rows with the identical bug (gold
+`"1, 2, 3, 4, 5, 6, 7, 8"` had been extracted as the stray digit `"8"`; now
+the full list). Confirmed precisely against the pre-fix frame: every change
+was `unparsed`/`wrong → correct`, zero were `correct → anything else` --
+broader than planned because the underlying bug was shared, not because
+anything was left unverified.
+
+Full writeup, including the exact false-positive checks, in `docs/DATA.md`;
+reproduce with `tests/test_prompts.py::test_extracts_node_lists` and its
+stale-marker and trailing-decoration regression tests, and
+`scripts/build_sweep_frame.py`.
+
 ## `edge_existence` conclusions stated without "yes"/"no" were unparsed
 
 Same shape of bug, `_extract_boolean` this time: it only recognised a

@@ -47,13 +47,46 @@ _YES = re.compile(r"\byes\b", re.IGNORECASE)
 _NO = re.compile(r"\bno\b", re.IGNORECASE)
 _NO_NODES = re.compile(r"\bno\s+nodes?\b", re.IGNORECASE)
 # A model answering "None"/"None." in place of the dataset's "No nodes"
-# spelling for an isolated node. Anchored to the end of the scope (optionally
-# after a "<label>:" prefix like "A:" or "Answer:") rather than searched
-# anywhere in free text, so a reasoning sentence like "None of the nodes are
-# directly reachable, but node 5 is adjacent" is not misread as the answer.
-# Known accepted gap: "...; none." (no colon) is not caught -- precision was
-# chosen over recall here rather than widening to a bare `\bnone\b` search.
-_NONE_ANSWER = re.compile(r"(?:^|:)\s*none\.?\s*$", re.IGNORECASE)
+# spelling for an isolated node. Anchored to the end of the scope rather than
+# searched anywhere in free text, so a reasoning sentence like "None of the
+# nodes are directly reachable, but node 5 is adjacent" is not misread as the
+# answer -- that end anchor is what actually provides the safety (checked
+# against every non-empty-gold connected_nodes row in the tracked sweep: zero
+# false positives), not what precedes "none". An earlier version also
+# required "none" be preceded by ":" or start-of-line, to additionally guard
+# against a false positive that never actually occurred, and that extra
+# requirement missed real answers glued onto a sentence with no separator at
+# all, e.g. "...the list is empty.None" -- a likely generation artifact, but
+# still the correct answer. Dropped.
+_NONE_ANSWER = re.compile(r"\bnone\.?\s*$", re.IGNORECASE)
+# "[]"/"[ ]" as an alternative empty-list spelling. Checked against the same
+# non-empty-gold rows for "[]" appearing anywhere (not just at line end):
+# zero matches, so this is not observed to collide with a real answer.
+_EMPTY_BRACKETS = re.compile(r"\[\s*\]\s*$")
+# Strips one trailing markdown-emphasis marker, sentence-ending period, or
+# parenthetical aside, so a decorated empty-set answer -- "**None**", "[] (an
+# empty list)" -- can still be recognised once the wrapping around it is
+# removed. Applied repeatedly (bounded by the string shrinking each time)
+# since a real row combines several: "...**[]** (empty list)." strips the
+# period, then "(empty list)", then "**", in that order. The period matters
+# on its own -- regression found against a real response ending "...is:
+# **[]** (empty list).": without it, `_EMPTY_BRACKETS` never matched this
+# line (the string doesn't end in "]", it ends in "."), so extraction fell
+# through to a stray "0" digit from "connected to 0" earlier on the same
+# line -- the same "queried node's own id" confound `_best_list` already
+# guards against for non-empty answers, here defeating the empty-set check
+# instead. Only feeds the empty-set check below; `_best_list`'s digit-list
+# matching runs on the raw line/tail, so this cannot change any
+# already-tested non-empty-answer extraction.
+_TRAILING_DECORATION = re.compile(r"\s*(?:\*+|`+|\.|\([^()]*\))\s*$")
+
+
+def _strip_trailing_decoration(text: str) -> str:
+  while True:
+    stripped = _TRAILING_DECORATION.sub("", text)
+    if stripped == text:
+      return text
+    text = stripped
 # A run of integers separated by commas and/or "and" -- the connected_nodes
 # shape. The `,\s*and\s+` branch must come first: an Oxford comma makes the
 # separator ", and ", and a plain `,` branch would consume the comma, fail to
@@ -215,22 +248,36 @@ def _extract_node_list(text: str) -> str | None:
   would return the union of everything it considered. The last line that parses
   as a list is the stated answer.
 
-  A model's own "None"/"None." (`_NONE_ANSWER`) is treated the same as the
-  dataset's "No nodes" (`_NO_NODES`) -- both canonicalize to the same string
+  A model's own "None"/"None."/"[]" (`_NONE_ANSWER`/`_EMPTY_BRACKETS`, checked
+  after stripping trailing markdown decoration) is treated the same as the
+  dataset's "No nodes" (`_NO_NODES`) -- all canonicalize to the same string
   so nothing downstream needs to know which spelling produced it.
+
+  The per-line scan runs *before* the marker tail, not after: `_marker_tail`
+  returns text after the *last* "answer"-labeled mention anywhere in the
+  response, which can be a mid-reasoning heading rather than the true
+  conclusion -- regression found against a real response where "3. **Determine
+  the Answer:** ... node 0 has no listed neighbors." preceded the true final
+  "A: []" line, and a stray digit in that heading ("node 0") was returned
+  under tail-first priority instead of the real answer one line later. The
+  per-line scan already implements "the last stated line wins"; the marker
+  tail is now a fallback for when the true last lines have no content at all,
+  not an override that can shadow them.
   """
-  tail = _marker_tail(text)
-  if tail is not None:
-    if _NO_NODES.search(tail) or _NONE_ANSWER.search(tail):
+  for line in reversed([line.strip() for line in text.splitlines() if line.strip()]):
+    core = _strip_trailing_decoration(line)
+    if _NO_NODES.search(core) or _NONE_ANSWER.search(core) or _EMPTY_BRACKETS.search(core):
       return "No nodes"
-    found = _best_list(tail)
+    found = _best_list(line)
     if found:
       return found
 
-  for line in reversed([line.strip() for line in text.splitlines() if line.strip()]):
-    if _NO_NODES.search(line) or _NONE_ANSWER.search(line):
+  tail = _marker_tail(text)
+  if tail is not None:
+    core = _strip_trailing_decoration(tail)
+    if _NO_NODES.search(core) or _NONE_ANSWER.search(core) or _EMPTY_BRACKETS.search(core):
       return "No nodes"
-    found = _best_list(line)
+    found = _best_list(tail)
     if found:
       return found
   return None
