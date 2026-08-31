@@ -17,6 +17,7 @@ import argparse
 import collections
 import json
 
+from graphtalk import node_naming
 from graphtalk import scoring
 
 CONTROL = "none"
@@ -29,6 +30,19 @@ def load(paths) -> list[dict]:
       for line in handle:
         if line.strip():
           records.append(json.loads(line))
+  return records
+
+
+def desubstitute_named_responses(records: list[dict]) -> list[dict]:
+  """Converts GoT-named responses back to integers in place, so the existing
+  `score_records` (which only understands integer node ids) scores them
+  correctly.
+  """
+  for record in records:
+    if record.get("node_naming", "integer") == "got":
+      record["response"] = node_naming.desubstitute_response(
+          record["response"], node_naming.GOT_NAMES
+      )
   return records
 
 
@@ -117,7 +131,7 @@ def main() -> None:
         task, condition = key.split("/")
         shortcuts_by_cell[(task, condition)] = value
 
-  records = score_records(load(args.responses))
+  records = score_records(desubstitute_named_responses(load(args.responses)))
   if not records:
     print("no responses found")
     return

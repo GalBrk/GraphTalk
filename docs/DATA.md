@@ -515,6 +515,19 @@ python scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v smoke) \
                              --shortcuts shortcuts.json
 ```
 
+Beyond `score_sweep.py`'s per-cell McNemar (underpowered at 30 pairs/cell, see
+`docs/sweep-findings.md`), `scripts/check_significance.py` pools pairs across task and
+style per (model, condition) for a permutation p-value, a bootstrap CI, and a
+Benjamini-Hochberg correction — over both main-sweep accuracy and thinking-arm
+non-termination rate. It reads the joined table `build_sweep_frame.py` writes, and
+needs the `analysis` extra (`pandas`) installed:
+
+```bash
+python scripts/build_sweep_frame.py --responses $(ls runs/*.jsonl | grep -v smoke) \
+    --shortcuts shortcuts.json --truncated-keys analysis/truncated_keys.json
+python scripts/check_significance.py --frame analysis/sweep_frame.csv --out significance.csv
+```
+
 `--count` takes a *prefix* of each split, so a larger value is a strict superset:
 `--count 40` contains all 2,520 `--count 30` rows with byte-identical prompt text.
 Existing responses therefore remain valid when the sweep is grown, and
