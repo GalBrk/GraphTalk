@@ -16,6 +16,7 @@ no permissions needed).
 | `archive/` | — | rows that carry a `model` field but are **not** part of the sweep: the smoke test and the 4x-cap probe. Excluded by directory, not by filename. |
 | `../shortcuts.json` | 36 cells | primer-only solver score per (task, condition) |
 | `<model>.rerun.shardNofM.jsonl` | 360/arm | the prompt-rewording regeneration; part of the arm |
+| `<model>.got.jsonl` | — | the same arm, generated from a GoT-named prompt file (`--node-naming got`); `node_naming: "got"` on every row, see [../README.md#node-naming](../README.md#node-naming) |
 | `../prompts.jsonl` | 2520 | the prompts these responses answer — **except** the 1,440 un-regenerated `zero_cot` rows |
 | `../prompts.original-wording.jsonl` | 360 | the prompts those 1,440 rows actually answer |
 
@@ -60,6 +61,15 @@ directory.
 That is why the regeneration is tagged `rerun` and not `redo` -- the exclusion
 matches on the substring `.redo.shard`, so the wrong tag would drop every
 regenerated row from the frame without raising anything.
+
+`.got.jsonl` files are **not** excluded the way `archive/` is -- they are
+part of the sweep, just a different node-naming scheme, so `runs/*.jsonl`
+will glob them in once any exist. `scripts/build_sweep_frame.py`,
+`scripts/sample_failures.py`, and `scripts/check_significance.py` all raise
+if their input carries more than one scheme rather than silently pooling it
+(`graphtalk.analysis.infer_node_naming`/`frame_node_naming`); score each
+scheme with its own `--responses`/`--frame` and let each land at its own
+`.got.`-tagged output file. See [../README.md#node-naming](../README.md#node-naming).
 
 ## Read this before drawing conclusions
 

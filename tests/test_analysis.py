@@ -16,6 +16,7 @@ import pandas as pd
 import pytest
 
 from graphtalk import analysis
+from graphtalk import node_naming
 from scripts import score_sweep
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -221,3 +222,104 @@ def test_rows_without_hit_cap_still_use_the_ground_truth_file():
   assert bool(frame.iloc[0]["non_terminating"])
   assert frame.iloc[0]["non_terminating_source"] == "ground_truth_file"
   assert pd.isna(frame.iloc[0]["n_new_tokens"])
+
+
+# --- node_naming: decoupling the integer and got schemes ---------------------
+
+
+def test_infer_node_naming_defaults_absent_field_to_integer():
+  records = [_record("node_count/0", "gemma4-12b", "A: 5")]
+  assert analysis.infer_node_naming(records) == "integer"
+
+
+def test_infer_node_naming_reads_the_shared_scheme():
+  records = [_record("node_count/0", "gemma4-12b", "A: Ned")]
+  records[0]["node_naming"] = "got"
+  assert analysis.infer_node_naming(records) == "got"
+
+
+def test_infer_node_naming_raises_on_a_mix():
+  """The exact hazard this exists for: a glob that caught both schemes."""
+  integer_record = _record("node_count/0", "gemma4-12b", "A: 5")
+  got_record = _record("node_count/1", "gemma4-12b", "A: Ned")
+  got_record["node_naming"] = "got"
+  with pytest.raises(ValueError, match="mixed node_naming schemes"):
+    analysis.infer_node_naming([integer_record, got_record])
+
+
+def test_infer_node_naming_empty_input_is_integer():
+  assert analysis.infer_node_naming([]) == "integer"
+
+
+def test_tagged_path_leaves_integer_unchanged():
+  assert analysis.tagged_path("analysis/sweep_frame.csv", "integer") == (
+      "analysis/sweep_frame.csv"
+  )
+
+
+def test_tagged_path_inserts_the_scheme_before_the_extension():
+  assert analysis.tagged_path("analysis/sweep_frame.csv", "got") == (
+      "analysis/sweep_frame.got.csv"
+  )
+
+
+def test_tagged_path_handles_no_extension():
+  assert analysis.tagged_path("significance_report", "got") == (
+      "significance_report.got"
+  )
+
+
+def test_build_frame_carries_the_node_naming_column():
+  integer_record = _record("node_count/0", "gemma4-12b", "A: 5")
+  got_record = _record("node_count/1", "gemma4-12b", "A: 5")
+  got_record["node_naming"] = "got"
+  scored = score_sweep.score_records([integer_record, got_record])
+  frame = analysis.build_frame(scored, set(), {})
+  values = dict(zip(frame["instance_id"], frame["node_naming"]))
+  assert values["node_count/0"] == "integer"
+  assert values["node_count/1"] == "got"
+
+
+def test_frame_node_naming_defaults_a_columnless_frame_to_integer():
+  """A frame built before this column existed must not be treated as a mix."""
+  record = _record("node_count/0", "gemma4-12b", "A: 5")
+  scored = score_sweep.score_records([record])
+  frame = analysis.build_frame(scored, set(), {}).drop(columns=["node_naming"])
+  assert analysis.frame_node_naming(frame) == "integer"
+
+
+def test_frame_node_naming_raises_on_a_mix():
+  integer_record = _record("node_count/0", "gemma4-12b", "A: 5")
+  got_record = _record("node_count/1", "gemma4-12b", "A: 5")
+  got_record["node_naming"] = "got"
+  scored = score_sweep.score_records([integer_record, got_record])
+  frame = analysis.build_frame(scored, set(), {})
+  with pytest.raises(ValueError, match="mixed node_naming schemes"):
+    analysis.frame_node_naming(frame)
+
+
+def test_desubstitution_before_scoring_is_what_build_sweep_frame_needs():
+  """`scripts/build_sweep_frame.py` must desubstitute a GoT response before
+  scoring, exactly like `scripts/score_sweep.py`'s own `main` already did --
+  a real gap this session found and fixed. Without it, "Ned" (node 0's GoT
+  name) never resolves to the digit "0" and the row scores `unparsed`
+  instead of `correct`.
+  """
+  record = {
+      "instance_id": "connected_nodes/0",
+      "task": "connected_nodes",
+      "condition": "none",
+      "style": "zero_shot",
+      "gold": "0.",
+      "model": "gemma4-12b",
+      "response": f"A: {node_naming.GOT_NAMES[0]}",
+      "node_naming": "got",
+  }
+  naive = score_sweep.score_records([dict(record)])
+  assert naive[0]["predicted"] is None
+
+  desubstituted = score_sweep.score_records(
+      score_sweep.desubstitute_named_responses([dict(record)])
+  )
+  assert desubstituted[0]["predicted"] == "0"
+  assert desubstituted[0]["score"]["exact"] == 1.0
