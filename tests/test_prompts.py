@@ -107,6 +107,35 @@ def test_reworded_question_reaches_the_built_prompt():
     ("There are 15 nodes in this graph.", "15"),
     ("Counting 0,1,2,3,4 and so on. In total there are 12 nodes.", "12"),
     ("Step 1: nodes 0 through 9. Step 2: that is 10.\nThe answer is 10.", "10"),
+    # The value follows the queried node's own id in the same tail sentence.
+    ("** The degree of node 7 is **2**.", "2"),
+    # An incomplete tail ending in ":" doesn't contain the answer -- it's on
+    # a separate line the tail can't reach.
+    ("Since the graph is undirected, the **degree of node 8** is:\n\n"
+     "$$\n\\boxed{2}\n$$", "2"),
+    # A "glued" continuation with no space (a likely generation artifact)
+    # restating the node list must not outrank the value stated right after
+    # the marker -- the first-sentence restriction stops at "18.".
+    ("The answer is 18.The graph is described among the nodes: 0, 1, 2, 3, "
+     "4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, and 17.", "18"),
+    # A parenthetical aside that is its own complete sentence must not
+    # extend the first-sentence scope into the glued continuation after it.
+    ("The answer is: The graph contains 7 nodes. (The return probability "
+     "data is extraneous.)The nodes in the graph are explicitly listed: "
+     "0, 1, 2, 3, 4, 5, and 6.", "7"),
+    # A hedge clause naming a different number must not outrank the value
+    # already stated before it in the first sentence.
+    ("The answer is: it must be 34. If the manual count is correct instead, "
+     "the degree sum must be 66.", "34"),
+    # Plain further reasoning after the stated answer, with no hedge word or
+    # glued artifact -- just more sentences on the same line.
+    ("The answer is: the number of nodes is the count of the labels used, "
+     "which is 11. The sum of the degrees is 4+6+6+7+6+4+8+4+5+7+7 = 64. "
+     "By the Handshaking Lemma, the number of edges is 64 / 2 = 32.", "11"),
+    # A re-verification enumeration after the stated answer must not outrank
+    # it either, even though it isn't glued and isn't a hedge.
+    ("The answer is: it should be 6 nodes. Let me count again: "
+     "0,1,2,3,4,5. Yep, that's six nodes.", "6"),
 ])
 def test_extracts_integers(text, want):
   assert scoring.extract_answer(text, "node_count") == want
@@ -123,6 +152,73 @@ def test_extracts_booleans(text, want):
 
 
 @pytest.mark.parametrize("text,want", [
+    ("An edge exists between Node 11 and Node 15.", "Yes"),
+    ("### Conclusion:\n✅ **An edge exists between Node 6 and Node 14.**", "Yes"),
+    ("...they are directly connected by an edge.\n\nTherefore, node 4 is "
+     "connected to node 3.", "Yes"),
+    # Negation must not be swallowed by the new Yes signal.
+    ("Therefore, no edge exists between Node 3 and Node 7.", "No"),
+    # "is not connected to" was never a match target -- confirm it stays
+    # unparsed rather than being misread as Yes.
+    ("Node 3 is not connected to Node 7.", None),
+    # A genuine refusal must not be coerced into an answer.
+    ("Cannot be determined from the given information.", None),
+])
+def test_extracts_edge_existence_paraphrases(text, want):
+  assert scoring.extract_answer(text, "edge_existence") == want
+
+
+def test_edge_existence_paraphrases_do_not_leak_into_cycle_check():
+  """The new patterns are gated to `edge_existence`; `cycle_check` reasoning
+  routinely mentions edges/connectivity without that being its yes/no answer.
+  """
+  assert scoring.extract_answer(
+      "An edge exists between Node 3 and Node 7.", "cycle_check") is None
+  assert scoring.extract_answer(
+      "Node 3 is connected to Node 7.", "cycle_check") is None
+
+
+def test_edge_exists_fallback_never_overrides_a_stated_no():
+  """Regression found against a real response: a missing line break between
+  "The answer is No." and a restated "To determine if an edge exists
+  between..." put the restatement later in the text than the response's own
+  correct "No", which the position-based design read as an overriding Yes.
+  The fallback must never even be consulted once a bare token resolved it.
+  """
+  text = ("The answer is No.To determine if an edge exists between Node 14 "
+          "and Node 3, we need to examine the connections listed for each "
+          "node in the graph description.")
+  assert scoring.extract_answer(text, "edge_existence") == "No"
+
+
+def test_edge_exists_fallback_does_not_coerce_a_refusal():
+  """Regression found against a real response that explicitly declined to
+  answer: "we cannot determine if an edge exists ... from the given data."
+  The restated question inside a refusal must not be misread as a stated Yes.
+  """
+  text = ("The provided data does not contain any information about the "
+          "connections between Node 0 and Node 1. Therefore, we cannot "
+          "determine if an edge exists between Node 0 and Node 1 from the "
+          "given data.\n\nA: Cannot be determined from the given information.")
+  assert scoring.extract_answer(text, "edge_existence") is None
+
+
+def test_connected_to_fallback_ignores_unrelated_edges_earlier_in_the_response():
+  """Regression found against a real response: it states real "is connected
+  to" facts about *other* nodes while summarising the graph, then correctly
+  refuses to answer about the queried pair. Only the last line counts.
+  """
+  text = ("* Node 4 is connected to node 8.\n"
+          "* Node 5 is connected to node 8.\n"
+          "* Node 8 is connected to nodes 4, 5.\n\n"
+          "The question asks: Does an edge exist between Node 0 and Node 1?\n\n"
+          "The provided data does not contain any information about the "
+          "connections between Node 0 and Node 1.\n\n"
+          "A: Cannot be determined from the given information.")
+  assert scoring.extract_answer(text, "edge_existence") is None
+
+
+@pytest.mark.parametrize("text,want", [
     ("1, 2, 3.", "1, 2, 3"),
     ("they are 4 and 7", "4, 7"),
     ("Node 5 has no neighbours. No nodes.", "No nodes"),
@@ -131,15 +227,66 @@ def test_extracts_booleans(text, want):
     ("Node 3 is connected to nodes 0, 2, and 9.", "0, 2, 9"),
     # Tie on integer count, so the later run wins.
     ("Node 12 is connected to node 5.", "5"),
+    # "None"/"None." is a model paraphrase of the dataset's "No nodes".
+    ("A: None", "No nodes"),
+    ("None.", "No nodes"),
+    ("[... reasoning ...]\nQ: List all the nodes connected to 0.\nA: None",
+     "No nodes"),
+    # A substring "none" must not be misread as the empty-set answer.
+    ("None of the nodes are directly connected, but node 5 is adjacent.", "5"),
+    # ".None"/",None" glued with no separator -- a likely generation artifact,
+    # but still the correct answer.
+    ('Since there are none, the answer is "None".None', "No nodes"),
+    ("...the list is empty.None", "No nodes"),
+    # Empty-bracket notation.
+    ("A: []", "No nodes"),
+    ("**A:** []", "No nodes"),
+    # Trailing parenthetical/markdown decoration around the real token.
+    ("A: [] (or None, depending on expected format for an empty list)",
+     "No nodes"),
+    ("**A: None**", "No nodes"),
+    ("A: None (or Insufficient information)", "No nodes"),
+    # The previously-documented semicolon gap is now closed for free.
+    ("Node 5 has no neighbours; none.", "No nodes"),
 ])
 def test_extracts_node_lists(text, want):
   assert scoring.extract_answer(text, "connected_nodes") == want
+
+
+def test_bracket_answer_survives_a_trailing_period_after_the_decoration():
+  """Regression found against a real response ending "...is: **[]** (empty
+  list).": the trailing period after the closing parenthetical meant the
+  line didn't end in "]", so `_EMPTY_BRACKETS` never matched and extraction
+  fell through to a stray "0" from "connected to 0" earlier on the same line.
+  """
+  text = ("So, the list of nodes connected to 0 is: **[]** (empty list).")
+  assert scoring.extract_answer(text, "connected_nodes") == "No nodes"
+
+
+def test_stale_answer_marker_does_not_shadow_the_final_line():
+  """A mid-response "answer"-labeled heading is not the true conclusion if
+  later lines restate it. `_marker_tail` finds the LAST "answer" mention in
+  the whole response, which here is a heading containing a stray digit
+  ("node 0") -- the old tail-first priority returned that digit instead of
+  scanning on to the real final "A: []" line.
+  """
+  text = ("1. Check the description.\n"
+          "2. No connections listed for node 0.\n"
+          "3. **Determine the Answer:** Based on step 2, node 0 has no "
+          "listed neighbors.\n"
+          "A: []")
+  assert scoring.extract_answer(text, "connected_nodes") == "No nodes"
 
 
 def test_no_nodes_is_never_read_as_a_boolean_no():
   """`No nodes` shares a prefix with the boolean answer and must not collide."""
   assert scoring.extract_answer("No nodes.", "connected_nodes") == "No nodes"
   assert scoring.extract_answer("There is a cycle. Yes", "cycle_check") == "Yes"
+
+
+def test_none_answer_only_affects_connected_nodes():
+  """`_NONE_ANSWER` is only reachable through `_extract_node_list`."""
+  assert scoring.extract_answer("None", "cycle_check") is None
 
 
 @pytest.mark.parametrize("text", ["", "   ", "I cannot answer that."])

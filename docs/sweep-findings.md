@@ -373,6 +373,144 @@ right. The trade is heavily favourable, but it is a trade.
 
 Reproduce with `scripts/rewording_effect.py`.
 
+## `connected_nodes`'s "None" answers were scored wrong, narrowly
+
+A smaller sibling of the previous finding, same root cause -- extraction
+matched the dataset's exact answer spelling and nothing else. `connected_nodes`
+spells an isolated node's gold answer `"No nodes."`; `graphtalk/scoring.py`
+only recognised that literal phrase, so a model answering `"None"`/`"None."`
+fell through to a stray digit earlier in the response and scored `wrong`.
+
+Only one of the 30 instances (`connected_nodes/2`) has gold `No nodes.`, so
+the fix's reach was bounded before it was measured: rescoring `runs/*.jsonl`
+after adding a `"None"`/`"None."` recognizer (anchored to end-of-line so a
+sentence like "None of the nodes are directly connected" is not misread)
+flipped exactly **8 rows** from `wrong` to `correct`, all `connected_nodes/2`,
+7 of them on `gemma4-12b` and 1 on `gemma4-e4b-think`. No other task or
+instance changed, and no non-terminating row was touched. Left out of scope:
+one `connected_nodes/2` row spelled `"A: []"` instead, which the fix does not
+recognise -- a deliberate precision-over-recall boundary, not a miss.
+
+Full writeup in `docs/DATA.md`; reproduce with
+`tests/test_prompts.py::test_extracts_node_lists` and
+`scripts/build_sweep_frame.py`.
+
+**Round two.** Both boundaries called out above turned out to be worth
+closing, plus two more real shapes surfaced by reading
+`analysis/failure_sample.csv` directly: `"None"` glued onto a sentence with
+no separator (`"...the list is empty.None"`) and the token wrapped in
+markdown emphasis or a trailing parenthetical (`"**A: None**"`, `"A: [] (or
+None, depending on expected format for an empty list)"`). Checked for false
+positives *before* changing anything: across all 2,436 non-empty-gold
+`connected_nodes` rows, zero have a last line ending in `none`/`None.`, and
+zero contain `[]` anywhere -- both boundaries were safe to relax.
+
+A second, unrelated bug was found and fixed alongside it: `_marker_tail`
+grabs text after the *last* "answer"-labeled mention anywhere in the
+response, which can be a mid-reasoning heading rather than the true
+conclusion. `_extract_node_list` now scans the full response's last lines
+*before* consulting the marker tail (previously the reverse), so a stray
+digit in a heading like `"3. **Determine the Answer:** ... node 0 has no
+listed neighbors."` can no longer shadow the real answer one line later.
+
+The predicted effect was "a handful more `connected_nodes/2` rows." The
+measured effect was **53 rows across 12 instances**: the stale-marker fix
+also corrected several *non-empty*-gold rows with the identical bug (gold
+`"1, 2, 3, 4, 5, 6, 7, 8"` had been extracted as the stray digit `"8"`; now
+the full list). Confirmed precisely against the pre-fix frame: every change
+was `unparsed`/`wrong → correct`, zero were `correct → anything else` --
+broader than planned because the underlying bug was shared, not because
+anything was left unverified.
+
+Full writeup, including the exact false-positive checks, in `docs/DATA.md`;
+reproduce with `tests/test_prompts.py::test_extracts_node_lists` and its
+stale-marker and trailing-decoration regression tests, and
+`scripts/build_sweep_frame.py`.
+
+## `edge_existence` conclusions stated without "yes"/"no" were unparsed
+
+Same shape of bug, `_extract_boolean` this time: it only recognised a
+standalone `yes`/`no` token, so a response concluding *"An edge exists between
+Node A and Node B."* -- echoing the live question's own wording -- scored
+`unparsed`. 17 of 2,520 tracked rows were affected; only 10 (5 live-`zero_shot`
+"edge exists" rows, 5 retired-`zero_cot` "is connected to" rows) are a
+paraphrase worth fixing -- the rest are genuine refusals or truncations, which
+must stay `unparsed`.
+
+**The obvious fix regressed 44 rows before it shipped.** Feeding the new
+patterns into the same position-based "last occurrence wins" comparison
+already used for bare `yes`/`no` let a mid-response restatement of the
+question ("...to determine **if an edge exists** between X and Y...") outrank
+the response's own correct bare `"No"` when the restatement happened to sit
+later in the text, and separately coerced an explicit refusal ("we cannot
+determine if an edge exists...") into a stated `"Yes"`. A third real row
+defeated the first attempt at a guard too: a true but irrelevant "is connected
+to" sentence about a *different*, real edge, stated early while the response
+summarised the graph before correctly refusing to answer the queried pair.
+
+The fix that shipped: the new patterns are a **fallback only**, consulted
+after both scopes are confirmed to have no bare token anywhere (so they can
+never override an already-resolved answer), gated to exclude a question/hedge
+lead-in ("if", "whether", "determine", ...), and checked only against each
+scope's **last non-empty line** rather than searched anywhere in it -- the
+same rule `_extract_node_list` already uses for `No nodes`. Rescoring against
+this version flipped exactly the predicted 10 rows, `unparsed → correct`, with
+zero rows regressed and the two refusals still correctly `unparsed`.
+
+Full writeup, including the two regressions in more detail, is in
+`docs/DATA.md`; reproduce with
+`tests/test_prompts.py::test_extracts_edge_existence_paraphrases` and its
+three regression-specific siblings, and `scripts/build_sweep_frame.py`.
+
+## `_extract_integer` was reading the queried node's own id as the answer
+
+The largest fix this session, and the one that took the most attempts.
+`_extract_integer` (`node_count`/`edge_count`/`node_degree`) preferred a
+marker's tail over the full response, and inside that tail took the *first*
+integer -- which is the queried node's own id whenever the response says
+"The degree of node 7 is 2." (id before value). A 23-row sample of
+`wrong`/`unparsed` rows found this in all 11 sampled `node_degree` rows and
+both sampled `node_count` rows; `edge_count` (5 rows) and `cycle_check`
+(1 row) in the same sample were genuine model errors, extraction already
+correct.
+
+Two intermediate designs shipped-then-reverted before the fix that stuck,
+each caught by the mandatory full-sweep rescore, not by inspection:
+
+- **Take the tail's last integer instead of the first**, plus tightening
+  `_MARKER` so a bare verb "answer" doesn't count as a label: regressed
+  **24 rows**. A response with two "answer" mentions -- a harmful early
+  preamble and a harmless later heading -- had the tightened regex stop
+  matching the harmless one, exposing the harmful one as the selected
+  marker instead (plus a `cycle_check` regression from the same mechanism).
+  The `_MARKER` change was reverted outright. Separately, "last integer"
+  broke exactly when the correct value came *first* in the tail, followed
+  by a glued-on restated node list.
+- **Cut the tail at a glued continuation or a ". If" hedge, blank "node X"
+  references, take the last remainder**: fixed those 24, but found **9
+  more** -- the same "continuation past the real answer" shape recurs in
+  plain sentences with no hedge word or glue artifact to detect.
+
+**What shipped:** restrict the tail to its first sentence, blank a "node X"
+reference within it, take the last remaining integer. One rule, not two
+special-case detectors, and it generalizes to shapes neither detector
+caught. Final rescore: **2** further changes, both a correctly-surfaced
+model error (`node_degree/2`'s `filler` primer, "Node 0 has 8 other nodes,"
+misreads as "every node has degree 8," and the model says so outright --
+the old code was accidentally reading `0` from "node 0" in that sentence,
+not the model's real, wrong answer), not a regression.
+
+**Measured effect: 507 rows**, `node_degree` 480 / `node_count` 28 /
+`edge_count` 1, `wrong`/`unparsed → correct` -- far beyond the ~13-row
+sample's prediction, because the bug wasn't sample-specific; it hit this
+tail shape everywhere it occurred in the tracked sweep. `edge_count`'s much
+smaller share confirms the earlier finding that most of that task's error
+is genuine arithmetic mistakes, not extraction.
+
+Full writeup, including the three-attempt history, is in `docs/DATA.md`;
+reproduce with `tests/test_prompts.py::test_extracts_integers` and
+`scripts/build_sweep_frame.py`.
+
 ## Provenance
 
 The thinking arm was generated with `graphtalk-cu126` (torch 2.13.0+cu126) while
