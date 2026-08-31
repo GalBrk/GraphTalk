@@ -13,6 +13,15 @@ excluded by directory, so a plain `runs/*.jsonl` glob does not reach them.
 
 The written CSV is the input `scripts/sample_failures.py` reads back in to
 pull the manual-inspection sample (objective 4) without re-scoring.
+
+GoT-named responses (`--node-naming got` on `build_prompts.py`) are
+desubstituted back to integers before scoring, same as `score_sweep.py`'s own
+`main`. `--responses` must resolve to a single `node_naming` scheme -- mixing
+an integer run and a `.got.` run in one glob raises rather than silently
+pooling them under the same `(instance_id, condition, style, model)` key
+(see `graphtalk.analysis.infer_node_naming`). `--out` left unset picks
+`analysis/sweep_frame.csv` for `integer` or `analysis/sweep_frame.got.csv`
+for `got` automatically.
 """
 
 import argparse
@@ -93,7 +102,11 @@ def main() -> None:
   parser.add_argument("--truncated-keys", default=None,
                        help="optional analysis/truncated_keys.json for the "
                             "ground-truth non_terminating column")
-  parser.add_argument("--out", default="analysis/sweep_frame.csv")
+  parser.add_argument("--out", default=None,
+                       help="default analysis/sweep_frame.csv, or "
+                            "analysis/sweep_frame.<scheme>.csv for a "
+                            "non-integer node_naming scheme -- see "
+                            "README.md#node-naming")
   args = parser.parse_args()
 
   paths = _load_paths(args.responses)
@@ -101,7 +114,9 @@ def main() -> None:
     print("no responses found after exclusions")
     return
 
-  records = score_sweep.score_records(score_sweep.load(paths))
+  loaded = score_sweep.desubstitute_named_responses(score_sweep.load(paths))
+  scheme = analysis.infer_node_naming(loaded)
+  records = score_sweep.score_records(loaded)
   shortcuts_by_cell = (
       analysis.load_shortcuts(args.shortcuts) if args.shortcuts else {}
   )
@@ -111,8 +126,9 @@ def main() -> None:
   )
 
   frame = analysis.build_frame(records, truncated_keys, shortcuts_by_cell)
-  frame.to_csv(args.out, index=False)
-  print(f"wrote {len(frame)} rows to {args.out}")
+  out = args.out or analysis.tagged_path("analysis/sweep_frame.csv", scheme)
+  frame.to_csv(out, index=False)
+  print(f"wrote {len(frame)} rows to {out} (node_naming: {scheme})")
 
   _print_baseline(frame)
   _print_condition_comparison(frame)

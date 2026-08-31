@@ -29,6 +29,17 @@ key the McNemar test is computed over.
 A row is uniquely identified by `(instance_id, condition, style)` within a model.
 No file contains a duplicate of that triple; this is asserted after every run.
 
+**That triple assumes one node-naming scheme.** `runs/<model>.jsonl` (the
+`integer` scheme, unstated on the row) and `runs/<model>.got.jsonl` (the GoT
+scheme, `node_naming: "got"` on every row) each satisfy the triple on their
+own, but the two files together do not — the same `(instance_id, condition,
+style)` recurs once per scheme. `analysis.build_frame`'s `node_naming`
+column widens the true key to `(instance_id, condition, style, node_naming)`
+within a model, and every scoring script (`build_sweep_frame.py`,
+`sample_failures.py`, `check_significance.py`) raises rather than silently
+pooling if its input carries more than one scheme — see
+`README.md#node-naming`.
+
 ## `prompts.jsonl` / `prompts_zero_shot.jsonl`
 
 | field | type | meaning |

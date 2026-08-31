@@ -44,8 +44,19 @@ LIMIT="${2:-}"
 
 # The prompt file is overridable so an arm can run a subset. The thinking arm
 # uses a zero_shot-only file whose 1260 rows are byte-identical to the zero_shot
-# half of the main one, so the two arms are comparable row for row.
+# half of the main one, so the two arms are comparable row for row. Also how a
+# GoT-named run points at prompts_got.jsonl instead -- see
+# cluster/submit_sweep.sh, which builds it before ever setting this.
 PROMPTS="${GRAPHTALK_PROMPTS:-prompts.jsonl}"
+if [[ ! -f "$PROMPTS" ]]; then
+  # Fails already without this -- the REMAINING check below opens the file --
+  # but with a bare Python traceback instead of a message that says what to
+  # do about it, and this way it fails before conda even activates.
+  echo "FATAL: prompt file '$PROMPTS' does not exist. Build it first" >&2
+  echo "(e.g. cluster/submit_sweep.sh --node-naming got ...) or point" >&2
+  echo "GRAPHTALK_PROMPTS at an existing file." >&2
+  exit 1
+fi
 
 # A smoke test writes to its own file. Sharing the sweep's output would make its
 # rows count as done, so a smoke run that revealed a broken chat template would

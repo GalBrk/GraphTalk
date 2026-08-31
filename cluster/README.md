@@ -125,6 +125,36 @@ key count -- that is the check that catches a silent skip.
 deliberately excludes -- and since exclusion is now by directory, keeping
 regenerated rows out of `runs/archive/` is what matters more than the tag.
 
+### Running the GoT node-naming scheme
+
+`GRAPHTALK_PROMPTS`/`GRAPHTALK_RUN_TAG` above are also how a
+Game-of-Thrones-named arm is run (`graphtalk/node_naming.py`; see
+`README.md#node-naming` for what the scheme is). `cluster/submit_sweep.sh`
+wraps that into one flag, and does stage 1 for you first if it hasn't run yet:
+
+```bash
+cluster/submit_sweep.sh --node-naming got --exclude=n-801 --mem=32G \
+    cluster/sweep.sbatch gemma4-12b
+```
+
+Every other `sbatch` flag or positional (`--array`, `--exclude`, the model
+key, the smoke-test limit) passes straight through in whatever position it's
+given -- only `--node-naming` and `--dry-run` are consumed by the wrapper.
+`--dry-run` prints what would run (and whether `prompts_got.jsonl` would be
+built) without touching anything, which is worth doing once before the real
+submission since the wrapper still can't be tested on a scheduler you don't
+have.
+
+That's exactly the two-step recipe from `README.md#node-naming` collapsed
+into one call: **stage 1 still runs on the login node**, not inside the
+job -- `build_prompts.py` fetches over plain `urllib`, and compute nodes have
+no outbound network (`HF_HUB_OFFLINE=1`, same reason as everywhere else in
+this file). The wrapper builds `prompts_got.jsonl` right there, before
+`sbatch` is ever called, and reuses it on every later invocation rather than
+rebuilding (`load_rows()`'s cache makes that safe -- see `README.md#node-naming`).
+Omit `--node-naming` (or pass `--node-naming integer`) for the plain scheme;
+nothing else about the wrapper's behavior changes.
+
 ## Warm the page cache, or the job dies loading
 
 `sweep.sbatch` reads the whole checkpoint with `cat` before starting Python.

@@ -19,6 +19,7 @@ scored records in here.
 """
 
 import json
+import os
 import pathlib
 
 import pandas as pd
@@ -80,6 +81,58 @@ def is_excluded(path: str) -> bool:
   if _EXCLUDE_DIR in parts:
     return True
   return any(s in path for s in _EXCLUDE_SUBSTRINGS)
+
+
+def infer_node_naming(records) -> str:
+  """The single `node_naming` scheme every record agrees on, or raises.
+
+  `graphtalk.node_naming.NAMINGS` lists the valid values; absence on a record
+  means `"integer"` (`scripts/build_prompts.py`'s convention -- the field is
+  only written for a named scheme). Raising on a mix, rather than silently
+  keeping whichever scheme happens to be more common, is what lets every
+  script downstream skip a `--node-naming` flag entirely: the data says what
+  it is, and if it says two different things at once that is exactly the
+  collision this exists to catch, before a single row gets mis-scored or
+  mis-joined.
+  """
+  schemes = {r.get("node_naming", "integer") for r in records}
+  if len(schemes) > 1:
+    raise ValueError(
+        f"mixed node_naming schemes in input: {sorted(schemes)} -- score "
+        f"each scheme separately, see README.md#node-naming"
+    )
+  return schemes.pop() if schemes else "integer"
+
+
+def frame_node_naming(frame: pd.DataFrame) -> str:
+  """Like `infer_node_naming`, but for an already-built frame's own column.
+
+  A frame built before this column existed has none at all -- treated as
+  `"integer"`, the same absence convention used everywhere else `node_naming`
+  is read. Checked independently of `infer_node_naming` (rather than trusting
+  a caller upstream already caught a mix), since a frame CSV can come from
+  anywhere, not only from `scripts/build_sweep_frame.py`'s own guard.
+  """
+  if "node_naming" not in frame.columns:
+    return "integer"
+  schemes = set(frame["node_naming"].unique())
+  if len(schemes) > 1:
+    raise ValueError(
+        f"mixed node_naming schemes in frame: {sorted(schemes)} -- score "
+        f"each scheme separately, see README.md#node-naming"
+    )
+  return next(iter(schemes)) if schemes else "integer"
+
+
+def tagged_path(path: str, scheme: str) -> str:
+  """`path` unchanged for `"integer"`; `.<scheme>` inserted before the
+  extension otherwise -- `analysis/sweep_frame.csv` -> `.got.csv`, matching
+  the `.rerun.`/`.shard<i>of<n>.` dot-tag convention already live in `runs/`.
+  """
+  if scheme == "integer":
+    return path
+  root, ext = os.path.splitext(path)
+  return f"{root}.{scheme}{ext}"
 
 
 def load_truncated_keys(path: str) -> set[tuple[str, str, str, str]]:
@@ -180,6 +233,7 @@ def build_frame(
         "model": model,
         "model_family": model_family,
         "is_think": is_think,
+        "node_naming": record.get("node_naming", "integer"),
         "predicted": record["predicted"],
         "parsed": score["parsed"],
         "exact": score["exact"],

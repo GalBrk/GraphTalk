@@ -11,7 +11,10 @@ It reuses the same pooling for the thinking arm's non-termination rate,
 replacing the ad hoc p-values quoted in prose there.
 
 Reads the already-scored, already-joined table `scripts/build_sweep_frame.py`
-writes -- no re-scoring, no re-reading raw runs/*.jsonl.
+writes -- no re-scoring, no re-reading raw runs/*.jsonl. Raises if `--frame`
+carries more than one `node_naming` scheme (a pooled significance number
+across schemes would be meaningless, not just mislabeled); pairing is keyed
+on `node_naming` alongside `(model, instance_id, style)` for the same reason.
 
   PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
       --frame analysis/sweep_frame.csv
@@ -21,6 +24,7 @@ import argparse
 
 import pandas as pd
 
+from graphtalk import analysis
 from graphtalk import significance
 
 CONTROL = "none"
@@ -29,15 +33,20 @@ CONTROL = "none"
 def _paired_values(frame: pd.DataFrame, condition: str, metric: str):
   """Aligned (control, treatment) lists for `condition` vs `CONTROL`.
 
-  Paired on (model, instance_id, style): instance_id alone repeats across
-  styles for the same task, so style has to be part of the key or a
-  zero_shot control row could pair against a zero_cot treatment row: model
-  has to be part of it too, since the same (instance_id, style) key recurs
-  once per model when `frame` pools rows across models. Pooling across
-  every task and style present in `frame` is what makes these pairs more
-  numerous than a single `score_sweep.py` cell.
+  Paired on (model, instance_id, style, node_naming): instance_id alone
+  repeats across styles for the same task, so style has to be part of the key
+  or a zero_shot control row could pair against a zero_cot treatment row;
+  model has to be part of it too, since the same (instance_id, style) key
+  recurs once per model when `frame` pools rows across models. `node_naming`
+  is part of it for the same reason `model` is -- without it, `main()`'s own
+  guard aside, a frame that ever did carry both schemes for one model would
+  pair a `got` control row against an `integer` treatment row (or vice
+  versa) via `set_index`, which raises on nothing; it just silently keeps
+  one of the duplicates. Pooling across every task and style present in
+  `frame` is what makes these pairs more numerous than a single
+  `score_sweep.py` cell.
   """
-  keys = ["model", "instance_id", "style"]
+  keys = ["model", "instance_id", "style", "node_naming"]
   control = frame[frame["condition"] == CONTROL].set_index(keys)[metric]
   treatment = frame[frame["condition"] == condition].set_index(keys)[metric]
   joined = pd.concat(
@@ -105,10 +114,17 @@ def main() -> None:
   parser.add_argument("--seed", type=int, default=1234)
   parser.add_argument("--out", default=None,
                        help="optional path to write every row printed above "
-                            "as CSV, for reuse beyond this terminal session")
+                            "as CSV -- analysis.tagged_path suffixes it for a "
+                            "non-integer node_naming scheme automatically")
   args = parser.parse_args()
 
   frame = pd.read_csv(args.frame)
+  # Raises on a genuine mix; a frame predating this column has none at all,
+  # normalized to "integer" so `_paired_values`'s key can always rely on it
+  # being present.
+  scheme = analysis.frame_node_naming(frame)
+  if "node_naming" not in frame.columns:
+    frame = frame.assign(node_naming="integer")
   records = []
 
   main_sweep = frame[~frame["is_think"]]
@@ -131,8 +147,9 @@ def main() -> None:
             "thinking_arm", records)
 
   if args.out:
-    pd.DataFrame(records).to_csv(args.out, index=False)
-    print(f"\nwrote {len(records)} rows to {args.out}")
+    out = analysis.tagged_path(args.out, scheme)
+    pd.DataFrame(records).to_csv(out, index=False)
+    print(f"\nwrote {len(records)} rows to {out}")
 
 
 if __name__ == "__main__":

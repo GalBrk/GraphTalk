@@ -31,6 +31,15 @@ badly -- `unparsed` alone fell from 342 rows to 70.
   `ground_truth_file` where `truncated_keys.json` is still the only record.
 - `n_new_tokens` -- present only on regenerated rows; empty, not zero, elsewhere.
 
+A fourth was added since, once `runs/<model>.got.jsonl` files exist:
+
+- `node_naming` -- `integer` (the default, and the only value in the frame
+  today) or `got`. `scripts/build_sweep_frame.py` refuses to build a frame
+  mixing the two -- it raises rather than silently pooling `(instance_id,
+  condition, style)` rows that only look like duplicates because the column
+  distinguishing them didn't exist yet. Score each scheme separately and let
+  each land at its own `.got.`-tagged CSV; see `README.md#node-naming`.
+
 ## The batching baseline
 
 `budget-gemma4-e4b.jsonl` and `budget-qwen3-8b.jsonl` are the reference for

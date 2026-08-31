@@ -114,31 +114,56 @@ GRAPHTALK_PROMPTS=prompts_got.jsonl GRAPHTALK_RUN_TAG=got \
 That writes `runs/gemma4-12b.got.jsonl` next to the integer run's
 `runs/gemma4-12b.jsonl`, rather than replacing it.
 
-**Score the two schemes separately, not with one `runs/*.jsonl` glob.**
-`score_sweep.py` needs no naming-specific flag — every named response's
-`node_naming` field is enough for it to desubstitute GoT names back to
-integers automatically before scoring — but neither it nor
-`build_sweep_frame.py` tracks `node_naming` as a column, so pooling both
-schemes' files for the same model in one call would put two rows under the
-identical `(instance_id, condition, style, model)` key, which
-[docs/DATA.md](docs/DATA.md#the-pairing-key) requires to be unique:
+**Or skip both manual steps with `cluster/submit_sweep.sh`**, which builds
+`prompts_got.jsonl` first if it doesn't exist yet (reusing it otherwise) and
+sets both env vars for you:
 
 ```bash
-PYTHONPATH=. .venv/bin/python scripts/score_sweep.py \
-    --responses runs/gemma4-12b.jsonl --shortcuts shortcuts.json
-
-PYTHONPATH=. .venv/bin/python scripts/score_sweep.py \
-    --responses runs/gemma4-12b.got.jsonl --shortcuts shortcuts.json
+cluster/submit_sweep.sh --node-naming got cluster/sweep.sbatch gemma4-12b
 ```
 
-Run them side by side to ask whether accuracy depends on node identity
-rather than graph structure. The existing `shortcuts.json` is still the bar
-for both — `shortcut_table.py` generates its own graphs and integer primers
-internally and never imports `node_naming`, so the ceiling it measures (how
-much of a primer's degree/clustering/etc. facts a solver can recover) does
-not depend on how a downstream prompt happens to label the nodes. `shortcuts.py`
-itself is integer-only, though (`_NODE_RE` expects `Node (\d+) ...`), so it's
-the model's GoT-worded *response* that needs desubstituting before scoring,
+Every other `sbatch` flag/positional passes straight through unchanged, so
+this is a drop-in replacement for the word `sbatch` in any of the invocations
+above or in [cluster/README.md](cluster/README.md) — `--dry-run` prints what
+it would do without submitting anything. Building the prompt file happens in
+the wrapper itself, on the login node, not inside the SLURM job: compute
+nodes have no outbound network, which is why `sweep.sbatch` sets
+`HF_HUB_OFFLINE=1` in the first place.
+
+**Score the two schemes separately, not with one `runs/*.jsonl` glob** — no
+flag needed to get this right, it's enforced. Every named response's
+`node_naming` field is enough for `score_sweep.py`/`build_sweep_frame.py` to
+desubstitute GoT names back to integers automatically before scoring, and
+`build_sweep_frame.py`, `sample_failures.py`, and `check_significance.py`
+all **infer the scheme from the data and raise rather than silently pooling**
+if their input ever carries more than one — pooling both schemes' files for
+the same model would otherwise put two rows under the identical
+`(instance_id, condition, style, model)` key, which
+[docs/DATA.md](docs/DATA.md#the-pairing-key) requires to be unique within a
+scheme:
+
+```bash
+PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py \
+    --responses runs/gemma4-12b.jsonl --shortcuts shortcuts.json
+# -> analysis/sweep_frame.csv
+
+PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py \
+    --responses runs/gemma4-12b.got.jsonl --shortcuts shortcuts.json
+# -> analysis/sweep_frame.got.csv
+```
+
+Each `--out` left unset lands at its own scheme-tagged filename automatically
+(`analysis.tagged_path`) — `sweep_frame.csv`/`failure_sample.csv` for
+`integer`, `sweep_frame.got.csv`/`failure_sample.got.csv` for `got`, and
+likewise for `check_significance.py --out`. Run the two side by side to ask
+whether accuracy depends on node identity rather than graph structure. The
+existing `shortcuts.json` is still the bar for both — `shortcut_table.py`
+generates its own graphs and integer primers internally and never imports
+`node_naming`, so the ceiling it measures (how much of a primer's
+degree/clustering/etc. facts a solver can recover) does not depend on how a
+downstream prompt happens to label the nodes. `shortcuts.py` itself is
+integer-only, though (`_NODE_RE` expects `Node (\d+) ...`), so it's the
+model's GoT-worded *response* that needs desubstituting before scoring,
 never a primer that needs running through `shortcuts.py` directly.
 
 ## Setup
