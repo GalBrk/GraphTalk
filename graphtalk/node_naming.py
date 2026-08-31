@@ -36,9 +36,21 @@ from talk_like_a_graph import name_dictionaries
 from graphtalk import primers
 from graphtalk import prompts
 
-# {0: "Ned", 1: "Cat", ..., 19: "Osha"} -- see the module docstring on why this
-# is graph-independent.
+# {0: "Ned", 1: "Catelyn", ..., 19: "Osha"} -- see the module docstring on why
+# this is graph-independent.
 GOT_NAMES: dict[int, str] = name_dictionaries.create_name_dict(None, "got")
+# The vendored list spells this character "Cat" -- a common English word,
+# and the only one of the 20 short forms here that collides with one. Every
+# other function in this module keys off `GOT_NAMES`'s values, so a values-
+# only override is already correctly threaded through prompt-building and
+# `desubstitute_response` alike, with no other special-casing needed. Not
+# edited in the vendored `talk_like_a_graph/name_dictionaries.py` itself --
+# see the module docstring above on treating that directory as third-party.
+# Deliberately not kept as a dual alias for "Cat": a model that still
+# abbreviates "Catelyn" that way would just miss desubstitution for that one
+# mention, which is a safe miss, not a reintroduction of the collision this
+# closes.
+GOT_NAMES[1] = "Catelyn"
 
 NAMINGS = ("integer", "got")
 

@@ -165,3 +165,29 @@ def test_desubstitute_response_leaves_no_nodes_alone():
 def test_desubstitute_response_leaves_plain_numbers_and_booleans_alone():
   assert node_naming.desubstitute_response("3.", NAME_MAP) == "3."
   assert node_naming.desubstitute_response("Yes.", NAME_MAP) == "Yes."
+
+
+def test_got_names_uses_catelyn_not_cat():
+  """"Cat" collides with a common English word; the full name doesn't."""
+  assert node_naming.GOT_NAMES[1] == "Catelyn"
+
+
+def test_desubstitute_response_does_not_collide_with_the_word_cat():
+  """Regression guard for the collision the "Catelyn" override closes: a
+  response mentioning the unrelated capitalized word "Cat" must pass
+  through unchanged, not get silently rewritten to a node id.
+  """
+  text = "The Cat was clearly visible in the diagram."
+  assert node_naming.desubstitute_response(text, NAME_MAP) == text
+
+
+def test_desubstitute_response_recognizes_catelyn():
+  assert (node_naming.desubstitute_response("Catelyn is isolated.", NAME_MAP)
+          == "1 is isolated.")
+
+
+def test_build_named_prompt_uses_catelyn_in_the_encoding():
+  task_description = "Q: What is the degree of node 1?\nA: "
+  prompt = node_naming.build_named_prompt(GRAPH, "degree", task_description, NAME_MAP)
+  assert "Catelyn" in prompt
+  assert "Cat " not in prompt and not prompt.endswith("Cat")
