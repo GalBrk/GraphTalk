@@ -78,6 +78,69 @@ At the proposal's 30 rows per task that is 2,520 prompts per model: 180 instance
 x 7 conditions x 2 prompt styles (`zero_shot` and `zero_cot`, both using the
 published dataset's own wording).
 
+## Node naming
+
+Every prompt names nodes one of two ways, chosen with `--node-naming` on
+`build_prompts.py`:
+
+- **`integer`** (default) — nodes stay `0, 1, 2, ...`, the published
+  dataset's own scheme and what every other section of this README assumes.
+- **`got`** — nodes are renamed to Game-of-Thrones characters (`Ned`,
+  `Catelyn`, `Daenerys`, ...) throughout the primer, the encoding, and the
+  question, via `graphtalk/node_naming.py`. Additive rather than a variant
+  code path: a named prompt is the ordinary integer prompt with node
+  references substituted after the fact, and a named response is converted
+  back to integers before it reaches the same, unmodified scorer — nothing
+  in `primers.py`, `prompts.py`, `graphqa.py`, or `scoring.py` is touched.
+
+```bash
+# integer node ids (default)
+PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 30
+
+# GoT character names -- --out keeps this from overwriting prompts.jsonl
+PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 30 \
+    --node-naming got --out prompts_got.jsonl
+```
+
+Generation is the same `cluster/sweep.sbatch` as [the sweep](#the-sweep)
+above, pointed at the named prompt file and tagged so its output doesn't
+collide with the integer run's — both env vars the script already supports:
+
+```bash
+GRAPHTALK_PROMPTS=prompts_got.jsonl GRAPHTALK_RUN_TAG=got \
+    sbatch cluster/sweep.sbatch gemma4-12b
+```
+
+That writes `runs/gemma4-12b.got.jsonl` next to the integer run's
+`runs/gemma4-12b.jsonl`, rather than replacing it.
+
+**Score the two schemes separately, not with one `runs/*.jsonl` glob.**
+`score_sweep.py` needs no naming-specific flag — every named response's
+`node_naming` field is enough for it to desubstitute GoT names back to
+integers automatically before scoring — but neither it nor
+`build_sweep_frame.py` tracks `node_naming` as a column, so pooling both
+schemes' files for the same model in one call would put two rows under the
+identical `(instance_id, condition, style, model)` key, which
+[docs/DATA.md](docs/DATA.md#the-pairing-key) requires to be unique:
+
+```bash
+PYTHONPATH=. .venv/bin/python scripts/score_sweep.py \
+    --responses runs/gemma4-12b.jsonl --shortcuts shortcuts.json
+
+PYTHONPATH=. .venv/bin/python scripts/score_sweep.py \
+    --responses runs/gemma4-12b.got.jsonl --shortcuts shortcuts.json
+```
+
+Run them side by side to ask whether accuracy depends on node identity
+rather than graph structure. The existing `shortcuts.json` is still the bar
+for both — `shortcut_table.py` generates its own graphs and integer primers
+internally and never imports `node_naming`, so the ceiling it measures (how
+much of a primer's degree/clustering/etc. facts a solver can recover) does
+not depend on how a downstream prompt happens to label the nodes. `shortcuts.py`
+itself is integer-only, though (`_NODE_RE` expects `Node (\d+) ...`), so it's
+the model's GoT-worded *response* that needs desubstituting before scoring,
+never a primer that needs running through `shortcuts.py` directly.
+
 ## Setup
 
 ```bash
@@ -110,15 +173,16 @@ cleanly on 3.12+.
 uv run --no-sync pytest -q
 ```
 
-391 tests: 27 vendored ones covering graph generation, text encoders and
+418 tests: 27 vendored ones covering graph generation, text encoders and
 metrics, 138 covering the primer statistics, the renderer, and the committed
 golden primer strings, 143 covering the shortcut solvers, 72 covering prompt
-assembly and answer scoring, and 11 covering the sweep frame, the failure taxonomy, the
-wording split, and how a row's non-termination flag was obtained.
+assembly and answer scoring, 27 covering node naming and the GoT round trip,
+and 11 covering the sweep frame, the failure taxonomy, the wording split, and
+how a row's non-termination flag was obtained.
 
 The last of those need `pandas`, which is not in the base install: without
 `pip install -e ".[analysis]"` the suite fails at *collection* rather than
-skipping, so the whole run aborts and none of the other 380 report.
+skipping, so the whole run aborts and none of the other 407 report.
 
 Two of those deserve mention because they are what the rest rests on. The
 **round trip** renders a primer, parses it back, and requires the recovered
