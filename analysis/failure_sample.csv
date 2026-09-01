@@ -1,5 +1,5 @@
-instance_id,task,condition,style,gold,model,model_family,is_think,predicted,parsed,exact,primary,absolute_error,non_terminating,non_terminating_source,n_new_tokens,wording,has_marker,shortcut_score,response_len_chars,failure_type,length_outlier,response_full,response_preview,response_tail_preview,nodes,edges
-edge_count/13,edge_count,rwse,zero_shot, 10.,gemma4-12b-think,gemma4-12b,True,12,True,0.0,0.0,2.0,True,retokenized,8191,unaffected,False,0.018,15065,non_terminating,False,"thought
+instance_id,task,condition,style,gold,model,model_family,is_think,node_naming,predicted,parsed,exact,primary,absolute_error,non_terminating,non_terminating_source,n_new_tokens,wording,has_marker,shortcut_score,response_len_chars,failure_type,length_outlier,response_full,response_preview,response_tail_preview,nodes,edges
+edge_count/13,edge_count,rwse,zero_shot, 10.,gemma4-12b-think,gemma4-12b,True,integer,12,True,0.0,0.0,2.0,True,retokenized,8191,unaffected,False,0.018,15065,non_terminating,False,"thought
 *   Node 1: 5, 11, 14
     *   Node 2: 10
     *   Node 4: 5
@@ -720,7 +720,7 @@ edge_count/13,edge_count,rwse,zero_shot, 10.,gemma4-12b-think,gemma4-12b,True,12
     ""Node 10 is connected to nodes 2, 12.""
     ""Node 11 is connected to nodes 1, 5.""
     ""Node 12",17,10
-edge_count/6,edge_count,none,zero_shot, 37.,gemma4-12b-think,gemma4-12b,True,3,True,0.0,0.0,34.0,True,retokenized,8191,unaffected,False,0.018,14794,non_terminating,False,"thought
+edge_count/6,edge_count,none,zero_shot, 37.,gemma4-12b-think,gemma4-12b,True,integer,3,True,0.0,0.0,34.0,True,retokenized,8191,unaffected,False,0.018,14794,non_terminating,False,"thought
 *   Nodes: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18. (Total 19 nodes)
     *   Edges:
         *   0: 1, 3, 6, 10, 14, 16 (6 edges)
@@ -1289,7 +1289,7 @@ edge_count/6,edge_count,none,zero_shot, 37.,gemma4-12b-think,gemma4-12b,True,3,T
         Sum = 74
 
         Number of edges = 74 / 2 = 3",19,37
-edge_existence/17,edge_existence,components,zero_shot,No.,gemma4-12b-think,gemma4-12b,True,No,True,1.0,1.0,,True,generator,8192,revised,True,0.498,12649,non_terminating,True,"thought
+edge_existence/17,edge_existence,components,zero_shot,No.,gemma4-12b-think,gemma4-12b,True,integer,No,True,1.0,1.0,,True,generator,8192,revised,True,0.498,12649,non_terminating,True,"thought
 The question asks whether an edge exists between Node 15 and Node 11 in the given graph G.
 
     *   Node 0: 1, 2, 3, 4, 5, 7, 8, 9, 10, 12, 13, 14, 15, 16
@@ -1551,7 +1551,7 @@ The question asks whether an edge exists between Node 15 and Node 11 in the give
     *   Node 11: 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 16.
     *   Wait, let me check Node 15's list again.
     *   Node 15: 0, 2, 3",17,95
-edge_count/8,edge_count,rwse,zero_cot, 32.,gemma4-12b,gemma4-12b,False,3,True,0.0,0.0,29.0,True,retokenized,1024,unaffected,False,0.018,1977,non_terminating,False,"To find the number of edges in the graph, we can list all the connections mentioned for each node and then count the unique edges. Since the graph is undirected (implied by the ""connected to"" phrasing and the return probabilities), each edge between two nodes (e.g., Node 0 and Node 1) will be listed twice in the description.
+edge_count/8,edge_count,rwse,zero_cot, 32.,gemma4-12b,gemma4-12b,False,integer,3,True,0.0,0.0,29.0,True,retokenized,1024,unaffected,False,0.018,1977,non_terminating,False,"To find the number of edges in the graph, we can list all the connections mentioned for each node and then count the unique edges. Since the graph is undirected (implied by the ""connected to"" phrasing and the return probabilities), each edge between two nodes (e.g., Node 0 and Node 1) will be listed twice in the description.
 
 Let's list the connections for each node:
 - Node 0: 1, 4, 8, 11, 14 (5 connections)
@@ -1624,7 +1624,7 @@ Wait, let me re-check the connections to ensure I didn't miss any or miscount.
 14: 0,4,8,16,17 (5)
 15: 3,5,10 (3)
 ",18,32
-edge_count/17,edge_count,none,zero_cot, 95.,gemma4-12b,gemma4-12b,False,8,True,0.0,0.0,87.0,True,retokenized,1024,unaffected,False,0.018,1563,non_terminating,False,"To find the number of edges in the graph, we can sum the degrees of all nodes and then divide by 2 (since each edge is counted twice, once for each endpoint).
+edge_count/17,edge_count,none,zero_cot, 95.,gemma4-12b,gemma4-12b,False,integer,8,True,0.0,0.0,87.0,True,retokenized,1024,unaffected,False,0.018,1563,non_terminating,False,"To find the number of edges in the graph, we can sum the degrees of all nodes and then divide by 2 (since each edge is counted twice, once for each endpoint).
 
 First, let's list the connections (degree) for each node:
 - **Node 0:** 1, 2, 3, 4, 5, 7, 8, 9, 10, 12, 13, 14, 15, 16 (14 connections)
@@ -1674,7 +1674,7 @@ Summation:
 50 + 12 = 62
 62 + 10 = 72
 72 + 11 = 8",17,95
-edge_count/20,edge_count,degree,zero_cot, 37.,gemma4-12b,gemma4-12b,False,1,True,0.0,0.0,36.0,True,retokenized,1024,unaffected,False,1.0,1835,non_terminating,False,"To find the number of edges in the graph, we can use the Handshaking Lemma, which states that the sum of the degrees of all nodes in a graph is equal to twice the number of edges.
+edge_count/20,edge_count,degree,zero_cot, 37.,gemma4-12b,gemma4-12b,False,integer,1,True,0.0,0.0,36.0,True,retokenized,1024,unaffected,False,1.0,1835,non_terminating,False,"To find the number of edges in the graph, we can use the Handshaking Lemma, which states that the sum of the degrees of all nodes in a graph is equal to twice the number of edges.
 
 **Step 1: List the degrees of each node.**
 - Node 0: 8
@@ -1756,7 +1756,7 @@ Number of edges = 37
 12. (11,12), (11,13) -> 2 edges (0,11, 2,11, 5,11, 6,11, 7,11, 10,11 already counted)
 13. (12,1) - No, (12,2) - No, (12,5) - No, (12,8) - No, (12,10) - No, (12,11) - No. (All counted)
 14. (13,0) - No, (13,6) - No, (1",14,37
-edge_count/2,edge_count,filler,zero_cot, 2.,gemma4-12b,gemma4-12b,False,36,True,0.0,0.0,34.0,False,retokenized,387,original,False,0.018,1293,wrong,False,"To determine the number of edges in the graph, let's analyze the information provided step by step:
+edge_count/2,edge_count,filler,zero_cot, 2.,gemma4-12b,gemma4-12b,False,integer,36,True,0.0,0.0,34.0,False,retokenized,387,original,False,0.018,1293,wrong,False,"To determine the number of edges in the graph, let's analyze the information provided step by step:
 
 1.  **Identify the Nodes:** The graph consists of 9 nodes: 0, 1, 2, 3, 4, 5, 6, 7, and 8.
 2.  **Analyze the Degree of the Nodes:** The prompt states that every node (0 through 8) has 8 other nodes in the graph. In a graph with 9 nodes, if a node is connected to ""8 other nodes,"" it means every node is connected to every other node in the graph. This describes a **Complete Graph** ($K_9$).
@@ -1786,7 +1786,7 @@ A: 36","To determine the number of edges in the graph, let's analyze the informa
 Since every node is connected to every other node in a 9-node graph, there are 36 edges.
 
 A: 36",9,2
-edge_count/23,edge_count,clustering,zero_shot, 54.,gemma4-12b,gemma4-12b,False,52,True,0.0,0.0,2.0,False,retokenized,706,unaffected,False,0.148,1130,wrong,False,"To find the number of edges in the graph, we can sum the degrees of all nodes and divide by 2 (since each edge is counted twice, once for each endpoint).
+edge_count/23,edge_count,clustering,zero_shot, 54.,gemma4-12b,gemma4-12b,False,integer,52,True,0.0,0.0,2.0,False,retokenized,706,unaffected,False,0.148,1130,wrong,False,"To find the number of edges in the graph, we can sum the degrees of all nodes and divide by 2 (since each edge is counted twice, once for each endpoint).
 
 First, let's list the connections for each node and determine their degrees:
 - Node 0: {6, 8, 13, 14, 15} (Degree: 5)
@@ -1832,7 +1832,7 @@ Divide the sum by 2 to get the number of edges:
 104 / 2 = 52
 
 A: 52",16,54
-edge_count/23,edge_count,components,zero_shot, 54.,gemma4-12b,gemma4-12b,False,52,True,0.0,0.0,2.0,False,retokenized,673,unaffected,False,0.018,1218,wrong,False,"To find the number of edges in the graph, we can list all the connections mentioned for each node and then divide the total count by 2 (since each edge is connected to two nodes and will be counted twice in the list).
+edge_count/23,edge_count,components,zero_shot, 54.,gemma4-12b,gemma4-12b,False,integer,52,True,0.0,0.0,2.0,False,retokenized,673,unaffected,False,0.018,1218,wrong,False,"To find the number of edges in the graph, we can list all the connections mentioned for each node and then divide the total count by 2 (since each edge is connected to two nodes and will be counted twice in the list).
 
 Let's list the neighbors for each node:
 - Node 0: 6, 8, 13, 14, 15 (5 neighbors)
@@ -1876,7 +1876,7 @@ Since each edge is counted twice (once for each endpoint), the number of edges i
 104 / 2 = 52
 
 A: 52",16,54
-edge_count/19,edge_count,rwse,zero_shot, 34.,gemma4-e4b-think,gemma4-e4b,True,33,True,0.0,0.0,1.0,False,retokenized,5563,unaffected,True,0.018,9121,wrong,False,"thought
+edge_count/19,edge_count,rwse,zero_shot, 34.,gemma4-e4b-think,gemma4-e4b,True,integer,33,True,0.0,0.0,1.0,False,retokenized,5563,unaffected,True,0.018,9121,wrong,False,"thought
 The user wants me to count the total number of edges in a graph $G$, given the list of nodes and the connections (adjacency list representation).
 
 The graph has nodes 0 through 18.
@@ -2196,7 +2196,7 @@ $|E| = \frac{\text{Sum of Degrees}}{2} = \frac{66}{2} = 33$
 There are 33 edges in this graph.
 
 A: 33",19,34
-node_count/22,node_count,none,zero_shot, 14.,gemma4-e4b-think,gemma4-e4b,True,13,True,0.0,0.0,1.0,False,retokenized,399,unaffected,True,0.064,1118,wrong,False,"thought
+node_count/22,node_count,none,zero_shot, 14.,gemma4-e4b-think,gemma4-e4b,True,integer,13,True,0.0,0.0,1.0,False,retokenized,399,unaffected,True,0.064,1118,wrong,False,"thought
 1.  **Analyze the Request:** The user provides a description of a graph $G$ and asks for the total number of nodes in this graph.
 
 2.  **Examine the Node Set:** The initial description states: ""G describes a graph among nodes 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, and 13.""
@@ -2225,7 +2225,7 @@ node_count/22,node_count,none,zero_shot, 14.,gemma4-e4b-think,gemma4-e4b,True,13
     *   The connectivity information confirms the structure of the graph, but it does not change the total number of nodes defined in the initial premise.
 
 5.  **Determine the Answer:** The graph is defined to have nodes 0 through 13. There are 14 nodes.14",14,5
-edge_count/13,edge_count,filler,zero_shot, 10.,gemma4-e4b-think,gemma4-e4b,True,9,True,0.0,0.0,1.0,False,generator,2179,revised,False,0.018,4335,wrong,False,"thought
+edge_count/13,edge_count,filler,zero_shot, 10.,gemma4-e4b-think,gemma4-e4b,True,integer,9,True,0.0,0.0,1.0,False,generator,2179,revised,False,0.018,4335,wrong,False,"thought
 The user has provided a description of a graph $G$ and asks for the total number of edges.
 
 The nodes are $V = \{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16\}$.
@@ -2408,7 +2408,7 @@ $3 + 1 + 1 + 1 + 2 + 1 = 9$
 The edges are: (1, 5), (1, 11), (1, 14), (2, 10), (4, 5), (5, 15), (8, 13), (8, 15), (10, 12).
 
 A: 9",17,10
-edge_count/14,edge_count,filler,zero_cot, 3.,gemma4-e4b,gemma4-e4b,False,36,True,0.0,0.0,33.0,False,retokenized,901,original,True,0.018,3321,wrong,False,"Here's a step-by-step analysis to determine the number of edges in the graph:
+edge_count/14,edge_count,filler,zero_cot, 3.,gemma4-e4b,gemma4-e4b,False,integer,36,True,0.0,0.0,33.0,False,retokenized,901,original,True,0.018,3321,wrong,False,"Here's a step-by-step analysis to determine the number of edges in the graph:
 
 **1. Analyze the initial degree information:**
 
@@ -2480,7 +2480,7 @@ However, since the initial statement is so strong (""Node 0 has 8 other nodes...
 **Final Answer based on the strong initial premise:** The graph is $K_9$.
 
 **Answer:** 36",9,3
-node_degree/5,node_degree,degree,zero_shot,14.,gemma4-e4b,gemma4-e4b,False,2,True,0.0,0.0,12.0,False,retokenized,283,unaffected,False,1.0,733,wrong,False,"The problem provides two sets of information:
+node_degree/5,node_degree,degree,zero_shot,14.,gemma4-e4b,gemma4-e4b,False,integer,2,True,0.0,0.0,12.0,False,retokenized,283,unaffected,False,1.0,733,wrong,False,"The problem provides two sets of information:
 1. The degree of each node based on a list of degrees.
 2. The adjacency list (connections) for each node.
 
@@ -2551,7 +2551,7 @@ There are 14 connections listed for Node 2.
 Both methods yield the same result.
 
 ",17,91
-edge_count/26,edge_count,components,zero_shot, 76.,gemma4-e4b,gemma4-e4b,False,70,True,0.0,0.0,6.0,False,retokenized,931,unaffected,False,0.018,1525,wrong,False,"The graph has 13 nodes, labeled from 0 to 12.
+edge_count/26,edge_count,components,zero_shot, 76.,gemma4-e4b,gemma4-e4b,False,integer,70,True,0.0,0.0,6.0,False,retokenized,931,unaffected,False,0.018,1525,wrong,False,"The graph has 13 nodes, labeled from 0 to 12.
 The connections are given as follows:
 Node 0 is connected to nodes 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12. (Degree of 0: 11)
 Node 1 is connected to nodes 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12. (Degree of 1: 12)
@@ -2595,7 +2595,7 @@ By the Handshaking Lemma, the number of edges ($E$) is half the sum of the degre
 $E = \frac{\text{Sum of degrees}}{2} = \frac{140}{2} = 70$
 
 ",13,76
-edge_count/21,edge_count,filler,zero_cot, 80.,gemma4-e4b,gemma4-e4b,False,15,True,0.0,0.0,65.0,True,retokenized,1024,original,False,0.018,2697,non_terminating,False,"The problem asks for the total number of edges in the given graph $G$ with 16 nodes (0 through 15).
+edge_count/21,edge_count,filler,zero_cot, 80.,gemma4-e4b,gemma4-e4b,False,integer,15,True,0.0,0.0,65.0,True,retokenized,1024,original,False,0.018,2697,non_terminating,False,"The problem asks for the total number of edges in the given graph $G$ with 16 nodes (0 through 15).
 
 The degree of a node is the number of edges connected to it. The problem statement provides information about the degrees:
 ""Node 0 has 15 other nodes in this graph."" $\implies \text{deg}(0) = 15$.
@@ -2645,7 +2645,7 @@ Similarly, for all nodes $i \in \{0, 1, \dots, 15\}$, the statement implies that
 *   **Node 4:** $\{0, 2, 3, 5, 6, 7, 8, 11, 13, 14\}$. $\text{deg}(4) = 10$.
 *   **Node 5:** $\{0, 1, 2, 4, 6, 10, 11, 12, 14, 15\}$. $\text{deg}(5) = 10$.
 *   **Node 6:** $\{1, 3, 4, 5, 7, 10, 14, 15\}$. $\",16,80
-cycle_check/20,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",gemma4-e4b,gemma4-e4b,False,Yes,True,1.0,1.0,,True,retokenized,2048,unaffected,False,0.832,4453,non_terminating,False,"To determine if there is a cycle in the graph, we can look for a path that starts and ends at the same node without repeating edges. A common way to check for cycles is to use graph traversal algorithms like Breadth-First Search (BFS) or Depth-First Search (DFS) while keeping track of visited nodes and the parent of each node in the traversal.
+cycle_check/20,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",gemma4-e4b,gemma4-e4b,False,integer,Yes,True,1.0,1.0,,True,retokenized,2048,unaffected,False,0.832,4453,non_terminating,False,"To determine if there is a cycle in the graph, we can look for a path that starts and ends at the same node without repeating edges. A common way to check for cycles is to use graph traversal algorithms like Breadth-First Search (BFS) or Depth-First Search (DFS) while keeping track of visited nodes and the parent of each node in the traversal.
 
 Let's list the connections (edges) based on the provided adjacency list:
 
@@ -2735,7 +2735,7 @@ Consider N0: Neighbors {2, 5, 6, 7, 9, 10, 11, 13}.
     *   N2 neighbors: {0, 3, 5, 6, 7, 8, 10, 11, 12}.
     *   N0 neighbors that are also neighbors of N2: {5, 6, 7, 10, 11}.
     *   Check N0-N2-N5: Is N0 connected to N5? Yes. **Cycle found: 0 - 2 - 5 - 0**.",14,37
-edge_count/0,edge_count,rwse,zero_cot, 115.,gemma4-e4b,gemma4-e4b,False,1,True,0.0,0.0,114.0,True,retokenized,1024,unaffected,False,0.018,1923,non_terminating,False,"The problem asks for the total number of edges in the given graph $G$. The graph has 18 nodes, labeled from 0 to 17. The connections (edges) are described by listing the neighbors for each node. Since the connections are described in terms of which nodes are connected to each other, and the graph is undirected (if A is connected to B, B is connected to A, which is implied by the structure of the neighbor lists), we can count the total number of connections listed and divide by 2.
+edge_count/0,edge_count,rwse,zero_cot, 115.,gemma4-e4b,gemma4-e4b,False,integer,1,True,0.0,0.0,114.0,True,retokenized,1024,unaffected,False,0.018,1923,non_terminating,False,"The problem asks for the total number of edges in the given graph $G$. The graph has 18 nodes, labeled from 0 to 17. The connections (edges) are described by listing the neighbors for each node. Since the connections are described in terms of which nodes are connected to each other, and the graph is undirected (if A is connected to B, B is connected to A, which is implied by the structure of the neighbor lists), we can count the total number of connections listed and divide by 2.
 
 Let $N(i)$ be the set of neighbors of node $i$. The number of edges is $\frac{1}{2} \sum_{i=0}^{17} |N(i)|$.
 
@@ -2761,7 +2761,7 @@ We list the degree of each node (the number of neighbors):
 *   **Node 12:** Connected to {0, 2, 4, 5, 6, 8, 9, 10, 13, 14, 15}. Degree = 11.
 *   **Node 13:** Connected to {0, 1, 2, 4, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17}. Degree = 14.
 *   **Node 14:** Connected to {0, 1",18,115
-edge_existence/2,edge_existence,rwse,zero_shot,No.,gemma4-e4b,gemma4-e4b,False,,False,0.0,0.0,,False,generator,188,revised,False,0.642,750,unparsed,False,"Based on the information provided, we are given the return probabilities for several nodes after 2 and 3 steps. We are also given a specific description of the edges involving nodes 4, 5, and 8:
+edge_existence/2,edge_existence,rwse,zero_shot,No.,gemma4-e4b,gemma4-e4b,False,integer,,False,0.0,0.0,,False,generator,188,revised,False,0.642,750,unparsed,False,"Based on the information provided, we are given the return probabilities for several nodes after 2 and 3 steps. We are also given a specific description of the edges involving nodes 4, 5, and 8:
 
 * Node 4 is connected to node 8.
 * Node 5 is connected to node 8.
@@ -2792,7 +2792,7 @@ The provided return probabilities and the specific edge descriptions **do not co
 Therefore, we cannot determine if an edge exists between Node 0 and Node 1 from the given data.
 
 A: **Cannot be determined from the given information.**",9,2
-edge_existence/22,edge_existence,clustering,zero_shot,No.,gemma4-e4b,gemma4-e4b,False,,False,0.0,0.0,,False,generator,536,revised,False,0.72,1810,unparsed,True,"The provided information gives the clustering coefficients for each node and a partial description of the edges in the graph $G$.
+edge_existence/22,edge_existence,clustering,zero_shot,No.,gemma4-e4b,gemma4-e4b,False,integer,,False,0.0,0.0,,False,generator,536,revised,False,0.72,1810,unparsed,True,"The provided information gives the clustering coefficients for each node and a partial description of the edges in the graph $G$.
 
 **Clustering Coefficient ($C_i$):**
 The clustering coefficient of a node $i$ measures how close its neighbors are to forming a clique (a fully connected subgraph).
@@ -2831,7 +2831,7 @@ The clustering coefficient of a node $i$ measures how close its neighbors are to
 The existence of an edge between Node 1 and Node 0 is not specified in the problem description.
 
 A: Cannot be determined from the given information.",14,5
-edge_count/15,edge_count,all,zero_shot, 29.,qwen3-14b-think,qwen3-14b,True,29,True,1.0,1.0,0.0,True,retokenized,8192,unaffected,True,1.0,21020,non_terminating,True,"<think>
+edge_count/15,edge_count,all,zero_shot, 29.,qwen3-14b-think,qwen3-14b,True,integer,29,True,1.0,1.0,0.0,True,retokenized,8192,unaffected,True,1.0,21020,non_terminating,True,"<think>
 Okay, so I need to figure out how many edges are in this graph. Let me think. The question gives me a list of nodes with their degrees, clustering coefficients, and return probabilities, but I don't think I need the clustering coefficients or return probabilities for this question. The main thing is the degrees of each node.
 
 Wait, right. The number of edges in a graph can be calculated by summing all the degrees of the nodes and then dividing by 2, because each edge is counted twice when you sum degrees (once for each node it connects). So if I can find the sum of all the degrees, then divide by 2, that should give me the number of edges.
@@ -3346,7 +3346,7 @@ Node 8 has degree 5, clustering coefficient 0.40, and return probability 0.20 af
 Node 9 has degree 6, clustering coefficient 0.40, and return probability 0.19 after 2 steps and 0.07 after 3 steps.
 
 Node 10 has degree 1, clustering coefficient 0.00, and return probability 0.14 after 2 steps and 0.",13,29
-edge_count/12,edge_count,all,zero_shot, 51.,qwen3-14b-think,qwen3-14b,True,51,True,1.0,1.0,0.0,True,retokenized,8192,unaffected,True,1.0,19110,non_terminating,True,"<think>
+edge_count/12,edge_count,all,zero_shot, 51.,qwen3-14b-think,qwen3-14b,True,integer,51,True,1.0,1.0,0.0,True,retokenized,8192,unaffected,True,1.0,19110,non_terminating,True,"<think>
 Okay, so I need to figure out how many edges are in this graph. Let me think. The question gives me a list of nodes with their degrees, clustering coefficients, and return probabilities, but I don't think those are directly needed for counting edges. The main thing is the connections between the nodes.
 
 Wait, the problem says that G describes a graph among nodes 0 through 11, and then lists the connections for each node. So maybe I can just count the number of edges by looking at each node's connections and then dividing by 2 since each edge is counted twice (once for each node it connects).
@@ -3853,7 +3853,7 @@ Wait, the problem says that G describes a graph among nodes 0 through 11, and th
 Wait, but let me check if there's an edge between node 5 and node 11. Yes, node 5 is connected to 11, and node 11 is connected to 5. That edge was added when processing node 5, as (5,11). And when processing node 11, it's already counted. So that's correct.
 
 Wait, what about the edge between node 7 and node 11? Yes, that was added when processing node 7 as (7,11).",12,51
-edge_count/6,edge_count,filler,zero_shot, 37.,qwen3-14b-think,qwen3-14b,True,1,True,0.0,0.0,36.0,True,generator,8192,revised,False,0.018,19065,non_terminating,True,"<think>
+edge_count/6,edge_count,filler,zero_shot, 37.,qwen3-14b-think,qwen3-14b,True,integer,1,True,0.0,0.0,36.0,True,generator,8192,revised,False,0.018,19065,non_terminating,True,"<think>
 Okay, so I need to figure out how many edges are in this graph G. Let me start by recalling that in an undirected graph, each edge is counted twice if I just sum up all the connections from each node. So, if I add up all the degrees of the nodes (the number of connections each node has), and then divide by 2, that should give me the total number of edges. That makes sense because each edge contributes to the degree of two nodes.
 
 First, I need to list out the connections for each node and count how many edges each node has. Let me go through each node one by one.
@@ -4371,7 +4371,7 @@ Node 2's connection to 14: edge (2,14) is edge 12. Present.
 Node 3's connection to 0: edge (0,3) is edge 2. Present.
 
 Node 3's connection to 1: edge (1",19,37
-connected_nodes/2,connected_nodes,none,zero_shot, No nodes.,qwen3-14b-think,qwen3-14b,True,0,True,0.0,0.0,,False,retokenized,1477,unaffected,True,0.082,5975,wrong,False,"<think>
+connected_nodes/2,connected_nodes,none,zero_shot, No nodes.,qwen3-14b-think,qwen3-14b,True,integer,0,True,0.0,0.0,,False,retokenized,1477,unaffected,True,0.082,5975,wrong,False,"<think>
 Okay, let's see. The question is asking for all the nodes connected to node 0 in the graph G, and then list them in alphabetical order. The nodes are numbered from 0 to 8. 
 
 First, I need to figure out which nodes are connected to node 0. But looking at the information provided, the connections mentioned are between nodes 4, 5, 8. Specifically, node 4 is connected to 8, node 5 is connected to 8, and node 8 is connected to 4 and 5. Wait, that's just restating the same connections. So the graph has edges between 4-8, 5-8, and 8-4, 8-5. But that's redundant because if 4 is connected to 8, then 8 is connected to 4. So the edges are 4-8 and 5-8. 
@@ -4451,7 +4451,7 @@ Thus, **node 0 is not connected to any other node** in the graph based on the gi
 $$
 \boxed{}
 $$",9,2
-connected_nodes/2,connected_nodes,rwse,zero_shot, No nodes.,qwen3-14b-think,qwen3-14b,True,0,True,0.0,0.0,,False,retokenized,1752,unaffected,True,0.082,6623,wrong,True,"<think>
+connected_nodes/2,connected_nodes,rwse,zero_shot, No nodes.,qwen3-14b-think,qwen3-14b,True,integer,0,True,0.0,0.0,,False,retokenized,1752,unaffected,True,0.082,6623,wrong,True,"<think>
 Okay, let's see. The question is asking to list all the nodes connected to node 0 in alphabetical order. The graph G has nodes from 0 to 8. The connections mentioned are:
 
 - Node 4 is connected to node 8.
@@ -4512,7 +4512,7 @@ Thus, node 0 is not connected to any other nodes in the graph.
 $$
 \boxed{}
 $$",9,2
-edge_count/13,edge_count,rwse,zero_shot, 10.,qwen3-14b-think,qwen3-14b,True,9,True,0.0,0.0,1.0,False,retokenized,2015,unaffected,True,0.018,5148,wrong,False,"<think>
+edge_count/13,edge_count,rwse,zero_shot, 10.,qwen3-14b-think,qwen3-14b,True,integer,9,True,0.0,0.0,1.0,False,retokenized,2015,unaffected,True,0.018,5148,wrong,False,"<think>
 Okay, let's see. I need to figure out how many edges are in this graph based on the connections given. The question lists several nodes and their connections. Let me start by listing out each node and the nodes they are connected to. Then I can count the edges, making sure not to double count since each edge is between two nodes.
 
 First, let me go through each line provided:
@@ -4693,7 +4693,7 @@ Each edge is counted once, and no additional connections are present for the rem
 $$
 \boxed{9}
 $$",17,10
-edge_count/6,edge_count,components,zero_shot, 37.,qwen3-14b,qwen3-14b,False,42,True,0.0,0.0,5.0,False,retokenized,414,unaffected,True,0.018,1075,wrong,False,"To find the **number of edges** in the graph, we can use the following approach:
+edge_count/6,edge_count,components,zero_shot, 37.,qwen3-14b,qwen3-14b,False,integer,42,True,0.0,0.0,5.0,False,retokenized,414,unaffected,True,0.018,1075,wrong,False,"To find the **number of edges** in the graph, we can use the following approach:
 
 Each edge is represented **twice** in the adjacency list — once for each node it connects. For example, if node A is connected to node B, then B will appear in A's list and A will appear in B's list.
 
@@ -4787,7 +4787,7 @@ $$
 ### ✅ Final Answer:
 
 **The graph has 42 edges.**",19,37
-edge_count/17,edge_count,components,zero_shot, 95.,qwen3-14b,qwen3-14b,False,108,True,0.0,0.0,13.0,False,retokenized,445,unaffected,True,0.018,1203,wrong,False,"To find the **number of edges** in the graph, we can use the following approach:
+edge_count/17,edge_count,components,zero_shot, 95.,qwen3-14b,qwen3-14b,False,integer,108,True,0.0,0.0,13.0,False,retokenized,445,unaffected,True,0.018,1203,wrong,False,"To find the **number of edges** in the graph, we can use the following approach:
 
 Each node's adjacency list gives the number of **edges connected to that node**. However, since each edge is counted **twice** (once for each node it connects), we need to:
 
@@ -4874,7 +4874,7 @@ $$
 ### ✅ Final Answer:
 
 **The graph has 108 edges.**",17,95
-edge_count/12,edge_count,all,zero_shot, 51.,qwen3-14b,qwen3-14b,False,57,True,0.0,0.0,6.0,False,retokenized,318,unaffected,True,1.0,836,wrong,False,"To determine the number of **edges** in the graph, we can use the **degree** of each node. The **sum of all node degrees** in a graph is **twice the number of edges**, because each edge contributes to the degree of **two nodes**.
+edge_count/12,edge_count,all,zero_shot, 51.,qwen3-14b,qwen3-14b,False,integer,57,True,0.0,0.0,6.0,False,retokenized,318,unaffected,True,1.0,836,wrong,False,"To determine the number of **edges** in the graph, we can use the **degree** of each node. The **sum of all node degrees** in a graph is **twice the number of edges**, because each edge contributes to the degree of **two nodes**.
 
 ---
 
@@ -4963,7 +4963,7 @@ $$
 $$
 
 There are **57 edges** in the graph.",12,51
-edge_count/23,edge_count,degree,zero_cot, 54.,qwen3-14b,qwen3-14b,False,115,True,0.0,0.0,61.0,True,retokenized,1024,unaffected,True,1.0,2451,non_terminating,True,"To find the **number of edges** in a graph, we can use the **Handshaking Lemma**, which states:
+edge_count/23,edge_count,degree,zero_cot, 54.,qwen3-14b,qwen3-14b,False,integer,115,True,0.0,0.0,61.0,True,retokenized,1024,unaffected,True,1.0,2451,non_terminating,True,"To find the **number of edges** in a graph, we can use the **Handshaking Lemma**, which states:
 
 > The **sum of all the degrees of the nodes** in a graph is equal to **twice the number of edges**.
 
@@ -5114,7 +5114,7 @@ Which is **not a valid number of edges** in any standard graph model.
 - The **sum of degrees is 115**, which is **odd**.
 - Therefore, **this is not a valid simple graph**.
 - If we ignore the validity and just compute the number of edges, it",16,54
-cycle_check/17,cycle_check,degree,zero_cot,"Yes, there is a cycle.",qwen3-14b,qwen3-14b,False,No,True,0.0,0.0,,True,retokenized,1024,unaffected,False,0.946,2502,non_terminating,False,"To determine whether the graph contains a **cycle**, we need to understand the **structure** of the graph and whether it is **connected** and whether it satisfies the **conditions for acyclicity**.
+cycle_check/17,cycle_check,degree,zero_cot,"Yes, there is a cycle.",qwen3-14b,qwen3-14b,False,integer,No,True,0.0,0.0,,True,retokenized,1024,unaffected,False,0.946,2502,non_terminating,False,"To determine whether the graph contains a **cycle**, we need to understand the **structure** of the graph and whether it is **connected** and whether it satisfies the **conditions for acyclicity**.
 
 ---
 
@@ -5201,7 +5201,7 @@ Now, the number of nodes is **17**.
 In a **tree**, the number of edges is **n - 1 = 16**.
 
 But we",17,95
-edge_count/15,edge_count,components,zero_cot, 29.,qwen3-14b,qwen3-14b,False,5,True,0.0,0.0,24.0,True,retokenized,1024,unaffected,False,0.018,2328,non_terminating,False,"To determine the **number of edges** in the graph, we can use the following approach:
+edge_count/15,edge_count,components,zero_cot, 29.,qwen3-14b,qwen3-14b,False,integer,5,True,0.0,0.0,24.0,True,retokenized,1024,unaffected,False,0.018,2328,non_terminating,False,"To determine the **number of edges** in the graph, we can use the following approach:
 
 ### Step 1: Understand the structure
 Each node has a list of nodes it is connected to. These are **undirected edges**, meaning if node A is connected to node B, it's the same as node B being connected to node A. So we must be careful **not to double count** edges.
@@ -5301,7 +5301,7 @@ Still 63. So the total number of **edges** is:
 $$
 \frac{63}{2} = 31.5
 $$",13,29
-edge_count/24,edge_count,rwse,zero_shot, 32.,qwen3-8b-think,qwen3-8b,True,32,True,1.0,1.0,0.0,True,retokenized,8192,unaffected,True,0.018,20940,non_terminating,False,"<think>
+edge_count/24,edge_count,rwse,zero_shot, 32.,qwen3-8b-think,qwen3-8b,True,integer,32,True,1.0,1.0,0.0,True,retokenized,8192,unaffected,True,0.018,20940,non_terminating,False,"<think>
 Okay, so I need to figure out how many edges are in this graph G. The question gives me the connections between each node, so I guess I just need to count all the edges. But wait, I have to be careful not to double-count edges because if node A is connected to node B, that's the same as node B connected to node A. So maybe I should go through each node's connections and count them, then divide by 2? Or maybe not, because if the graph is directed, but the problem doesn't specify direction. Wait, the question just says ""G describes a graph among nodes..."", and usually, unless specified otherwise, graphs are considered undirected. But sometimes, in some contexts, edges can be directed. Hmm. Let me check the problem again.
 
 The problem says ""Node 0 is connected to nodes 1, 2, 3, 4, 5, 6, 8."" So, if it's undirected, then each connection is bidirectional. But if it's directed, then each connection is one-way. However, the problem doesn't mention direction. But since they are talking about return probabilities, which might relate to Markov chains, which are usually directed. Wait, but the question is about the number of edges, not about the probabilities. So maybe the graph is undirected? Or maybe it's directed? Hmm. Wait, the problem says ""G describes a graph among nodes..."", and in graph theory, unless specified, it's usually undirected. But sometimes, in some contexts, edges can be directed. However, since the problem gives connections as ""Node X is connected to nodes Y, Z..."", which is typically how undirected graphs are described. For example, if Node 0 is connected to Node 1, then Node 1 is connected to Node 0. So maybe the graph is undirected. Therefore, each edge is counted twice in the adjacency lists. Therefore, to find the total number of edges, I can sum up all the connections each node has and then divide by 2.
@@ -5814,7 +5814,7 @@ Wait, what about Node 6 connected to 9? Yes, 6-9.
 Wait, what about Node 7 connected to 8? Yes, 7-8.
 
 Wait, what about Node 8 connected to 0,1,2,",10,32
-cycle_check/7,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",qwen3-8b-think,qwen3-8b,True,No,True,0.0,0.0,,True,retokenized,8192,unaffected,False,0.832,19195,non_terminating,False,"<think>
+cycle_check/7,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",qwen3-8b-think,qwen3-8b,True,integer,No,True,0.0,0.0,,True,retokenized,8192,unaffected,False,0.832,19195,non_terminating,False,"<think>
 Okay, let's try to figure out if there's a cycle in this graph. First, I need to recall what a cycle is. A cycle in a graph is a path that starts and ends at the same node, with no repeated edges or nodes except for the starting and ending node. So, I need to check if there's such a path in this graph.
 
 Looking at the connections given, all nodes are connected to several others. Let me try to visualize the graph. Let me list out the connections again to make sure I have them right.
@@ -5829,7 +5829,7 @@ Similarly, node 6 is connected to 0,1,2,3,4,7. So node 6 is not connected to nod
 Okay, let's try to figure out if there's a cycle in this graph. First, I need to recall what a cycle is. A cycle in a graph is a path that starts and ends at the same node, with no repeated edges or nodes except for the starting and ending node. So, I need to check if there's such a path in this graph.
 
 Looking at the connections given, all nodes are connected to several others. Let me try","o nodes 0,1,2,3,4. So node 5 is connected to nodes 0,1,2,3,4. So node 5 is connected to nodes 0,1,2,3,4. So node 5 is connected to nodes 0,1,2,3,4. So node 5 is connected to nodes 0,1,2,3,4. So node 5 is connected to nodes 0,1,2,3,4. So node 5 is connected to nodes 0,1,2,3,4. So node 5 is connected to nodes 0,1,2,3,4. So node 5 is connected to nodes 0,1,2,3,4. So node 5 is connected to nodes 0,1,2",8,25
-edge_count/19,edge_count,rwse,zero_shot, 34.,qwen3-8b-think,qwen3-8b,True,15,True,0.0,0.0,19.0,True,retokenized,8192,unaffected,False,0.018,16122,non_terminating,False,"<think>
+edge_count/19,edge_count,rwse,zero_shot, 34.,qwen3-8b-think,qwen3-8b,True,integer,15,True,0.0,0.0,19.0,True,retokenized,8192,unaffected,False,0.018,16122,non_terminating,False,"<think>
 Okay, so I need to figure out how many edges are in this graph G. The question gives me a list of nodes from 0 to 18, each with their return probabilities after 2 and 3 steps, but I think that part might not be directly relevant. The main thing is the connections between the nodes. 
 
 First, I should probably list out all the connections for each node as given in the problem. Then, count each edge. But I have to be careful not to double-count because an edge between node A and node B is the same as between B and A. So maybe I should go through each node's connections and tally them up, making sure not to count duplicates.
@@ -6590,7 +6590,7 @@ Node 13: (13,0), (13,12) → already counted.
 Node 14: (14,6), (14,9) → already counted.
 
 Node 15:",19,34
-edge_count/13,edge_count,rwse,zero_shot, 10.,qwen3-8b-think,qwen3-8b,True,9,True,0.0,0.0,1.0,False,retokenized,6341,unaffected,True,0.018,16061,wrong,False,"<think>
+edge_count/13,edge_count,rwse,zero_shot, 10.,qwen3-8b-think,qwen3-8b,True,integer,9,True,0.0,0.0,1.0,False,retokenized,6341,unaffected,True,0.018,16061,wrong,False,"<think>
 Okay, let me try to figure out how many edges are in this graph. The question gives me a list of nodes with their return probabilities after 2 and 3 steps, but I think that part might not be directly relevant. The main thing is the connections between the nodes. 
 
 First, I need to go through each node's connections as described in the problem. Let me list them out one by one. 
@@ -7131,7 +7131,7 @@ From the above, the **unique edges** in the graph are:
 $$
 \boxed{9}
 $$",17,10
-connected_nodes/26,connected_nodes,degree,zero_shot,"1, 2, 3, 4, 6, 7, 8, 9, 11, 12.",qwen3-8b-think,qwen3-8b,True,9,True,0.0,0.1818181818181818,,False,retokenized,7716,unaffected,True,0.208,24110,wrong,False,"<think>
+connected_nodes/26,connected_nodes,degree,zero_shot,"1, 2, 3, 4, 6, 7, 8, 9, 11, 12.",qwen3-8b-think,qwen3-8b,True,integer,9,True,0.0,0.1818181818181818,,False,retokenized,7716,unaffected,True,0.208,24110,wrong,False,"<think>
 Okay, let's see. The question is asking for all the nodes connected to node 10 in alphabetical order. Let me start by recalling the information given.
 
 First, there's a graph with nodes numbered from 0 to 12. Each node has a certain degree, which is the number of connections it has. The degrees are listed for each node, but I think the actual connections are provided in the description. The user provided the connections for each node, so I need to check which nodes are connected to node 10.
@@ -7413,7 +7413,7 @@ So the **alphabetical order** of the nodes is:
 $$
 \boxed{1}, \boxed{11}, \boxed{12}, \boxed{2}, \boxed{3}, \boxed{4}, \boxed{6}, \boxed{7}, \boxed{8}, \boxed{9}
 $$",13,76
-edge_count/21,edge_count,filler,zero_shot, 80.,qwen3-8b,qwen3-8b,False,76,True,0.0,0.0,4.0,False,generator,424,revised,True,0.018,1179,wrong,False,"To find the number of **edges** in the graph, we need to count the number of **connections** between nodes. Since the graph is **undirected**, each edge is counted **twice** (once for each node it connects). So, we will:
+edge_count/21,edge_count,filler,zero_shot, 80.,qwen3-8b,qwen3-8b,False,integer,76,True,0.0,0.0,4.0,False,generator,424,revised,True,0.018,1179,wrong,False,"To find the number of **edges** in the graph, we need to count the number of **connections** between nodes. Since the graph is **undirected**, each edge is counted **twice** (once for each node it connects). So, we will:
 
 1. Count the total number of **connections** (i.e., the sum of the number of neighbors for each node).
 2. Divide the result by **2** to get the actual number of **unique edges**.
@@ -7492,7 +7492,7 @@ $$
 ### ✅ Final Answer:
 
 **76 edges** are in the graph.",16,80
-edge_count/17,edge_count,none,zero_cot, 95.,qwen3-8b,qwen3-8b,False,85,True,0.0,0.0,10.0,False,retokenized,534,unaffected,True,0.018,1409,wrong,False,"To find the number of **edges** in the graph, we need to count the number of **connections** between nodes. However, we must be careful not to double-count edges, since an edge between node A and node B is the same as the edge between node B and node A.
+edge_count/17,edge_count,none,zero_cot, 95.,qwen3-8b,qwen3-8b,False,integer,85,True,0.0,0.0,10.0,False,retokenized,534,unaffected,True,0.018,1409,wrong,False,"To find the number of **edges** in the graph, we need to count the number of **connections** between nodes. However, we must be careful not to double-count edges, since an edge between node A and node B is the same as the edge between node B and node A.
 
 ---
 
@@ -7569,7 +7569,7 @@ $$
 
 ### ✅ Final Answer:
 **85 edges** in the graph.",17,95
-edge_existence/17,edge_existence,filler,zero_shot,No.,qwen3-8b,qwen3-8b,False,Yes,True,0.0,0.0,,False,generator,151,revised,False,0.498,338,wrong,False,"A: **Yes**, an edge exists between Node 15 and Node 11.
+edge_existence/17,edge_existence,filler,zero_shot,No.,qwen3-8b,qwen3-8b,False,integer,Yes,True,0.0,0.0,,False,generator,151,revised,False,0.498,338,wrong,False,"A: **Yes**, an edge exists between Node 15 and Node 11.
 
 **Explanation:**  
 From the description of the graph, Node 11 is connected to nodes:  
@@ -7597,7 +7597,7 @@ Node 15 is connected to nodes:
 **0, 2, 3, 4, 6, 7, 8, 9, 10, 12, 13**.
 
 Since **Node 11** is connected to **Node 15**, an edge exists between them.",17,95
-edge_count/17,edge_count,filler,zero_cot, 95.,qwen3-8b,qwen3-8b,False,8,True,0.0,0.0,87.0,True,retokenized,1024,original,False,0.018,2532,non_terminating,False,"To find the number of **edges** in the graph, we need to count the number of **connections** between nodes. However, we must be careful not to double-count edges, since an edge between two nodes is **undirected** (i.e., if node A is connected to node B, it is the same as node B being connected to node A).
+edge_count/17,edge_count,filler,zero_cot, 95.,qwen3-8b,qwen3-8b,False,integer,8,True,0.0,0.0,87.0,True,retokenized,1024,original,False,0.018,2532,non_terminating,False,"To find the number of **edges** in the graph, we need to count the number of **connections** between nodes. However, we must be careful not to double-count edges, since an edge between two nodes is **undirected** (i.e., if node A is connected to node B, it is the same as node B being connected to node A).
 
 ---
 
@@ -7712,7 +7712,7 @@ Connected to: 0, 1, 3, 4, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16 → **14 connection
 
 #### Node 3:
 Connected to: 0, 1, 2, 4, 5, 6, 7, 8",17,95
-cycle_check/27,cycle_check,all,zero_cot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,,False,0.0,0.0,,True,retokenized,1024,unaffected,False,0.946,2747,non_terminating,False,"Let's analyze the graph step by step to determine whether **there is a cycle** in the graph.
+cycle_check/27,cycle_check,all,zero_cot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,,False,0.0,0.0,,True,retokenized,1024,unaffected,False,0.946,2747,non_terminating,False,"Let's analyze the graph step by step to determine whether **there is a cycle** in the graph.
 
 ---
 
@@ -7840,7 +7840,7 @@ We are given the **connections** (edges) between nodes 0 through 6. Let's list t
 
 #### **Check Triangle (0, 5, 6):**
 - 0 is",7,20
-edge_count/26,edge_count,none,zero_cot, 76.,qwen3-8b,qwen3-8b,False,1,True,0.0,0.0,75.0,True,retokenized,1024,unaffected,False,0.018,2925,non_terminating,False,"Let's analyze the graph step by step to determine the number of **edges**.
+edge_count/26,edge_count,none,zero_cot, 76.,qwen3-8b,qwen3-8b,False,integer,1,True,0.0,0.0,75.0,True,retokenized,1024,unaffected,False,0.018,2925,non_terminating,False,"Let's analyze the graph step by step to determine the number of **edges**.
 
 ---
 
