@@ -124,6 +124,26 @@ def frame_node_naming(frame: pd.DataFrame) -> str:
   return next(iter(schemes)) if schemes else "integer"
 
 
+def assert_unique_pairing_key(frame: pd.DataFrame, keys: list[str]) -> None:
+  """Raises if `keys` isn't unique in `frame`.
+
+  The silent failure mode without this: `scripts/check_significance.py`'s
+  `_paired_values` does `frame[...].set_index(keys)` then `pd.concat(...,
+  join="inner")` to align control against treatment -- and `pd.concat` on a
+  non-unique index doesn't raise, it cross-joins the duplicated keys,
+  inflating `n_pairs` and corrupting every downstream test with no error at
+  all. Call this once, before any grouping, rather than trusting an upstream
+  guard (`infer_node_naming`, the pairing-key uniqueness `docs/DATA.md`
+  documents) to have already caught it -- a frame CSV can come from anywhere.
+  """
+  dupes = frame.duplicated(subset=keys, keep=False)
+  if dupes.any():
+    raise ValueError(
+        f"{int(dupes.sum())} rows share a duplicate {keys} key -- "
+        f"fix the frame before running significance tests"
+    )
+
+
 def tagged_path(path: str, scheme: str) -> str:
   """`path` unchanged for `"integer"`; `.<scheme>` inserted before the
   extension otherwise -- `analysis/sweep_frame.csv` -> `.got.csv`, matching

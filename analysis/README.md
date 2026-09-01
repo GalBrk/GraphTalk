@@ -13,6 +13,7 @@ should not have to spend again to check the claim.
 | `truncated_keys.json` | historical record of the **271** thinking-arm rows that were hand-labelled non-terminating. No longer consulted: every tracked row now carries `hit_cap`. Kept because it is the provenance of a claim, and because two of its rows turn out to have terminated. |
 | `sweep_frame.csv` | one row per scored response over the whole tracked sweep, 15,120 rows. **Stale — do not cite; see below.** |
 | `failure_sample.csv` | the stratified manual-inspection sample, 56 rows with full response text. **Stale — do not cite; see below.** |
+| `significance_report.csv`/`.txt` | `scripts/check_significance.py`'s pooled permutation/bootstrap/BH-corrected results, one row per (arm, group, condition). See "The significance report" below — this one has a real methodology fix behind its most recent regeneration, not just fresher input. |
 
 ## The two CSVs, and what is in them now
 
@@ -39,6 +40,33 @@ A fourth was added since, once `runs/<model>.got.jsonl` files exist:
   condition, style)` rows that only look like duplicates because the column
   distinguishing them didn't exist yet. Score each scheme separately and let
   each land at its own `.got.`-tagged CSV; see `README.md#node-naming`.
+
+## The significance report
+
+Regenerated with a corrected methodology, not just fresher `sweep_frame.csv`
+input -- an audit of `scripts/check_significance.py` found it was pooling
+correlated rows (the same graph instance recurs up to 12x per condition,
+across styles and models) as if they were independent, which is anti-
+conservative, and including `non_terminating` rows in the main-sweep
+accuracy test, confounding "does this primer help reasoning" with "does
+this primer change truncation rate" (`docs/DATA.md`/`runs/README.md`
+already establish that non-terminating rows must be filtered before
+reporting accuracy; this script wasn't).
+
+The fix: `graphtalk/significance.py` gained `paired_permutation_test_clustered`/
+`cluster_bootstrap_ci_clustered`, which flip/resample whole graph instances
+rather than individual rows, and `check_significance.py` excludes
+non-terminating rows from the main-sweep test (`n_excluded_non_terminating`
+reports how many, per condition, so the confound's size stays visible)
+and adds a uniqueness guard (`graphtalk.analysis.assert_unique_pairing_key`)
+before pairing anything.
+
+**The effect was not cosmetic**: three `bh_significant` flags flipped versus
+the pre-fix regeneration, including `gemma4-12b`/`rwse` going from
+"significant" (p=0.0072) to clearly not (p=1.0) -- exactly the kind of
+false positive naive pooling produces. `n_pairs` (raw rows) and `n_clusters`
+(real graph instances) are both reported now precisely so this gap stays
+visible rather than being averaged away again.
 
 ## The batching baseline
 

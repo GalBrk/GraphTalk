@@ -2,96 +2,96 @@
 Main sweep: accuracy (exact) vs `none`, pooled across task + style
 
   gemma4-12b
-    condition     n_pairs     delta                95% CI  p (perm)  BH-sig
-    all               360    -0.014      [-0.031, +0.003]    0.1801  no
-    clustering        360    +0.000      [-0.014, +0.014]    1.0000  no
-    components        360    -0.028      [-0.050, -0.006]    0.0302  no
-    degree            360    -0.003      [-0.019, +0.014]    1.0000  no
-    filler            360    -0.028      [-0.050, -0.006]    0.0230  no
-    rwse              360    -0.022      [-0.039, -0.008]    0.0072  yes
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    all                 180    +0.003      [-0.006, +0.014]    1.0000  no
+    clustering          179    -0.003      [-0.009, +0.000]    1.0000  no
+    components          180    -0.026      [-0.043, -0.011]    0.0039  yes
+    degree              180    +0.006      [+0.000, +0.015]    0.5021  no
+    filler              179    -0.029      [-0.046, -0.012]    0.0018  yes
+    rwse                179    -0.006      [-0.018, +0.000]    1.0000  no
 
   gemma4-e4b
-    condition     n_pairs     delta                95% CI  p (perm)  BH-sig
-    all               360    +0.003      [-0.028, +0.033]    1.0000  no
-    clustering        360    +0.003      [-0.028, +0.033]    1.0000  no
-    components        360    -0.081      [-0.114, -0.047]    0.0001  yes
-    degree            360    +0.008      [-0.022, +0.039]    0.7214  no
-    filler            360    -0.053      [-0.086, -0.019]    0.0030  yes
-    rwse              360    -0.036      [-0.067, -0.006]    0.0263  no
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    all                 173    +0.009      [-0.013, +0.034]    0.6089  no
+    clustering          171    +0.016      [-0.006, +0.038]    0.2811  no
+    components          174    -0.066      [-0.098, -0.034]    0.0002  yes
+    degree              173    +0.006      [-0.016, +0.029]    0.7950  no
+    filler              173    -0.038      [-0.067, -0.013]    0.0109  yes
+    rwse                171    +0.006      [-0.013, +0.026]    0.7513  no
 
   qwen3-14b
-    condition     n_pairs     delta                95% CI  p (perm)  BH-sig
-    all               360    +0.039      [+0.017, +0.064]    0.0031  yes
-    clustering        360    +0.036      [+0.014, +0.058]    0.0020  yes
-    components        360    -0.019      [-0.044, +0.006]    0.2105  no
-    degree            360    +0.050      [+0.019, +0.081]    0.0023  yes
-    filler            360    -0.014      [-0.042, +0.014]    0.4557  no
-    rwse              360    +0.014      [-0.008, +0.036]    0.3296  no
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    all                 180    +0.028      [+0.008, +0.051]    0.0182  yes
+    clustering          180    +0.025      [+0.006, +0.045]    0.0230  yes
+    components          180    -0.017      [-0.040, +0.003]    0.2181  no
+    degree              180    +0.048      [+0.017, +0.082]    0.0037  yes
+    filler              180    -0.023      [-0.051, +0.006]    0.1657  no
+    rwse                180    +0.014      [-0.003, +0.034]    0.2290  no
 
   qwen3-8b
-    condition     n_pairs     delta                95% CI  p (perm)  BH-sig
-    all               360    +0.056      [+0.025, +0.089]    0.0012  yes
-    clustering        360    +0.047      [+0.017, +0.081]    0.0076  yes
-    components        360    -0.006      [-0.033, +0.022]    0.8460  no
-    degree            360    +0.072      [+0.039, +0.108]    0.0002  yes
-    filler            360    -0.028      [-0.067, +0.011]    0.1858  no
-    rwse              360    +0.006      [-0.025, +0.036]    0.8634  no
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    all                 180    +0.057      [+0.026, +0.090]    0.0008  yes
+    clustering          180    +0.051      [+0.023, +0.081]    0.0006  yes
+    components          180    +0.003      [-0.018, +0.026]    1.0000  no
+    degree              180    +0.071      [+0.034, +0.111]    0.0005  yes
+    filler              180    -0.026      [-0.061, +0.009]    0.1939  no
+    rwse                179    +0.006      [-0.026, +0.037]    0.8614  no
 
   pooled across all models
-    condition     n_pairs     delta                95% CI  p (perm)  BH-sig
-    all              1440    +0.021      [+0.008, +0.034]    0.0029  yes
-    clustering       1440    +0.022      [+0.009, +0.034]    0.0011  yes
-    components       1440    -0.033      [-0.047, -0.019]    0.0001  yes
-    degree           1440    +0.032      [+0.017, +0.047]    0.0001  yes
-    filler           1440    -0.031      [-0.047, -0.015]    0.0002  yes
-    rwse             1440    -0.010      [-0.022, +0.003]    0.1680  no
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    all                 180    +0.025      [+0.012, +0.039]    0.0004  yes
+    clustering          180    +0.023      [+0.011, +0.036]    0.0007  yes
+    components          180    -0.026      [-0.039, -0.012]    0.0002  yes
+    degree              180    +0.033      [+0.016, +0.052]    0.0003  yes
+    filler              180    -0.028      [-0.048, -0.010]    0.0037  yes
+    rwse                180    +0.005      [-0.008, +0.019]    0.5366  no
 
 ==============================================================================
 Thinking arm: non-termination rate vs `none`, pooled across task
 
   gemma4-12b
-    condition     n_pairs     delta                95% CI  p (perm)  BH-sig
-    all               180    -0.089      [-0.144, -0.039]    0.0022  yes
-    clustering        180    +0.022      [-0.022, +0.067]    0.4841  no
-    components        180    -0.067      [-0.122, -0.017]    0.0225  yes
-    degree            180    -0.056      [-0.111, -0.006]    0.0597  no
-    filler            180    -0.094      [-0.144, -0.044]    0.0005  yes
-    rwse              180    -0.028      [-0.083, +0.028]    0.4199  no
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    all                 180    -0.089      [-0.144, -0.033]    0.0026  yes
+    clustering          180    +0.022      [-0.022, +0.067]    0.4814  no
+    components          180    -0.067      [-0.122, -0.017]    0.0241  yes
+    degree              180    -0.056      [-0.111, -0.006]    0.0697  no
+    filler              180    -0.094      [-0.144, -0.044]    0.0004  yes
+    rwse                180    -0.028      [-0.083, +0.028]    0.4302  no
 
   gemma4-e4b
-    condition     n_pairs     delta                95% CI  p (perm)  BH-sig
-    all               180    +0.000      [+0.000, +0.000]    1.0000  no
-    clustering        180    +0.000      [+0.000, +0.000]    1.0000  no
-    components        180    +0.000      [+0.000, +0.000]    1.0000  no
-    degree            180    +0.000      [+0.000, +0.000]    1.0000  no
-    filler            180    +0.000      [+0.000, +0.000]    1.0000  no
-    rwse              180    +0.000      [+0.000, +0.000]    1.0000  no
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    all                 180    +0.000      [+0.000, +0.000]    1.0000  no
+    clustering          180    +0.000      [+0.000, +0.000]    1.0000  no
+    components          180    +0.000      [+0.000, +0.000]    1.0000  no
+    degree              180    +0.000      [+0.000, +0.000]    1.0000  no
+    filler              180    +0.000      [+0.000, +0.000]    1.0000  no
+    rwse                180    +0.000      [+0.000, +0.000]    1.0000  no
 
   qwen3-14b
-    condition     n_pairs     delta                95% CI  p (perm)  BH-sig
-    all               180    +0.000      [-0.022, +0.022]    1.0000  no
-    clustering        180    +0.006      [+0.000, +0.017]    1.0000  no
-    components        180    +0.000      [-0.017, +0.017]    1.0000  no
-    degree            180    +0.000      [-0.017, +0.017]    1.0000  no
-    filler            180    +0.000      [-0.017, +0.017]    1.0000  no
-    rwse              180    +0.006      [-0.017, +0.028]    1.0000  no
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    all                 180    +0.000      [-0.022, +0.022]    1.0000  no
+    clustering          180    +0.006      [+0.000, +0.017]    1.0000  no
+    components          180    +0.000      [-0.017, +0.017]    1.0000  no
+    degree              180    +0.000      [-0.017, +0.017]    1.0000  no
+    filler              180    +0.000      [-0.017, +0.017]    1.0000  no
+    rwse                180    +0.006      [-0.017, +0.033]    1.0000  no
 
   qwen3-8b
-    condition     n_pairs     delta                95% CI  p (perm)  BH-sig
-    all               180    +0.011      [-0.028, +0.050]    0.7667  no
-    clustering        180    +0.000      [-0.028, +0.028]    1.0000  no
-    components        180    +0.006      [-0.028, +0.039]    1.0000  no
-    degree            180    -0.011      [-0.044, +0.022]    0.7615  no
-    filler            180    -0.028      [-0.061, +0.006]    0.1813  no
-    rwse              180    -0.022      [-0.050, +0.000]    0.2206  no
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    all                 180    +0.011      [-0.028, +0.050]    0.7850  no
+    clustering          180    +0.000      [-0.028, +0.028]    1.0000  no
+    components          180    +0.006      [-0.028, +0.039]    1.0000  no
+    degree              180    -0.011      [-0.044, +0.022]    0.7551  no
+    filler              180    -0.028      [-0.061, +0.006]    0.1814  no
+    rwse                180    -0.022      [-0.050, +0.000]    0.2175  no
 
   pooled across all models
-    condition     n_pairs     delta                95% CI  p (perm)  BH-sig
-    all               720    -0.019      [-0.037, -0.001]    0.0412  no
-    clustering        720    +0.007      [-0.007, +0.021]    0.4312  no
-    components        720    -0.015      [-0.032, +0.000]    0.0926  no
-    degree            720    -0.017      [-0.033, +0.000]    0.0626  no
-    filler            720    -0.031      [-0.046, -0.015]    0.0002  yes
-    rwse              720    -0.011      [-0.028, +0.006]    0.2423  no
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    all                 180    -0.019      [-0.037, -0.003]    0.0444  no
+    clustering          180    +0.007      [-0.007, +0.021]    0.4209  no
+    components          180    -0.015      [-0.031, +0.000]    0.0707  no
+    degree              180    -0.017      [-0.033, -0.001]    0.0666  no
+    filler              180    -0.031      [-0.046, -0.015]    0.0006  yes
+    rwse                180    -0.011      [-0.028, +0.006]    0.2509  no
 
 wrote 60 rows to analysis\significance_report.csv
