@@ -97,9 +97,11 @@ Every prompt names nodes one of two ways, chosen with `--node-naming` on
 # integer node ids (default)
 PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 30
 
-# GoT character names -- --out keeps this from overwriting prompts.jsonl
+# GoT character names -- --out keeps this from overwriting prompts.jsonl.
+# --styles zero_shot because zero_cot is retired: generating those rows would
+# produce 1,260 prompts nothing will ever be run against.
 PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 30 \
-    --node-naming got --out prompts_got.jsonl
+    --node-naming got --styles zero_shot --out prompts_got.jsonl
 ```
 
 Generation is the same `cluster/sweep.sbatch` as [the sweep](#the-sweep)
