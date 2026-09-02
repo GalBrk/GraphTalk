@@ -28,3 +28,4 @@ out/
 # they look like a prompt set the sweep used in full, which they never are.
 /prompts.rerun.jsonl
 /prompts.smoke.jsonl
+/prompts_got.rerun.jsonl
