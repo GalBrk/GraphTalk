@@ -15,9 +15,15 @@ structure.
 | `runs/<model>-think.redo.shard<i>of<n>.jsonl` | 67 | evidence only — see caveats |
 | `runs/archive/smoke-gemma4-e4b.jsonl` | 20 | a smoke test; archived, excluded by directory |
 | `shortcuts.json` | 42 entries | the primer-only solver bar per (task, condition) |
+| `prompts_got.jsonl` | 2,520 | the same prompts with Game-of-Thrones node names; only its 1,260 `zero_shot` rows were generated |
+| `runs/<model>.got.jsonl` | 1,260 × 8 | GoT-named responses, every arm, `zero_shot` only; `node_naming: "got"` on every row |
 | `analysis/*.jsonl` | 51 | token-budget measurements; see `analysis/README.md` |
 
-15,187 response rows in total: 10,080 main sweep, 5,040 thinking arm, 67 redo.
+25,267 response rows in total: 10,080 main sweep, 5,040 thinking arm, **10,080
+GoT-named**, 67 redo. The GoT rows pair one-to-one with the `zero_shot` half of
+the other two — same graphs, same queries, same primers — and are scored
+separately, never pooled (`graphtalk.analysis.infer_node_naming` raises on a
+mix). See README.md#node-naming.
 
 ## The pairing key
 
