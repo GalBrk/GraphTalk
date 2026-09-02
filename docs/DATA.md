@@ -17,6 +17,14 @@ structure.
 | `shortcuts.json` | 42 entries | the primer-only solver bar per (task, condition) |
 | `prompts_got.jsonl` | 2,520 | the same prompts with Game-of-Thrones node names; only its 1,260 `zero_shot` rows were generated |
 | `runs/<model>.got.jsonl` | 1,260 × 8 | GoT-named responses, every arm, `zero_shot` only; `node_naming: "got"` on every row |
+
+The GoT sweep was driven by the `zero_shot` half of `prompts_got.jsonl`, filtered
+out to its own file. That subset is not tracked -- it is one line to rebuild, and
+a prompt subset used to drive a run is not the record of what the sweep used:
+
+```bash
+python -c "import json; [print(l,end='') for l in open('prompts_got.jsonl') if json.loads(l)['style']=='zero_shot']" > prompts_got.rerun.jsonl
+```
 | `analysis/*.jsonl` | 51 | token-budget measurements; see `analysis/README.md` |
 
 25,267 response rows in total: 10,080 main sweep, 5,040 thinking arm, **10,080
