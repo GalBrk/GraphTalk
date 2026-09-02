@@ -111,6 +111,34 @@ one even if it were there":
 
   PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
       --frame analysis/sweep_frame.csv
+
+**`--metric mae`**: a separate mode, reusing the same clustering/
+permutation/bootstrap/BH machinery on a different metric -- mean absolute
+error instead of exact-match accuracy -- rather than pooling across the
+6 tasks. Scoped to the 3 integer tasks `absolute_error` is defined for
+(`node_count`, `edge_count`, `node_degree`; the frame carries `NaN` for
+the other three, where the metric doesn't apply). Reported **per task**,
+not pooled across them: a node-count error of 2 and a degree error of 2
+aren't the same size of mistake, so averaging them the way `exact` pools
+across all 6 tasks would conflate different quantities -- this mode's
+per-task split incidentally gives real per-task significance for these
+three tasks, unlike `exact`'s pooled-only view.
+
+Excludes `non_terminating` rows before pairing (same reasoning as the
+`exact` metric's `excluded` bound -- a truncated response's extracted
+number isn't a meaningful "how close" signal) and any row where
+`absolute_error` itself is undefined (`unparsed` responses). No
+`best_case`/`worst_case` bracket (unbounded metric, no principled "worst
+case" value the way 0/1 has), no `near_ceiling` (a 0-1-accuracy concept),
+no `task_delta_min`/`max` (redundant -- this mode doesn't pool across
+tasks to begin with). Reports `mae_delta = control_mae - treatment_mae`,
+not the raw `treatment - control` the underlying functions return --
+lower error is better, the opposite sign convention from `exact`'s
+"higher is better", so this flip keeps a positive number meaning "helped"
+in both modes.
+
+  PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
+      --frame analysis/sweep_frame.csv --metric mae
 """
 
 import argparse
@@ -123,6 +151,7 @@ from graphtalk import significance
 CONTROL = "none"
 _KEYS = ["model", "instance_id", "style", "node_naming"]
 _BRACKET_BOUNDS = ("best_case", "worst_case")
+_MAE_TASKS = ("node_count", "edge_count", "node_degree")
 
 
 def _paired_values(frame: pd.DataFrame, condition: str, metric: str):
@@ -360,9 +389,98 @@ def _apply_global_bh(records: list, q: float) -> None:
     r.setdefault("bh_significant_global", None)
 
 
+def _mae_eligible_frame(main_sweep_raw: pd.DataFrame) -> pd.DataFrame:
+  """Rows `--metric mae` can pair: one of `_MAE_TASKS`, `non_terminating`
+  excluded, and `absolute_error` actually defined (an `unparsed` row has
+  none) -- see the module docstring's `mae` mode section for why each of
+  these is excluded."""
+  return main_sweep_raw[
+      main_sweep_raw["task"].isin(_MAE_TASKS)
+      & (main_sweep_raw["failure_type"] != "non_terminating")
+      & main_sweep_raw["absolute_error"].notna()
+  ]
+
+
+def _report_mae(
+    frame: pd.DataFrame, raw_frame: pd.DataFrame, label: str, task: str,
+    args, records: list,
+) -> None:
+  """`--metric mae`'s counterpart to `_report`, scoped to one
+  `(label, task)` pair.
+
+  Deliberately does not call `_report`: its bracket/`near_ceiling`/
+  `task_delta`/MDE logic is all specific to the 0-1 `exact` metric and
+  doesn't translate to an unbounded error metric (see the module
+  docstring). The underlying clustering/permutation/bootstrap/BH
+  primitives are metric-agnostic and are reused as-is; only the
+  orchestration and the `mae_delta` sign flip are new.
+  """
+  print(f"\n  {label} / {task}")
+  conditions = sorted(c for c in frame["condition"].unique() if c != CONTROL)
+  rows = []
+  for condition in conditions:
+    control, treatment, cluster_ids = _paired_values(
+        frame, condition, "absolute_error"
+    )
+    if not control:
+      print(f"    {condition:<12} -- no paired rows found")
+      continue
+    seed = f"{args.seed}:mae:{label}:{task}:{condition}"
+    perm = significance.paired_permutation_test_clustered(
+        control, treatment, cluster_ids, n_perm=args.n_perm, seed=seed
+    )
+    boot = significance.cluster_bootstrap_ci_clustered(
+        control, treatment, cluster_ids, n_boot=args.n_boot, seed=seed,
+        alpha=args.alpha,
+    )
+    n_excluded = _count_excluded_non_terminating(raw_frame, condition)
+    rows.append((condition, perm, boot, n_excluded))
+
+  if not rows:
+    return
+  bh_family = f"mae/{label}/{task}"
+  reject = significance.benjamini_hochberg(
+      [perm["p_value"] for _, perm, _, _ in rows], q=args.q
+  )
+  print(f"    {'condition':<12}{'n_clusters':>11}{'mae_delta':>10}"
+        f"{'95% CI':>22}{'p (perm)':>10}  BH-sig")
+  for (condition, perm, boot, n_excluded), sig in zip(rows, reject):
+    # Flip sign: the underlying functions return treatment - control (raw
+    # error, higher = worse); mae_delta = control - treatment so positive
+    # still means "the condition helped", matching `exact`'s convention.
+    mae_delta = -perm["observed_diff"]
+    ci_low, ci_high = -boot["ci_high"], -boot["ci_low"]
+    ci = f"[{ci_low:+.3f}, {ci_high:+.3f}]"
+    print(f"    {condition:<12}{perm['n_clusters']:>11}"
+          f"{mae_delta:>+10.3f}{ci:>22}"
+          f"{perm['p_value']:>10.4f}  {'yes' if sig else 'no'}")
+    records.append({
+        "arm": "main_sweep",
+        "group": label,
+        "task": task,
+        "condition": condition,
+        "bound": "excluded",
+        "bh_family": bh_family,
+        "n_pairs": perm["n_pairs"],
+        "n_clusters": perm["n_clusters"],
+        "n_excluded_non_terminating": n_excluded,
+        "mae_delta": mae_delta,
+        "ci_low": ci_low,
+        "ci_high": ci_high,
+        "p_value": perm["p_value"],
+        "bh_significant": sig,
+    })
+
+
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--frame", default="analysis/sweep_frame.csv")
+  parser.add_argument("--metric", choices=("exact", "mae"), default="exact",
+                       help="'exact' (default): today's accuracy-vs-none "
+                            "pipeline, pooled across tasks, main sweep + "
+                            "thinking arm. 'mae': a separate per-task mode "
+                            "on the 3 integer tasks' absolute_error -- see "
+                            "the module docstring")
   parser.add_argument("--n-perm", type=int, default=10_000,
                        help="permutations for the pooled p-value")
   parser.add_argument("--n-boot", type=int, default=10_000,
@@ -419,11 +537,29 @@ def main() -> None:
   analysis.assert_unique_pairing_key(frame, ["model", "instance_id", "condition", "style", "node_naming"])
   records = []
 
+  main_sweep_raw = frame[~frame["is_think"]]
+
+  if args.metric == "mae":
+    print("=" * 78)
+    print("Main sweep: mean absolute error vs `none`, per task (not pooled)")
+    for model_family, raw_group in main_sweep_raw.groupby("model_family"):
+      eligible = _mae_eligible_frame(raw_group)
+      for task in _MAE_TASKS:
+        _report_mae(
+            eligible[eligible["task"] == task], raw_group[raw_group["task"] == task],
+            model_family, task, args, records,
+        )
+    _apply_global_bh(records, args.q)
+    if args.out:
+      out = analysis.tagged_path(args.out, scheme)
+      pd.DataFrame(records).to_csv(out, index=False)
+      print(f"\nwrote {len(records)} rows to {out}")
+    return
+
   # main_sweep_raw is what n_excluded_non_terminating/n_instances_missing
   # count against; main_sweep (non_terminating dropped) is the `excluded`
   # bound; main_sweep_best/worst (non_terminating overridden, not dropped)
   # are the bracket -- see the module docstring on why all three are kept.
-  main_sweep_raw = frame[~frame["is_think"]]
   main_sweep = main_sweep_raw[main_sweep_raw["failure_type"] != "non_terminating"]
   main_sweep_best = _bracket_frame(main_sweep_raw, 1.0)
   main_sweep_worst = _bracket_frame(main_sweep_raw, 0.0)

@@ -643,3 +643,68 @@ def test_mde_no_pairs_returns_none_with_a_note():
   )
   assert mde["delta"] is None
   assert mde["note"] is not None
+
+
+# --- --metric mae ------------------------------------------------------------
+
+
+def test_mae_eligible_frame_filters_correctly():
+  raw = pd.DataFrame({
+      "task": ["node_count", "node_count", "cycle_check", "node_count"],
+      "failure_type": ["correct", "non_terminating", "correct", "unparsed"],
+      "absolute_error": [2.0, 3.0, None, None],
+  })
+  eligible = cs._mae_eligible_frame(raw)
+  assert len(eligible) == 1
+  assert eligible.iloc[0]["absolute_error"] == 2.0
+
+
+def test_report_mae_sign_convention_positive_means_helped():
+  """`mae_delta = control_mae - treatment_mae`, so a condition that
+  reduces error (helps) must show a *positive* `mae_delta` -- the opposite
+  raw sign from what `paired_permutation_test_clustered` itself returns
+  (`treatment - control`), which is why `_report_mae` flips it."""
+  raw = pd.DataFrame({
+      "model": ["gemma4-12b"] * 20,
+      "instance_id": [f"node_count/{i}" for i in range(10)] * 2,
+      "style": ["zero_shot"] * 20,
+      "node_naming": ["integer"] * 20,
+      "condition": ["none"] * 10 + ["degree"] * 10,
+      "failure_type": ["correct"] * 20,
+      # control error consistently higher than treatment -> primer helps.
+      "absolute_error": [5.0] * 10 + [1.0] * 10,
+  })
+  records = []
+  cs._report_mae(raw, raw, "gemma4-12b", "node_count", _default_args(), records)
+  row = records[0]
+  assert row["mae_delta"] == pytest.approx(4.0)
+  assert row["bh_significant"] is True
+
+
+def test_report_mae_keeps_tasks_separate_not_pooled():
+  """Two tasks with opposite-sign MAE effects must produce two separate
+  records, not get averaged into one pooled number the way `exact`'s
+  metric pools across all 6 tasks."""
+  raw = pd.DataFrame({
+      "model": ["gemma4-12b"] * 8,
+      "instance_id": (
+          ["node_count/0", "node_count/1"] * 2
+          + ["edge_count/0", "edge_count/1"] * 2
+      ),
+      "style": ["zero_shot"] * 8,
+      "node_naming": ["integer"] * 8,
+      "task": ["node_count"] * 4 + ["edge_count"] * 4,
+      "condition": ["none", "none", "degree", "degree"] * 2,
+      "failure_type": ["correct"] * 8,
+      # node_count: control error > treatment error -> helps.
+      # edge_count: control error < treatment error -> hurts.
+      "absolute_error": [5.0, 5.0, 1.0, 1.0, 1.0, 1.0, 5.0, 5.0],
+  })
+  records = []
+  args = _default_args()
+  for task in ("node_count", "edge_count"):
+    subset = raw[raw["task"] == task]
+    cs._report_mae(subset, subset, "gemma4-12b", task, args, records)
+  by_task = {r["task"]: r["mae_delta"] for r in records}
+  assert by_task["node_count"] == pytest.approx(4.0)
+  assert by_task["edge_count"] == pytest.approx(-4.0)

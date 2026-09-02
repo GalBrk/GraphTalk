@@ -580,6 +580,19 @@ direct-computation shortcut it doesn't reliably take, not a token-budget or
 formatting problem -- a generation-behavior question, not a scoring-pipeline one,
 and out of scope for anything `check_significance.py` can fix.
 
+`edge_count`'s fragility is not unique to `gemma4-e4b`, only most visible there
+as non-termination. `check_significance.py --metric mae` (`analysis/README.md`,
+"The `mae` metric mode") scores mean absolute error instead of exact-match on
+the three integer tasks, and finds `edge_count` carrying essentially all of
+that signal too: `filler` and `rwse` significantly widen `qwen3-14b`'s and
+`qwen3-8b`'s `edge_count` errors, in cells where exact-match accuracy shows
+no effect at all -- the same task where a bad primer's damage tends to land,
+whether it surfaces as never finishing (`gemma4-e4b`) or as a wrong answer
+landing further from correct (`qwen3-14b`, `qwen3-8b`). This `mae` result
+pools `zero_shot` and `zero_cot`, like everything else in this section --
+see "Most primer findings depend on the retired `zero_cot` style" below for
+how much of it survives on `zero_shot` alone (most of it does not).
+
 ## The `filler` instrument confound is reduced, not fully closed
 
 `non_terminating_source` (`generator` = `scripts/run_sweep.py`'s own recorded
@@ -595,3 +608,44 @@ the same retokenization audit as the other six conditions' rows have. Not urgent
 both instruments agree at 100% where they've both been checked (see above) -- but
 worth knowing before treating `filler`'s non-termination numbers as measured
 identically to the rest of the table.
+
+## Most primer findings depend on the retired `zero_cot` style
+
+`scripts/check_significance.py`'s main-sweep tests have pooled `zero_shot` and
+`zero_cot` together throughout this project. Re-scoped to one style at a time
+(`analysis/README.md`, "What holds up without `zero_cot`"): **0 of 24
+`zero_shot`-only accuracy cells are significant, against 7 of 24 for
+`zero_cot`-only.** Most of the pooled table's primer-helps/primer-hurts
+findings trace back to the retired, half-token-budget style
+(`graphtalk/prompts.py`: *"`zero_cot` is retired. Do not generate new rows in
+it"*), not to the live prompt format. The same pattern holds for the `mae`
+metric: 1 of 72 `zero_shot`-only cells (not surviving whole-table correction)
+against 6 of 72 for `zero_cot`-only.
+
+Checking effect size rather than only significance, this is not "`zero_cot`
+invents fake effects" -- most `zero_shot`-only deltas share the pooled/`zero_cot`
+numbers' sign, just smaller, at roughly half the sample size
+(`n_clusters≈170-180` vs `≈350` pooled). A few cells (`gemma4-e4b`/`filler`,
+`qwen3-8b`/`all`) show a `zero_shot` delta near zero against a large `zero_cot`
+delta, closer to genuinely `zero_cot`-specific; one cell
+(`qwen3-8b`/`filler`) runs the other way, with its only signal in `zero_shot`.
+So most of the pooled accuracy story is *underpowered and unconfirmed* on live
+data, not *disproven*.
+
+A simulated minimum-detectable-effect check (same method as "A third pass",
+`analysis/README.md`) confirms this is not fixable by running more graphs of
+the same shape. Of the 24 `zero_shot`-only cells: 12 never reach 80% power
+even at the maximum simulated effect (the same near-ceiling problem as
+`gemma4-12b`/`gemma4-e4b` elsewhere in this document), 2 have an observed
+effect of exactly zero, and the 10 that do converge all need far more than
+the published split's 500-graph cap (~2,232 to ~49,207). The thinking arm's
+own accuracy -- unaffected by `zero_cot`, since it never used that style --
+fails to converge on all 24 cells too. No amount of additional graphs from
+the published GraphQA split resolves the accuracy question on live-format
+data, for either arm.
+
+The one finding that survives intact is the thinking arm's non-termination
+result ("Non-termination responds to the primer" above) -- a reliability
+effect, not an accuracy one. Read every accuracy claim elsewhere in this
+document and in `analysis/README.md` as real in the pooled data but not yet
+confirmed on `zero_shot` alone.
