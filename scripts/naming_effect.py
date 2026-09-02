@@ -66,12 +66,16 @@ def arm_paths(runs: str, model: str) -> tuple[list[str], list[str]]:
   return integer, got
 
 
-def paired(integer: list[dict], got: list[dict]) -> tuple[list, list, list]:
+def paired(integer: list[dict], got: list[dict], drop_capped: bool = True) -> tuple[list, list, list]:
   """Aligned (integer score, got score, cluster id) over shared keys."""
-  gi = {tuple(r[k] for k in _KEY): r for r in integer
-        if r["style"] == "zero_shot" and not r.get("non_terminating")}
-  gg = {tuple(r[k] for k in _KEY): r for r in got
-        if r["style"] == "zero_shot" and not r.get("non_terminating")}
+  # `hit_cap`, not `non_terminating`: the latter is a column
+  # `graphtalk.analysis.build_frame` derives, and these are raw scored records
+  # from `scripts.score_sweep`, which carry the generator's own flag instead.
+  # Keying off the wrong name silently excluded nothing at all.
+  def keep(r):
+    return r["style"] == "zero_shot" and not (drop_capped and r.get("hit_cap"))
+  gi = {tuple(r[k] for k in _KEY): r for r in integer if keep(r)}
+  gg = {tuple(r[k] for k in _KEY): r for r in got if keep(r)}
   shared = sorted(gi.keys() & gg.keys())
   return ([gi[k]["score"]["primary"] for k in shared],
           [gg[k]["score"]["primary"] for k in shared],
@@ -85,6 +89,11 @@ def main() -> None:
   parser.add_argument("--n-boot", type=int, default=10_000)
   parser.add_argument("--seed", type=int, default=1234)
   parser.add_argument("--q", type=float, default=0.05)
+  parser.add_argument("--keep-capped", action="store_true",
+                      help="include responses that hit the token cap; by default "
+                           "they are dropped, since a truncated response's score "
+                           "reflects abandoned working and GoT names cost more "
+                           "tokens, which would confound naming with truncation")
   args = parser.parse_args()
 
   results, skipped = [], []
@@ -99,7 +108,7 @@ def main() -> None:
     if n_got != n_int:
       skipped.append((model, f"incomplete: {n_got} GoT vs {n_int} integer rows"))
       continue
-    ctrl, treat, clusters = paired(integer, got)
+    ctrl, treat, clusters = paired(integer, got, drop_capped=not args.keep_capped)
     if not ctrl:
       skipped.append((model, "no shared pairs"))
       continue
