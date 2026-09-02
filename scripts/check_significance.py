@@ -14,24 +14,100 @@ Reads the already-scored, already-joined table `scripts/build_sweep_frame.py`
 writes -- no re-scoring, no re-reading raw runs/*.jsonl. Raises if `--frame`
 carries more than one `node_naming` scheme (a pooled significance number
 across schemes would be meaningless, not just mislabeled) or a duplicated
-`(model, instance_id, style, node_naming)` key (silently corrupts every
-pairing downstream, via `pandas`'s cross-join on a non-unique index).
+`(model, instance_id, condition, style, node_naming)` key (silently corrupts
+every pairing downstream, via `pandas`'s cross-join on a non-unique index).
 
 Pooling across style (and, for "pooled across all models" rows, across
 model too) means the same graph instance recurs many times in one pooled
-sample, so `instance_id` is threaded through as a *cluster* id: the
+sample, so `(model, instance_id)` is threaded through as a *cluster* id: the
 permutation test flips and the bootstrap resamples whole clusters, not
 individual rows, so correlated rows sharing a graph don't get counted as
 independent evidence (see `graphtalk/significance.py`'s module docstring).
+The cluster id carries `model`, not just `instance_id` -- otherwise a
+"pooled across all models" row would merge the same graph number from four
+different model families into one cluster, assuming those families'
+errors on that graph correlate as strongly as one model's own repeated
+answers to it do. They may not, so only same-model rows sharing an instance
+are treated as correlated.
 
-Main-sweep `exact` rows also exclude `non_terminating` responses before
-pairing -- a truncated response's `exact` score reflects abandoned working,
-not reasoning quality, and non-termination itself responds to the primer
-condition (docs/sweep-findings.md), so leaving them in confounds the very
-thing being tested. `n_excluded_non_terminating` reports how many were
-dropped per condition so the confound's size stays visible. The thinking
-arm's own `non_terminating` rows are the outcome being tested there and are
-never excluded.
+Main-sweep `exact` rows are reported three times per condition, tagged by
+`bound`, since a non-terminating response's true (untruncated) outcome is
+unknown:
+
+- `excluded` drops `non_terminating` responses before pairing -- a
+  truncated response's `exact` score reflects abandoned working, not
+  reasoning quality.
+- `best_case`/`worst_case` keep every row, but override a non-terminating
+  response's `exact` score to 1.0/0.0 rather than trusting whatever the
+  truncated-text answer-extractor happened to land on -- a real bracket on
+  the unknown true outcome, not a second point estimate.
+
+Dropping non-terminating rows (`excluded`) is not free of bias either:
+non-termination itself responds to the primer condition
+(docs/sweep-findings.md), so a condition that happens to truncate on
+instances it would have gotten wrong anyway would look artificially better
+under `excluded` alone. Reporting the bracket alongside it makes that range
+visible instead of picking one estimate silently. `n_excluded_non_terminating`
+reports how many rows `excluded` dropped per condition (always 0 for
+`best_case`/`worst_case`, which drop nothing, only override). The thinking
+arm's own `non_terminating` rows are the outcome being tested there --
+never excluded or overridden, and `bound` is `not_applicable` for those
+rows (not the literal text `"n/a"` -- that string is one of pandas'
+default NA tokens, so `pd.read_csv` would silently turn it into `NaN` on
+every re-read, which is exactly the bug this sentinel avoids).
+
+`n_looped_on_correct_answer` and `low_power` are further diagnostics,
+populated only on `bound == "excluded"` main-sweep rows (blank elsewhere):
+the former counts non-terminating rows whose response settled on the
+correct answer before getting cut off rather than genuinely drifting (see
+`graphtalk.analysis.build_frame`'s `looped_on_correct_answer` column); the
+latter flags a row where the exclusion rate is high enough that a
+"not significant" result may mean "not enough clean data" rather than
+"no effect" (default threshold 15%, `--low-power-threshold`).
+`n_instances_missing` (every row, every bound) is the count of graph
+instances with zero surviving pairs -- computed from the data, not a
+hardcoded total, since the sweep's instance count changes with `--count`.
+
+`bh_significant` corrects across the ~6 conditions within one
+`(arm, group, bound)` family, same scope as before this fix.
+`bh_significant_global` is a second, additional correction across every
+`excluded`/`not_applicable`-bound row from the whole run, excluding `best_case`/
+`worst_case` rows (a sensitivity bracket, not an independent hypothesis)
+and excluding `pooled across all models` rows in both arms (built from the
+same underlying pairs as their sibling per-model rows, so not an
+independent test either). The first column answers "does this condition
+matter for this model"; the second answers "how many of the whole table's
+findings survive testing it all at once". Both are kept; neither replaces
+the other.
+
+Three further diagnostics distinguish "no effect" from "couldn't have seen
+one even if it were there":
+
+- `near_ceiling` -- the CONTROL condition's own mean `metric` is above
+  `--near-ceiling-threshold` (default 95%) or below its complement (a
+  floor, not just a ceiling -- e.g. `gemma4-e4b-think`'s 0% non-termination
+  baseline). Populated on `bound in ("excluded", "not_applicable")` rows
+  only; a
+  best_case/worst_case bracket forces non-terminating rows to fixed
+  extremes and would distort the read.
+- `task_delta_min`/`task_delta_max` -- per-task point-estimate deltas
+  (`instance_id` already encodes its task as a `/`-prefix, e.g.
+  `edge_count/27`, so no extra join is needed), purely descriptive, no new
+  hypothesis test and no added multiple-comparison burden. A pooled `delta`
+  near zero with a wide `[task_delta_min, task_delta_max]` range means the
+  condition helps on some tasks and hurts on others rather than doing
+  nothing everywhere.
+- `mde_delta`/`mde_realized_diff`/`mde_power_target` -- opt-in via `--mde`
+  (off by default: roughly 6-7x's the run's total time), computed only for
+  rows where `bh_significant is False` and
+  `bound in ("excluded", "not_applicable")`.
+  `graphtalk.significance.minimum_detectable_effect_clustered` simulates
+  the smallest true effect this row's data could have reliably detected;
+  `mde_realized_diff` can come in below `mde_delta` on a `near_ceiling` row,
+  which is itself a second, independent confirmation that a ceiling effect
+  is suppressing detectability there. Blank wherever not computed --
+  `bh_significant is True` (nothing to explain), a bracket row (not a
+  primary interpretive bound), or `--mde` wasn't passed.
 
   PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
       --frame analysis/sweep_frame.csv
@@ -46,6 +122,7 @@ from graphtalk import significance
 
 CONTROL = "none"
 _KEYS = ["model", "instance_id", "style", "node_naming"]
+_BRACKET_BOUNDS = ("best_case", "worst_case")
 
 
 def _paired_values(frame: pd.DataFrame, condition: str, metric: str):
@@ -60,10 +137,13 @@ def _paired_values(frame: pd.DataFrame, condition: str, metric: str):
   carry both schemes for one model would pair a `got` control row against an
   `integer` treatment row (or vice versa) via `set_index`, which raises on
   nothing; it just silently keeps one of the duplicates. `cluster_ids` is
-  `instance_id` pulled back out of the joined index -- the unit
+  `(model, instance_id)` pulled back out of the joined index -- the unit
   `paired_permutation_test_clustered`/`cluster_bootstrap_ci_clustered` need,
-  since the *pairing* key has to include style/model to be unique but the
-  *correlation* those two functions correct for lives at the instance level.
+  since the *pairing* key has to include style/node_naming to be unique but
+  the *correlation* those two functions correct for lives at the
+  per-model-per-instance level. `model` stays part of the cluster id (not
+  just `instance_id`) so a pooled-across-models call doesn't merge the same
+  graph number from different model families into one cluster.
   """
   control = frame[frame["condition"] == CONTROL].set_index(_KEYS)[metric]
   treatment = frame[frame["condition"] == condition].set_index(_KEYS)[metric]
@@ -71,25 +151,87 @@ def _paired_values(frame: pd.DataFrame, condition: str, metric: str):
       [control.rename("control"), treatment.rename("treatment")],
       axis=1, join="inner",
   )
-  cluster_ids = joined.index.get_level_values("instance_id").tolist()
+  cluster_ids = list(zip(
+      joined.index.get_level_values("model"),
+      joined.index.get_level_values("instance_id"),
+  ))
   return joined["control"].tolist(), joined["treatment"].tolist(), cluster_ids
 
 
 def _count_excluded_non_terminating(raw_frame: pd.DataFrame, condition: str) -> int:
   """How many `condition`-or-`CONTROL` rows in `raw_frame` were dropped for
-  being `non_terminating` -- the size of the confound the exclusion filter
-  in `main()` removes, kept visible rather than silently disappearing."""
+  being `non_terminating` -- the size of the confound the `excluded` bound
+  removes, kept visible rather than silently disappearing."""
   relevant = raw_frame[raw_frame["condition"].isin([CONTROL, condition])]
   return int((relevant["failure_type"] == "non_terminating").sum())
 
 
+def _count_looped_on_correct_answer(raw_frame: pd.DataFrame, condition: str) -> int:
+  """How many of those same `non_terminating` rows settled on the correct
+  answer before getting cut off, rather than genuinely drifting -- same
+  scope as `_count_excluded_non_terminating`, see its docstring."""
+  relevant = raw_frame[raw_frame["condition"].isin([CONTROL, condition])]
+  return int((relevant["looped_on_correct_answer"] == True).sum())  # noqa: E712
+
+
+def _task_delta_range(control, treatment, cluster_ids):
+  """Per-task point-estimate deltas (`mean(treatment) - mean(control)`),
+  descriptive only -- no new hypothesis test, no new multiple-comparison
+  burden. `instance_id` (the second element of each `cluster_ids` tuple)
+  already encodes its task as a `/`-prefix (e.g. `edge_count/27`), so no
+  extra join or `_paired_values` change is needed. Returns `(min, max)`
+  across tasks -- surfaces whether a near-zero pooled delta is hiding tasks
+  that actually disagree in direction, or genuinely reflects "nothing much
+  happening on any task."
+  """
+  by_task: dict = {}
+  for (_model, instance_id), c, t in zip(cluster_ids, control, treatment):
+    task = instance_id.split("/")[0]
+    by_task.setdefault(task, []).append(t - c)
+  if not by_task:
+    return None, None
+  task_means = [sum(diffs) / len(diffs) for diffs in by_task.values()]
+  return min(task_means), max(task_means)
+
+
+def _bracket_frame(raw_frame: pd.DataFrame, value: float) -> pd.DataFrame:
+  """`raw_frame` with `exact` overridden to `value` on `non_terminating`
+  rows, every other row's actual observed value left untouched -- the
+  best_case (`value=1.0`) / worst_case (`value=0.0`) bracket: a
+  non-terminating response's true outcome is unknown, so this asks "what if
+  it had gone the best/worst possible way" instead of trusting the
+  truncated-text extractor's guess."""
+  frame = raw_frame.copy()
+  frame.loc[frame["failure_type"] == "non_terminating", "exact"] = value
+  return frame
+
+
 def _report(
     frame: pd.DataFrame, raw_frame: pd.DataFrame, metric: str, label: str,
-    args, arm: str, records: list,
+    args, arm: str, records: list, bound: str = "not_applicable",
 ) -> None:
-  print(f"\n  {label}")
+  print(f"\n  {label} [{bound}]")
   conditions = sorted(c for c in frame["condition"].unique() if c != CONTROL)
   rows = []
+  # The number of *clusters* -- (model, instance_id) pairs, matching Fix 2's
+  # cluster granularity, not bare instance_id -- available to this group
+  # before any exclusion. Read from the data, not hardcoded, so
+  # `n_instances_missing` stays correct if the sweep's `--count` ever
+  # changes (see module docstring). Using bare instance_id here would
+  # undercount the baseline for a pooled-across-models call (up to 4
+  # clusters can share one instance_id) and make `n_instances_missing`
+  # go negative -- caught by running this against the real sweep data.
+  total_clusters_possible = int(
+      raw_frame[["model", "instance_id"]].drop_duplicates().shape[0]
+  )
+  near_ceiling = None
+  if bound not in _BRACKET_BOUNDS:
+    control_mean = frame.loc[frame["condition"] == CONTROL, metric].mean()
+    if pd.notna(control_mean):
+      near_ceiling = bool(
+          control_mean > args.near_ceiling_threshold
+          or control_mean < 1 - args.near_ceiling_threshold
+      )
   for condition in conditions:
     control, treatment, cluster_ids = _paired_values(frame, condition, metric)
     if not control:
@@ -100,7 +242,7 @@ def _report(
     # benjamini_hochberg call below is correlated rather than independent.
     # random.Random only accepts None/int/float/str/bytes/bytearray, not an
     # arbitrary tuple, hence the string join.
-    seed = f"{args.seed}:{arm}:{label}:{condition}"
+    seed = f"{args.seed}:{arm}:{label}:{bound}:{condition}"
     perm = significance.paired_permutation_test_clustered(
         control, treatment, cluster_ids, n_perm=args.n_perm, seed=seed
     )
@@ -108,39 +250,114 @@ def _report(
         control, treatment, cluster_ids, n_boot=args.n_boot, seed=seed,
         alpha=args.alpha,
     )
-    n_excluded = _count_excluded_non_terminating(raw_frame, condition)
-    rows.append((condition, perm, boot, n_excluded))
+    task_delta_min, task_delta_max = _task_delta_range(
+        control, treatment, cluster_ids
+    )
+    if bound in _BRACKET_BOUNDS:
+      # Nothing was excluded here -- non_terminating rows were overridden,
+      # not dropped -- so both diagnostics are inapplicable, not just zero.
+      n_excluded, n_looped, low_power = 0, None, None
+    else:
+      n_excluded = _count_excluded_non_terminating(raw_frame, condition)
+      if bound == "excluded":
+        n_looped = _count_looped_on_correct_answer(raw_frame, condition)
+        denom = perm["n_pairs"] + n_excluded
+        low_power = (
+            (n_excluded / denom) > args.low_power_threshold if denom else False
+        )
+      else:
+        # Thinking arm (`bound == "not_applicable"`): `n_excluded` here is really the
+        # non-termination count itself, the outcome being tested, not a
+        # confound to flag power against -- so these stay inapplicable too.
+        n_looped, low_power = None, None
+    n_instances_missing = total_clusters_possible - perm["n_clusters"]
+    rows.append((
+        condition, perm, boot, n_excluded, n_looped, low_power,
+        n_instances_missing, task_delta_min, task_delta_max,
+        control, treatment, cluster_ids,
+    ))
 
   if not rows:
     return
   # What "corrected together" means for the bh_significant flags below: this
-  # one (arm, label) call, not the whole report -- see the module docstring's
-  # note on pooling, and check_significance.py's own header comment.
-  bh_family = f"{arm}/{label}"
+  # one (arm, label, bound) call, not the whole report -- see the module
+  # docstring's note on pooling, and `main()`'s separate global BH pass.
+  bh_family = f"{arm}/{label}/{bound}"
   reject = significance.benjamini_hochberg(
-      [perm["p_value"] for _, perm, _, _ in rows], q=args.q
+      [row[1]["p_value"] for row in rows], q=args.q
   )
+  mde_eligible = args.mde and bound not in _BRACKET_BOUNDS
   print(f"    {'condition':<12}{'n_clusters':>11}{'delta':>10}"
         f"{'95% CI':>22}{'p (perm)':>10}  BH-sig")
-  for (condition, perm, boot, n_excluded), sig in zip(rows, reject):
+  for (condition, perm, boot, n_excluded, n_looped, low_power, n_missing,
+       task_delta_min, task_delta_max, control, treatment, cluster_ids), sig \
+      in zip(rows, reject):
     ci = f"[{boot['ci_low']:+.3f}, {boot['ci_high']:+.3f}]"
     print(f"    {condition:<12}{perm['n_clusters']:>11}"
           f"{perm['observed_diff']:>+10.3f}{ci:>22}"
           f"{perm['p_value']:>10.4f}  {'yes' if sig else 'no'}")
+    mde_delta = mde_realized = mde_power_target = None
+    if mde_eligible and not sig:
+      ci_width = boot["ci_high"] - boot["ci_low"]
+      mde_seed = f"{args.seed}:{arm}:{label}:{bound}:{condition}:mde"
+      mde = significance.minimum_detectable_effect_clustered(
+          control, treatment, cluster_ids, initial_hi=max(0.05, ci_width),
+          alpha=args.alpha, power_target=args.mde_power_target,
+          n_replicates=args.mde_replicates, n_perm=args.mde_n_perm,
+          seed=mde_seed,
+      )
+      mde_delta, mde_realized = mde["delta"], mde["realized_diff"]
+      mde_power_target = mde["power_target"]
+      print(f"      MDE: delta={mde_delta} realized={mde_realized} "
+            f"({mde['note'] or 'ok'})")
     records.append({
         "arm": arm,
         "group": label,
         "condition": condition,
+        "bound": bound,
         "bh_family": bh_family,
         "n_pairs": perm["n_pairs"],
         "n_clusters": perm["n_clusters"],
+        "n_instances_missing": n_missing,
         "n_excluded_non_terminating": n_excluded,
+        "n_looped_on_correct_answer": n_looped,
+        "low_power": low_power,
+        "near_ceiling": near_ceiling,
+        "task_delta_min": task_delta_min,
+        "task_delta_max": task_delta_max,
         "delta": perm["observed_diff"],
         "ci_low": boot["ci_low"],
         "ci_high": boot["ci_high"],
         "p_value": perm["p_value"],
         "bh_significant": sig,
+        "mde_delta": mde_delta,
+        "mde_realized_diff": mde_realized,
+        "mde_power_target": mde_power_target,
     })
+
+
+def _apply_global_bh(records: list, q: float) -> None:
+  """Fix 3's whole-table BH pass, mutating `records` in place.
+
+  Eligible rows are every `bound not in _BRACKET_BOUNDS` row (excludes the
+  best_case/worst_case sensitivity bracket) whose `group` is not
+  `"pooled across all models"` (excludes a row built from the same
+  underlying pairs as its sibling per-model rows in the same arm -- not an
+  independent hypothesis). Ineligible rows get `bh_significant_global =
+  None`, not `False`, so "not significant" and "not tested" stay
+  distinguishable.
+  """
+  eligible = [
+      r for r in records
+      if r["bound"] not in _BRACKET_BOUNDS and r["group"] != "pooled across all models"
+  ]
+  reject_global = significance.benjamini_hochberg(
+      [r["p_value"] for r in eligible], q=q
+  )
+  for r, sig in zip(eligible, reject_global):
+    r["bh_significant_global"] = sig
+  for r in records:
+    r.setdefault("bh_significant_global", None)
 
 
 def main() -> None:
@@ -154,6 +371,26 @@ def main() -> None:
                        help="bootstrap CI level (default 95%% CI)")
   parser.add_argument("--q", type=float, default=0.05,
                        help="Benjamini-Hochberg FDR level")
+  parser.add_argument("--low-power-threshold", type=float, default=0.15,
+                       help="flag a row's `low_power` column when its "
+                            "non-terminating exclusion rate exceeds this "
+                            "fraction of its would-be sample")
+  parser.add_argument("--near-ceiling-threshold", type=float, default=0.95,
+                       help="flag a row's `near_ceiling` column when its "
+                            "control condition's mean metric is above this "
+                            "(or below 1 minus this)")
+  parser.add_argument("--mde", action="store_true",
+                       help="compute a simulated minimum-detectable-effect "
+                            "for every non-significant excluded/n-a-bound "
+                            "row -- roughly 6-7x's total runtime, off by "
+                            "default")
+  parser.add_argument("--mde-power-target", type=float, default=0.8)
+  parser.add_argument("--mde-replicates", type=int, default=200,
+                       help="simulated trials per candidate effect size")
+  parser.add_argument("--mde-n-perm", type=int, default=500,
+                       help="permutations per simulated trial's inner test "
+                            "(lower than --n-perm: averaged over many "
+                            "trials, so per-trial precision matters less)")
   parser.add_argument("--seed", type=int, default=1234)
   parser.add_argument("--out", default=None,
                        help="optional path to write every row printed above "
@@ -168,6 +405,13 @@ def main() -> None:
   scheme = analysis.frame_node_naming(frame)
   if "node_naming" not in frame.columns:
     frame = frame.assign(node_naming="integer")
+  # A frame predating `graphtalk.analysis.build_frame`'s
+  # `looped_on_correct_answer` column carries neither it nor
+  # `predicted_first` -- default both to a column of Nones so
+  # `_count_looped_on_correct_answer` still has something to compare
+  # against (it will just count 0 everywhere, same as "not computed yet").
+  if "looped_on_correct_answer" not in frame.columns:
+    frame = frame.assign(looped_on_correct_answer=None, predicted_first=None)
   # The FULL row identity, not `_KEYS` -- `_KEYS` is the *pairing* key,
   # correct only once `_paired_values` has already filtered down to a single
   # `condition`. Checking it against the whole (all-conditions) frame would
@@ -175,20 +419,34 @@ def main() -> None:
   analysis.assert_unique_pairing_key(frame, ["model", "instance_id", "condition", "style", "node_naming"])
   records = []
 
-  # main_sweep_raw is what n_excluded_non_terminating counts against;
-  # main_sweep (non_terminating dropped) is what's actually paired and
-  # tested -- see the module docstring on why.
+  # main_sweep_raw is what n_excluded_non_terminating/n_instances_missing
+  # count against; main_sweep (non_terminating dropped) is the `excluded`
+  # bound; main_sweep_best/worst (non_terminating overridden, not dropped)
+  # are the bracket -- see the module docstring on why all three are kept.
   main_sweep_raw = frame[~frame["is_think"]]
   main_sweep = main_sweep_raw[main_sweep_raw["failure_type"] != "non_terminating"]
+  main_sweep_best = _bracket_frame(main_sweep_raw, 1.0)
+  main_sweep_worst = _bracket_frame(main_sweep_raw, 0.0)
   think = frame[frame["is_think"]]
 
   print("=" * 78)
   print("Main sweep: accuracy (exact) vs `none`, pooled across task + style")
   for model_family, group in main_sweep.groupby("model_family"):
     raw_group = main_sweep_raw[main_sweep_raw["model_family"] == model_family]
-    _report(group, raw_group, "exact", model_family, args, "main_sweep", records)
+    best_group = main_sweep_best[main_sweep_best["model_family"] == model_family]
+    worst_group = main_sweep_worst[main_sweep_worst["model_family"] == model_family]
+    _report(group, raw_group, "exact", model_family, args, "main_sweep",
+            records, bound="excluded")
+    _report(best_group, raw_group, "exact", model_family, args, "main_sweep",
+            records, bound="best_case")
+    _report(worst_group, raw_group, "exact", model_family, args, "main_sweep",
+            records, bound="worst_case")
   _report(main_sweep, main_sweep_raw, "exact", "pooled across all models",
-          args, "main_sweep", records)
+          args, "main_sweep", records, bound="excluded")
+  _report(main_sweep_best, main_sweep_raw, "exact", "pooled across all models",
+          args, "main_sweep", records, bound="best_case")
+  _report(main_sweep_worst, main_sweep_raw, "exact", "pooled across all models",
+          args, "main_sweep", records, bound="worst_case")
 
   if not think.empty:
     print(f"\n{'=' * 78}")
@@ -198,6 +456,10 @@ def main() -> None:
               "thinking_arm", records)
     _report(think, think, "non_terminating", "pooled across all models",
             args, "thinking_arm", records)
+
+  # Fix 3: a second, whole-table BH pass -- see `_apply_global_bh` and the
+  # module docstring's paragraph on `bh_significant_global`.
+  _apply_global_bh(records, args.q)
 
   if args.out:
     out = analysis.tagged_path(args.out, scheme)

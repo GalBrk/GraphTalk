@@ -351,6 +351,106 @@ def extract_answer(text: str, task: str) -> str | None:
   return _extract_node_list(text)
 
 
+def _first_marker_tail(text: str) -> str | None:
+  """The text after the *first* explicit answer marker, if there is one --
+  mirrors `_marker_tail`, which uses the last."""
+  found = list(_MARKER.finditer(text))
+  return found[0].group(1).strip() if found else None
+
+
+def _first_nonempty_line(text: str) -> str | None:
+  """Mirrors `_last_nonempty_line`, scanning forward instead of backward."""
+  for line in text.splitlines():
+    line = line.strip()
+    if line:
+      return line
+  return None
+
+
+def _extract_integer_first(text: str) -> str | None:
+  """Mirrors `_extract_integer`, but on the *first* marker tail and the
+  *first* integer in its first sentence (or the first integer in the full
+  text, as a fallback) -- see `extract_answer_first`."""
+  tail = _first_marker_tail(text)
+  if tail and not tail.endswith(":"):
+    period = tail.find(".")
+    first_sentence = tail[:period + 1] if period >= 0 else tail
+    scope = _NODE_ID_REF.sub(" ", first_sentence)
+    found = _INTEGER.findall(scope)
+    if found:
+      return found[0]
+  found = _INTEGER.findall(text)
+  return found[0] if found else None
+
+
+def _extract_boolean_first(text: str, task: str) -> str | None:
+  """Mirrors `_extract_boolean`, preferring the earliest yes/no token in
+  each scope instead of the latest -- see `extract_answer_first`."""
+  tail = _first_marker_tail(text)
+  for scope in (tail, text):
+    if not scope:
+      continue
+    scope = _NO_NODES.sub(" ", scope)
+    first_yes = min((m.start() for m in _YES.finditer(scope)), default=None)
+    first_no = min((m.start() for m in _NO.finditer(scope)), default=None)
+    if first_yes is not None or first_no is not None:
+      if first_no is None or (first_yes is not None and first_yes < first_no):
+        return "Yes"
+      return "No"
+  if task == "edge_existence":
+    for scope in (tail, text):
+      if not scope:
+        continue
+      line = _first_nonempty_line(scope) or scope
+      if (_stated_conclusion_matches(_EDGE_EXISTS, line)
+          or _stated_conclusion_matches(_CONNECTED_YES, line)):
+        return "Yes"
+  return None
+
+
+def _extract_node_list_first(text: str) -> str | None:
+  """Mirrors `_extract_node_list`, scanning lines forward instead of
+  backward -- see `extract_answer_first`."""
+  for line in (line.strip() for line in text.splitlines() if line.strip()):
+    core = _strip_trailing_decoration(line)
+    if _NO_NODES.search(core) or _NONE_ANSWER.search(core) or _EMPTY_BRACKETS.search(core):
+      return "No nodes"
+    found = _best_list(line)
+    if found:
+      return found
+
+  tail = _first_marker_tail(text)
+  if tail is not None:
+    core = _strip_trailing_decoration(tail)
+    if _NO_NODES.search(core) or _NONE_ANSWER.search(core) or _EMPTY_BRACKETS.search(core):
+      return "No nodes"
+    found = _best_list(tail)
+    if found:
+      return found
+  return None
+
+
+def extract_answer_first(text: str, task: str) -> str | None:
+  """The *first* value `text` states for `task`, mirroring `extract_answer`
+  (which takes the last-stated value) but taking the earliest match in each
+  scope instead.
+
+  Not a general-purpose "early answer" extractor -- it exists only so a
+  non-terminating response can be checked for whether it settled on one
+  answer and then looped (this equals `extract_answer`'s result) versus was
+  still drifting between different values when generation was cut off.
+  """
+  if task not in TASKS:
+    raise ValueError(f"unknown task: {task}; known: {list(TASKS)}")
+  if not text or not text.strip():
+    return None
+  if task in _INTEGER_TASKS:
+    return _extract_integer_first(text)
+  if task in _BOOLEAN_TASKS:
+    return _extract_boolean_first(text, task)
+  return _extract_node_list_first(text)
+
+
 def normalize(answer: str) -> str:
   """Trims the dataset's leading space and trailing period."""
   return answer.strip().rstrip(".").strip()

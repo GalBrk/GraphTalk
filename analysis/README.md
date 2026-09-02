@@ -68,6 +68,113 @@ false positive naive pooling produces. `n_pairs` (raw rows) and `n_clusters`
 (real graph instances) are both reported now precisely so this gap stays
 visible rather than being averaged away again.
 
+### A second pass: the cluster id, the exclusion bias, and one whole-table view
+
+A follow-up audit of the same script found the fix above still left three
+things unaddressed, each now covered by a new column rather than a code
+change alone:
+
+**The cluster id was `instance_id` alone**, so a "pooled across all models"
+row merged the same graph number from all four model families into one
+cluster -- a much stronger correlation assumption than intended (one
+model's errors on a graph correlating with a different model's errors on
+the same graph, not just with its own repeated answers). Fixed by keying
+clusters on `(model, instance_id)` instead. Concretely: pooled `n_clusters`
+went from 180 to 709-720 (one cluster per model per instance rather than one
+per instance, full-stop). No `bh_significant` flag flipped from this change
+alone in the current data, but the CIs it feeds are now correctly narrower,
+not artificially wide from an assumption the data doesn't support.
+
+**Excluding `non_terminating` rows is not free of bias either.** The first
+fix already noted non-termination responds to the primer condition; dropping
+those rows before pairing (`bound == "excluded"`, unchanged) can still make
+a condition that happens to truncate on instances it would have gotten
+wrong anyway look artificially better. Rather than trust the truncated-text
+extractor's guess as a second point estimate, `best_case`/`worst_case` rows
+now bracket the true unknown outcome by forcing every non-terminating row's
+score to 1.0/0.0 -- a real range, not another single number. On
+`gemma4-e4b`/`filler`, the row with the most exclusions (67 of 382 rows,
+`low_power = True`): `excluded` reports -0.038, and the bracket is
+[-0.050, -0.031] -- `excluded` falls inside it, as it should, but the range
+itself is the more honest thing to report. `n_looped_on_correct_answer`
+(1 of those 67 rows) shows the extractor's guess would rarely have moved
+that estimate much on this data -- most non-terminating rows really were
+headed somewhere other than the right answer, not cut off one token short
+of it.
+
+**`bh_significant` never covered more than one `(arm, group, bound)`
+family (~6 conditions) at a time.** A reader treating the whole table as one
+5%-FDR-controlled set was getting a weaker guarantee than that reads as.
+`bh_significant_global` adds one more correction across every `excluded`/
+`not_applicable`-bound row in the whole run (excluding `best_case`/
+`worst_case`, a sensitivity bracket rather than an independent hypothesis,
+and excluding `pooled across all models` rows in both arms, which are built
+from the same pairs as their sibling per-model rows rather than an
+independent test). On the current data this flips three rows from
+significant to not: `gemma4-e4b`/`filler`, `qwen3-14b`/`all`, and
+`qwen3-14b`/`clustering` -- real findings under the narrower per-model
+question, not under "does this matter anywhere in the whole study."
+
+Both `bh_significant` and `bh_significant_global` are kept side by side --
+neither replaces the other, since they answer different questions.
+
+### A third pass: no-headroom rows, masked heterogeneity, and simulated power
+
+`gemma4-12b` and `gemma4-e4b` sit at 96-99% main-sweep control accuracy --
+almost no primer effect could show up there regardless of sample size, a
+different problem from `low_power`'s "too much data excluded." **`near_ceiling`**
+flags a row where the CONTROL condition's own mean is above 95% (or below
+5%, a floor case -- e.g. `gemma4-e4b-think`'s 0% non-termination baseline),
+on `excluded`/`not_applicable`-bound rows. Confirmed on the current data:
+`True` for `gemma4-12b` and `gemma4-e4b` main-sweep, `False` for `qwen3-14b`
+and `qwen3-8b` (86-90% control accuracy, real headroom left).
+
+**A pooled `delta` can hide tasks that disagree in direction.**
+`task_delta_min`/`task_delta_max` report each condition's per-task point
+estimates (descriptive only -- no new hypothesis test, no added
+multiple-comparison burden) alongside the pooled number. Pooled
+`degree` (main sweep, all models): `delta=+0.033`, but
+`[task_delta_min, task_delta_max] = [-0.004, +0.136]` -- one task is
+essentially flat while another moves 13 points, which the pooled number
+alone doesn't show.
+
+**A `bh_significant=False` row could be a real null or just underpowered.**
+`--mde` (opt-in, off by default -- took ~50 minutes on the full run)
+runs `graphtalk.significance.minimum_detectable_effect_clustered`, a real
+simulation (bootstrap-resample this row's own clusters, inject a candidate
+effect as a Bernoulli draw at the shifted probability, rerun the paired
+test, repeat) rather than a formula, for every non-significant
+`excluded`/`not_applicable`-bound row (33 of 73 on the current data).
+Reports `mde_delta` (the smallest effect this row's data could reliably
+have detected) and `mde_realized_diff` (what that translated to on
+average).
+
+Confirmed on the real regenerated data: every extreme-`near_ceiling` row
+(`gemma4-12b`/`gemma4-e4b` main sweep, 96-98% control accuracy) came back
+`mde_delta=None` ("MDE exceeds 1.0") -- even the largest simulated effect
+couldn't reliably reach 80% power there, the strongest possible
+confirmation that a ceiling suppresses detectability. Less-extreme
+`near_ceiling` rows (thinking-arm floor cases, ~0% baseline) converged to
+small MDEs (~0.04) with `mde_realized_diff` tracking `mde_delta` closely.
+Comfortably-powered rows (neither `near_ceiling` nor `low_power`) range
+from `mde_delta=0.08` (`pooled across all models`/`rwse`, `n_clusters=709`)
+to ~0.20 (single-model rows, `n_clusters≈180`) -- more data, smaller MDE,
+as expected. One planned comparison didn't separate cleanly: every
+`low_power=True` row in this data is *also* `near_ceiling=True` (all five
+are `gemma4-e4b` main sweep), and the ceiling dominates completely enough
+that none of them converged either -- `low_power` alone, holding ceiling
+constant, isn't isolable in the current data, itself a real finding about
+which constraint actually binds for `gemma4-e4b`'s main-sweep nulls.
+
+One implementation bug caught before it reached the committed data: the
+thinking arm's `bound` sentinel was originally the literal string `"n/a"`,
+which is one of pandas' default NA tokens -- every re-read of the CSV
+silently turned it into `NaN`, invisible to any `bound == "n/a"` filter
+applied *after* loading the file (the file itself had the right text; only
+`pd.read_csv` was wrong). Renamed to `"not_applicable"`, caught by a
+sanity-check query on the regenerated file returning an empty result where
+it shouldn't have.
+
 ## The batching baseline
 
 `budget-gemma4-e4b.jsonl` and `budget-qwen3-8b.jsonl` are the reference for

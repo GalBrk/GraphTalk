@@ -21,10 +21,13 @@ rows sharing an `instance_id` are correlated (a graph the model finds easy,
 or a condition that happens to suit its structure, moves every row sharing
 that instance in the same direction). `paired_permutation_test_clustered`/
 `cluster_bootstrap_ci_clustered` correct for that by resampling/sign-flipping
-whole clusters (shared `instance_id`s) rather than individual rows -- see
-`scripts/check_significance.py`, which threads `instance_id` through as the
-cluster key. The unclustered functions are kept, not replaced: they're still
-correct wherever no cluster_id repeats.
+whole clusters rather than individual rows -- see `scripts/check_significance.py`,
+which threads `(model, instance_id)` through as the cluster key, not
+`instance_id` alone: a cluster never spans more than one model, since
+different model families' errors on the same graph number are not assumed
+to correlate as strongly as one model's own repeated answers to it. The
+unclustered functions are kept, not replaced: they're still correct
+wherever no cluster_id repeats.
 """
 
 import itertools
@@ -82,9 +85,11 @@ def paired_permutation_test_clustered(
   `cluster_ids` value together, not independently.
 
   Pairs that share a cluster -- the same graph instance seen across
-  multiple styles or models -- are not independent replicates: if that
-  instance is unusually easy, or the condition happens to help on its
-  particular structure, every pair sharing it tends to move together.
+  multiple styles, for one model (callers key clusters by
+  `(model, instance_id)`, not `instance_id` alone) -- are not independent
+  replicates: if that instance is unusually easy, or the condition happens
+  to help on its particular structure, every pair sharing it tends to move
+  together.
   Flipping cluster-by-cluster rather than pair-by-pair preserves that
   dependence under the null, which is what keeps the p-value from being
   anti-conservative on pooled data. Reduces to `paired_permutation_test`
@@ -137,11 +142,38 @@ def paired_permutation_test_clustered(
   return {"n_pairs": n, "n_clusters": m, "observed_diff": observed, "p_value": p_value}
 
 
+def _resample_clusters(clusters: list, rng: random.Random):
+  """One bootstrap draw: resamples `len(clusters)` clusters with
+  replacement from `clusters` (each element a list of same-cluster items --
+  diffs, for `cluster_bootstrap_ci_clustered`, or `(control, treatment)`
+  pairs, for `minimum_detectable_effect_clustered`).
+
+  Returns `(items, draw_ids)`: `items` is every item from each drawn
+  cluster concatenated, in draw order; `draw_ids` labels each item with
+  which of the `m` draws (0..m-1) produced it, not the original cluster id
+  -- two draws of the same original cluster must be treated as two separate
+  clusters by anything that clusters on `draw_ids` afterward (a resampled
+  duplicate is not more evidence about the same instance, it is two
+  hypothetical instances that happened to look alike), which is exactly
+  what `minimum_detectable_effect_clustered`'s inner significance test
+  needs and `cluster_bootstrap_ci_clustered` doesn't (it only reads the
+  pooled mean, so it discards `draw_ids`).
+  """
+  m = len(clusters)
+  items, draw_ids = [], []
+  for draw_idx in range(m):
+    drawn = clusters[rng.randrange(m)]
+    items.extend(drawn)
+    draw_ids.extend([draw_idx] * len(drawn))
+  return items, draw_ids
+
+
 def cluster_bootstrap_ci_clustered(
     control, treatment, cluster_ids, n_boot: int = 10_000, seed: int = 0, alpha: float = 0.05
 ) -> dict:
-  """Resamples whole clusters (e.g. graph instances) with replacement,
-  carrying every pair that shares a cluster along together -- a real
+  """Resamples whole clusters (e.g. one model's rows on a graph instance)
+  with replacement, carrying every pair that shares a cluster along
+  together -- a real
   cluster bootstrap, unlike `cluster_bootstrap_ci`'s per-pair resampling,
   which understates variance when pairs sharing a cluster are correlated
   (see `paired_permutation_test_clustered`). Reduces to
@@ -167,14 +199,133 @@ def cluster_bootstrap_ci_clustered(
   rng = random.Random(seed)
   boot_means = []
   for _ in range(n_boot):
-    resampled = []
-    for _ in range(m):
-      resampled.extend(clusters[rng.randrange(m)])
+    resampled, _draw_ids = _resample_clusters(clusters, rng)
     boot_means.append(sum(resampled) / len(resampled))
   boot_means.sort()
   lo = boot_means[int((alpha / 2) * n_boot)]
   hi = boot_means[min(n_boot - 1, int((1 - alpha / 2) * n_boot))]
   return {"point_estimate": point, "ci_low": lo, "ci_high": hi, "n_clusters": m}
+
+
+def minimum_detectable_effect_clustered(
+    control, treatment, cluster_ids, initial_hi: float, alpha: float = 0.05,
+    power_target: float = 0.8, n_replicates: int = 200, n_perm: int = 500,
+    n_steps: int = 8, seed=0,
+) -> dict:
+  """The smallest additive shift `delta` such that, if the true effect on
+  data shaped like this row were `delta`, `paired_permutation_test_clustered`
+  would detect it (`p <= alpha`) at least `power_target` of the time.
+
+  Answers a question `bh_significant=False` alone can't: is this a real
+  null, or just not enough power to see one. Simulation-based, not a
+  formula -- for a candidate `delta`, each of `n_replicates` trials
+  bootstrap-resamples whole clusters from this row's own real
+  `(control, treatment)` data (`_resample_clusters`, the same resampling
+  unit `cluster_bootstrap_ci_clustered` uses), injects the shift by
+  treating `clip(control* + delta, 0, 1)` as a *probability* and drawing a
+  fresh Bernoulli outcome for `treatment*` from it -- not a deterministic
+  `treatment* = clip(...)`, which would move every pair by exactly `delta`
+  with no exceptions and make the permutation test read "every diff shares
+  one sign" as maximally extreme regardless of how small `delta` was,
+  collapsing the search toward implausibly tiny deltas (caught this way via
+  a smoke test before it shipped). The fresh draw is what makes a smaller
+  `delta` genuinely harder to detect than a larger one, which is the whole
+  point of an MDE. `delta=0` reproduces a true null (the draw's probability
+  is just `control*` itself). Reruns `paired_permutation_test_clustered` on
+  the injected data, clustering on the resampled draw index (two resampled
+  copies of the same original cluster are two hypothetical instances, not
+  one). `power(delta)` is the fraction of trials with `p <= alpha`.
+
+  Clipping is deliberate, not a limitation to work around: a near-ceiling
+  or near-floor control (see `scripts/check_significance.py`'s
+  `near_ceiling`) has little room to move, so even a large `delta`
+  produces a small *realized* shift once clipping binds -- correctly
+  reflecting reduced detectability there rather than hiding it. Returns
+  both `delta` (the swept parameter at convergence) and `realized_diff`
+  (the replicates' actual mean `treatment* - control*` at that `delta`),
+  since the two can differ and the gap between them is itself informative.
+
+  Search: expands `hi` geometrically from `max(0.05, initial_hi)` --
+  callers should pass their own bootstrap CI width as `initial_hi`, a good
+  anchor that avoids wasting steps on obviously-always-detectable deltas
+  near 1.0, computed once rather than redundantly inside this function --
+  until `power(hi) >= power_target` or `hi` reaches 1.0, then bisects
+  `n_steps` times between 0 and that `hi`.
+
+  Power estimates carry real Monte Carlo noise (SE ~= 0.03 at
+  `n_replicates=200` near power=0.8), so bisection does not converge
+  perfectly monotonically -- the same tradeoff this module already accepts
+  for its own p-values, not a bug specific to this function. One `rng`
+  stream drives every resample and every inner test's seed, so the whole
+  search is deterministic given `seed`.
+  """
+  control, treatment = list(control), list(treatment)
+  cluster_ids = list(cluster_ids)
+  if not (len(control) == len(treatment) == len(cluster_ids)):
+    raise ValueError(
+        f"MDE needs equal lengths, got {len(control)} control, "
+        f"{len(treatment)} treatment, {len(cluster_ids)} cluster_ids"
+    )
+  if len(control) == 0:
+    return {"delta": None, "realized_diff": None, "power_target": power_target,
+            "note": "no paired rows"}
+
+  by_cluster: dict = {}
+  for cid, c, t in zip(cluster_ids, control, treatment):
+    by_cluster.setdefault(cid, []).append((c, t))
+  clusters = list(by_cluster.values())
+  rng = random.Random(seed)
+
+  def _power_and_realized(delta: float) -> tuple:
+    hits = 0
+    realized_total, realized_n = 0.0, 0
+    for _ in range(n_replicates):
+      pairs, draw_ids = _resample_clusters(clusters, rng)
+      c_star = [c for c, _ in pairs]
+      # `clip(c + delta)` is a *probability*, not a deterministic value: a
+      # fresh Bernoulli draw at that probability is what makes this a
+      # believable synthetic outcome instead of an artifact. A deterministic
+      # shift (every pair moving by exactly `delta`, no exceptions) makes
+      # every nonzero diff share one sign no matter how small `delta` is --
+      # the permutation test then reads "all diffs agree in sign" as
+      # maximally extreme regardless of magnitude, so the search collapses
+      # toward implausibly tiny deltas (caught via a smoke test: a 50-pair
+      # fixture with a strong true effect converged to delta=0.001, clearly
+      # wrong). Real per-pair noise is what makes a smaller `delta` harder
+      # to detect than a larger one, which is the entire point of an MDE.
+      p_star = [min(1.0, c + delta) if delta >= 0 else max(0.0, c + delta)
+                for c in c_star]
+      t_star = [1.0 if rng.random() < p else 0.0 for p in p_star]
+      result = paired_permutation_test_clustered(
+          c_star, t_star, draw_ids, n_perm=n_perm, seed=rng.randrange(2**31)
+      )
+      if result["p_value"] <= alpha:
+        hits += 1
+      realized_total += sum(t - c for c, t in zip(c_star, t_star))
+      realized_n += len(c_star)
+    return hits / n_replicates, realized_total / realized_n
+
+  hi = max(0.05, initial_hi)
+  power_hi, realized_hi = _power_and_realized(hi)
+  expansions = 0
+  while power_hi < power_target and hi < 1.0 and expansions < 10:
+    hi = min(1.0, hi * 2)
+    power_hi, realized_hi = _power_and_realized(hi)
+    expansions += 1
+  if power_hi < power_target:
+    return {"delta": None, "realized_diff": realized_hi, "power_target": power_target,
+            "note": "MDE exceeds 1.0 at this power target"}
+
+  lo = 0.0
+  for _ in range(n_steps):
+    mid = (lo + hi) / 2
+    power_mid, realized_mid = _power_and_realized(mid)
+    if power_mid >= power_target:
+      hi, realized_hi = mid, realized_mid
+    else:
+      lo = mid
+  return {"delta": hi, "realized_diff": realized_hi, "power_target": power_target,
+          "note": None}
 
 
 def cluster_bootstrap_ci(

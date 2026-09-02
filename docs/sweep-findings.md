@@ -534,3 +534,64 @@ depending on `analysis/truncated_keys.json`; older rows still depend on it.
 Total non-terminating rows is now **316**, not the 350 previously reported: 271 from
 the ground-truth file for rows not regenerated, plus 45 recorded directly. The drop
 is concentrated in `filler`, for the reason given above.
+
+## Missing instances skew toward larger graphs, and it's the same two tasks
+
+`scripts/characterize_non_termination.py` re-derives, from the `excluded` bound's
+own pairing join, exactly which `(model, instance_id)` clusters contribute zero
+surviving pairs (`n_instances_missing` in `analysis/significance_report.csv`) --
+49 across the whole main sweep. They are **not** spread evenly: 43 are `edge_count`,
+6 are `cycle_check`, and every other task has zero. Their mean graph size is **16.9
+nodes** against **12.8** for the corpus as a whole -- missingness concentrates on
+the larger, harder end of the size range, on exactly the two tasks that require
+exhaustive per-edge or per-node reasoning (counting every edge; walking the whole
+graph for a cycle). This is a mild selection-bias risk `analysis/significance_report.csv`'s
+`n_instances_missing` column makes visible but can't correct: the `excluded` bound's
+main-sweep accuracy numbers are drawn from a corpus slightly biased toward smaller/
+easier `edge_count`/`cycle_check` instances than the full 180.
+
+## Why `gemma4-e4b` truncates more: frequency, not length, and the same two tasks again
+
+Main-sweep non-termination rate by model: `gemma4-12b` 2.7%, `gemma4-e4b` **9.3%**,
+`qwen3-14b` 0.8%, `qwen3-8b` 1.9%. The obvious guess -- that `gemma4-e4b` just writes
+longer before getting cut off -- is wrong: its mean length on non-terminating rows
+(2,475 chars) is in the same range as the other three models' (1,798-2,719). It
+truncates about as *late* as everyone else, just far more *often*.
+
+`edge_count` (150 of 235) and `cycle_check` (77 of 235) account for 97% of
+`gemma4-e4b`'s non-terminating rows -- the identical two tasks driving the missing-
+instances finding above, and 201 of 235 are in `zero_cot` (the obsolete, half-budget
+style), consistent with "Non-termination is not only a thinking-arm problem" above.
+
+A stratified read of 9 raw `gemma4-e4b` non-terminating responses (in
+`analysis/non_termination_sample.csv`) shows a consistent pattern on both tasks:
+exhaustive, node-by-node or edge-by-edge manual re-verification rather than a
+direct computation. On `edge_count`, it re-derives the adjacency list edge by edge
+with running "already counted" bookkeeping instead of summing degrees and dividing
+by two. On `cycle_check`, it narrates a full manual DFS, checking every neighbor of
+every node against the current stack. Both scale with graph size in a way a more
+direct method wouldn't -- consistent with missing instances skewing larger above.
+`edge_existence`'s adjacency-list contradiction-checking (the `filler` primer
+mechanism from "Non-termination responds to the primer") shows the same
+exhaustive-verification instinct on a third task, at a much lower rate (5 rows)
+since `edge_existence` only requires checking one pair, not all of them. This reads
+as `gemma4-e4b` defaulting into exhaustive self-verification on tasks whose
+direct-computation shortcut it doesn't reliably take, not a token-budget or
+formatting problem -- a generation-behavior question, not a scoring-pipeline one,
+and out of scope for anything `check_significance.py` can fix.
+
+## The `filler` instrument confound is reduced, not fully closed
+
+`non_terminating_source` (`generator` = `scripts/run_sweep.py`'s own recorded
+`hit_cap`; `retokenized` = `scripts/backfill_hit_cap.py`'s independent audit, see
+"Non-termination is not only a thinking-arm problem" above) splits roughly
+1:8 (`generator`:`retokenized`) for every condition **except** `filler`, which
+splits roughly 2:1 the other way. Both instruments are hit_cap-based now -- neither
+is the old, unreliable `ground_truth_file` fallback -- so this is no longer the
+comparability problem it was when `filler` and the other six conditions were
+measured by genuinely different routes. But `filler`'s rows come overwhelmingly
+from the 2026-08-29 prompt-rewording re-run (see above), which hasn't been through
+the same retokenization audit as the other six conditions' rows have. Not urgent --
+both instruments agree at 100% where they've both been checked (see above) -- but
+worth knowing before treating `filler`'s non-termination numbers as measured
+identically to the rest of the table.
