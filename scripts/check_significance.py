@@ -13,8 +13,25 @@ replacing the ad hoc p-values quoted in prose there.
 Reads the already-scored, already-joined table `scripts/build_sweep_frame.py`
 writes -- no re-scoring, no re-reading raw runs/*.jsonl. Raises if `--frame`
 carries more than one `node_naming` scheme (a pooled significance number
-across schemes would be meaningless, not just mislabeled); pairing is keyed
-on `node_naming` alongside `(model, instance_id, style)` for the same reason.
+across schemes would be meaningless, not just mislabeled) or a duplicated
+`(model, instance_id, style, node_naming)` key (silently corrupts every
+pairing downstream, via `pandas`'s cross-join on a non-unique index).
+
+Pooling across style (and, for "pooled across all models" rows, across
+model too) means the same graph instance recurs many times in one pooled
+sample, so `instance_id` is threaded through as a *cluster* id: the
+permutation test flips and the bootstrap resamples whole clusters, not
+individual rows, so correlated rows sharing a graph don't get counted as
+independent evidence (see `graphtalk/significance.py`'s module docstring).
+
+Main-sweep `exact` rows also exclude `non_terminating` responses before
+pairing -- a truncated response's `exact` score reflects abandoned working,
+not reasoning quality, and non-termination itself responds to the primer
+condition (docs/sweep-findings.md), so leaving them in confounds the very
+thing being tested. `n_excluded_non_terminating` reports how many were
+dropped per condition so the confound's size stays visible. The thinking
+arm's own `non_terminating` rows are the outcome being tested there and are
+never excluded.
 
   PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
       --frame analysis/sweep_frame.csv
@@ -28,70 +45,96 @@ from graphtalk import analysis
 from graphtalk import significance
 
 CONTROL = "none"
+_KEYS = ["model", "instance_id", "style", "node_naming"]
 
 
 def _paired_values(frame: pd.DataFrame, condition: str, metric: str):
-  """Aligned (control, treatment) lists for `condition` vs `CONTROL`.
+  """Aligned (control, treatment, cluster_ids) for `condition` vs `CONTROL`.
 
-  Paired on (model, instance_id, style, node_naming): instance_id alone
-  repeats across styles for the same task, so style has to be part of the key
-  or a zero_shot control row could pair against a zero_cot treatment row;
-  model has to be part of it too, since the same (instance_id, style) key
-  recurs once per model when `frame` pools rows across models. `node_naming`
-  is part of it for the same reason `model` is -- without it, `main()`'s own
-  guard aside, a frame that ever did carry both schemes for one model would
-  pair a `got` control row against an `integer` treatment row (or vice
-  versa) via `set_index`, which raises on nothing; it just silently keeps
-  one of the duplicates. Pooling across every task and style present in
-  `frame` is what makes these pairs more numerous than a single
-  `score_sweep.py` cell.
+  Paired on `_KEYS`: instance_id alone repeats across styles for the same
+  task, so style has to be part of the key or a zero_shot control row could
+  pair against a zero_cot treatment row; model has to be part of it too,
+  since the same (instance_id, style) key recurs once per model when `frame`
+  pools rows across models. `node_naming` is part of it for the same reason
+  `model` is -- without it, `main()`'s own guard aside, a frame that ever did
+  carry both schemes for one model would pair a `got` control row against an
+  `integer` treatment row (or vice versa) via `set_index`, which raises on
+  nothing; it just silently keeps one of the duplicates. `cluster_ids` is
+  `instance_id` pulled back out of the joined index -- the unit
+  `paired_permutation_test_clustered`/`cluster_bootstrap_ci_clustered` need,
+  since the *pairing* key has to include style/model to be unique but the
+  *correlation* those two functions correct for lives at the instance level.
   """
-  keys = ["model", "instance_id", "style", "node_naming"]
-  control = frame[frame["condition"] == CONTROL].set_index(keys)[metric]
-  treatment = frame[frame["condition"] == condition].set_index(keys)[metric]
+  control = frame[frame["condition"] == CONTROL].set_index(_KEYS)[metric]
+  treatment = frame[frame["condition"] == condition].set_index(_KEYS)[metric]
   joined = pd.concat(
       [control.rename("control"), treatment.rename("treatment")],
       axis=1, join="inner",
   )
-  return joined["control"].tolist(), joined["treatment"].tolist()
+  cluster_ids = joined.index.get_level_values("instance_id").tolist()
+  return joined["control"].tolist(), joined["treatment"].tolist(), cluster_ids
+
+
+def _count_excluded_non_terminating(raw_frame: pd.DataFrame, condition: str) -> int:
+  """How many `condition`-or-`CONTROL` rows in `raw_frame` were dropped for
+  being `non_terminating` -- the size of the confound the exclusion filter
+  in `main()` removes, kept visible rather than silently disappearing."""
+  relevant = raw_frame[raw_frame["condition"].isin([CONTROL, condition])]
+  return int((relevant["failure_type"] == "non_terminating").sum())
 
 
 def _report(
-    frame: pd.DataFrame, metric: str, label: str, args, arm: str, records: list
+    frame: pd.DataFrame, raw_frame: pd.DataFrame, metric: str, label: str,
+    args, arm: str, records: list,
 ) -> None:
   print(f"\n  {label}")
   conditions = sorted(c for c in frame["condition"].unique() if c != CONTROL)
   rows = []
   for condition in conditions:
-    control, treatment = _paired_values(frame, condition, metric)
+    control, treatment, cluster_ids = _paired_values(frame, condition, metric)
     if not control:
       print(f"    {condition:<12} -- no paired rows found")
       continue
-    perm = significance.paired_permutation_test(
-        control, treatment, n_perm=args.n_perm, seed=args.seed
+    # A distinct seed per test, not one value reused everywhere: otherwise
+    # the Monte Carlo estimation noise across the p-values fed into the same
+    # benjamini_hochberg call below is correlated rather than independent.
+    # random.Random only accepts None/int/float/str/bytes/bytearray, not an
+    # arbitrary tuple, hence the string join.
+    seed = f"{args.seed}:{arm}:{label}:{condition}"
+    perm = significance.paired_permutation_test_clustered(
+        control, treatment, cluster_ids, n_perm=args.n_perm, seed=seed
     )
-    boot = significance.cluster_bootstrap_ci(
-        control, treatment, n_boot=args.n_boot, seed=args.seed, alpha=args.alpha
+    boot = significance.cluster_bootstrap_ci_clustered(
+        control, treatment, cluster_ids, n_boot=args.n_boot, seed=seed,
+        alpha=args.alpha,
     )
-    rows.append((condition, perm, boot))
+    n_excluded = _count_excluded_non_terminating(raw_frame, condition)
+    rows.append((condition, perm, boot, n_excluded))
 
   if not rows:
     return
+  # What "corrected together" means for the bh_significant flags below: this
+  # one (arm, label) call, not the whole report -- see the module docstring's
+  # note on pooling, and check_significance.py's own header comment.
+  bh_family = f"{arm}/{label}"
   reject = significance.benjamini_hochberg(
-      [perm["p_value"] for _, perm, _ in rows], q=args.q
+      [perm["p_value"] for _, perm, _, _ in rows], q=args.q
   )
-  print(f"    {'condition':<12}{'n_pairs':>9}{'delta':>10}"
+  print(f"    {'condition':<12}{'n_clusters':>11}{'delta':>10}"
         f"{'95% CI':>22}{'p (perm)':>10}  BH-sig")
-  for (condition, perm, boot), sig in zip(rows, reject):
+  for (condition, perm, boot, n_excluded), sig in zip(rows, reject):
     ci = f"[{boot['ci_low']:+.3f}, {boot['ci_high']:+.3f}]"
-    print(f"    {condition:<12}{perm['n_pairs']:>9}"
+    print(f"    {condition:<12}{perm['n_clusters']:>11}"
           f"{perm['observed_diff']:>+10.3f}{ci:>22}"
           f"{perm['p_value']:>10.4f}  {'yes' if sig else 'no'}")
     records.append({
         "arm": arm,
         "group": label,
         "condition": condition,
+        "bh_family": bh_family,
         "n_pairs": perm["n_pairs"],
+        "n_clusters": perm["n_clusters"],
+        "n_excluded_non_terminating": n_excluded,
         "delta": perm["observed_diff"],
         "ci_low": boot["ci_low"],
         "ci_high": boot["ci_high"],
@@ -125,26 +168,36 @@ def main() -> None:
   scheme = analysis.frame_node_naming(frame)
   if "node_naming" not in frame.columns:
     frame = frame.assign(node_naming="integer")
+  # The FULL row identity, not `_KEYS` -- `_KEYS` is the *pairing* key,
+  # correct only once `_paired_values` has already filtered down to a single
+  # `condition`. Checking it against the whole (all-conditions) frame would
+  # flag every row as a "duplicate" of its six sibling conditions.
+  analysis.assert_unique_pairing_key(frame, ["model", "instance_id", "condition", "style", "node_naming"])
   records = []
 
-  main_sweep = frame[~frame["is_think"]]
+  # main_sweep_raw is what n_excluded_non_terminating counts against;
+  # main_sweep (non_terminating dropped) is what's actually paired and
+  # tested -- see the module docstring on why.
+  main_sweep_raw = frame[~frame["is_think"]]
+  main_sweep = main_sweep_raw[main_sweep_raw["failure_type"] != "non_terminating"]
   think = frame[frame["is_think"]]
 
   print("=" * 78)
   print("Main sweep: accuracy (exact) vs `none`, pooled across task + style")
   for model_family, group in main_sweep.groupby("model_family"):
-    _report(group, "exact", model_family, args, "main_sweep", records)
-  _report(main_sweep, "exact", "pooled across all models", args,
-          "main_sweep", records)
+    raw_group = main_sweep_raw[main_sweep_raw["model_family"] == model_family]
+    _report(group, raw_group, "exact", model_family, args, "main_sweep", records)
+  _report(main_sweep, main_sweep_raw, "exact", "pooled across all models",
+          args, "main_sweep", records)
 
   if not think.empty:
     print(f"\n{'=' * 78}")
     print("Thinking arm: non-termination rate vs `none`, pooled across task")
     for model_family, group in think.groupby("model_family"):
-      _report(group, "non_terminating", model_family, args,
+      _report(group, group, "non_terminating", model_family, args,
               "thinking_arm", records)
-    _report(think, "non_terminating", "pooled across all models", args,
-            "thinking_arm", records)
+    _report(think, think, "non_terminating", "pooled across all models",
+            args, "thinking_arm", records)
 
   if args.out:
     out = analysis.tagged_path(args.out, scheme)

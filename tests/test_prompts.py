@@ -352,3 +352,21 @@ def test_mcnemar_rejects_misaligned_pairs():
   """A silent length mismatch would invert the pairing and the conclusion."""
   with pytest.raises(ValueError, match="equal lengths"):
     scoring.mcnemar([1, 0, 1], [1, 0])
+
+
+def test_run_sweep_row_carries_node_naming():
+  """A response row must record the scheme its prompt used.
+
+  Everything downstream keys off `node_naming` on the *response* row and
+  defaults a missing field to `integer`, so a GoT run whose rows lack it is
+  scored against integer gold and comes out near-zero -- silently, because an
+  absent field is not a mixed-scheme conflict for `analysis.infer_node_naming`
+  to catch. This pins the one line that prevents that.
+  """
+  import inspect
+  from scripts import run_sweep
+  source = inspect.getsource(run_sweep.main)
+  assert '"node_naming" in record' in source, (
+      "run_sweep.main must copy node_naming from the prompt record onto the "
+      "response row; without it a GoT sweep is silently mis-scored"
+  )

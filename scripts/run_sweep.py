@@ -103,7 +103,7 @@ def main() -> None:
       # generated before it do not carry them, so anything reading these must
       # treat absence as "unknown" and fall back to
       # `analysis/truncated_keys.json` -- see `graphtalk/analysis.py`.
-      handle.write(json.dumps({
+      row = {
           "instance_id": record["instance_id"],
           "task": record["task"],
           "condition": record["condition"],
@@ -113,7 +113,19 @@ def main() -> None:
           "response": completion.text,
           "n_new_tokens": completion.n_new_tokens,
           "hit_cap": completion.hit_cap,
-      }) + "\n")
+      }
+      # The prompt file's node-naming scheme has to travel with the response.
+      # Everything downstream keys off this field on the *response* row --
+      # `scripts/score_sweep.py` converts GoT names back to integers before
+      # scoring, and `graphtalk/analysis.py` reads it for the frame's column and
+      # for its mixed-scheme guard. All three default a missing field to
+      # `integer`, so dropping it here does not raise: a GoT run would simply be
+      # scored against integer gold and come out near-zero, with the guard unable
+      # to fire because absence is not a conflict. Copied rather than defaulted,
+      # so an integer prompt file stays byte-identical to what it wrote before.
+      if "node_naming" in record:
+        row["node_naming"] = record["node_naming"]
+      handle.write(json.dumps(row) + "\n")
       # Flushed every row so a preemption loses at most the row in flight.
       handle.flush()
       if index % 25 == 0 or index == len(todo):
