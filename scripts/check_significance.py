@@ -158,8 +158,8 @@ def _paired_values(frame: pd.DataFrame, condition: str, metric: str):
   """Aligned (control, treatment, cluster_ids) for `condition` vs `CONTROL`.
 
   Paired on `_KEYS`: instance_id alone repeats across styles for the same
-  task, so style has to be part of the key or a zero_shot control row could
-  pair against a zero_cot treatment row; model has to be part of it too,
+  task, so style has to be part of the key or a control row of one style could
+  pair against a treatment row of another; model has to be part of it too,
   since the same (instance_id, style) key recurs once per model when `frame`
   pools rows across models. `node_naming` is part of it for the same reason
   `model` is -- without it, `main()`'s own guard aside, a frame that ever did

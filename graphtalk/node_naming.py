@@ -131,8 +131,6 @@ def build_named_prompt(
   body = encode_incident_named(graph, name_map) + rename_task_description(
       task_description, name_map
   )
-  if style == "zero_cot":
-    body += prompts.COT_SUFFIX
   return f"{primer}\n\n{body}" if primer else body
 
 

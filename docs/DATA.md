@@ -54,7 +54,7 @@ pooling if its input carries more than one scheme — see
 | `instance_id` | str | pairing key, `"<task>/<index>"` |
 | `task` | str | one of the six tasks below |
 | `condition` | str | one of the seven primer conditions below |
-| `style` | str | `zero_shot` or `zero_cot` |
+| `style` | str | `zero_shot` |
 | `prompt` | str | the exact text handed to the model, primer included |
 | `gold` | str | the published answer, dataset formatting preserved |
 | `nodes` | int | node count of the underlying graph, 5–19 |
@@ -106,16 +106,8 @@ differs from the baseline, the solver is reading something it should not.
 primer of the same shape carrying no structural information, which separates
 "primer present" from "primer informative").
 
-**Styles (2)** — `zero_shot`, `zero_cot`. The thinking arm is `zero_shot` only.
-
-> **`zero_cot` is retired and will not be used again in this project.** Chain-of-thought
-> is measured by the thinking arm (native reasoning at `zero_shot`), which superseded
-> it. The 5,040 `zero_cot` rows are kept because a response is only interpretable
-> against the prompt that produced it, but they are a historical record: their `filler`
-> and `edge_existence` cells answer prompts that no longer exist, and the style ran at
-> half the token budget, so its accuracy is depressed by truncation as well as by the
-> prompt. **Filter on `style == "zero_shot"` for anything current.** See
-> `graphtalk/prompts.py`.
+**Styles (1)** — `zero_shot`. Chain-of-thought is measured by the thinking arm
+(native reasoning at `zero_shot`) rather than by a separate prompt style.
 
 **`gold` formatting varies by task** and keeps the dataset's own punctuation, so
 compare through `graphtalk.scoring`, never by string equality:
@@ -480,14 +472,10 @@ These are properties of the data, not of the analysis, so they belong here:
   test (20 rows carrying `model: gemma4-e4b`) and the 4x-cap regeneration probe.
   `runs/*.jsonl` no longer matches them, and `graphtalk/analysis.py` excludes the
   directory outright rather than matching on filenames.
-- **679 rows never terminate** and are truncated at the token cap. Every row now
+- **348 rows never terminate** and are truncated at the token cap. Every row now
   carries `hit_cap`, measured on one instrument (`scripts/backfill_hit_cap.py`).
-  Split by whether the prompt style is still in use: **309** in the thinking arm
-  (`zero_shot`, live, 6.13%), **39** in the plain arms at `zero_shot` (live, 0.77%,
-  of which 34 are `gemma4-e4b`), and **331** at `zero_cot` (obsolete, 6.57% — that
-  style gets half the token budget). Only the first two affect anything current;
-  the `zero_cot` figure mostly explains why that style looks worse than it is, and
-  is not worth correcting for a format nothing uses.
+  **309** are in the thinking arm (6.13%), **39** in the plain arms (0.77%, of
+  which 34 are `gemma4-e4b`).
   They still *parse*, because the extractor finds an integer in the abandoned
   working, so they score as confident wrong answers rather than as missing. Their
   Of those, 271 predate per-row token counts and their exact keys are in
@@ -504,27 +492,16 @@ These are properties of the data, not of the analysis, so they belong here:
   they should match GPU output, but this is unverified.
 - **The two arms used different torch builds**, cu130 for the main sweep and
   cu126 for the thinking arm. Same version, same transformers, greedy throughout.
-- **2,880 rows are being regenerated under reworded prompts.** The `filler` primer
-  and the `edge_existence` question were both reworded in `d7cdcf7..3545662`, so the
-  360 affected `zero_shot` rows in each of the eight arms are generated from prompts
-  the rest of the sweep never saw. The 1,440 affected rows in the obsolete `zero_cot`
-  prompt style are **not** regenerated and keep the original wording — so
-  `condition: filler` does not mean one thing across the whole sweep, and the frame
-  carries a `wording` column to say which is which. Never pool the two.
-- **`prompts.original-wording.jsonl` is what produced those un-regenerated rows.**
-  `prompts.jsonl` now holds the revised wording throughout, including for the 360
-  `zero_cot` rows whose responses were *not* regenerated — so for those rows the
-  tracked prompt file no longer matches the tracked response. This file closes that
-  gap: it is the 360 original-wording `zero_cot` prompts, verbatim, and it is the
-  prompt of record for the 1,440 responses (360 x 4 plain models) that keep the old
-  text. Rebuilding it from `build_prompts.py` is not possible; it exists because a
-  response is only interpretable against the exact prompt that produced it.
+- **The `filler` primer and the `edge_existence` question were reworded** in
+  `d7cdcf7..3545662`, and every tracked row was regenerated against the revised
+  text, so the whole sweep now shares one wording — the frame's `wording`
+  column (`analysis.wording`) still marks which cells the rewording touched
+  (`"revised"` for `filler`/`edge_existence`, `"unaffected"` elsewhere).
 
 ## Reproducing
 
-> Since the rewording, `build_prompts.py` reproduces `prompts.jsonl` exactly, but
-> **not** the prompts behind every tracked response: the 1,440 un-regenerated
-> `zero_cot` rows came from `prompts.original-wording.jsonl`. See the caveat above.
+`build_prompts.py` reproduces `prompts.jsonl` exactly, and every tracked
+response was generated against that file.
 
 ```bash
 python scripts/build_prompts.py --count 30            # -> prompts.jsonl

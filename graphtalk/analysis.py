@@ -43,20 +43,13 @@ _EXCLUDE_SUBSTRINGS = ("smoke-", ".redo.shard")
 FAILURE_TYPES = ("non_terminating", "unparsed", "wrong", "correct")
 
 # Which wording of the prompt a row was generated from. The `filler` primer and
-# the `edge_existence` question were both reworded, and only the `zero_shot`
-# rows were regenerated -- the obsolete `zero_cot` prompt style keeps the
-# original wording, because it is no longer used and not worth the GPU time.
+# the `edge_existence` question were both reworded in the 2026-08-29 re-run.
 #
-# So `condition: filler` does NOT mean one thing across this frame, and pooling
-# it across styles averages two different independent variables. That is exactly
-# the quiet source of measurement error `graphtalk/scoring.py`'s own docstring
-# warns about, which is why this is a column rather than a footnote: group by it,
-# or filter on it, but never sum across it.
-#
-# `unaffected` is the honest label for the 10,800 rows the rewording never
-# touched -- for those the two wordings are byte-identical and the distinction
-# does not arise.
-WORDINGS = ("revised", "original", "unaffected")
+# `unaffected` is the honest label for the rows the rewording never touched --
+# for those the two wordings are byte-identical and the distinction does not
+# arise. This is a column rather than a footnote so `filler`/`edge_existence`
+# rows can be grouped by wording rather than silently pooling the two.
+WORDINGS = ("revised", "unaffected")
 
 # Tukey's extreme-outlier rule (Q3 + 3*IQR), applied per (model, task,
 # condition, style) cell rather than as a fixed length cutoff -- there is no
@@ -69,10 +62,17 @@ _OUTLIER_IQR_MULTIPLIER = 3.0
 
 
 def wording(task: str, condition: str, style: str) -> str:
-  """Which prompt wording produced a row; see `WORDINGS`."""
+  """Which prompt wording produced a row; see `WORDINGS`.
+
+  Raises on any `style` other than `"zero_shot"` -- the only style this
+  project generates or scores rows in; a different value means the row
+  predates a wording it can't be labelled against.
+  """
+  if style != "zero_shot":
+    raise ValueError(f"unknown prompt style: {style!r}; only 'zero_shot' is supported")
   if condition != "filler" and task != "edge_existence":
     return "unaffected"
-  return "revised" if style == "zero_shot" else "original"
+  return "revised"
 
 
 def is_excluded(path: str) -> bool:

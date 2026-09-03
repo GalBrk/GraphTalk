@@ -31,9 +31,9 @@ class ModelSpec:
   `chat_kwargs` are passed to the tokenizer's `apply_chat_template`. Both families
   have a thinking mode and their defaults are opposite: Gemma 4 defaults to
   thinking off, Qwen3 defaults to thinking on. Left alone that is an accidental
-  asymmetry -- Qwen would reason in a hidden `<think>` channel on *both* prompt
-  styles, spending 1179 tokens on a node_count question it answers in 105 without,
-  and collapsing `zero_shot` and `zero_cot` into one condition for that family
+  asymmetry -- Qwen would reason in a hidden `<think>` channel even in the plain
+  arm, spending 1179 tokens on a node_count question it answers in 105 without,
+  and collapsing the plain and thinking arms into one condition for that family
   only, which is the pairing the McNemar test is computed over. The main specs
   therefore pin both families to thinking off; the `-think` specs pin both to on,
   as a separate arm rather than a confound inside the first.
@@ -58,7 +58,7 @@ class ModelSpec:
 # scripts/measure_budget.py; the number below is replaced by the measured one
 # before the arm is launched, because a truncated <think> block loses the answer
 # rather than shortening it.
-THINK_MAX_NEW_TOKENS = {"zero_shot": 8192, "zero_cot": 8192}
+THINK_MAX_NEW_TOKENS = {"zero_shot": 8192}
 
 MODELS = {
     spec.key: spec
@@ -118,18 +118,7 @@ MODELS = {
 # distribution (gemma4-e4b, cap 2048) is median 271 and max 1974, with
 # `edge_count` the tail -- it enumerates and sums every edge, median 1390. At 64
 # tokens gemma4-e4b scored 3/24; at 2048 it scored 24/24, and no row hit the cap.
-#
-# Note what this does to the design: at 2048 the model reasons on the zero_shot
-# prompt too, so the contrast against `zero_cot` narrows to the prompt wording
-# rather than to whether reasoning happens at all. The 64-token cap suppressed
-# that, but by truncation rather than by design, which is not a contrast worth
-# keeping.
-# `zero_cot` is retired -- see `graphtalk/prompts.py`. Its 1024 is half what
-# `zero_shot` gets, which is why that style truncates eight times as often and
-# why a third of its apparent accuracy penalty is this number rather than the
-# prompt. Left as it was so the tracked rows stay reproducible; do not tune it,
-# because nothing should be generated in that style again.
-MAX_NEW_TOKENS = {"zero_shot": 2048, "zero_cot": 1024}
+MAX_NEW_TOKENS = {"zero_shot": 2048}
 
 
 def budget(spec: ModelSpec, style: str) -> int:

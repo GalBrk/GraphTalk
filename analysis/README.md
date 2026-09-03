@@ -11,14 +11,13 @@ should not have to spend again to check the claim.
 | `budget-qwen3-8b.jsonl` | the same 24 prompts on Qwen3-8B with `enable_thinking=False` |
 | `budget-qwen3-8b-THINKING.jsonl` | three of those rows with thinking **on**, kept as the before-picture: 1179 mean tokens on a `node_count` question the same model answers in 105 without |
 | `truncated_keys.json` | historical record of the **271** thinking-arm rows that were hand-labelled non-terminating. No longer consulted: every tracked row now carries `hit_cap`. Kept because it is the provenance of a claim, and because two of its rows turn out to have terminated. |
-| `sweep_frame.csv` | one row per scored response over the whole tracked sweep, 15,120 rows. **Stale — do not cite; see below.** |
-| `failure_sample.csv` | the stratified manual-inspection sample, 56 rows with full response text. **Stale — do not cite; see below.** |
+| `sweep_frame.csv` | one row per scored response over the whole tracked sweep, 10,080 rows. |
+| `failure_sample.csv` | the stratified manual-inspection sample, with full response text. **Stale — do not cite; see below.** |
 | `significance_report.csv`/`.txt` | `scripts/check_significance.py`'s pooled permutation/bootstrap/BH-corrected results, one row per (arm, group, condition). See "The significance report" below — this one has a real methodology fix behind its most recent regeneration, not just fresher input. |
 | `significance_report_mae.csv` | `check_significance.py --metric mae`'s per-`(model, task, condition)` results on mean absolute error, for the 3 integer tasks -- see "The `mae` metric mode" below. Costs no GPU time to regenerate; reuses `sweep_frame.csv`. |
-| `significance_report_exact_by_style.csv` | accuracy significance re-scoped to one style/arm at a time -- `zero_shot`-only and `zero_cot`-only main sweep, plus (new) the thinking arm's own accuracy. See "What holds up without `zero_cot`" below. |
-| `significance_report_mae_by_style.csv` | the `mae` metric re-scoped to `zero_shot`-only main sweep and the thinking arm. |
-| `significance_report_mae_zerocot_only.csv` | the `mae` metric re-scoped to `zero_cot`-only main sweep -- the counterpart that shows how much of `significance_report_mae.csv`'s pooled signal traces back to `zero_cot`. |
-| `significance_report_exact_zeroshot_and_thinking_mde.csv` | simulated minimum-detectable-effect for every non-significant `zero_shot`-only main-sweep and thinking-arm accuracy cell -- the basis for "How much more data would confirm it" below. |
+| `significance_report_exact_by_style.csv` | accuracy significance re-scoped to one style/arm at a time -- the main sweep's own accuracy plus the thinking arm's own accuracy. Now that `zero_shot` is the only prompt style, its "by style" scoping is a historical name; kept because it also carries the thinking-arm breakdown. |
+| `significance_report_mae_by_style.csv` | the `mae` metric re-scoped to the main sweep and the thinking arm. |
+| `significance_report_exact_zeroshot_and_thinking_mde.csv` | simulated minimum-detectable-effect for every non-significant main-sweep and thinking-arm accuracy cell. |
 
 ## The two CSVs, and what is in them now
 
@@ -29,10 +28,10 @@ badly -- `unparsed` alone fell from 342 rows to 70.
 
 `sweep_frame.csv` carries three columns the earlier version did not:
 
-- `wording` -- `revised` / `original` / `unaffected`, marking which text produced the
-  row. The obsolete `zero_cot` rows keep the original `filler` and `edge_existence`
-  wording, so `condition` alone does not identify the prompt. Group by this before
-  comparing anything that touches those cells.
+- `wording` -- `revised` / `unaffected`, marking which text produced the
+  row: `filler` and `edge_existence` were reworded and every tracked row was
+  regenerated against the new text, so `wording` now only distinguishes which
+  cells that rewording touched.
 - `non_terminating_source` -- `recorded` where the row carries its own `hit_cap`,
   `ground_truth_file` where `truncated_keys.json` is still the only record.
 - `n_new_tokens` -- present only on regenerated rows; empty, not zero, elsewhere.
@@ -240,25 +239,29 @@ model-and-task's) comparison only; -- = not significant.
 
 ### Main sweep -- accuracy vs. `none`
 
-Where a model's row is footnoted, every one of its `near_ceiling`-flagged,
-not-significant cells should be read per the direction-specific caveat in
-"A third pass" above, not as a confirmed null.
+**No cell is significant.** `gemma4-12b` and `gemma4-e4b` are `near_ceiling`
+on all six conditions (96-99% control accuracy, per "A third pass" above),
+genuinely inconclusive rather than null; `qwen3-14b` and `qwen3-8b` have real
+headroom (88-90% control accuracy) and still show no significant effect --
+closer to a genuine null.
 
 | Model | all | clustering | components | degree | filler | rwse |
 |---|---|---|---|---|---|---|
-| `gemma4-12b` [^ceiling] | -- | -- | ✅ hurts | -- | ✅ hurts | -- |
-| `gemma4-e4b` [^ceiling] | -- | -- | ✅ hurts | -- | ⚠️ hurts | -- |
-| `qwen3-14b` | ⚠️ helps | ⚠️ helps | -- | ✅ helps | -- | -- |
-| `qwen3-8b` | ✅ helps | ✅ helps | -- | ✅ helps | -- | -- |
-| pooled across all models | ✅ helps | ✅ helps | ✅ hurts | ✅ helps | ✅ hurts | -- |
+| `gemma4-12b` [^ceiling] | -- | -- | -- | -- | -- | -- |
+| `gemma4-e4b` [^ceiling] | -- | -- | -- | -- | -- | -- |
+| `qwen3-14b` | -- | -- | -- | -- | -- | -- |
+| `qwen3-8b` | -- | -- | -- | -- | -- | -- |
+| pooled across all models | -- | -- | -- | -- | -- | -- |
 
-[^ceiling]: `near_ceiling=True` on all six conditions (96-98% control
-accuracy). The `all`/`degree` not-significant cells (harmless direction)
-are genuinely inconclusive rather than null; `clustering`/`rwse`
-(harmful direction, `gemma4-12b` only -- `gemma4-e4b`'s `clustering`/`rwse`
-move in the helpful direction) are not excused by the ceiling and should
-be read as closer to a genuine null; see the CI-based bound in "A third
-pass" above.
+[^ceiling]: `near_ceiling=True` on all six conditions (96-99% control
+accuracy) -- see the CI-based bound in "A third pass" above before reading
+any of these cells as a confirmed null.
+
+An earlier version of this table, computed while `zero_cot` rows were still
+pooled into the main sweep, showed several ✅/⚠️ cells (`gemma4-12b`/`components`,
+`gemma4-e4b`/`components`, `qwen3-14b`/`degree`, `qwen3-8b`/`all`, and others).
+None of them survive on `zero_shot`-only data -- see "Retracted: 'Most primer
+findings depend on the retired `zero_cot` style'" in `docs/sweep-findings.md`.
 
 ### Thinking arm -- non-termination rate vs. `none`
 
@@ -279,10 +282,12 @@ task regardless of condition) and is omitted; the other two tasks:
 
 **`node_count`**
 
+No significant cells.
+
 | Model | all | clustering | components | degree | filler | rwse |
 |---|---|---|---|---|---|---|
 | `gemma4-12b` | -- | -- | -- | -- | -- | -- |
-| `gemma4-e4b` | -- | -- | ✅ hurts | -- | -- | -- |
+| `gemma4-e4b` | -- | -- | -- | -- | -- | -- |
 | `qwen3-14b` | -- | -- | -- | -- | -- | -- |
 | `qwen3-8b` | -- | -- | -- | -- | -- | -- |
 
@@ -292,87 +297,29 @@ task regardless of condition) and is omitted; the other two tasks:
 |---|---|---|---|---|---|---|
 | `gemma4-12b` | -- | -- | -- | -- | -- | -- |
 | `gemma4-e4b` | -- | -- | -- | -- | -- | -- |
-| `qwen3-14b` | -- | ✅ helps | -- | -- | ✅ hurts | -- |
-| `qwen3-8b` | ✅ helps | -- | -- | -- | ✅ hurts | ✅ hurts |
+| `qwen3-14b` | -- | ⚠️ helps | -- | -- | -- | -- |
+| `qwen3-8b` | -- | -- | -- | -- | -- | ⚠️ hurts |
 
-`edge_count` is where essentially all of the MAE-specific signal lives,
-and three of these cells (`qwen3-14b`/`filler`, `qwen3-8b`/`filler`,
-`qwen3-8b`/`rwse`) have no counterpart at all in the main-sweep accuracy
-table above -- `filler` and `rwse` push these models' wrong `edge_count`
-answers substantially further from correct without flipping enough of
-them to exact matches to register on accuracy. Reads as consistent with
-"Why `gemma4-e4b` truncates more" (`docs/sweep-findings.md`): `edge_count`
-is exactly the task where models fall into exhaustive, error-prone manual
-counting, so it is the task where a bad primer's damage shows up as
-*larger* miscounts before it shows up as *more frequent* wrong answers.
+`edge_count` is still where essentially all of the MAE-specific signal
+lives, consistent with "Why `gemma4-e4b` truncates more"
+(`docs/sweep-findings.md`): it is exactly the task where models fall into
+exhaustive, error-prone manual counting, so it is the task where a bad
+primer's damage shows up as *larger* miscounts before it shows up as *more
+frequent* wrong answers. Neither surviving cell reaches
+`bh_significant_global` -- both are significant only within their own
+model's six-condition comparison. An earlier, `zero_cot`-pooled version of
+this table showed five significant cells; three did not survive restricting
+to `zero_shot`-only data (see the retraction note in
+`docs/sweep-findings.md`).
 
-### What holds up without `zero_cot`
+### Retracted: "What holds up without `zero_cot`"
 
-Every table above pools `zero_shot` and `zero_cot` together for the main
-sweep. `zero_cot` is explicitly retired (`graphtalk/prompts.py`: *"`zero_cot`
-is retired. Do not generate new rows in it"*) and gets half the token
-budget of `zero_shot`, so it is worth checking how much of the above
-depends on it. Same tooling, just re-scoped to one style/arm at a time.
-
-**`zero_shot`-only main sweep, accuracy: 0 of 24 `(model, condition)`
-cells significant.** `zero_cot`-only, the same 24 cells:
-
-| Model | Condition | delta | p |
-|---|---|---|---|
-| `gemma4-e4b` | `components` | -0.109 | 0.0003 |
-| `gemma4-e4b` | `filler` | -0.092 | 0.0023 |
-| `qwen3-8b` | `all` | +0.105 | 0.0001 |
-| `qwen3-8b` | `degree` | +0.116 | 0.0004 |
-| `gemma4-12b` | `filler` | -0.047 | 0.0070 |
-| `qwen3-14b` | `components` | -0.053 | 0.0048 |
-| `qwen3-8b` | `clustering` | +0.076 | 0.0081 |
-
-Most of the pooled main-sweep accuracy findings in "Main sweep" above
-trace back to `zero_cot`, not `zero_shot`.
-
-**`zero_shot`-only, `mae`: 1 of 72 cells** (`qwen3-8b`/`edge_count`/`rwse`,
-and it does not survive the whole-table correction). **`zero_cot`-only:
-6 of 72**, including that same cell at a larger magnitude -- `zero_cot`
-amplifies rather than invents, but the same pattern repeats: most of "Per-task
-error (MAE)" above lives in the retired format, not the live one.
-
-**Thinking-arm accuracy: 0 of 24 cells, on exact-match or `mae`.**
-Unaffected by this question, since the thinking arm never used `zero_cot`
-in the first place -- its own significant findings ("Thinking arm" above)
-stand as-is; they are about non-termination, not accuracy.
-
-Not every pooled finding is a `zero_cot` artifact, though -- checking
-effect size, not just significance, most `zero_shot`-only deltas share
-the pooled/`zero_cot` numbers' sign, just smaller and underpowered at
-roughly half the sample (`n_clusters≈170-180` vs `≈350` pooled) --
-e.g. `qwen3-8b`/`degree`: `zero_shot`-only delta +0.028 (not significant),
-`zero_cot`-only +0.116 (significant), same direction. A few
-(`gemma4-e4b`/`filler`, `qwen3-8b`/`all`) show a `zero_shot` delta near
-zero against a large `zero_cot` delta -- closer to genuinely
-`zero_cot`-specific. One cell runs the other way
-(`qwen3-8b`/`filler`'s only signal sits in `zero_shot`, not `zero_cot`).
-So the honest read on most of the pooled accuracy story is
-*underpowered and unconfirmed*, not *disproven*.
-
-**How much more data would confirm it:** the same simulated MDE used in
-"A third pass" above, rescoped to `zero_shot`-only main sweep and to the
-thinking arm's own accuracy. Of the 24 `zero_shot`-only cells: 12 never
-converge (the same near-ceiling problem as `gemma4-12b`/`gemma4-e4b`
-elsewhere), 2 have an observed delta of exactly zero (no amount of data
-shows an effect that isn't there), and the 10 that do converge all need
-far more than the published dataset's 500-graph cap -- from ~2,232
-(`qwen3-14b`/`degree`, the closest) to ~49,207. All 24 of the thinking
-arm's own accuracy cells fail to converge too. **No `--count` within the
-published GraphQA split resolves the accuracy question on live-format
-data, for either arm.**
-
-**Bottom line**: the only primer finding that survives excluding
-`zero_cot` entirely is the thinking arm's non-termination result above
-(`gemma4-12b`: `all`/`filler`/`components`; pooled: `filler`) -- a
-reliability effect, not an accuracy one. Every accuracy claim in the
-tables above is real *in the pooled data* but not yet confirmed on the
-live prompt format alone, and this dataset cannot resolve that with more
-of the same graphs.
+This subsection used to compare `zero_shot`-only significance against
+`zero_cot`-only to show how much of the tables above depended on the
+retired style. `zero_cot` and its rows have since been fully removed from
+the project, so that comparison is no longer reproducible; the tables above
+are now `zero_shot`-only by construction; see the matching retraction note
+in `docs/sweep-findings.md`.
 
 ## The batching baseline
 
