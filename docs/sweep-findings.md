@@ -175,6 +175,30 @@ remains unimplemented. At 3-5x it turns a week per model into a couple of days.
 
 ## Design caveats to carry into the write-up
 
+**Truncation impersonates a finding, and has done so three times.** Filter
+capped responses out before comparing anything, and say so when reporting.
+
+A response cut off at the token budget still *parses* — the extractor pulls an
+integer or a yes/no out of the abandoned working — so it scores as a confident
+wrong answer rather than as missing data. It is invisible in a parse rate and
+invisible in a gap; it shows up only as a condition or a model looking worse.
+Three separate results in this document turned out to be that and nothing else:
+
+- **"`filler` hurts"** — the length control scored below the no-primer control
+  on accuracy *and* had the highest non-termination rate. Both measures were
+  responding to the primer's false numeral, not to padding.
+- **"`zero_cot` is worse than `zero_shot`"** — true, but a third of the gap is
+  that `zero_cot` runs at half the token budget and truncates 8× as often. On
+  `gemma4-12b` the entire penalty is truncation.
+- **"GoT naming costs 4 points"** — GoT names are ~8% longer, on an arm already
+  truncating 20% of responses. On terminated rows the effect is −0.1.
+
+Every one of these looked statistically solid before the capped rows came out.
+`hit_cap` is now recorded on every row (`scripts/backfill_hit_cap.py`), so there
+is no longer an excuse for pooling them in; `scripts/check_significance.py` and
+`scripts/naming_effect.py` both exclude them by default.
+
+
 **`zero_shot` now reasons.** The `zero_shot` budget was raised from 64 to 2,048
 tokens after measurement showed 64 truncated ~90% of answers mid-sentence (see
 `graphtalk/models.py`). With room, these instruction-tuned models narrate their
@@ -373,6 +397,66 @@ right. The trade is heavily favourable, but it is a trade.
 
 Reproduce with `scripts/rewording_effect.py`.
 
+## Renaming every node changes nothing
+
+The second sweep renames nodes from `0, 1, 2, ...` to Game-of-Thrones characters
+(`Ned`, `Catelyn`, `Daenerys`, ...) throughout the primer, the encoding and the
+question, via `--node-naming got`. Everything else is held fixed: the same 30
+graphs per task, the same queries, the same seven primer conditions, the same
+eight arms, `zero_shot` only. So the two sweeps pair row for row on
+`(model, instance_id, task, condition, style)` and differ in nothing but the
+names. 10,080 generations.
+
+The effect is nil, in every arm:
+
+| arm | integer | got | delta | 95% CI | p |
+|---|---|---|---|---|---|
+| `gemma4-e4b` | 97.9% | 97.6% | −0.3 | [−1.4, +0.8] | 0.60 |
+| `gemma4-12b` | 98.6% | 98.4% | −0.2 | [−0.6, +0.2] | 0.69 |
+| `qwen3-8b` | 90.2% | 90.1% | −0.1 | [−1.6, +1.4] | 0.87 |
+| `qwen3-14b` | 90.5% | 90.8% | +0.3 | [−1.0, +1.6] | 0.73 |
+| `gemma4-e4b-think` | 98.4% | 97.3% | −1.1 | [−2.4, +0.1] | 0.07 |
+| `gemma4-12b-think` | 100.0% | 99.9% | −0.1 | [−0.4, +0.0] | 0.25 |
+| `qwen3-8b-think` | 99.8% | 99.7% | −0.2 | [−0.8, +0.3] | 0.75 |
+| `qwen3-14b-think` | 99.8% | 100.0% | +0.2 | [+0.0, +0.6] | 0.50 |
+
+Pooled: **−0.19 points** (sd 0.42, range −1.1 to +0.3). **Zero of eight**
+significant after Benjamini-Hochberg. Paired permutation test and cluster
+bootstrap from `graphtalk/significance.py`, clustered on `instance_id` because
+one graph recurs under all seven conditions; truncated responses excluded.
+Reproduce with `scripts/naming_effect.py`.
+
+This is not an underpowered null. The intervals are roughly ±1.5 points over
+1,200+ paired rows per arm, so it is a *precise* zero, which says more than
+"no significant difference".
+
+**What it bears on.** Fatemi et al.'s central result — quoted in
+`graphtalk/primers.py` as the reason every condition must share a format — is
+that phrasing alone moves accuracy by tens of points. Node naming is one axis of
+phrasing, and it is bounded here at well under a point. That does not refute
+them: they vary whole encoding schemes (`adjacency` vs `incident` vs
+`friendship`), of which naming is one component, and this project holds the
+`incident` edge encoding fixed throughout. What it does say is that the axis
+often assumed to carry the effect — whether nodes look like integers or like
+people — is not where it lives, at least for these models on these tasks.
+
+### The one apparent effect was truncation, again
+
+`gemma4-12b-think` initially measured −4.0 points, p=0.0005, comfortably
+significant. It is an artifact, and worth recording because of how it arose.
+
+GoT names cost that arm about **8% more response tokens**. It was already
+truncating **20%** of its responses at the budget, so the extra length tips
+another 4% over the cap: capped rises 20.0% → 24.0%, which is the apparent
+accuracy drop to the decimal. On responses that actually terminate, both namings
+score ~100%.
+
+The reason it looked real for as long as it did is that the truncated rows were
+not being excluded — the filter in `scripts/naming_effect.py` tested a field name
+that does not exist on those records, so it silently passed everything through.
+The script now drops capped rows by default and `--keep-capped` opts back in; the
+difference between the two readings is the finding.
+
 ## `connected_nodes`'s "None" answers were scored wrong, narrowly
 
 A smaller sibling of the previous finding, same root cause -- extraction
@@ -530,6 +614,13 @@ that produced them are preserved in `prompts.original-wording.jsonl`, and the fr
 `wording` column marks which is which. Rows generated from this point carry
 `n_new_tokens` and `hit_cap`, so non-termination is recorded per row rather than
 depending on `analysis/truncated_keys.json`; older rows still depend on it.
+
+**The GoT-naming sweep, 2026-09-02.** A second 10,080-row sweep over the same
+graphs and queries with Game-of-Thrones node names, `zero_shot` only across all
+eight arms, generated entirely on `graphtalk-cu126` -- so unlike the integer
+sweep it carries no build split at all. Its 1,819 first-attempt rows were
+discarded rather than resumed, to keep that uniform; they are kept outside the
+repo. Scored separately from the integer rows and never pooled with them.
 
 Total non-terminating rows is now **316**, not the 350 previously reported: 271 from
 the ground-truth file for rows not regenerated, plus 45 recorded directly. The drop

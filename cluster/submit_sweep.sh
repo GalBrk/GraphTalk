@@ -43,13 +43,17 @@ case "$NODE_NAMING" in
   got)
     # Matches prompts.jsonl's own generation (`--count 30`, the proposal's
     # budget, every other default) -- the two schemes need identical
-    # instances/conditions/styles to be comparable at all.
+    # instances and conditions to be comparable at all.
+    #
+    # --styles zero_shot, though: zero_cot is retired (see graphtalk/prompts.py),
+    # so building it here would write 1,260 prompts that nothing will ever be run
+    # against. The GoT sweep pairs against the zero_shot half of prompts.jsonl.
     PROMPTS_FILE="prompts_got.jsonl"
     if [[ ! -f "$PROMPTS_FILE" ]]; then
       echo "building $PROMPTS_FILE (login node, --node-naming got)"
       if [[ -z "$DRY_RUN" ]]; then
         PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 30 \
-            --node-naming got --out "$PROMPTS_FILE"
+            --node-naming got --styles zero_shot --out "$PROMPTS_FILE"
       fi
     else
       echo "reusing existing $PROMPTS_FILE"

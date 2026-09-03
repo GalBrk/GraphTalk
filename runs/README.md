@@ -64,7 +64,7 @@ regenerated row from the frame without raising anything.
 
 `.got.jsonl` files are **not** excluded the way `archive/` is -- they are
 part of the sweep, just a different node-naming scheme, so `runs/*.jsonl`
-will glob them in once any exist. `scripts/build_sweep_frame.py`,
+will glob them in -- all eight arms exist as of 2026-09-02, 1,260 rows each. `scripts/build_sweep_frame.py`,
 `scripts/sample_failures.py`, and `scripts/check_significance.py` all raise
 if their input carries more than one scheme rather than silently pooling it
 (`graphtalk.analysis.infer_node_naming`/`frame_node_naming`); score each
