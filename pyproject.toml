@@ -29,8 +29,18 @@ dev = [
 ]
 # Only graphtalk/analysis.py and its scripts (build_sweep_frame.py,
 # sample_failures.py) need this -- scoring itself stays pandas-free.
+#
+# statsmodels/pymc are for graphtalk/mixed_models.py and
+# graphtalk/hierarchical_model.py only (the GEE and Bayesian hierarchical
+# cross-checks) -- graphtalk/significance.py itself stays hand-rolled and
+# scipy/statsmodels-free, per its own module docstring; these two are a
+# deliberate, scoped exception for models a permutation test can't do
+# (population-averaged and partial-pooling estimation), not a reversal of
+# that policy.
 analysis = [
     "pandas>=2.0",
+    "statsmodels>=0.14",
+    "pymc>=5.10",
 ]
 
 [tool.pytest.ini_options]
