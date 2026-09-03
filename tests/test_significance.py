@@ -380,11 +380,11 @@ def test_count_looped_on_correct_answer():
 
 def test_apply_global_bh_excludes_bracket_and_pooled_rows():
   records = [
-      {"group": "gemma4-12b", "bound": "excluded", "p_value": 0.001},
-      {"group": "gemma4-12b", "bound": "best_case", "p_value": 0.001},
-      {"group": "gemma4-12b", "bound": "worst_case", "p_value": 0.001},
-      {"group": "pooled across all models", "bound": "excluded", "p_value": 0.001},
-      {"group": "gemma4-e4b", "bound": "not_applicable", "p_value": 0.9},
+      {"group": "gemma4-12b", "bound": "excluded", "p_value": 0.001, "is_derived_condition": False},
+      {"group": "gemma4-12b", "bound": "best_case", "p_value": 0.001, "is_derived_condition": False},
+      {"group": "gemma4-12b", "bound": "worst_case", "p_value": 0.001, "is_derived_condition": False},
+      {"group": "pooled across all models", "bound": "excluded", "p_value": 0.001, "is_derived_condition": False},
+      {"group": "gemma4-e4b", "bound": "not_applicable", "p_value": 0.9, "is_derived_condition": False},
   ]
   cs._apply_global_bh(records, q=0.05)
   by_key = {(r["group"], r["bound"]): r["bh_significant_global"] for r in records}
@@ -395,6 +395,19 @@ def test_apply_global_bh_excludes_bracket_and_pooled_rows():
   assert by_key[("gemma4-12b", "best_case")] is None
   assert by_key[("gemma4-12b", "worst_case")] is None
   assert by_key[("pooled across all models", "excluded")] is None
+
+
+def test_apply_global_bh_excludes_derived_condition_rows():
+  """`all` (the union of degree/clustering/rwse) must not be pooled into
+  the same multiple-comparison family as the independent conditions --
+  it's mechanically correlated with them, not a fifth independent test."""
+  records = [
+      {"group": "gemma4-12b", "bound": "excluded", "p_value": 0.001, "is_derived_condition": False},
+      {"group": "gemma4-12b", "bound": "excluded", "p_value": 0.001, "is_derived_condition": True},
+  ]
+  cs._apply_global_bh(records, q=0.05)
+  assert records[0]["bh_significant_global"] is True
+  assert records[1]["bh_significant_global"] is None
 
 
 def test_global_bh_can_be_stricter_than_per_family_bh():
@@ -411,7 +424,7 @@ def test_global_bh_can_be_stricter_than_per_family_bh():
 
   p_values = [0.01, 0.02] + [0.5 + 0.02 * i for i in range(18)]
   records = [
-      {"group": f"model_{i}", "bound": "excluded", "p_value": p}
+      {"group": f"model_{i}", "bound": "excluded", "p_value": p, "is_derived_condition": False}
       for i, p in enumerate(p_values)
   ]
   cs._apply_global_bh(records, q=0.05)
@@ -474,6 +487,95 @@ def test_near_ceiling_not_populated_for_bracket_bounds():
   cs._report(raw, raw, "exact", "gemma4-12b", _default_args(),
              "main_sweep", records, bound="best_case")
   assert all(r["near_ceiling"] is None for r in records)
+
+
+# --- headroom -----------------------------------------------------------------
+
+
+def test_headroom_matches_hand_computed_value():
+  # n=50 so 0.98 * 50 = 49 lands exactly (no rounding) -- headroom = 0.02.
+  raw = _near_ceiling_frame(0.98, n=50)
+  records = []
+  cs._report(raw, raw, "exact", "gemma4-12b", _default_args(),
+             "main_sweep", records, bound="excluded")
+  assert all(r["headroom"] == pytest.approx(0.02) for r in records)
+
+
+def test_headroom_matches_hand_computed_value_below_half():
+  raw = _near_ceiling_frame(0.3)
+  records = []
+  cs._report(raw, raw, "exact", "gemma4-12b", _default_args(),
+             "main_sweep", records, bound="excluded")
+  # min(0.3, 1 - 0.3) = 0.3 -- below the midpoint, headroom is the control
+  # rate itself, not its complement.
+  assert all(r["headroom"] == pytest.approx(0.3) for r in records)
+
+
+def test_headroom_not_populated_for_bracket_bounds():
+  """Same populated scope as `near_ceiling` -- a best_case/worst_case
+  bracket forces non-terminating rows to fixed extremes, so headroom read
+  off it would measure the bracket's own construction, not the model."""
+  raw = _near_ceiling_frame(0.98)
+  records = []
+  cs._report(raw, raw, "exact", "gemma4-12b", _default_args(),
+             "main_sweep", records, bound="best_case")
+  assert all(r["headroom"] is None for r in records)
+
+
+# --- `all` is a derived condition, corrected as its own family -------------
+
+
+def _multi_condition_frame(n: int = 30):
+  """One `instance_id` set repeated under `none` plus every non-control
+  primer condition (the five independent ones and `all`) -- for testing
+  that `all`, the union of degree/clustering/rwse, is excluded from the
+  independent conditions' BH-correction family."""
+  conditions = ["none", "degree", "clustering", "rwse", "components", "filler", "all"]
+  cols = {"model": [], "instance_id": [], "style": [], "node_naming": [],
+          "condition": [], "failure_type": [], "exact": [],
+          "looped_on_correct_answer": []}
+  for condition in conditions:
+    for i in range(n):
+      cols["model"].append("gemma4-12b")
+      cols["instance_id"].append(f"node_count/{i}")
+      cols["style"].append("zero_shot")
+      cols["node_naming"].append("integer")
+      cols["condition"].append(condition)
+      cols["failure_type"].append("correct")
+      cols["exact"].append(1.0 if i % 2 == 0 else 0.0)
+      cols["looped_on_correct_answer"].append(None)
+  return pd.DataFrame(cols)
+
+
+def test_all_condition_is_marked_derived_others_are_not():
+  raw = _multi_condition_frame()
+  records = []
+  cs._report(raw, raw, "exact", "gemma4-12b", _default_args(),
+             "main_sweep", records, bound="excluded")
+  by_condition = {r["condition"]: r for r in records}
+  assert by_condition["all"]["is_derived_condition"] is True
+  assert all(
+      by_condition[c]["is_derived_condition"] is False
+      for c in ("degree", "clustering", "rwse", "components", "filler")
+  )
+
+
+def test_all_condition_gets_its_own_bh_family():
+  """The five independent conditions share one `bh_family`; `all` must get
+  a distinct one, so it is corrected as a single-hypothesis family instead
+  of inflating (or diluting) the real one."""
+  raw = _multi_condition_frame()
+  records = []
+  cs._report(raw, raw, "exact", "gemma4-12b", _default_args(),
+             "main_sweep", records, bound="excluded")
+  by_condition = {r["condition"]: r for r in records}
+  independent_families = {
+      by_condition[c]["bh_family"]
+      for c in ("degree", "clustering", "rwse", "components", "filler")
+  }
+  assert len(independent_families) == 1
+  assert by_condition["all"]["bh_family"] != independent_families.pop()
+  assert by_condition["all"]["bh_family"].endswith("/derived")
 
 
 # --- task_delta_min/max -------------------------------------------------------
@@ -708,3 +810,78 @@ def test_report_mae_keeps_tasks_separate_not_pooled():
   by_task = {r["task"]: r["mae_delta"] for r in records}
   assert by_task["node_count"] == pytest.approx(4.0)
   assert by_task["edge_count"] == pytest.approx(-4.0)
+
+
+def test_report_mae_also_excludes_all_from_the_bh_family():
+  """Same fix as `_report`'s: `all` must not be pooled into the same
+  multiple-comparison family as the independent conditions in `--metric
+  mae` mode either."""
+  n = 30
+  conditions = ["none", "degree", "clustering", "rwse", "components", "filler", "all"]
+  cols = {"model": [], "instance_id": [], "style": [], "node_naming": [],
+          "condition": [], "failure_type": [], "absolute_error": []}
+  for condition in conditions:
+    for i in range(n):
+      cols["model"].append("gemma4-12b")
+      cols["instance_id"].append(f"node_count/{i}")
+      cols["style"].append("zero_shot")
+      cols["node_naming"].append("integer")
+      cols["condition"].append(condition)
+      cols["failure_type"].append("correct")
+      cols["absolute_error"].append(1.0 if i % 2 == 0 else 3.0)
+  raw = pd.DataFrame(cols)
+  records = []
+  cs._report_mae(raw, raw, "gemma4-12b", "node_count", _default_args(), records)
+  by_condition = {r["condition"]: r for r in records}
+  assert by_condition["all"]["is_derived_condition"] is True
+  independent_families = {
+      by_condition[c]["bh_family"]
+      for c in ("degree", "clustering", "rwse", "components", "filler")
+  }
+  assert len(independent_families) == 1
+  assert by_condition["all"]["bh_family"].endswith("/derived")
+
+
+def test_report_mae_tags_records_with_metric():
+  raw = pd.DataFrame({
+      "model": ["gemma4-12b"] * 20,
+      "instance_id": [f"node_count/{i}" for i in range(10)] * 2,
+      "style": ["zero_shot"] * 20,
+      "node_naming": ["integer"] * 20,
+      "condition": ["none"] * 10 + ["degree"] * 10,
+      "failure_type": ["correct"] * 20,
+      "absolute_error": [5.0] * 10 + [1.0] * 10,
+  })
+  records = []
+  cs._report_mae(raw, raw, "gemma4-12b", "node_count", _default_args(), records)
+  assert all(r["metric"] == "mae" for r in records)
+
+
+def test_report_tags_records_with_metric():
+  raw = _near_ceiling_frame(0.5)
+  records = []
+  cs._report(raw, raw, "exact", "gemma4-12b", _default_args(),
+             "main_sweep", records, bound="excluded")
+  assert all(r["metric"] == "exact" for r in records)
+
+
+def test_apply_global_bh_pools_exact_and_mae_into_one_family():
+  """1.1.2: exact and mae are two lenses on the same hypotheses and must
+  share one multiplicity budget, not two separate ones."""
+  exact_records = [
+      {"group": f"exact_{i}", "bound": "excluded", "p_value": 0.5 + 0.01 * i,
+       "is_derived_condition": False, "metric": "exact"}
+      for i in range(10)
+  ]
+  mae_records = [
+      {"group": f"mae_{i}", "bound": "excluded", "p_value": 0.001,
+       "is_derived_condition": False, "metric": "mae"}
+      for i in range(2)
+  ]
+  records = exact_records + mae_records
+  cs._apply_global_bh(records, q=0.05)
+  # The union has 12 rows; the two mae rows' small p-values are the ones
+  # that survive BH at that family size -- confirms both metrics were
+  # actually pooled into one correction, not run as two separate passes.
+  assert all(r["bh_significant_global"] is True for r in mae_records)
+  assert all(r["bh_significant_global"] is False for r in exact_records)

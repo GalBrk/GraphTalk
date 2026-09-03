@@ -6,9 +6,12 @@ out of 30, and no correction for testing 288 of them at once (see
 docs/sweep-findings.md, "The McNemar analysis is underpowered"). This script
 pools pairs across task and style instead, per `graphtalk/significance.py`:
 a permutation p-value, a bootstrap CI on the effect size, and a
-Benjamini-Hochberg correction across the conditions tested for one model.
-It reuses the same pooling for the thinking arm's non-termination rate,
-replacing the ad hoc p-values quoted in prose there.
+Benjamini-Hochberg correction across the *independent* conditions tested for
+one model -- `all` (the union of `degree`/`clustering`/`rwse`) is corrected
+as its own single-hypothesis family instead of being pooled with the
+conditions it's derived from, see `_is_derived_condition`. It reuses the
+same pooling for the thinking arm's non-termination rate, replacing the ad
+hoc p-values quoted in prose there.
 
 Reads the already-scored, already-joined table `scripts/build_sweep_frame.py`
 writes -- no re-scoring, no re-reading raw runs/*.jsonl. Raises if `--frame`
@@ -68,19 +71,23 @@ latter flags a row where the exclusion rate is high enough that a
 instances with zero surviving pairs -- computed from the data, not a
 hardcoded total, since the sweep's instance count changes with `--count`.
 
-`bh_significant` corrects across the ~6 conditions within one
-`(arm, group, bound)` family, same scope as before this fix.
+`bh_significant` corrects across the ~5 *independent* conditions within one
+`(arm, group, bound)` family (`all` gets its own `.../derived` family, see
+above). `is_derived_condition` marks which rows that is, so a reader can
+tell the two families apart without parsing the `bh_family` string.
 `bh_significant_global` is a second, additional correction across every
-`excluded`/`not_applicable`-bound row from the whole run, excluding `best_case`/
-`worst_case` rows (a sensitivity bracket, not an independent hypothesis)
-and excluding `pooled across all models` rows in both arms (built from the
-same underlying pairs as their sibling per-model rows, so not an
-independent test either). The first column answers "does this condition
-matter for this model"; the second answers "how many of the whole table's
-findings survive testing it all at once". Both are kept; neither replaces
-the other.
+`excluded`/`not_applicable`-bound, non-derived row from the whole run
+(**now spanning both `--metric exact` and `--metric mae` in one pass** --
+see `--metric` below), excluding `best_case`/`worst_case` rows (a
+sensitivity bracket, not an independent hypothesis), excluding
+`pooled across all models` rows in both arms (built from the same
+underlying pairs as their sibling per-model rows, so not an independent
+test either), and excluding derived-condition rows for the same reason as
+`bh_significant`. The first column answers "does this condition matter for
+this model"; the second answers "how many of the whole table's findings
+survive testing it all at once". Both are kept; neither replaces the other.
 
-Three further diagnostics distinguish "no effect" from "couldn't have seen
+Four further diagnostics distinguish "no effect" from "couldn't have seen
 one even if it were there":
 
 - `near_ceiling` -- the CONTROL condition's own mean `metric` is above
@@ -90,6 +97,13 @@ one even if it were there":
   only; a
   best_case/worst_case bracket forces non-terminating rows to fixed
   extremes and would distort the read.
+- `headroom` -- `min(control_mean, 1 - control_mean)`, the theoretical max
+  fraction of rows that could still flip. Alongside `near_ceiling` and
+  `low_power`, this is what lets a reader tell "low_power *because of*
+  near-ceiling headroom" apart from "low_power despite real headroom left"
+  -- the two flags alone can't distinguish those, and on the current data
+  they happen to co-occur completely for one model. Same populated scope
+  as `near_ceiling`.
 - `task_delta_min`/`task_delta_max` -- per-task point-estimate deltas
   (`instance_id` already encodes its task as a `/`-prefix, e.g.
   `edge_count/27`, so no extra join is needed), purely descriptive, no new
@@ -112,10 +126,19 @@ one even if it were there":
   PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
       --frame analysis/sweep_frame.csv
 
-**`--metric mae`**: a separate mode, reusing the same clustering/
-permutation/bootstrap/BH machinery on a different metric -- mean absolute
-error instead of exact-match accuracy -- rather than pooling across the
-6 tasks. Scoped to the 3 integer tasks `absolute_error` is defined for
+**`--metric`**: `both` (default) runs `exact` (accuracy vs. `none`, pooled
+across tasks, main sweep + thinking arm) and `mae` (mean absolute error
+instead of exact-match accuracy, reused clustering/permutation/bootstrap/BH
+machinery) in **one pass**, so `_apply_global_bh` corrects across every
+record either metric produced -- `exact` and `mae` are two lenses on the
+same underlying (model, condition) hypotheses, not two independent
+questions, so they share one multiplicity budget rather than each getting
+its own (which would understate how many comparisons were actually made).
+Pass `--metric exact` or `--metric mae` to run just one, e.g. for a faster
+iteration loop during development; its BH correction is then scoped to
+only that metric's rows, matching the old (pre-unification) behavior.
+
+`mae` is scoped to the 3 integer tasks `absolute_error` is defined for
 (`node_count`, `edge_count`, `node_degree`; the frame carries `NaN` for
 the other three, where the metric doesn't apply). Reported **per task**,
 not pooled across them: a node-count error of 2 and a degree error of 2
@@ -146,12 +169,29 @@ import argparse
 import pandas as pd
 
 from graphtalk import analysis
+from graphtalk import primers
 from graphtalk import significance
 
 CONTROL = "none"
 _KEYS = ["model", "instance_id", "style", "node_naming"]
 _BRACKET_BOUNDS = ("best_case", "worst_case")
 _MAE_TASKS = ("node_count", "edge_count", "node_degree")
+
+
+def _is_derived_condition(condition: str) -> bool:
+  """Whether `condition` is a combination of other conditions (currently
+  just `all`, the union of `degree`/`clustering`/`rwse`) rather than an
+  independent manipulation.
+
+  Derived from `graphtalk.primers.CONDITIONS` rather than hardcoding the
+  string `"all"`, so a future multi-component condition is caught the same
+  way without a second place to remember to update. A derived condition is
+  mechanically correlated with its components -- pooling it into the same
+  multiple-comparison family as `degree`/`clustering`/`rwse` overstates how
+  many independent hypotheses are being tested, so it is corrected as its
+  own single-hypothesis family instead (see `_report`/`_report_mae`).
+  """
+  return len(primers.CONDITIONS[condition]) > 1
 
 
 def _paired_values(frame: pd.DataFrame, condition: str, metric: str):
@@ -254,6 +294,7 @@ def _report(
       raw_frame[["model", "instance_id"]].drop_duplicates().shape[0]
   )
   near_ceiling = None
+  headroom = None
   if bound not in _BRACKET_BOUNDS:
     control_mean = frame.loc[frame["condition"] == CONTROL, metric].mean()
     if pd.notna(control_mean):
@@ -261,6 +302,11 @@ def _report(
           control_mean > args.near_ceiling_threshold
           or control_mean < 1 - args.near_ceiling_threshold
       )
+      # The theoretical max fraction of rows that could still flip --
+      # `near_ceiling` alone can't say whether a `low_power` row is
+      # low_power *because* of that headroom limit or despite having real
+      # headroom left; this makes the two separable.
+      headroom = min(control_mean, 1 - control_mean)
   for condition in conditions:
     control, treatment, cluster_ids = _paired_values(frame, condition, metric)
     if not control:
@@ -303,82 +349,108 @@ def _report(
     rows.append((
         condition, perm, boot, n_excluded, n_looped, low_power,
         n_instances_missing, task_delta_min, task_delta_max,
-        control, treatment, cluster_ids,
+        control, treatment, cluster_ids, _is_derived_condition(condition),
     ))
 
   if not rows:
     return
-  # What "corrected together" means for the bh_significant flags below: this
-  # one (arm, label, bound) call, not the whole report -- see the module
-  # docstring's note on pooling, and `main()`'s separate global BH pass.
-  bh_family = f"{arm}/{label}/{bound}"
-  reject = significance.benjamini_hochberg(
-      [row[1]["p_value"] for row in rows], q=args.q
-  )
   mde_eligible = args.mde and bound not in _BRACKET_BOUNDS
   print(f"    {'condition':<12}{'n_clusters':>11}{'delta':>10}"
         f"{'95% CI':>22}{'p (perm)':>10}  BH-sig")
-  for (condition, perm, boot, n_excluded, n_looped, low_power, n_missing,
-       task_delta_min, task_delta_max, control, treatment, cluster_ids), sig \
-      in zip(rows, reject):
-    ci = f"[{boot['ci_low']:+.3f}, {boot['ci_high']:+.3f}]"
-    print(f"    {condition:<12}{perm['n_clusters']:>11}"
-          f"{perm['observed_diff']:>+10.3f}{ci:>22}"
-          f"{perm['p_value']:>10.4f}  {'yes' if sig else 'no'}")
-    mde_delta = mde_realized = mde_power_target = None
-    if mde_eligible and not sig:
-      ci_width = boot["ci_high"] - boot["ci_low"]
-      mde_seed = f"{args.seed}:{arm}:{label}:{bound}:{condition}:mde"
-      mde = significance.minimum_detectable_effect_clustered(
-          control, treatment, cluster_ids, initial_hi=max(0.05, ci_width),
-          alpha=args.alpha, power_target=args.mde_power_target,
-          n_replicates=args.mde_replicates, n_perm=args.mde_n_perm,
-          seed=mde_seed,
-      )
-      mde_delta, mde_realized = mde["delta"], mde["realized_diff"]
-      mde_power_target = mde["power_target"]
-      print(f"      MDE: delta={mde_delta} realized={mde_realized} "
-            f"({mde['note'] or 'ok'})")
-    records.append({
-        "arm": arm,
-        "group": label,
-        "condition": condition,
-        "bound": bound,
-        "bh_family": bh_family,
-        "n_pairs": perm["n_pairs"],
-        "n_clusters": perm["n_clusters"],
-        "n_instances_missing": n_missing,
-        "n_excluded_non_terminating": n_excluded,
-        "n_looped_on_correct_answer": n_looped,
-        "low_power": low_power,
-        "near_ceiling": near_ceiling,
-        "task_delta_min": task_delta_min,
-        "task_delta_max": task_delta_max,
-        "delta": perm["observed_diff"],
-        "ci_low": boot["ci_low"],
-        "ci_high": boot["ci_high"],
-        "p_value": perm["p_value"],
-        "bh_significant": sig,
-        "mde_delta": mde_delta,
-        "mde_realized_diff": mde_realized,
-        "mde_power_target": mde_power_target,
-    })
+
+  # Independent conditions (degree/clustering/rwse/components/filler) are
+  # corrected together; `all` -- mechanically the union of three of those --
+  # is corrected as its own single-hypothesis family instead of inflating
+  # (or diluting) the real one. See `_is_derived_condition`.
+  independent_rows = [r for r in rows if not r[-1]]
+  derived_rows = [r for r in rows if r[-1]]
+
+  def _emit(group_rows: list, family_suffix: str) -> None:
+    if not group_rows:
+      return
+    # What "corrected together" means for the bh_significant flags below:
+    # this one (arm, label, bound[, derived]) family, not the whole report
+    # -- see the module docstring's note on pooling, and `main()`'s
+    # separate global BH pass.
+    bh_family = f"{arm}/{label}/{bound}{family_suffix}"
+    reject = significance.benjamini_hochberg(
+        [row[1]["p_value"] for row in group_rows], q=args.q
+    )
+    for (condition, perm, boot, n_excluded, n_looped, low_power, n_missing,
+         task_delta_min, task_delta_max, control, treatment, cluster_ids,
+         is_derived), sig in zip(group_rows, reject):
+      ci = f"[{boot['ci_low']:+.3f}, {boot['ci_high']:+.3f}]"
+      print(f"    {condition:<12}{perm['n_clusters']:>11}"
+            f"{perm['observed_diff']:>+10.3f}{ci:>22}"
+            f"{perm['p_value']:>10.4f}  {'yes' if sig else 'no'}")
+      mde_delta = mde_realized = mde_power_target = None
+      if mde_eligible and not sig:
+        ci_width = boot["ci_high"] - boot["ci_low"]
+        mde_seed = f"{args.seed}:{arm}:{label}:{bound}:{condition}:mde"
+        mde = significance.minimum_detectable_effect_clustered(
+            control, treatment, cluster_ids, initial_hi=max(0.05, ci_width),
+            alpha=args.alpha, power_target=args.mde_power_target,
+            n_replicates=args.mde_replicates, n_perm=args.mde_n_perm,
+            seed=mde_seed,
+        )
+        mde_delta, mde_realized = mde["delta"], mde["realized_diff"]
+        mde_power_target = mde["power_target"]
+        print(f"      MDE: delta={mde_delta} realized={mde_realized} "
+              f"({mde['note'] or 'ok'})")
+      records.append({
+          "arm": arm,
+          "group": label,
+          "metric": metric,
+          "condition": condition,
+          "is_derived_condition": is_derived,
+          "bound": bound,
+          "bh_family": bh_family,
+          "n_pairs": perm["n_pairs"],
+          "n_clusters": perm["n_clusters"],
+          "n_instances_missing": n_missing,
+          "n_excluded_non_terminating": n_excluded,
+          "n_looped_on_correct_answer": n_looped,
+          "low_power": low_power,
+          "near_ceiling": near_ceiling,
+          "headroom": headroom,
+          "task_delta_min": task_delta_min,
+          "task_delta_max": task_delta_max,
+          "delta": perm["observed_diff"],
+          "ci_low": boot["ci_low"],
+          "ci_high": boot["ci_high"],
+          "p_value": perm["p_value"],
+          "bh_significant": sig,
+          "mde_delta": mde_delta,
+          "mde_realized_diff": mde_realized,
+          "mde_power_target": mde_power_target,
+      })
+
+  _emit(independent_rows, "")
+  _emit(derived_rows, "/derived")
 
 
 def _apply_global_bh(records: list, q: float) -> None:
-  """Fix 3's whole-table BH pass, mutating `records` in place.
+  """The whole-table BH pass, mutating `records` in place.
 
   Eligible rows are every `bound not in _BRACKET_BOUNDS` row (excludes the
   best_case/worst_case sensitivity bracket) whose `group` is not
   `"pooled across all models"` (excludes a row built from the same
   underlying pairs as its sibling per-model rows in the same arm -- not an
-  independent hypothesis). Ineligible rows get `bh_significant_global =
-  None`, not `False`, so "not significant" and "not tested" stay
-  distinguishable.
+  independent hypothesis) and whose condition is not derived (excludes
+  `all`, mechanically the union of degree/clustering/rwse -- see
+  `_is_derived_condition` -- also not an independent hypothesis). Called
+  once per `main()` run, over every record collected regardless of which
+  metric produced it (`exact`, `non_terminating`, `mae`) -- exact and mae
+  are two lenses on the same underlying (model, condition) hypotheses, so
+  they share one multiplicity budget rather than two separate ones.
+  Ineligible rows get `bh_significant_global = None`, not `False`, so "not
+  significant" and "not tested" stay distinguishable.
   """
   eligible = [
       r for r in records
-      if r["bound"] not in _BRACKET_BOUNDS and r["group"] != "pooled across all models"
+      if r["bound"] not in _BRACKET_BOUNDS
+      and r["group"] != "pooled across all models"
+      and not r["is_derived_condition"]
   ]
   reject_global = significance.benjamini_hochberg(
       [r["p_value"] for r in eligible], q=q
@@ -434,53 +506,73 @@ def _report_mae(
         alpha=args.alpha,
     )
     n_excluded = _count_excluded_non_terminating(raw_frame, condition)
-    rows.append((condition, perm, boot, n_excluded))
+    rows.append((condition, perm, boot, n_excluded, _is_derived_condition(condition)))
 
   if not rows:
     return
-  bh_family = f"mae/{label}/{task}"
-  reject = significance.benjamini_hochberg(
-      [perm["p_value"] for _, perm, _, _ in rows], q=args.q
-  )
   print(f"    {'condition':<12}{'n_clusters':>11}{'mae_delta':>10}"
         f"{'95% CI':>22}{'p (perm)':>10}  BH-sig")
-  for (condition, perm, boot, n_excluded), sig in zip(rows, reject):
-    # Flip sign: the underlying functions return treatment - control (raw
-    # error, higher = worse); mae_delta = control - treatment so positive
-    # still means "the condition helped", matching `exact`'s convention.
-    mae_delta = -perm["observed_diff"]
-    ci_low, ci_high = -boot["ci_high"], -boot["ci_low"]
-    ci = f"[{ci_low:+.3f}, {ci_high:+.3f}]"
-    print(f"    {condition:<12}{perm['n_clusters']:>11}"
-          f"{mae_delta:>+10.3f}{ci:>22}"
-          f"{perm['p_value']:>10.4f}  {'yes' if sig else 'no'}")
-    records.append({
-        "arm": "main_sweep",
-        "group": label,
-        "task": task,
-        "condition": condition,
-        "bound": "excluded",
-        "bh_family": bh_family,
-        "n_pairs": perm["n_pairs"],
-        "n_clusters": perm["n_clusters"],
-        "n_excluded_non_terminating": n_excluded,
-        "mae_delta": mae_delta,
-        "ci_low": ci_low,
-        "ci_high": ci_high,
-        "p_value": perm["p_value"],
-        "bh_significant": sig,
-    })
+
+  # Same split as `_report`: `all` is a derived condition (the union of
+  # degree/clustering/rwse), corrected as its own single-hypothesis family
+  # rather than pooled with the independent conditions -- see
+  # `_is_derived_condition`.
+  independent_rows = [r for r in rows if not r[-1]]
+  derived_rows = [r for r in rows if r[-1]]
+
+  def _emit(group_rows: list, family_suffix: str) -> None:
+    if not group_rows:
+      return
+    bh_family = f"mae/{label}/{task}{family_suffix}"
+    reject = significance.benjamini_hochberg(
+        [perm["p_value"] for _, perm, _, _, _ in group_rows], q=args.q
+    )
+    for (condition, perm, boot, n_excluded, is_derived), sig in zip(group_rows, reject):
+      # Flip sign: the underlying functions return treatment - control (raw
+      # error, higher = worse); mae_delta = control - treatment so positive
+      # still means "the condition helped", matching `exact`'s convention.
+      mae_delta = -perm["observed_diff"]
+      ci_low, ci_high = -boot["ci_high"], -boot["ci_low"]
+      ci = f"[{ci_low:+.3f}, {ci_high:+.3f}]"
+      print(f"    {condition:<12}{perm['n_clusters']:>11}"
+            f"{mae_delta:>+10.3f}{ci:>22}"
+            f"{perm['p_value']:>10.4f}  {'yes' if sig else 'no'}")
+      records.append({
+          "arm": "main_sweep",
+          "group": label,
+          "metric": "mae",
+          "task": task,
+          "condition": condition,
+          "is_derived_condition": is_derived,
+          "bound": "excluded",
+          "bh_family": bh_family,
+          "n_pairs": perm["n_pairs"],
+          "n_clusters": perm["n_clusters"],
+          "n_excluded_non_terminating": n_excluded,
+          "mae_delta": mae_delta,
+          "ci_low": ci_low,
+          "ci_high": ci_high,
+          "p_value": perm["p_value"],
+          "bh_significant": sig,
+      })
+
+  _emit(independent_rows, "")
+  _emit(derived_rows, "/derived")
 
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--frame", default="analysis/sweep_frame.csv")
-  parser.add_argument("--metric", choices=("exact", "mae"), default="exact",
-                       help="'exact' (default): today's accuracy-vs-none "
-                            "pipeline, pooled across tasks, main sweep + "
-                            "thinking arm. 'mae': a separate per-task mode "
-                            "on the 3 integer tasks' absolute_error -- see "
-                            "the module docstring")
+  parser.add_argument("--metric", choices=("exact", "mae", "both"), default="both",
+                       help="'both' (default): runs 'exact' (accuracy-vs-none, "
+                            "pooled across tasks, main sweep + thinking arm) "
+                            "and 'mae' (per-task mean absolute error, 3 "
+                            "integer tasks) in one pass, sharing one "
+                            "multiplicity-correction budget -- see the module "
+                            "docstring. 'exact' or 'mae' alone runs only that "
+                            "metric, kept for faster single-metric runs during "
+                            "development; its BH correction is then scoped to "
+                            "just that metric's rows, not the union")
   parser.add_argument("--n-perm", type=int, default=10_000,
                        help="permutations for the pooled p-value")
   parser.add_argument("--n-boot", type=int, default=10_000,
@@ -539,7 +631,45 @@ def main() -> None:
 
   main_sweep_raw = frame[~frame["is_think"]]
 
-  if args.metric == "mae":
+  if args.metric in ("exact", "both"):
+    # main_sweep_raw is what n_excluded_non_terminating/n_instances_missing
+    # count against; main_sweep (non_terminating dropped) is the `excluded`
+    # bound; main_sweep_best/worst (non_terminating overridden, not dropped)
+    # are the bracket -- see the module docstring on why all three are kept.
+    main_sweep = main_sweep_raw[main_sweep_raw["failure_type"] != "non_terminating"]
+    main_sweep_best = _bracket_frame(main_sweep_raw, 1.0)
+    main_sweep_worst = _bracket_frame(main_sweep_raw, 0.0)
+    think = frame[frame["is_think"]]
+
+    print("=" * 78)
+    print("Main sweep: accuracy (exact) vs `none`, pooled across task + style")
+    for model_family, group in main_sweep.groupby("model_family"):
+      raw_group = main_sweep_raw[main_sweep_raw["model_family"] == model_family]
+      best_group = main_sweep_best[main_sweep_best["model_family"] == model_family]
+      worst_group = main_sweep_worst[main_sweep_worst["model_family"] == model_family]
+      _report(group, raw_group, "exact", model_family, args, "main_sweep",
+              records, bound="excluded")
+      _report(best_group, raw_group, "exact", model_family, args, "main_sweep",
+              records, bound="best_case")
+      _report(worst_group, raw_group, "exact", model_family, args, "main_sweep",
+              records, bound="worst_case")
+    _report(main_sweep, main_sweep_raw, "exact", "pooled across all models",
+            args, "main_sweep", records, bound="excluded")
+    _report(main_sweep_best, main_sweep_raw, "exact", "pooled across all models",
+            args, "main_sweep", records, bound="best_case")
+    _report(main_sweep_worst, main_sweep_raw, "exact", "pooled across all models",
+            args, "main_sweep", records, bound="worst_case")
+
+    if not think.empty:
+      print(f"\n{'=' * 78}")
+      print("Thinking arm: non-termination rate vs `none`, pooled across task")
+      for model_family, group in think.groupby("model_family"):
+        _report(group, group, "non_terminating", model_family, args,
+                "thinking_arm", records)
+      _report(think, think, "non_terminating", "pooled across all models",
+              args, "thinking_arm", records)
+
+  if args.metric in ("mae", "both"):
     print("=" * 78)
     print("Main sweep: mean absolute error vs `none`, per task (not pooled)")
     for model_family, raw_group in main_sweep_raw.groupby("model_family"):
@@ -549,52 +679,9 @@ def main() -> None:
             eligible[eligible["task"] == task], raw_group[raw_group["task"] == task],
             model_family, task, args, records,
         )
-    _apply_global_bh(records, args.q)
-    if args.out:
-      out = analysis.tagged_path(args.out, scheme)
-      pd.DataFrame(records).to_csv(out, index=False)
-      print(f"\nwrote {len(records)} rows to {out}")
-    return
 
-  # main_sweep_raw is what n_excluded_non_terminating/n_instances_missing
-  # count against; main_sweep (non_terminating dropped) is the `excluded`
-  # bound; main_sweep_best/worst (non_terminating overridden, not dropped)
-  # are the bracket -- see the module docstring on why all three are kept.
-  main_sweep = main_sweep_raw[main_sweep_raw["failure_type"] != "non_terminating"]
-  main_sweep_best = _bracket_frame(main_sweep_raw, 1.0)
-  main_sweep_worst = _bracket_frame(main_sweep_raw, 0.0)
-  think = frame[frame["is_think"]]
-
-  print("=" * 78)
-  print("Main sweep: accuracy (exact) vs `none`, pooled across task + style")
-  for model_family, group in main_sweep.groupby("model_family"):
-    raw_group = main_sweep_raw[main_sweep_raw["model_family"] == model_family]
-    best_group = main_sweep_best[main_sweep_best["model_family"] == model_family]
-    worst_group = main_sweep_worst[main_sweep_worst["model_family"] == model_family]
-    _report(group, raw_group, "exact", model_family, args, "main_sweep",
-            records, bound="excluded")
-    _report(best_group, raw_group, "exact", model_family, args, "main_sweep",
-            records, bound="best_case")
-    _report(worst_group, raw_group, "exact", model_family, args, "main_sweep",
-            records, bound="worst_case")
-  _report(main_sweep, main_sweep_raw, "exact", "pooled across all models",
-          args, "main_sweep", records, bound="excluded")
-  _report(main_sweep_best, main_sweep_raw, "exact", "pooled across all models",
-          args, "main_sweep", records, bound="best_case")
-  _report(main_sweep_worst, main_sweep_raw, "exact", "pooled across all models",
-          args, "main_sweep", records, bound="worst_case")
-
-  if not think.empty:
-    print(f"\n{'=' * 78}")
-    print("Thinking arm: non-termination rate vs `none`, pooled across task")
-    for model_family, group in think.groupby("model_family"):
-      _report(group, group, "non_terminating", model_family, args,
-              "thinking_arm", records)
-    _report(think, think, "non_terminating", "pooled across all models",
-            args, "thinking_arm", records)
-
-  # Fix 3: a second, whole-table BH pass -- see `_apply_global_bh` and the
-  # module docstring's paragraph on `bh_significant_global`.
+  # A second, whole-table BH pass, over every record collected above
+  # regardless of which metric produced it -- see `_apply_global_bh`.
   _apply_global_bh(records, args.q)
 
   if args.out:

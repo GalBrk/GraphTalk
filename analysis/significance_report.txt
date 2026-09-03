@@ -3,185 +3,293 @@ Main sweep: accuracy (exact) vs `none`, pooled across task + style
 
   gemma4-12b [excluded]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 180    +0.006      [-0.011, +0.022]    1.0000  no
     clustering          179    -0.006      [-0.017, +0.000]    1.0000  no
     components          180    -0.017      [-0.039, +0.000]    0.2456  no
     degree              180    +0.011      [+0.000, +0.028]    0.4999  no
     filler              179    -0.011      [-0.028, +0.000]    0.4885  no
     rwse                179    -0.006      [-0.017, +0.000]    1.0000  no
+    all                 180    +0.006      [-0.011, +0.022]    1.0000  no
 
   gemma4-12b [best_case]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 180    +0.006      [-0.011, +0.022]    1.0000  no
     clustering          180    -0.006      [-0.017, +0.000]    1.0000  no
     components          180    -0.017      [-0.039, +0.000]    0.2520  no
     degree              180    +0.011      [+0.000, +0.028]    0.4963  no
     filler              180    -0.011      [-0.028, +0.000]    0.5079  no
     rwse                180    -0.006      [-0.017, +0.000]    1.0000  no
+    all                 180    +0.006      [-0.011, +0.022]    1.0000  no
 
   gemma4-12b [worst_case]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 180    +0.006      [-0.011, +0.028]    1.0000  no
     clustering          180    -0.011      [-0.028, +0.000]    0.4995  no
     components          180    -0.017      [-0.039, +0.000]    0.2420  no
     degree              180    +0.011      [+0.000, +0.028]    0.4991  no
     filler              180    -0.017      [-0.039, +0.000]    0.2543  no
     rwse                180    -0.011      [-0.028, +0.000]    0.5046  no
+    all                 180    +0.006      [-0.011, +0.028]    1.0000  no
 
   gemma4-e4b [excluded]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 173    -0.006      [-0.029, +0.017]    1.0000  no
     clustering          171    -0.006      [-0.029, +0.018]    1.0000  no
     components          173    -0.029      [-0.064, +0.000]    0.1815  no
     degree              173    -0.006      [-0.035, +0.017]    1.0000  no
     filler              173    +0.006      [-0.012, +0.029]    1.0000  no
     rwse                170    -0.018      [-0.041, +0.000]    0.2474  no
+    all                 173    -0.006      [-0.029, +0.017]    1.0000  no
 
   gemma4-e4b [best_case]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 180    -0.006      [-0.028, +0.017]    1.0000  no
     clustering          180    -0.006      [-0.033, +0.017]    1.0000  no
     components          180    -0.033      [-0.067, +0.000]    0.1136  no
     degree              180    -0.006      [-0.028, +0.017]    1.0000  no
     filler              180    +0.000      [-0.022, +0.022]    1.0000  no
     rwse                180    -0.017      [-0.039, +0.000]    0.2524  no
+    all                 180    -0.006      [-0.028, +0.017]    1.0000  no
 
   gemma4-e4b [worst_case]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 180    +0.000      [-0.033, +0.033]    1.0000  no
     clustering          180    -0.006      [-0.044, +0.033]    1.0000  no
     components          180    -0.033      [-0.072, +0.006]    0.1453  no
     degree              180    +0.011      [-0.028, +0.050]    0.7830  no
     filler              180    +0.006      [-0.022, +0.033]    1.0000  no
     rwse                180    -0.039      [-0.072, -0.011]    0.0394  no
+    all                 180    +0.000      [-0.033, +0.033]    1.0000  no
 
   qwen3-14b [excluded]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 180    +0.011      [-0.017, +0.039]    0.6914  no
     clustering          180    +0.022      [+0.006, +0.044]    0.1274  no
     components          180    +0.017      [-0.011, +0.044]    0.4573  no
     degree              180    +0.044      [+0.011, +0.078]    0.0205  no
     filler              180    +0.000      [-0.022, +0.022]    1.0000  no
     rwse                180    +0.011      [+0.000, +0.028]    0.4992  no
+    all                 180    +0.011      [-0.017, +0.039]    0.6914  no
 
   qwen3-14b [best_case]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 180    +0.011      [-0.017, +0.039]    0.6928  no
     clustering          180    +0.022      [+0.006, +0.044]    0.1280  no
     components          180    +0.017      [-0.011, +0.044]    0.4490  no
     degree              180    +0.044      [+0.011, +0.078]    0.0207  no
     filler              180    +0.000      [-0.022, +0.022]    1.0000  no
     rwse                180    +0.011      [+0.000, +0.028]    0.5033  no
+    all                 180    +0.011      [-0.017, +0.039]    0.6928  no
 
   qwen3-14b [worst_case]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 180    +0.011      [-0.017, +0.039]    0.6883  no
     clustering          180    +0.022      [+0.006, +0.044]    0.1283  no
     components          180    +0.017      [-0.011, +0.044]    0.4473  no
     degree              180    +0.044      [+0.011, +0.083]    0.0219  no
     filler              180    +0.000      [-0.022, +0.022]    1.0000  no
     rwse                180    +0.011      [+0.000, +0.028]    0.4982  no
+    all                 180    +0.011      [-0.017, +0.039]    0.6883  no
 
   qwen3-8b [excluded]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 179    +0.011      [-0.022, +0.045]    0.7520  no
     clustering          180    +0.028      [+0.000, +0.056]    0.1296  no
     components          180    +0.000      [-0.033, +0.033]    1.0000  no
     degree              180    +0.028      [-0.006, +0.067]    0.2276  no
     filler              180    -0.050      [-0.094, -0.006]    0.0495  no
     rwse                179    -0.034      [-0.067, +0.000]    0.1115  no
+    all                 179    +0.011      [-0.022, +0.045]    0.7520  no
 
   qwen3-8b [best_case]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 180    +0.017      [-0.017, +0.056]    0.5587  no
     clustering          180    +0.028      [+0.000, +0.056]    0.1235  no
     components          180    +0.000      [-0.033, +0.033]    1.0000  no
     degree              180    +0.028      [-0.006, +0.067]    0.2197  no
     filler              180    -0.050      [-0.094, -0.006]    0.0485  no
     rwse                180    -0.028      [-0.067, +0.006]    0.2277  no
+    all                 180    +0.017      [-0.017, +0.056]    0.5587  no
 
   qwen3-8b [worst_case]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 180    +0.011      [-0.022, +0.044]    0.7550  no
     clustering          180    +0.028      [+0.000, +0.056]    0.1305  no
     components          180    +0.000      [-0.033, +0.033]    1.0000  no
     degree              180    +0.028      [-0.006, +0.067]    0.2255  no
     filler              180    -0.050      [-0.094, -0.006]    0.0506  no
     rwse                180    -0.033      [-0.067, +0.000]    0.1048  no
+    all                 180    +0.011      [-0.022, +0.044]    0.7550  no
 
   pooled across all models [excluded]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 712    +0.006      [-0.007, +0.020]    0.5410  no
     clustering          710    +0.010      [-0.001, +0.021]    0.1507  no
     components          713    -0.007      [-0.022, +0.008]    0.4610  no
     degree              713    +0.020      [+0.006, +0.035]    0.0110  no
     filler              712    -0.014      [-0.028, +0.000]    0.0774  no
     rwse                708    -0.011      [-0.023, +0.000]    0.0757  no
+    all                 712    +0.006      [-0.007, +0.020]    0.5410  no
 
   pooled across all models [best_case]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 720    +0.007      [-0.007, +0.021]    0.4294  no
     clustering          720    +0.010      [-0.001, +0.021]    0.1452  no
     components          720    -0.008      [-0.024, +0.007]    0.3615  no
     degree              720    +0.019      [+0.006, +0.035]    0.0125  no
     filler              720    -0.015      [-0.031, -0.001]    0.0479  no
     rwse                720    -0.010      [-0.021, +0.001]    0.1406  no
+    all                 720    +0.007      [-0.007, +0.021]    0.4294  no
 
   pooled across all models [worst_case]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 720    +0.007      [-0.007, +0.021]    0.4558  no
     clustering          720    +0.008      [-0.006, +0.022]    0.3317  no
     components          720    -0.008      [-0.024, +0.007]    0.3749  no
     degree              720    +0.024      [+0.008, +0.040]    0.0065  yes
     filler              720    -0.015      [-0.031, +0.000]    0.0703  no
     rwse                720    -0.018      [-0.032, -0.006]    0.0118  yes
+    all                 720    +0.007      [-0.007, +0.021]    0.4558  no
 
 ==============================================================================
 Thinking arm: non-termination rate vs `none`, pooled across task
 
   gemma4-12b [not_applicable]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 180    -0.089      [-0.144, -0.033]    0.0037  yes
     clustering          180    +0.022      [-0.022, +0.067]    0.4826  no
-    components          180    -0.067      [-0.122, -0.017]    0.0234  yes
+    components          180    -0.067      [-0.122, -0.017]    0.0234  no
     degree              180    -0.056      [-0.111, -0.006]    0.0620  no
     filler              180    -0.094      [-0.144, -0.044]    0.0005  yes
     rwse                180    -0.028      [-0.083, +0.028]    0.4156  no
+    all                 180    -0.089      [-0.144, -0.033]    0.0037  yes
 
   gemma4-e4b [not_applicable]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 180    +0.000      [+0.000, +0.000]    1.0000  no
     clustering          180    +0.000      [+0.000, +0.000]    1.0000  no
     components          180    +0.000      [+0.000, +0.000]    1.0000  no
     degree              180    +0.000      [+0.000, +0.000]    1.0000  no
     filler              180    +0.000      [+0.000, +0.000]    1.0000  no
     rwse                180    +0.000      [+0.000, +0.000]    1.0000  no
+    all                 180    +0.000      [+0.000, +0.000]    1.0000  no
 
   qwen3-14b [not_applicable]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 180    +0.000      [-0.022, +0.022]    1.0000  no
     clustering          180    +0.006      [+0.000, +0.017]    1.0000  no
     components          180    +0.000      [-0.017, +0.017]    1.0000  no
     degree              180    +0.000      [-0.017, +0.017]    1.0000  no
     filler              180    +0.000      [-0.017, +0.017]    1.0000  no
     rwse                180    +0.006      [-0.017, +0.028]    1.0000  no
+    all                 180    +0.000      [-0.022, +0.022]    1.0000  no
 
   qwen3-8b [not_applicable]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 180    +0.011      [-0.028, +0.050]    0.7793  no
     clustering          180    +0.000      [-0.028, +0.028]    1.0000  no
     components          180    +0.006      [-0.028, +0.039]    1.0000  no
     degree              180    -0.011      [-0.044, +0.022]    0.7590  no
     filler              180    -0.028      [-0.061, +0.006]    0.1806  no
     rwse                180    -0.022      [-0.050, +0.000]    0.2256  no
+    all                 180    +0.011      [-0.028, +0.050]    0.7793  no
 
   pooled across all models [not_applicable]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
-    all                 720    -0.019      [-0.036, -0.003]    0.0482  no
     clustering          720    +0.007      [-0.007, +0.021]    0.4249  no
     components          720    -0.015      [-0.032, +0.000]    0.0911  no
     degree              720    -0.017      [-0.033, +0.000]    0.0676  no
     filler              720    -0.031      [-0.047, -0.015]    0.0002  yes
     rwse                720    -0.011      [-0.028, +0.006]    0.2422  no
+    all                 720    -0.019      [-0.036, -0.003]    0.0482  yes
+==============================================================================
+Main sweep: mean absolute error vs `none`, per task (not pooled)
 
-wrote 120 rows to analysis/significance_report.csv
+  gemma4-12b / node_count
+    condition    n_clusters mae_delta                95% CI  p (perm)  BH-sig
+    clustering           30    -0.000      [-0.000, -0.000]    1.0000  no
+    components           30    -0.000      [-0.000, -0.000]    1.0000  no
+    degree               30    -0.000      [-0.000, -0.000]    1.0000  no
+    filler               30    -0.000      [-0.000, -0.000]    1.0000  no
+    rwse                 30    -0.000      [-0.000, -0.000]    1.0000  no
+    all                  30    -0.000      [-0.000, -0.000]    1.0000  no
+
+  gemma4-12b / edge_count
+    condition    n_clusters mae_delta                95% CI  p (perm)  BH-sig
+    clustering           29    +0.103      [-0.207, +0.517]    1.0000  no
+    components           30    -0.267      [-0.667, -0.000]    0.2417  no
+    degree               30    +0.500      [-0.000, +1.333]    0.4979  no
+    filler               29    -0.103      [-0.276, -0.000]    0.4923  no
+    rwse                 29    +0.103      [-0.207, +0.517]    1.0000  no
+    all                  30    +0.300      [-0.433, +1.167]    0.7467  no
+
+  gemma4-12b / node_degree
+    condition    n_clusters mae_delta                95% CI  p (perm)  BH-sig
+    clustering           30    -0.000      [-0.000, -0.000]    1.0000  no
+    components           30    -0.000      [-0.000, -0.000]    1.0000  no
+    degree               30    -0.000      [-0.000, -0.000]    1.0000  no
+    filler               30    -0.000      [-0.000, -0.000]    1.0000  no
+    rwse                 30    -0.000      [-0.000, -0.000]    1.0000  no
+    all                  30    -0.000      [-0.000, -0.000]    1.0000  no
+
+  gemma4-e4b / node_count
+    condition    n_clusters mae_delta                95% CI  p (perm)  BH-sig
+    clustering           30    -0.000      [-0.000, -0.000]    1.0000  no
+    components           30    -1.267      [-2.733, -0.033]    0.1229  no
+    degree               30    -0.000      [-0.000, -0.000]    1.0000  no
+    filler               30    -0.000      [-0.000, -0.000]    1.0000  no
+    rwse                 30    -0.000      [-0.000, -0.000]    1.0000  no
+    all                  30    -0.000      [-0.000, -0.000]    1.0000  no
+
+  gemma4-e4b / edge_count
+    condition    n_clusters mae_delta                95% CI  p (perm)  BH-sig
+    clustering           24    -0.875      [-2.833, +0.417]    0.7536  no
+    components           24    -0.042      [-0.750, +0.625]    1.0000  no
+    degree               24    -0.083      [-0.792, +0.583]    0.7542  no
+    filler               23    -0.130      [-1.043, +0.652]    1.0000  no
+    rwse                 22    -0.182      [-0.682, +0.136]    1.0000  no
+    all                  23    -1.870      [-5.478, +0.217]    0.2549  no
+
+  gemma4-e4b / node_degree
+    condition    n_clusters mae_delta                95% CI  p (perm)  BH-sig
+    clustering           30    -0.000      [-0.000, -0.000]    1.0000  no
+    components           30    -0.500      [-1.400, -0.000]    0.5008  no
+    degree               30    -0.400      [-1.200, -0.000]    1.0000  no
+    filler               30    -0.000      [-0.000, -0.000]    1.0000  no
+    rwse                 30    -0.000      [-0.000, -0.000]    1.0000  no
+    all                  30    -0.000      [-0.000, -0.000]    1.0000  no
+
+  qwen3-14b / node_count
+    condition    n_clusters mae_delta                95% CI  p (perm)  BH-sig
+    clustering           30    +0.200      [-0.000, +0.600]    1.0000  no
+    components           30    +0.067      [-0.400, +0.600]    1.0000  no
+    degree               30    +0.200      [-0.000, +0.600]    1.0000  no
+    filler               30    +0.200      [-0.000, +0.600]    1.0000  no
+    rwse                 30    +0.200      [-0.000, +0.600]    1.0000  no
+    all                  30    +0.167      [-0.100, +0.600]    1.0000  no
+
+  qwen3-14b / edge_count
+    condition    n_clusters mae_delta                95% CI  p (perm)  BH-sig
+    clustering           30    +0.933      [+0.367, +1.600]    0.0077  yes
+    components           30    +0.333      [-0.200, +0.933]    0.3187  no
+    degree               30    +1.867      [+0.400, +3.567]    0.0437  no
+    filler               30    -2.467      [-7.833, +0.367]    0.8162  no
+    rwse                 30    -2.800      [-8.300, +0.300]    0.3103  no
+    all                  30    +0.333      [-0.133, +0.867]    0.2787  no
+
+  qwen3-14b / node_degree
+    condition    n_clusters mae_delta                95% CI  p (perm)  BH-sig
+    clustering           30    -0.000      [-0.000, -0.000]    1.0000  no
+    components           30    -0.000      [-0.000, -0.000]    1.0000  no
+    degree               30    -0.000      [-0.000, -0.000]    1.0000  no
+    filler               30    -0.000      [-0.000, -0.000]    1.0000  no
+    rwse                 30    -0.000      [-0.000, -0.000]    1.0000  no
+    all                  30    -0.000      [-0.000, -0.000]    1.0000  no
+
+  qwen3-8b / node_count
+    condition    n_clusters mae_delta                95% CI  p (perm)  BH-sig
+    clustering           30    -0.000      [-0.000, -0.000]    1.0000  no
+    components           30    -0.000      [-0.000, -0.000]    1.0000  no
+    degree               30    -0.000      [-0.000, -0.000]    1.0000  no
+    filler               30    -0.233      [-0.400, -0.100]    0.0188  no
+    rwse                 30    -0.000      [-0.000, -0.000]    1.0000  no
+    all                  30    -0.000      [-0.000, -0.000]    1.0000  no
+
+  qwen3-8b / edge_count
+    condition    n_clusters mae_delta                95% CI  p (perm)  BH-sig
+    clustering           30    +0.500      [-0.067, +1.267]    0.1956  no
+    components           30    +0.267      [-0.367, +1.067]    0.6241  no
+    degree               30    -0.267      [-3.933, +2.133]    0.9934  no
+    filler               30    -2.733      [-7.733, +0.533]    0.3411  no
+    rwse                 29   -12.759     [-19.862, -6.276]    0.0010  yes
+    all                  29    +0.310      [-0.552, +1.207]    0.5634  no
+
+  qwen3-8b / node_degree
+    condition    n_clusters mae_delta                95% CI  p (perm)  BH-sig
+    clustering           30    -0.000      [-0.000, -0.000]    1.0000  no
+    components           30    -0.000      [-0.000, -0.000]    1.0000  no
+    degree               30    -0.000      [-0.000, -0.000]    1.0000  no
+    filler               30    -0.000      [-0.000, -0.000]    1.0000  no
+    rwse                 30    -0.000      [-0.000, -0.000]    1.0000  no
+    all                  30    -0.000      [-0.000, -0.000]    1.0000  no
