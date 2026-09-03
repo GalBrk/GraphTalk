@@ -111,17 +111,32 @@ one even if it were there":
   near zero with a wide `[task_delta_min, task_delta_max]` range means the
   condition helps on some tasks and hurts on others rather than doing
   nothing everywhere.
-- `mde_delta`/`mde_realized_diff`/`mde_power_target` -- opt-in via `--mde`
-  (off by default: roughly 6-7x's the run's total time), computed only for
-  rows where `bh_significant is False` and
-  `bound in ("excluded", "not_applicable")`.
+- `mde_delta`/`mde_realized_diff`/`mde_delta_negative`/
+  `mde_realized_diff_negative`/`mde_power_target` -- computed automatically
+  for every row where `bh_significant is False` and `bound in ("excluded",
+  "not_applicable")`, at a fast-approximate preset (`n_replicates=50,
+  n_perm=200, n_steps=5`) unless `--mde` asks for full precision
+  (`200/500/8`, roughly 6-7x slower -- use for a final reported number, not
+  routine runs) or `--no-mde` turns the whole thing off. The fast preset is
+  benchmarked against full precision in `scripts/benchmark_mde.py`: mean/max
+  `|delta|` difference stays within `graphtalk.significance
+  .minimum_detectable_effect_clustered`'s own documented Monte Carlo noise
+  floor (SE ~= 0.03) at several times the speed -- see that script and
+  `--mde-fast`'s help text.
   `graphtalk.significance.minimum_detectable_effect_clustered` simulates
-  the smallest true effect this row's data could have reliably detected;
-  `mde_realized_diff` can come in below `mde_delta` on a `near_ceiling` row,
+  the smallest true effect this row's data could have reliably detected,
+  **in both directions** -- a candidate improvement (`mde_delta`, positive)
+  and a candidate harm (`mde_delta_negative`, negative) are searched
+  independently, since a near-ceiling control has very different headroom
+  in each: almost no room to improve (often `mde_delta = None`, "exceeds
+  1.0") but plenty of room to get worse (`mde_delta_negative` usually
+  converges to a real value there). `mde_realized_diff`/
+  `mde_realized_diff_negative` can come in on the far side of their
+  respective `mde_delta`/`mde_delta_negative` on a `near_ceiling` row,
   which is itself a second, independent confirmation that a ceiling effect
   is suppressing detectability there. Blank wherever not computed --
   `bh_significant is True` (nothing to explain), a bracket row (not a
-  primary interpretive bound), or `--mde` wasn't passed.
+  primary interpretive bound), or `--no-mde` was passed.
 
   PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
       --frame analysis/sweep_frame.csv
@@ -162,9 +177,38 @@ in both modes.
 
   PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
       --frame analysis/sweep_frame.csv --metric mae
+
+**`--confirmatory-config`**: an optional JSON file naming the (arm, model,
+condition, metric) cells decided *before a sweep's results are seen* to be
+the ones a claim will actually rest on -- everything else is exploratory,
+labelled as such rather than silently sharing a multiplicity budget with
+cells chosen with the benefit of hindsight. Format:
+
+```json
+{"confirmatory": [
+    {"model": "gemma4-12b", "condition": "degree"},
+    {"model": "qwen3-8b", "condition": "filler", "metric": "mae"}
+]}
+```
+
+`arm` and `metric` are optional per entry (default: any arm, `"exact"`);
+`model` matches the `group` column, so `"pooled across all models"` is a
+valid value too. Every record gets a `hypothesis_type` column
+(`"confirmatory"`/`"exploratory"`) and `_apply_global_bh` corrects the two
+groups *separately* -- a smaller, stricter confirmatory family, and an
+exploratory family that's still reported (not suppressed) but explicitly
+labelled hypothesis-generating rather than confirmed. Omit `--confirmatory-
+config` and nothing changes: every record's `hypothesis_type` is blank and
+`_apply_global_bh` corrects everything together in one family, exactly as
+it always has. Committing the config file *before* running the sweep it
+applies to is a discipline this flag makes possible to follow, not
+something the code itself can enforce -- there is no way to check "was
+this file's git history older than the run" from inside a Python process
+reading it after the fact.
 """
 
 import argparse
+import json
 
 import pandas as pd
 
@@ -192,6 +236,48 @@ def _is_derived_condition(condition: str) -> bool:
   own single-hypothesis family instead (see `_report`/`_report_mae`).
   """
   return len(primers.CONDITIONS[condition]) > 1
+
+
+def _load_confirmatory_config(path: str | None) -> set | None:
+  """Loads `--confirmatory-config`'s JSON file (see the module docstring
+  for its format) into a set of `(arm, group, condition, metric)` tuples,
+  `arm`/`metric` normalized to `"*"` (any) when an entry omits them.
+  `None` -- not an empty set -- when `path` is falsy: distinguishes "no
+  config, every row is unlabelled" from "a config was loaded and happens
+  to list nothing confirmatory", which would otherwise both look like
+  "nothing is confirmatory" to `_hypothesis_type` but mean very different
+  things (the second should still label every row `"exploratory"`, the
+  first should leave `hypothesis_type` blank).
+  """
+  if not path:
+    return None
+  with open(path) as handle:
+    raw = json.load(handle)
+  return {
+      (entry.get("arm", "*"), entry["model"], entry["condition"],
+       entry.get("metric", "exact"))
+      for entry in raw["confirmatory"]
+  }
+
+
+def _hypothesis_type(
+    confirmatory: set | None, arm: str, group: str, condition: str, metric: str,
+) -> str | None:
+  """`"confirmatory"` if `(arm, group, condition, metric)` (or its
+  any-arm form, `("*", group, condition, metric)`) is in `confirmatory`,
+  `"exploratory"` if a config was loaded but this cell isn't in it, `None`
+  if `confirmatory is None` (no `--confirmatory-config` was given --
+  today's fully-exploratory-by-omission behavior, left blank rather than
+  spelled out as `"exploratory"` for every row, so an unlabelled run and a
+  run with an empty confirmatory list remain visibly different in the
+  output)."""
+  if confirmatory is None:
+    return None
+  if (arm, group, condition, metric) in confirmatory:
+    return "confirmatory"
+  if ("*", group, condition, metric) in confirmatory:
+    return "confirmatory"
+  return "exploratory"
 
 
 def _paired_values(frame: pd.DataFrame, condition: str, metric: str):
@@ -384,6 +470,7 @@ def _report(
             f"{perm['observed_diff']:>+10.3f}{ci:>22}"
             f"{perm['p_value']:>10.4f}  {'yes' if sig else 'no'}")
       mde_delta = mde_realized = mde_power_target = None
+      mde_delta_negative = mde_realized_negative = None
       if mde_eligible and not sig:
         ci_width = boot["ci_high"] - boot["ci_low"]
         mde_seed = f"{args.seed}:{arm}:{label}:{bound}:{condition}:mde"
@@ -391,17 +478,25 @@ def _report(
             control, treatment, cluster_ids, initial_hi=max(0.05, ci_width),
             alpha=args.alpha, power_target=args.mde_power_target,
             n_replicates=args.mde_replicates, n_perm=args.mde_n_perm,
-            seed=mde_seed,
+            n_steps=args.mde_n_steps, seed=mde_seed,
         )
         mde_delta, mde_realized = mde["delta"], mde["realized_diff"]
         mde_power_target = mde["power_target"]
+        mde_delta_negative = mde["delta_negative"]
+        mde_realized_negative = mde["realized_diff_negative"]
         print(f"      MDE: delta={mde_delta} realized={mde_realized} "
-              f"({mde['note'] or 'ok'})")
+              f"({mde['note'] or 'ok'})  "
+              f"delta_negative={mde_delta_negative} "
+              f"realized_negative={mde_realized_negative} "
+              f"({mde['note_negative'] or 'ok'})")
       records.append({
           "arm": arm,
           "group": label,
           "metric": metric,
           "condition": condition,
+          "hypothesis_type": _hypothesis_type(
+              args.confirmatory, arm, label, condition, metric
+          ),
           "is_derived_condition": is_derived,
           "bound": bound,
           "bh_family": bh_family,
@@ -422,6 +517,8 @@ def _report(
           "bh_significant": sig,
           "mde_delta": mde_delta,
           "mde_realized_diff": mde_realized,
+          "mde_delta_negative": mde_delta_negative,
+          "mde_realized_diff_negative": mde_realized_negative,
           "mde_power_target": mde_power_target,
       })
 
@@ -445,6 +542,14 @@ def _apply_global_bh(records: list, q: float) -> None:
   they share one multiplicity budget rather than two separate ones.
   Ineligible rows get `bh_significant_global = None`, not `False`, so "not
   significant" and "not tested" stay distinguishable.
+
+  Eligible rows are further split by `hypothesis_type` (see
+  `--confirmatory-config` in the module docstring) before correcting --
+  confirmatory and exploratory cells get their own, separately-corrected
+  family, never pooled into one. When no config was given every record's
+  `hypothesis_type` is `None`, which is then the *only* group, so this
+  reduces to exactly one whole-table family -- today's behavior,
+  unchanged.
   """
   eligible = [
       r for r in records
@@ -452,11 +557,15 @@ def _apply_global_bh(records: list, q: float) -> None:
       and r["group"] != "pooled across all models"
       and not r["is_derived_condition"]
   ]
-  reject_global = significance.benjamini_hochberg(
-      [r["p_value"] for r in eligible], q=q
-  )
-  for r, sig in zip(eligible, reject_global):
-    r["bh_significant_global"] = sig
+  by_hypothesis_type: dict = {}
+  for r in eligible:
+    by_hypothesis_type.setdefault(r["hypothesis_type"], []).append(r)
+  for group_rows in by_hypothesis_type.values():
+    reject_global = significance.benjamini_hochberg(
+        [r["p_value"] for r in group_rows], q=q
+    )
+    for r, sig in zip(group_rows, reject_global):
+      r["bh_significant_global"] = sig
   for r in records:
     r.setdefault("bh_significant_global", None)
 
@@ -543,6 +652,9 @@ def _report_mae(
           "metric": "mae",
           "task": task,
           "condition": condition,
+          "hypothesis_type": _hypothesis_type(
+              args.confirmatory, "main_sweep", label, condition, "mae"
+          ),
           "is_derived_condition": is_derived,
           "bound": "excluded",
           "bh_family": bh_family,
@@ -558,6 +670,46 @@ def _report_mae(
 
   _emit(independent_rows, "")
   _emit(derived_rows, "/derived")
+
+
+def _resolve_mde_settings(
+    mde: bool, no_mde: bool, mde_replicates, mde_n_perm, mde_n_steps,
+) -> dict:
+  """Phase 1.3.3: MDE runs by default; `no_mde` is the only way to turn it
+  off. `mde` (the parsed `--mde` flag) only chooses full precision
+  (`n_replicates=200, n_perm=500, n_steps=8`) over the default fast preset
+  (`50/200/5`) -- it does not itself enable MDE, which is already on. An
+  explicit `mde_replicates`/`mde_n_perm`/`mde_n_steps` (not `None`) always
+  wins over either preset. Returns the four resolved values as a dict
+  (`mde` here means "should MDE run at all", the trigger `_report` reads --
+  not "was full precision requested", which is `mde`'s *input* meaning;
+  the rename happens across this call on purpose, so the caller can't
+  confuse the two)."""
+  full_precision = mde
+  return {
+      "mde": not no_mde,
+      "mde_replicates": mde_replicates if mde_replicates is not None
+                         else (200 if full_precision else 50),
+      "mde_n_perm": mde_n_perm if mde_n_perm is not None
+                    else (500 if full_precision else 200),
+      "mde_n_steps": mde_n_steps if mde_n_steps is not None
+                     else (8 if full_precision else 5),
+  }
+
+
+def _apply_filter(frame: pd.DataFrame, filter_expr: str | None) -> pd.DataFrame:
+  """`--filter`'s pandas `DataFrame.query()` expression applied to
+  `frame`, or `frame` unchanged when no filter was given. Formalizes what
+  used to be an undocumented manual pre-filter step (see the module
+  docstring's `--filter` help text and `analysis/README.md`) into one
+  reproducible, testable operation -- a `--filter "style == 'zero_shot'"`
+  run and a manually-pre-filtered `frame.query(...)` call passed straight
+  into the rest of `main()` are now provably the same thing, not two
+  routes that happen to usually agree.
+  """
+  if not filter_expr:
+    return frame
+  return frame.query(filter_expr)
 
 
 def main() -> None:
@@ -590,25 +742,97 @@ def main() -> None:
                             "control condition's mean metric is above this "
                             "(or below 1 minus this)")
   parser.add_argument("--mde", action="store_true",
-                       help="compute a simulated minimum-detectable-effect "
-                            "for every non-significant excluded/n-a-bound "
-                            "row -- roughly 6-7x's total runtime, off by "
-                            "default")
+                       help="upgrade the automatic MDE (see --no-mde) from "
+                            "the fast-approximate default to full precision "
+                            "(n_replicates=200, n_perm=500, n_steps=8 "
+                            "unless overridden below) -- roughly 6-7x the "
+                            "fast preset's time. Use for a final reported "
+                            "number, not routine runs")
+  parser.add_argument("--no-mde", action="store_true",
+                       help="disable MDE entirely. Since Phase 1.3.3, MDE "
+                            "is computed automatically (fast-approximate "
+                            "preset) for every non-significant "
+                            "excluded/n-a-bound row -- pass this to skip "
+                            "it, e.g. for a quicker exploratory run")
+  parser.add_argument("--mde-fast", action="store_true",
+                       help="explicit spelling of the default fast-"
+                            "approximate MDE preset (n_replicates=50, "
+                            "n_perm=200, n_steps=5, benchmarked in "
+                            "scripts/benchmark_mde.py against --mde's full "
+                            "precision: mean/max |delta| difference stays "
+                            "within graphtalk.significance"
+                            ".minimum_detectable_effect_clustered's own "
+                            "documented Monte Carlo noise floor, SE ~= "
+                            "0.03, at several times the speed). Doesn't "
+                            "change anything on its own since it's already "
+                            "the default; kept for scripts that want to be "
+                            "explicit rather than rely on it")
   parser.add_argument("--mde-power-target", type=float, default=0.8)
-  parser.add_argument("--mde-replicates", type=int, default=200,
-                       help="simulated trials per candidate effect size")
-  parser.add_argument("--mde-n-perm", type=int, default=500,
+  parser.add_argument("--mde-replicates", type=int, default=None,
+                       help="simulated trials per candidate effect size -- "
+                            "default depends on --mde (200 vs the fast "
+                            "preset's 50) unless set explicitly here")
+  parser.add_argument("--mde-n-perm", type=int, default=None,
                        help="permutations per simulated trial's inner test "
                             "(lower than --n-perm: averaged over many "
-                            "trials, so per-trial precision matters less)")
+                            "trials, so per-trial precision matters less) "
+                            "-- default depends on --mde (500 vs the fast "
+                            "preset's 200) unless set explicitly here")
+  parser.add_argument("--mde-n-steps", type=int, default=None,
+                       help="bisection steps in the MDE search -- default "
+                            "depends on --mde (8 vs the fast preset's 5) "
+                            "unless set explicitly here")
   parser.add_argument("--seed", type=int, default=1234)
+  parser.add_argument("--filter", default=None,
+                       help="optional pandas `DataFrame.query()` expression "
+                            "applied to `--frame` before anything else runs "
+                            "-- e.g. --filter \"model == 'gemma4-12b'\" or "
+                            "--filter \"style == 'zero_shot'\". Formalizes "
+                            "what used to be an undocumented manual "
+                            "pre-filter step for any 'what holds up under "
+                            "subset X' question (see analysis/README.md); "
+                            "one flag is now the whole reproduction "
+                            "recipe instead of a remembered pandas snippet. "
+                            "`bh_family`/`bh_significant_global`'s "
+                            "multiplicity correction is computed only over "
+                            "the filtered rows -- a `--filter`'d run is a "
+                            "genuinely different, smaller-family question "
+                            "than the unfiltered one, not a display-only "
+                            "slice of it")
+  parser.add_argument("--confirmatory-config", default=None,
+                       help="optional JSON file naming (arm, model, "
+                            "condition, metric) cells pre-registered as "
+                            "confirmatory before a sweep's results were "
+                            "seen -- see the module docstring for the "
+                            "format. Every record gets a `hypothesis_type` "
+                            "column and confirmatory/exploratory cells are "
+                            "BH-corrected in separate families; omit this "
+                            "flag and nothing changes from today's "
+                            "single-family behavior")
   parser.add_argument("--out", default=None,
                        help="optional path to write every row printed above "
                             "as CSV -- analysis.tagged_path suffixes it for a "
                             "non-integer node_naming scheme automatically")
   args = parser.parse_args()
 
+  args.confirmatory = _load_confirmatory_config(args.confirmatory_config)
+
+  if args.no_mde and args.mde:
+    parser.error("--mde and --no-mde are mutually exclusive")
+  resolved = _resolve_mde_settings(
+      mde=args.mde, no_mde=args.no_mde, mde_replicates=args.mde_replicates,
+      mde_n_perm=args.mde_n_perm, mde_n_steps=args.mde_n_steps,
+  )
+  args.mde = resolved["mde"]
+  args.mde_replicates = resolved["mde_replicates"]
+  args.mde_n_perm = resolved["mde_n_perm"]
+  args.mde_n_steps = resolved["mde_n_steps"]
+
   frame = pd.read_csv(args.frame)
+  frame = _apply_filter(frame, args.filter)
+  if frame.empty and args.filter:
+    print(f"--filter {args.filter!r} matched no rows")
+    return
   # Raises on a genuine mix; a frame predating this column has none at all,
   # normalized to "integer" so `_paired_values`'s key can always rely on it
   # being present.

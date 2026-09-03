@@ -257,6 +257,41 @@ one to cite going forward.
 left" -- the two booleans alone couldn't distinguish those, and on the
 current data they happen to co-occur completely for `gemma4-e4b`.
 
+### Phase 1.4: reproducibility & process hardening
+
+**`--filter`.** The `*_by_style.csv` artifacts (now deleted, see the
+zero_cot purge) were produced by an undocumented manual pre-filter step --
+someone hand-edited `sweep_frame.csv` down to one style before running
+`check_significance.py`, a process this repo never checked in a script
+for. `--filter "<pandas query expression>"` (e.g. `--filter "model ==
+'gemma4-12b'"`) formalizes that into one flag applied to `--frame`
+immediately after loading, before anything else runs -- any future "what
+holds up under subset X" question is now one documented command instead
+of a remembered snippet. The multiplicity correction is computed only over
+the filtered rows: a `--filter`'d run answers a genuinely different,
+smaller-family question than the unfiltered one, not a display slice of it.
+
+**`--confirmatory-config`.** A JSON file naming which (arm, model,
+condition, metric) cells were decided *before a sweep's results were
+seen* to be the ones a claim will actually rest on -- see
+`scripts/check_significance.py`'s module docstring for the exact format.
+Every record gets a `hypothesis_type` column (`"confirmatory"`/
+`"exploratory"`, blank when no config is given) and `bh_significant_global`
+corrects the two groups in **separate** families: a small, strict
+confirmatory family, and an exploratory family that's still reported (not
+suppressed) but explicitly labelled hypothesis-generating rather than
+confirmed. This is the direct answer to the pattern this project has hit
+more than once (see "Retracted: 'Most primer findings depend on the
+retired `zero_cot` style'" and the `filler`-primer episode in
+`docs/sweep-findings.md`) -- a large exploratory sweep produces findings
+that later turn out to be artifacts of pooling or of the specific format
+tested, and there was previously no structural way to tell "this was
+predicted in advance" apart from "this was noticed after the fact and
+looks real." Committing the config file before running the sweep it
+applies to is the discipline this flag makes possible, not something code
+can verify from inside a process reading the file after the run -- that
+part still depends on actually doing it in that order.
+
 ### The `mae` metric mode
 
 Accuracy is not the only lens `check_significance.py` applies to

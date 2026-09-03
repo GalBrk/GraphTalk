@@ -4,11 +4,17 @@ Main sweep: accuracy (exact) vs `none`, pooled across task + style
   gemma4-12b [excluded]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
     clustering          179    -0.006      [-0.017, +0.000]    1.0000  no
+      MDE: delta=None realized=0.012625698324022347 (MDE exceeds 1.0 at this power target)  delta_negative=-0.043750000000000004 realized_negative=-0.0423463687150838 (ok)
     components          180    -0.017      [-0.039, +0.000]    0.2456  no
+      MDE: delta=None realized=0.011888888888888888 (MDE exceeds 1.0 at this power target)  delta_negative=-0.0421875 realized_negative=-0.04066666666666666 (ok)
     degree              180    +0.011      [+0.000, +0.028]    0.4999  no
+      MDE: delta=None realized=0.013111111111111112 (MDE exceeds 1.0 at this power target)  delta_negative=-0.045312500000000006 realized_negative=-0.042333333333333334 (ok)
     filler              179    -0.011      [-0.028, +0.000]    0.4885  no
+      MDE: delta=None realized=0.012625698324022347 (MDE exceeds 1.0 at this power target)  delta_negative=-0.045312500000000006 realized_negative=-0.04692737430167598 (ok)
     rwse                179    -0.006      [-0.017, +0.000]    1.0000  no
+      MDE: delta=None realized=0.013072625698324023 (MDE exceeds 1.0 at this power target)  delta_negative=-0.0484375 realized_negative=-0.0488268156424581 (ok)
     all                 180    +0.006      [-0.011, +0.022]    1.0000  no
+      MDE: delta=None realized=0.011555555555555555 (MDE exceeds 1.0 at this power target)  delta_negative=-0.043750000000000004 realized_negative=-0.04555555555555556 (ok)
 
   gemma4-12b [best_case]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
@@ -31,11 +37,17 @@ Main sweep: accuracy (exact) vs `none`, pooled across task + style
   gemma4-e4b [excluded]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
     clustering          171    -0.006      [-0.029, +0.018]    1.0000  no
+      MDE: delta=None realized=0.011345029239766082 (MDE exceeds 1.0 at this power target)  delta_negative=-0.046875 realized_negative=-0.045380116959064326 (ok)
     components          173    -0.029      [-0.064, +0.000]    0.1815  no
+      MDE: delta=None realized=0.012023121387283236 (MDE exceeds 1.0 at this power target)  delta_negative=-0.045700867052023114 realized_negative=-0.04369942196531792 (ok)
     degree              173    -0.006      [-0.035, +0.017]    1.0000  no
+      MDE: delta=None realized=0.011213872832369942 (MDE exceeds 1.0 at this power target)  delta_negative=-0.048771676300578035 realized_negative=-0.048323699421965315 (ok)
     filler              173    +0.006      [-0.012, +0.029]    1.0000  no
+      MDE: delta=None realized=0.011907514450867051 (MDE exceeds 1.0 at this power target)  delta_negative=-0.046875 realized_negative=-0.048092485549132945 (ok)
     rwse                170    -0.018      [-0.041, +0.000]    0.2474  no
+      MDE: delta=None realized=0.010941176470588235 (MDE exceeds 1.0 at this power target)  delta_negative=-0.0484375 realized_negative=-0.04823529411764706 (ok)
     all                 173    -0.006      [-0.029, +0.017]    1.0000  no
+      MDE: delta=None realized=0.012138728323699421 (MDE exceeds 1.0 at this power target)  delta_negative=-0.046875 realized_negative=-0.049364161849710986 (ok)
 
   gemma4-e4b [best_case]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
@@ -58,11 +70,17 @@ Main sweep: accuracy (exact) vs `none`, pooled across task + style
   qwen3-14b [excluded]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
     clustering          180    +0.022      [+0.006, +0.044]    0.1274  no
+      MDE: delta=0.36250000000000004 realized=0.04033333333333333 (ok)  delta_negative=-0.053125000000000006 realized_negative=-0.04733333333333333 (ok)
     components          180    +0.017      [-0.011, +0.044]    0.4573  no
+      MDE: delta=0.40277777777777785 realized=0.045 (ok)  delta_negative=-0.05034722222222223 realized_negative=-0.04688888888888889 (ok)
     degree              180    +0.044      [+0.011, +0.078]    0.0205  no
+      MDE: delta=0.4 realized=0.043 (ok)  delta_negative=-0.04166666666666667 realized_negative=-0.039 (ok)
     filler              180    +0.000      [-0.022, +0.022]    1.0000  no
+      MDE: delta=0.3875 realized=0.042888888888888886 (ok)  delta_negative=-0.053125000000000006 realized_negative=-0.04588888888888889 (ok)
     rwse                180    +0.011      [+0.000, +0.028]    0.4992  no
+      MDE: delta=0.3875 realized=0.04566666666666667 (ok)  delta_negative=-0.0484375 realized_negative=-0.04455555555555556 (ok)
     all                 180    +0.011      [-0.017, +0.039]    0.6914  no
+      MDE: delta=0.40277777777777773 realized=0.043222222222222224 (ok)  delta_negative=-0.04687499999999999 realized_negative=-0.03955555555555555 (ok)
 
   qwen3-14b [best_case]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
@@ -85,11 +103,17 @@ Main sweep: accuracy (exact) vs `none`, pooled across task + style
   qwen3-8b [excluded]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
     clustering          180    +0.028      [+0.000, +0.056]    0.1296  no
+      MDE: delta=0.40277777777777773 realized=0.042444444444444444 (ok)  delta_negative=-0.05034722222222222 realized_negative=-0.042888888888888886 (ok)
     components          180    +0.000      [-0.033, +0.033]    1.0000  no
+      MDE: delta=0.48333333333333334 realized=0.04811111111111111 (ok)  delta_negative=-0.04583333333333334 realized_negative=-0.043555555555555556 (ok)
     degree              180    +0.028      [-0.006, +0.067]    0.2276  no
+      MDE: delta=0.4333333333333333 realized=0.04566666666666667 (ok)  delta_negative=-0.04965277777777777 realized_negative=-0.046 (ok)
     filler              180    -0.050      [-0.094, -0.006]    0.0495  no
+      MDE: delta=0.4666666666666667 realized=0.04822222222222222 (ok)  delta_negative=-0.05 realized_negative=-0.04633333333333333 (ok)
     rwse                179    -0.034      [-0.067, +0.000]    0.1115  no
+      MDE: delta=0.4860335195530726 realized=0.04279329608938547 (ok)  delta_negative=-0.04818435754189944 realized_negative=-0.042905027932960894 (ok)
     all                 179    +0.011      [-0.022, +0.045]    0.7520  no
+      MDE: delta=0.4860335195530726 realized=0.04446927374301676 (ok)  delta_negative=-0.04189944134078212 realized_negative=-0.040446927374301674 (ok)
 
   qwen3-8b [best_case]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
@@ -112,11 +136,17 @@ Main sweep: accuracy (exact) vs `none`, pooled across task + style
   pooled across all models [excluded]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
     clustering          710    +0.010      [-0.001, +0.021]    0.1507  no
+      MDE: delta=0.17500000000000002 realized=0.010422535211267606 (ok)  delta_negative=-0.0125 realized_negative=-0.012225352112676056 (ok)
     components          713    -0.007      [-0.022, +0.008]    0.4610  no
+      MDE: delta=0.17500000000000002 realized=0.010238429172510518 (ok)  delta_negative=-0.0125 realized_negative=-0.011697054698457223 (ok)
     degree              713    +0.020      [+0.006, +0.035]    0.0110  no
+      MDE: delta=0.1875 realized=0.010799438990182328 (ok)  delta_negative=-0.0125 realized_negative=-0.011584852734922862 (ok)
     filler              712    -0.014      [-0.028, +0.000]    0.0774  no
+      MDE: delta=0.18125000000000002 realized=0.011039325842696629 (ok)  delta_negative=-0.0140625 realized_negative=-0.011769662921348314 (ok)
     rwse                708    -0.011      [-0.023, +0.000]    0.0757  no
+      MDE: delta=0.1875 realized=0.010734463276836158 (ok)  delta_negative=-0.0125 realized_negative=-0.01248587570621469 (ok)
     all                 712    +0.006      [-0.007, +0.020]    0.5410  no
+      MDE: delta=0.17500000000000002 realized=0.010084269662921348 (ok)  delta_negative=-0.0125 realized_negative=-0.012191011235955056 (ok)
 
   pooled across all models [best_case]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
@@ -142,46 +172,72 @@ Thinking arm: non-termination rate vs `none`, pooled across task
   gemma4-12b [not_applicable]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
     clustering          180    +0.022      [-0.022, +0.067]    0.4826  no
+      MDE: delta=0.058333333333333334 realized=0.044 (ok)  delta_negative=-0.17777777777777778 realized_negative=-0.043333333333333335 (ok)
     components          180    -0.067      [-0.122, -0.017]    0.0234  no
+      MDE: delta=0.059375 realized=0.04477777777777778 (ok)  delta_negative=-0.178125 realized_negative=-0.04777777777777778 (ok)
     degree              180    -0.056      [-0.111, -0.006]    0.0620  no
+      MDE: delta=0.05277777777777778 realized=0.042444444444444444 (ok)  delta_negative=-0.15833333333333333 realized_negative=-0.03966666666666667 (ok)
     filler              180    -0.094      [-0.144, -0.044]    0.0005  yes
     rwse                180    -0.028      [-0.083, +0.028]    0.4156  no
+      MDE: delta=0.05555555555555555 realized=0.043111111111111114 (ok)  delta_negative=-0.1736111111111111 realized_negative=-0.042333333333333334 (ok)
     all                 180    -0.089      [-0.144, -0.033]    0.0037  yes
 
   gemma4-e4b [not_applicable]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
     clustering          180    +0.000      [+0.000, +0.000]    1.0000  no
+      MDE: delta=0.045312500000000006 realized=0.04544444444444445 (ok)  delta_negative=None realized_negative=0.0 (MDE exceeds 1.0 at this power target)
     components          180    +0.000      [+0.000, +0.000]    1.0000  no
+      MDE: delta=0.045312500000000006 realized=0.04666666666666667 (ok)  delta_negative=None realized_negative=0.0 (MDE exceeds 1.0 at this power target)
     degree              180    +0.000      [+0.000, +0.000]    1.0000  no
+      MDE: delta=0.043750000000000004 realized=0.04822222222222222 (ok)  delta_negative=None realized_negative=0.0 (MDE exceeds 1.0 at this power target)
     filler              180    +0.000      [+0.000, +0.000]    1.0000  no
+      MDE: delta=0.045312500000000006 realized=0.04833333333333333 (ok)  delta_negative=None realized_negative=0.0 (MDE exceeds 1.0 at this power target)
     rwse                180    +0.000      [+0.000, +0.000]    1.0000  no
+      MDE: delta=0.037500000000000006 realized=0.041777777777777775 (ok)  delta_negative=None realized_negative=0.0 (MDE exceeds 1.0 at this power target)
     all                 180    +0.000      [+0.000, +0.000]    1.0000  no
+      MDE: delta=0.0421875 realized=0.041777777777777775 (ok)  delta_negative=None realized_negative=0.0 (MDE exceeds 1.0 at this power target)
 
   qwen3-14b [not_applicable]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
     clustering          180    +0.006      [+0.000, +0.017]    1.0000  no
+      MDE: delta=0.045312500000000006 realized=0.043 (ok)  delta_negative=None realized_negative=-0.011555555555555555 (MDE exceeds 1.0 at this power target)
     components          180    +0.000      [-0.017, +0.017]    1.0000  no
+      MDE: delta=0.043750000000000004 realized=0.044 (ok)  delta_negative=None realized_negative=-0.009 (MDE exceeds 1.0 at this power target)
     degree              180    +0.000      [-0.017, +0.017]    1.0000  no
+      MDE: delta=0.0421875 realized=0.043 (ok)  delta_negative=None realized_negative=-0.011 (MDE exceeds 1.0 at this power target)
     filler              180    +0.000      [-0.017, +0.017]    1.0000  no
+      MDE: delta=0.03906250000000001 realized=0.04122222222222222 (ok)  delta_negative=None realized_negative=-0.013 (MDE exceeds 1.0 at this power target)
     rwse                180    +0.006      [-0.017, +0.028]    1.0000  no
+      MDE: delta=0.043750000000000004 realized=0.043111111111111114 (ok)  delta_negative=None realized_negative=-0.009777777777777778 (MDE exceeds 1.0 at this power target)
     all                 180    +0.000      [-0.022, +0.022]    1.0000  no
+      MDE: delta=0.045312500000000006 realized=0.04455555555555556 (ok)  delta_negative=None realized_negative=-0.011333333333333334 (MDE exceeds 1.0 at this power target)
 
   qwen3-8b [not_applicable]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
     clustering          180    +0.000      [-0.028, +0.028]    1.0000  no
+      MDE: delta=0.04687499999999999 realized=0.044444444444444446 (ok)  delta_negative=None realized_negative=-0.03822222222222222 (MDE exceeds 1.0 at this power target)
     components          180    +0.006      [-0.028, +0.039]    1.0000  no
+      MDE: delta=0.043750000000000004 realized=0.042666666666666665 (ok)  delta_negative=None realized_negative=-0.041666666666666664 (MDE exceeds 1.0 at this power target)
     degree              180    -0.011      [-0.044, +0.022]    0.7590  no
+      MDE: delta=0.05 realized=0.04777777777777778 (ok)  delta_negative=None realized_negative=-0.04066666666666666 (MDE exceeds 1.0 at this power target)
     filler              180    -0.028      [-0.061, +0.006]    0.1806  no
+      MDE: delta=0.04583333333333334 realized=0.043333333333333335 (ok)  delta_negative=None realized_negative=-0.041 (MDE exceeds 1.0 at this power target)
     rwse                180    -0.022      [-0.050, +0.000]    0.2256  no
+      MDE: delta=0.043750000000000004 realized=0.044 (ok)  delta_negative=None realized_negative=-0.04055555555555555 (MDE exceeds 1.0 at this power target)
     all                 180    +0.011      [-0.028, +0.050]    0.7793  no
+      MDE: delta=0.04375 realized=0.04655555555555556 (ok)  delta_negative=None realized_negative=-0.03844444444444445 (MDE exceeds 1.0 at this power target)
 
   pooled across all models [not_applicable]
     condition    n_clusters     delta                95% CI  p (perm)  BH-sig
     clustering          720    +0.007      [-0.007, +0.021]    0.4249  no
+      MDE: delta=0.0140625 realized=0.013194444444444444 (ok)  delta_negative=-0.1375 realized_negative=-0.010611111111111111 (ok)
     components          720    -0.015      [-0.032, +0.000]    0.0911  no
+      MDE: delta=0.0125 realized=0.012527777777777778 (ok)  delta_negative=-0.14375000000000002 realized_negative=-0.01175 (ok)
     degree              720    -0.017      [-0.033, +0.000]    0.0676  no
+      MDE: delta=0.0125 realized=0.010805555555555556 (ok)  delta_negative=-0.15000000000000002 realized_negative=-0.011888888888888888 (ok)
     filler              720    -0.031      [-0.047, -0.015]    0.0002  yes
     rwse                720    -0.011      [-0.028, +0.006]    0.2422  no
+      MDE: delta=0.010937500000000001 realized=0.010777777777777778 (ok)  delta_negative=-0.14375000000000002 realized_negative=-0.010888888888888889 (ok)
     all                 720    -0.019      [-0.036, -0.003]    0.0482  yes
 ==============================================================================
 Main sweep: mean absolute error vs `none`, per task (not pooled)
@@ -293,3 +349,5 @@ Main sweep: mean absolute error vs `none`, per task (not pooled)
     filler               30    -0.000      [-0.000, -0.000]    1.0000  no
     rwse                 30    -0.000      [-0.000, -0.000]    1.0000  no
     all                  30    -0.000      [-0.000, -0.000]    1.0000  no
+
+wrote 192 rows to analysis/significance_report.csv

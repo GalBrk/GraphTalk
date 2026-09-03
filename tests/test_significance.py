@@ -10,6 +10,7 @@ just a handful of independent instances duplicated, and the clustered ones
 correctly don't.
 """
 
+import json
 import random
 from types import SimpleNamespace
 
@@ -30,6 +31,7 @@ def _default_args(**overrides):
       n_perm=200, n_boot=200, alpha=0.05, q=0.05, seed=1,
       low_power_threshold=0.15, near_ceiling_threshold=0.95,
       mde=False, mde_power_target=0.8, mde_replicates=50, mde_n_perm=100,
+      mde_n_steps=5, confirmatory=None,
   )
   base.update(overrides)
   return SimpleNamespace(**base)
@@ -380,11 +382,11 @@ def test_count_looped_on_correct_answer():
 
 def test_apply_global_bh_excludes_bracket_and_pooled_rows():
   records = [
-      {"group": "gemma4-12b", "bound": "excluded", "p_value": 0.001, "is_derived_condition": False},
-      {"group": "gemma4-12b", "bound": "best_case", "p_value": 0.001, "is_derived_condition": False},
-      {"group": "gemma4-12b", "bound": "worst_case", "p_value": 0.001, "is_derived_condition": False},
-      {"group": "pooled across all models", "bound": "excluded", "p_value": 0.001, "is_derived_condition": False},
-      {"group": "gemma4-e4b", "bound": "not_applicable", "p_value": 0.9, "is_derived_condition": False},
+      {"group": "gemma4-12b", "bound": "excluded", "p_value": 0.001, "is_derived_condition": False, "hypothesis_type": None},
+      {"group": "gemma4-12b", "bound": "best_case", "p_value": 0.001, "is_derived_condition": False, "hypothesis_type": None},
+      {"group": "gemma4-12b", "bound": "worst_case", "p_value": 0.001, "is_derived_condition": False, "hypothesis_type": None},
+      {"group": "pooled across all models", "bound": "excluded", "p_value": 0.001, "is_derived_condition": False, "hypothesis_type": None},
+      {"group": "gemma4-e4b", "bound": "not_applicable", "p_value": 0.9, "is_derived_condition": False, "hypothesis_type": None},
   ]
   cs._apply_global_bh(records, q=0.05)
   by_key = {(r["group"], r["bound"]): r["bh_significant_global"] for r in records}
@@ -402,8 +404,8 @@ def test_apply_global_bh_excludes_derived_condition_rows():
   the same multiple-comparison family as the independent conditions --
   it's mechanically correlated with them, not a fifth independent test."""
   records = [
-      {"group": "gemma4-12b", "bound": "excluded", "p_value": 0.001, "is_derived_condition": False},
-      {"group": "gemma4-12b", "bound": "excluded", "p_value": 0.001, "is_derived_condition": True},
+      {"group": "gemma4-12b", "bound": "excluded", "p_value": 0.001, "is_derived_condition": False, "hypothesis_type": None},
+      {"group": "gemma4-12b", "bound": "excluded", "p_value": 0.001, "is_derived_condition": True, "hypothesis_type": None},
   ]
   cs._apply_global_bh(records, q=0.05)
   assert records[0]["bh_significant_global"] is True
@@ -424,8 +426,150 @@ def test_global_bh_can_be_stricter_than_per_family_bh():
 
   p_values = [0.01, 0.02] + [0.5 + 0.02 * i for i in range(18)]
   records = [
-      {"group": f"model_{i}", "bound": "excluded", "p_value": p, "is_derived_condition": False}
+      {"group": f"model_{i}", "bound": "excluded", "p_value": p, "is_derived_condition": False, "hypothesis_type": None}
       for i, p in enumerate(p_values)
+  ]
+  cs._apply_global_bh(records, q=0.05)
+  assert records[0]["bh_significant_global"] is False
+  assert records[1]["bh_significant_global"] is False
+
+
+# --- 1.4.1: --filter -------------------------------------------------------
+
+
+def test_apply_filter_no_expression_returns_frame_unchanged():
+  frame = pd.DataFrame({"model": ["a", "b"]})
+  assert cs._apply_filter(frame, None) is frame
+  assert cs._apply_filter(frame, "") is frame
+
+
+def test_apply_filter_matches_manual_pre_filtering():
+  """The whole point of extracting `--filter` into `_apply_filter`: a
+  `--filter`'d run and manually pre-filtering the frame before handing it
+  to the rest of the pipeline must be provably the same operation, not two
+  routes that happen to usually agree."""
+  frame = pd.DataFrame({
+      "model": ["gemma4-12b", "gemma4-12b", "qwen3-8b"],
+      "exact": [1.0, 0.0, 1.0],
+  })
+  via_filter = cs._apply_filter(frame, "model == 'gemma4-12b'")
+  manual = frame[frame["model"] == "gemma4-12b"]
+  pd.testing.assert_frame_equal(via_filter, manual)
+
+
+def test_apply_filter_can_match_nothing():
+  frame = pd.DataFrame({"model": ["a", "b"]})
+  assert cs._apply_filter(frame, "model == 'nonexistent'").empty
+
+
+# --- 1.4.2: --confirmatory-config -------------------------------------------
+
+
+def test_load_confirmatory_config_none_path_returns_none():
+  assert cs._load_confirmatory_config(None) is None
+  assert cs._load_confirmatory_config("") is None
+
+
+def test_load_confirmatory_config_parses_arm_and_metric_defaults(tmp_path):
+  config = tmp_path / "confirmatory.json"
+  config.write_text(json.dumps({"confirmatory": [
+      {"model": "gemma4-12b", "condition": "degree"},
+      {"model": "qwen3-8b", "condition": "filler", "metric": "mae"},
+      {"model": "pooled across all models", "condition": "all", "arm": "thinking_arm"},
+  ]}))
+  hypotheses = cs._load_confirmatory_config(str(config))
+  assert hypotheses == {
+      ("*", "gemma4-12b", "degree", "exact"),
+      ("*", "qwen3-8b", "filler", "mae"),
+      ("thinking_arm", "pooled across all models", "all", "exact"),
+  }
+
+
+def test_hypothesis_type_none_when_no_config():
+  assert cs._hypothesis_type(None, "main_sweep", "gemma4-12b", "degree", "exact") is None
+
+
+def test_hypothesis_type_confirmatory_exact_match():
+  confirmatory = {("main_sweep", "gemma4-12b", "degree", "exact")}
+  assert cs._hypothesis_type(
+      confirmatory, "main_sweep", "gemma4-12b", "degree", "exact"
+  ) == "confirmatory"
+
+
+def test_hypothesis_type_confirmatory_wildcard_arm_match():
+  confirmatory = {("*", "gemma4-12b", "degree", "exact")}
+  assert cs._hypothesis_type(
+      confirmatory, "thinking_arm", "gemma4-12b", "degree", "exact"
+  ) == "confirmatory"
+
+
+def test_hypothesis_type_exploratory_when_config_present_but_cell_not_listed():
+  confirmatory = {("main_sweep", "gemma4-12b", "degree", "exact")}
+  assert cs._hypothesis_type(
+      confirmatory, "main_sweep", "gemma4-12b", "filler", "exact"
+  ) == "exploratory"
+
+
+def test_apply_global_bh_corrects_confirmatory_and_exploratory_separately():
+  """The core claim 1.4.2 exists for: a p-value that would NOT survive
+  pooled with a large exploratory family can survive alone in a small
+  confirmatory family, and vice versa -- mirrors
+  `test_global_bh_can_be_stricter_than_per_family_bh`'s demonstration, but
+  for `hypothesis_type` grouping instead of arm/bound grouping.
+  """
+  # Two confirmatory cells with a real, small p-value -- survives easily
+  # in a 2-item family.
+  confirmatory_records = [
+      {"group": f"confirmatory_{i}", "bound": "excluded", "p_value": 0.01,
+       "is_derived_condition": False, "hypothesis_type": "confirmatory"}
+      for i in range(2)
+  ]
+  # 18 exploratory cells, mostly null p-values -- the same 0.01 p-value
+  # would NOT survive BH if pooled into this larger, mostly-null family
+  # (see test_global_bh_can_be_stricter_than_per_family_bh's demonstration
+  # of the same phenomenon), but these rows' own actual p-values here are
+  # unrelated to the confirmatory ones.
+  exploratory_records = [
+      {"group": f"exploratory_{i}", "bound": "excluded", "p_value": 0.5 + 0.02 * i,
+       "is_derived_condition": False, "hypothesis_type": "exploratory"}
+      for i in range(18)
+  ]
+  records = confirmatory_records + exploratory_records
+  cs._apply_global_bh(records, q=0.05)
+  assert all(r["bh_significant_global"] is True for r in confirmatory_records)
+  assert all(r["bh_significant_global"] is False for r in exploratory_records)
+
+
+def test_apply_global_bh_pooling_would_have_hidden_the_confirmatory_signal():
+  """Companion to the test above: prove the separate-family correction
+  isn't a no-op by showing what happens WITHOUT it -- pooling the same
+  p-values into one family (hypothesis_type stripped) fails to reject the
+  confirmatory cells, the exact failure mode 1.4.2 exists to prevent."""
+  confirmatory_records = [
+      {"group": f"confirmatory_{i}", "bound": "excluded", "p_value": 0.01,
+       "is_derived_condition": False, "hypothesis_type": "confirmatory"}
+      for i in range(2)
+  ]
+  exploratory_records = [
+      {"group": f"exploratory_{i}", "bound": "excluded", "p_value": 0.5 + 0.02 * i,
+       "is_derived_condition": False, "hypothesis_type": "exploratory"}
+      for i in range(18)
+  ]
+  pooled = [dict(r, hypothesis_type=None) for r in confirmatory_records + exploratory_records]
+  cs._apply_global_bh(pooled, q=0.05)
+  pooled_confirmatory = pooled[:2]
+  assert not all(r["bh_significant_global"] for r in pooled_confirmatory)
+
+
+def test_apply_global_bh_still_one_family_when_no_config_used():
+  """Backward compatibility: every record's `hypothesis_type` is `None`
+  when `--confirmatory-config` was never given (see `_hypothesis_type`),
+  so `by_hypothesis_type` in `_apply_global_bh` has exactly one group and
+  behaves exactly as it did before 1.4.2 existed."""
+  records = [
+      {"group": f"model_{i}", "bound": "excluded", "p_value": p,
+       "is_derived_condition": False, "hypothesis_type": None}
+      for i, p in enumerate([0.01, 0.02] + [0.5 + 0.02 * i for i in range(18)])
   ]
   cs._apply_global_bh(records, q=0.05)
   assert records[0]["bh_significant_global"] is False
@@ -608,6 +752,50 @@ def test_task_delta_range_surfaces_heterogeneity_a_pooled_delta_hides():
   assert row["task_delta_max"] == pytest.approx(1.0)
 
 
+# --- 1.3.3: MDE-on-by-default resolution ------------------------------------
+
+
+def test_resolve_mde_settings_default_is_on_and_fast():
+  resolved = cs._resolve_mde_settings(
+      mde=False, no_mde=False, mde_replicates=None, mde_n_perm=None, mde_n_steps=None,
+  )
+  assert resolved == {
+      "mde": True, "mde_replicates": 50, "mde_n_perm": 200, "mde_n_steps": 5,
+  }
+
+
+def test_resolve_mde_settings_mde_flag_upgrades_to_full_precision():
+  resolved = cs._resolve_mde_settings(
+      mde=True, no_mde=False, mde_replicates=None, mde_n_perm=None, mde_n_steps=None,
+  )
+  assert resolved == {
+      "mde": True, "mde_replicates": 200, "mde_n_perm": 500, "mde_n_steps": 8,
+  }
+
+
+def test_resolve_mde_settings_no_mde_disables_regardless_of_preset():
+  resolved = cs._resolve_mde_settings(
+      mde=False, no_mde=True, mde_replicates=None, mde_n_perm=None, mde_n_steps=None,
+  )
+  assert resolved["mde"] is False
+
+
+def test_resolve_mde_settings_explicit_values_override_either_preset():
+  resolved = cs._resolve_mde_settings(
+      mde=True, no_mde=False, mde_replicates=999, mde_n_perm=888, mde_n_steps=7,
+  )
+  assert resolved == {
+      "mde": True, "mde_replicates": 999, "mde_n_perm": 888, "mde_n_steps": 7,
+  }
+  # And the same explicit values survive on the fast (non-full-precision)
+  # path too -- an override always wins over both presets, not just the
+  # full-precision one.
+  resolved_fast = cs._resolve_mde_settings(
+      mde=False, no_mde=False, mde_replicates=999, mde_n_perm=888, mde_n_steps=7,
+  )
+  assert resolved_fast == resolved
+
+
 # --- MDE wiring ----------------------------------------------------------
 
 
@@ -702,6 +890,12 @@ def test_mde_large_effect_converges_to_a_small_delta():
   # made it converge to ~0.001) and not near 1.0 either.
   assert 0.05 < mde["delta"] < 0.6
   assert mde["realized_diff"] <= mde["delta"] + 1e-9
+  # `direction` defaults to "both" -- a mid-range (~50%) control has real
+  # headroom in both directions, so the negative search should converge
+  # too, not report "exceeds 1.0".
+  assert mde["delta_negative"] is not None
+  assert -0.6 < mde["delta_negative"] < -0.05
+  assert mde["realized_diff_negative"] >= mde["delta_negative"] - 1e-9
 
 
 def test_mde_near_ceiling_base_rate_needs_a_larger_delta():
@@ -739,12 +933,72 @@ def test_mde_near_ceiling_base_rate_needs_a_larger_delta():
     assert mde_ceiling["delta"] > mde_mid["delta"]
 
 
+def test_mde_bidirectional_near_ceiling_control_is_asymmetric():
+  """The core claim 1.3.1 exists for: a near-ceiling control has almost no
+  room to *improve* (positive MDE should be unreachable, "exceeds 1.0") but
+  plenty of room to get *worse* (negative MDE should converge to a real,
+  achievable value) -- the two directions must not be read as symmetric
+  just because they share one `initial_hi` magnitude.
+  """
+  n = 60
+  rng = random.Random(42)
+  control = [1.0 if rng.random() < 0.95 else 0.0 for _ in range(n)]
+  treatment = list(control)  # observed effect is irrelevant to MDE itself
+  cluster_ids = list(range(n))
+
+  mde = significance.minimum_detectable_effect_clustered(
+      control, treatment, cluster_ids, initial_hi=0.1,
+      n_replicates=50, n_perm=100, seed=42,
+  )
+  assert mde["delta"] is None
+  assert mde["note"] == "MDE exceeds 1.0 at this power target"
+  assert mde["delta_negative"] is not None
+  assert mde["delta_negative"] < -0.05
+  assert mde["note_negative"] is None
+
+
+def test_mde_direction_positive_matches_default_both():
+  """Regression pin: `direction="both"` (the default) must return the
+  exact same positive-direction `delta`/`realized_diff` a `direction=
+  "positive"`-only call does at the same seed -- the positive search runs
+  first and draws from `rng` in the same order either way, so appending a
+  negative-direction search afterward must not perturb it."""
+  n = 50
+  rng = random.Random(7)
+  control = [1.0 if rng.random() < 0.5 else 0.0 for _ in range(n)]
+  treatment = [1.0 if rng.random() < 0.8 else 0.0 for _ in range(n)]
+  cluster_ids = list(range(n))
+  kwargs = dict(initial_hi=0.1, n_replicates=50, n_perm=100, seed=7)
+
+  both = significance.minimum_detectable_effect_clustered(
+      control, treatment, cluster_ids, direction="both", **kwargs
+  )
+  positive_only = significance.minimum_detectable_effect_clustered(
+      control, treatment, cluster_ids, direction="positive", **kwargs
+  )
+  assert both["delta"] == positive_only["delta"]
+  assert both["realized_diff"] == positive_only["realized_diff"]
+  assert both["note"] == positive_only["note"]
+  # direction="positive" alone must not compute the negative side at all.
+  assert positive_only["delta_negative"] is None
+  assert positive_only["realized_diff_negative"] is None
+
+
+def test_mde_unknown_direction_raises():
+  with pytest.raises(ValueError, match="direction"):
+    significance.minimum_detectable_effect_clustered(
+        [1.0], [1.0], [0], initial_hi=0.1, direction="sideways"
+    )
+
+
 def test_mde_no_pairs_returns_none_with_a_note():
   mde = significance.minimum_detectable_effect_clustered(
       [], [], [], initial_hi=0.1
   )
   assert mde["delta"] is None
   assert mde["note"] is not None
+  assert mde["delta_negative"] is None
+  assert mde["note_negative"] is not None
 
 
 # --- --metric mae ------------------------------------------------------------
@@ -870,12 +1124,12 @@ def test_apply_global_bh_pools_exact_and_mae_into_one_family():
   share one multiplicity budget, not two separate ones."""
   exact_records = [
       {"group": f"exact_{i}", "bound": "excluded", "p_value": 0.5 + 0.01 * i,
-       "is_derived_condition": False, "metric": "exact"}
+       "is_derived_condition": False, "metric": "exact", "hypothesis_type": None}
       for i in range(10)
   ]
   mae_records = [
       {"group": f"mae_{i}", "bound": "excluded", "p_value": 0.001,
-       "is_derived_condition": False, "metric": "mae"}
+       "is_derived_condition": False, "metric": "mae", "hypothesis_type": None}
       for i in range(2)
   ]
   records = exact_records + mae_records
