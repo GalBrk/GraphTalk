@@ -625,3 +625,118 @@ repo. Scored separately from the integer rows and never pooled with them.
 Total non-terminating rows is now **316**, not the 350 previously reported: 271 from
 the ground-truth file for rows not regenerated, plus 45 recorded directly. The drop
 is concentrated in `filler`, for the reason given above.
+
+## Missing instances skew toward larger graphs, and it's the same two tasks
+
+`scripts/characterize_non_termination.py` re-derives, from the `excluded` bound's
+own pairing join, exactly which `(model, instance_id)` clusters contribute zero
+surviving pairs (`n_instances_missing` in `analysis/significance_report.csv`) --
+49 across the whole main sweep. They are **not** spread evenly: 43 are `edge_count`,
+6 are `cycle_check`, and every other task has zero. Their mean graph size is **16.9
+nodes** against **12.8** for the corpus as a whole -- missingness concentrates on
+the larger, harder end of the size range, on exactly the two tasks that require
+exhaustive per-edge or per-node reasoning (counting every edge; walking the whole
+graph for a cycle). This is a mild selection-bias risk `analysis/significance_report.csv`'s
+`n_instances_missing` column makes visible but can't correct: the `excluded` bound's
+main-sweep accuracy numbers are drawn from a corpus slightly biased toward smaller/
+easier `edge_count`/`cycle_check` instances than the full 180.
+
+## Why `gemma4-e4b` truncates more: frequency, not length, and the same two tasks again
+
+Main-sweep non-termination rate by model: `gemma4-12b` 2.7%, `gemma4-e4b` **9.3%**,
+`qwen3-14b` 0.8%, `qwen3-8b` 1.9%. The obvious guess -- that `gemma4-e4b` just writes
+longer before getting cut off -- is wrong: its mean length on non-terminating rows
+(2,475 chars) is in the same range as the other three models' (1,798-2,719). It
+truncates about as *late* as everyone else, just far more *often*.
+
+`edge_count` (150 of 235) and `cycle_check` (77 of 235) account for 97% of
+`gemma4-e4b`'s non-terminating rows -- the identical two tasks driving the missing-
+instances finding above, and 201 of 235 are in `zero_cot` (the obsolete, half-budget
+style), consistent with "Non-termination is not only a thinking-arm problem" above.
+
+A stratified read of 9 raw `gemma4-e4b` non-terminating responses (in
+`analysis/non_termination_sample.csv`) shows a consistent pattern on both tasks:
+exhaustive, node-by-node or edge-by-edge manual re-verification rather than a
+direct computation. On `edge_count`, it re-derives the adjacency list edge by edge
+with running "already counted" bookkeeping instead of summing degrees and dividing
+by two. On `cycle_check`, it narrates a full manual DFS, checking every neighbor of
+every node against the current stack. Both scale with graph size in a way a more
+direct method wouldn't -- consistent with missing instances skewing larger above.
+`edge_existence`'s adjacency-list contradiction-checking (the `filler` primer
+mechanism from "Non-termination responds to the primer") shows the same
+exhaustive-verification instinct on a third task, at a much lower rate (5 rows)
+since `edge_existence` only requires checking one pair, not all of them. This reads
+as `gemma4-e4b` defaulting into exhaustive self-verification on tasks whose
+direct-computation shortcut it doesn't reliably take, not a token-budget or
+formatting problem -- a generation-behavior question, not a scoring-pipeline one,
+and out of scope for anything `check_significance.py` can fix.
+
+`edge_count`'s fragility is not unique to `gemma4-e4b`, only most visible there
+as non-termination. `check_significance.py --metric mae` (`analysis/README.md`,
+"The `mae` metric mode") scores mean absolute error instead of exact-match on
+the three integer tasks, and finds `edge_count` carrying essentially all of
+that signal too: `filler` and `rwse` significantly widen `qwen3-14b`'s and
+`qwen3-8b`'s `edge_count` errors, in cells where exact-match accuracy shows
+no effect at all -- the same task where a bad primer's damage tends to land,
+whether it surfaces as never finishing (`gemma4-e4b`) or as a wrong answer
+landing further from correct (`qwen3-14b`, `qwen3-8b`). This `mae` result
+pools `zero_shot` and `zero_cot`, like everything else in this section --
+see "Most primer findings depend on the retired `zero_cot` style" below for
+how much of it survives on `zero_shot` alone (most of it does not).
+
+## The `filler` instrument confound is reduced, not fully closed
+
+`non_terminating_source` (`generator` = `scripts/run_sweep.py`'s own recorded
+`hit_cap`; `retokenized` = `scripts/backfill_hit_cap.py`'s independent audit, see
+"Non-termination is not only a thinking-arm problem" above) splits roughly
+1:8 (`generator`:`retokenized`) for every condition **except** `filler`, which
+splits roughly 2:1 the other way. Both instruments are hit_cap-based now -- neither
+is the old, unreliable `ground_truth_file` fallback -- so this is no longer the
+comparability problem it was when `filler` and the other six conditions were
+measured by genuinely different routes. But `filler`'s rows come overwhelmingly
+from the 2026-08-29 prompt-rewording re-run (see above), which hasn't been through
+the same retokenization audit as the other six conditions' rows have. Not urgent --
+both instruments agree at 100% where they've both been checked (see above) -- but
+worth knowing before treating `filler`'s non-termination numbers as measured
+identically to the rest of the table.
+
+## Most primer findings depend on the retired `zero_cot` style
+
+`scripts/check_significance.py`'s main-sweep tests have pooled `zero_shot` and
+`zero_cot` together throughout this project. Re-scoped to one style at a time
+(`analysis/README.md`, "What holds up without `zero_cot`"): **0 of 24
+`zero_shot`-only accuracy cells are significant, against 7 of 24 for
+`zero_cot`-only.** Most of the pooled table's primer-helps/primer-hurts
+findings trace back to the retired, half-token-budget style
+(`graphtalk/prompts.py`: *"`zero_cot` is retired. Do not generate new rows in
+it"*), not to the live prompt format. The same pattern holds for the `mae`
+metric: 1 of 72 `zero_shot`-only cells (not surviving whole-table correction)
+against 6 of 72 for `zero_cot`-only.
+
+Checking effect size rather than only significance, this is not "`zero_cot`
+invents fake effects" -- most `zero_shot`-only deltas share the pooled/`zero_cot`
+numbers' sign, just smaller, at roughly half the sample size
+(`n_clusters≈170-180` vs `≈350` pooled). A few cells (`gemma4-e4b`/`filler`,
+`qwen3-8b`/`all`) show a `zero_shot` delta near zero against a large `zero_cot`
+delta, closer to genuinely `zero_cot`-specific; one cell
+(`qwen3-8b`/`filler`) runs the other way, with its only signal in `zero_shot`.
+So most of the pooled accuracy story is *underpowered and unconfirmed* on live
+data, not *disproven*.
+
+A simulated minimum-detectable-effect check (same method as "A third pass",
+`analysis/README.md`) confirms this is not fixable by running more graphs of
+the same shape. Of the 24 `zero_shot`-only cells: 12 never reach 80% power
+even at the maximum simulated effect (the same near-ceiling problem as
+`gemma4-12b`/`gemma4-e4b` elsewhere in this document), 2 have an observed
+effect of exactly zero, and the 10 that do converge all need far more than
+the published split's 500-graph cap (~2,232 to ~49,207). The thinking arm's
+own accuracy -- unaffected by `zero_cot`, since it never used that style --
+fails to converge on all 24 cells too. No amount of additional graphs from
+the published GraphQA split resolves the accuracy question on live-format
+data, for either arm.
+
+The one finding that survives intact is the thinking arm's non-termination
+result ("Non-termination responds to the primer" above) -- a reliability
+effect, not an accuracy one. Read every accuracy claim elsewhere in this
+document and in `analysis/README.md` as real in the pooled data but not yet
+confirmed on `zero_shot` alone.

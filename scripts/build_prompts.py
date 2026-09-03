@@ -14,9 +14,12 @@ styles, differing only in the primer. `instance_id` is the pairing key.
 """
 
 import argparse
+import collections
 import json
 import os
+import random
 
+from graphtalk import diverse_corpus
 from graphtalk import graphqa
 from graphtalk import node_naming
 from graphtalk import primers
@@ -92,6 +95,44 @@ def build(count: int, conditions, styles, split: str, cache: str,
   return records
 
 
+def build_diverse(count: int, conditions, styles, k_min: int, k_max: int,
+                   seed: int = 1234) -> list[dict]:
+  """Like `build`, but sources graphs from a balanced multi-algorithm pool
+  (`diverse_corpus`) instead of the published (ER-only) zero_shot_test split.
+
+  Builds one pool of `count` graphs and reuses it across every task, unlike
+  `build`, which fetches a separately-shuffled `count` rows per task -- sharing
+  the pool is what lets a later analysis compare per-algorithm success rate
+  against a consistent graph set across tasks.
+  """
+  pool = diverse_corpus.build_pool(count, seed=seed)
+  records = []
+  for task in scoring.TASKS:
+    rng = random.Random(seed)
+    seen = collections.Counter()
+    for algorithm, graph in pool:
+      index = seen[algorithm]
+      seen[algorithm] += 1
+      row = diverse_corpus.make_row(graph, task, rng)
+      for condition in conditions:
+        for style in styles:
+          records.append({
+              "instance_id": f"{task}/diverse/{algorithm}/{index}",
+              "task": task,
+              "condition": condition,
+              "style": style,
+              "prompt": prompts.build_prompt(
+                  graph, condition, row["task_description"],
+                  style=style, k_min=k_min, k_max=k_max,
+              ),
+              "gold": row["gold"],
+              "nodes": graph.number_of_nodes(),
+              "edges": graph.number_of_edges(),
+              "algorithm": algorithm,
+          })
+  return records
+
+
 def build_named(count: int, conditions, styles, split: str, cache: str,
                  k_min: int, k_max: int, node_naming_scheme: str) -> list[dict]:
   """Like `build`, but every prompt uses `node_naming_scheme`'s node names.
@@ -139,7 +180,9 @@ def build_named(count: int, conditions, styles, split: str, cache: str,
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--count", type=int, default=30,
-                      help="rows per task; the proposal's starting budget is 30")
+                      help="rows per task for --graph-source published; total "
+                           "graphs in the shared pool for --graph-source diverse "
+                           "(the proposal's starting budget is 30)")
   parser.add_argument("--split", default=SPLIT)
   parser.add_argument("--out", default="prompts.jsonl")
   parser.add_argument("--cache", default=".cache/sweep_rows")
@@ -148,9 +191,23 @@ def main() -> None:
   parser.add_argument("--k-min", type=int, default=2)
   parser.add_argument("--k-max", type=int, default=3)
   parser.add_argument("--node-naming", default="integer", choices=node_naming.NAMINGS)
+  parser.add_argument("--graph-source", default="published",
+                      choices=["published", "diverse"],
+                      help="published: fetch from the HF zero_shot_test split "
+                           "(ER only, today's default, unchanged). diverse: "
+                           "generate a pool balanced across er/ba/sbm/sfn/"
+                           "complete/star/path locally (graphtalk.diverse_corpus). "
+                           "Only supported with --node-naming integer.")
   args = parser.parse_args()
 
-  if args.node_naming == "integer":
+  if args.graph_source == "diverse":
+    if args.node_naming != "integer":
+      raise NotImplementedError(
+          "--graph-source diverse only supports --node-naming integer for now"
+      )
+    records = build_diverse(args.count, args.conditions, args.styles,
+                            args.k_min, args.k_max)
+  elif args.node_naming == "integer":
     records = build(args.count, args.conditions, args.styles, args.split,
                     args.cache, args.k_min, args.k_max)
   else:

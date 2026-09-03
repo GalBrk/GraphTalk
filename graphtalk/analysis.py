@@ -244,6 +244,20 @@ def build_frame(
         record.get("token_count_source", "generator")
         if recorded_cap is not None else "ground_truth_file"
     )
+    # The first-stated value, mirroring `predicted` (the last-stated value
+    # `extract_answer` already computed upstream) -- compared against it to
+    # tell whether a non-terminating response settled on one answer and
+    # looped (the two agree) or was still drifting when cut off. `None` on
+    # every row where `non_terminating` is False: the distinction only means
+    # anything for a response that never reached a terminated conclusion.
+    predicted_first = scoring.extract_answer_first(
+        record["response"], record["task"]
+    )
+    looped_on_correct_answer = (
+        predicted_first is not None
+        and predicted_first == record["predicted"]
+        and score["exact"] > 0.5
+    ) if non_terminating else None
     rows.append({
         "instance_id": record["instance_id"],
         "task": record["task"],
@@ -255,6 +269,8 @@ def build_frame(
         "is_think": is_think,
         "node_naming": record.get("node_naming", "integer"),
         "predicted": record["predicted"],
+        "predicted_first": predicted_first,
+        "looped_on_correct_answer": looped_on_correct_answer,
         "parsed": score["parsed"],
         "exact": score["exact"],
         "primary": score["primary"],
