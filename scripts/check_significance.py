@@ -33,43 +33,59 @@ errors on that graph correlate as strongly as one model's own repeated
 answers to it do. They may not, so only same-model rows sharing an instance
 are treated as correlated.
 
-Main-sweep `exact` rows are reported three times per condition, tagged by
-`bound`, since a non-terminating response's true (untruncated) outcome is
-unknown:
+Main-sweep `exact` rows: one row per condition, `bound="excluded"` (kept as
+the literal value for schema stability, even though nothing is excluded
+any more -- see below). A non-terminating response's `exact`/`primary` are
+forced to 0.0 in `graphtalk.analysis.build_frame` itself, unconditionally
+-- never trusting whatever the truncated-text answer-extractor happened to
+land on, and never dropped from the pairing either. This replaced an
+earlier three-way `excluded`/`best_case`/`worst_case` bound system that
+bracketed the uncertainty about a truncated response's true outcome
+instead of resolving it; that bracket is gone because there is no longer
+any uncertainty left to bracket -- every non-terminating row is now
+scored, deterministically, as wrong, by design, everywhere downstream.
+`graphtalk.analysis.build_frame`'s `truncated_but_correct` column is the
+one place that discarded information survives: `True` when the forced
+row's raw, pre-override `exact` was actually a hit.
 
-- `excluded` drops `non_terminating` responses before pairing -- a
-  truncated response's `exact` score reflects abandoned working, not
-  reasoning quality.
-- `best_case`/`worst_case` keep every row, but override a non-terminating
-  response's `exact` score to 1.0/0.0 rather than trusting whatever the
-  truncated-text answer-extractor happened to land on -- a real bracket on
-  the unknown true outcome, not a second point estimate.
+Forcing every non-terminating row to wrong is not free of bias: non-
+termination itself responds to the primer condition (docs/sweep-
+findings.md), so a condition that induces more truncation will now
+mechanically look worse here in a way that partly reflects generation
+length rather than reasoning quality. This is the flip side of the old
+`excluded` bound's own bias (a condition that truncates on instances it
+would have gotten wrong anyway looked artificially *better* there) --
+resolved in the conservative direction rather than left open, per this
+project's own choice, not a claim that the bias has vanished.
+`n_forced_wrong_non_terminating` reports how many of a condition's rows
+were forced this way, so that bias stays visible rather than silent. The
+thinking arm's own `non_terminating` rows are a different question
+entirely -- the outcome being tested there, never forced or dropped, and
+`bound` is `not_applicable` for those rows (not the literal text `"n/a"`
+-- that string is one of pandas' default NA tokens, so `pd.read_csv`
+would silently turn it into `NaN` on every re-read, which is exactly the
+bug this sentinel avoids).
 
-Dropping non-terminating rows (`excluded`) is not free of bias either:
-non-termination itself responds to the primer condition
-(docs/sweep-findings.md), so a condition that happens to truncate on
-instances it would have gotten wrong anyway would look artificially better
-under `excluded` alone. Reporting the bracket alongside it makes that range
-visible instead of picking one estimate silently. `n_excluded_non_terminating`
-reports how many rows `excluded` dropped per condition (always 0 for
-`best_case`/`worst_case`, which drop nothing, only override). The thinking
-arm's own `non_terminating` rows are the outcome being tested there --
-never excluded or overridden, and `bound` is `not_applicable` for those
-rows (not the literal text `"n/a"` -- that string is one of pandas'
-default NA tokens, so `pd.read_csv` would silently turn it into `NaN` on
-every re-read, which is exactly the bug this sentinel avoids).
-
-`n_looped_on_correct_answer` and `low_power` are further diagnostics,
-populated only on `bound == "excluded"` main-sweep rows (blank elsewhere):
-the former counts non-terminating rows whose response settled on the
-correct answer before getting cut off rather than genuinely drifting (see
-`graphtalk.analysis.build_frame`'s `looped_on_correct_answer` column); the
-latter flags a row where the exclusion rate is high enough that a
-"not significant" result may mean "not enough clean data" rather than
-"no effect" (default threshold 15%, `--low-power-threshold`).
-`n_instances_missing` (every row, every bound) is the count of graph
-instances with zero surviving pairs -- computed from the data, not a
-hardcoded total, since the sweep's instance count changes with `--count`.
+`n_looped_on_correct_answer` and `high_non_termination_rate` are further
+diagnostics, populated only on `bound == "excluded"` main-sweep rows
+(blank elsewhere): the former counts non-terminating rows whose response
+settled on the correct answer before getting cut off rather than
+genuinely drifting (see `graphtalk.analysis.build_frame`'s
+`looped_on_correct_answer` column -- closely related to, but not the same
+computation as, `truncated_but_correct`, since one reads the *first*
+stated value and the other the score of the *last*; they usually agree).
+`high_non_termination_rate` flags a row where the forced-wrong share of
+its *pairs* (either side non-terminating, matching `_paired_values`'s own
+join -- not raw rows summed across both condition sides, which would
+double-count a pair with both sides non-terminating and isn't a fraction
+of `n_pairs`; see `_count_forced_wrong_pairs`) is high enough that its
+accuracy number should be read with real caution -- not "not enough clean
+data" (nothing is dropped any more), but "a meaningful part of what moved
+this number is truncation rate, not reasoning" (default threshold 15%,
+`--high-non-termination-threshold`).
+`n_instances_missing` (every row) is the count of graph instances with
+zero surviving pairs -- computed from the data, not a hardcoded total,
+since the sweep's instance count changes with `--count`.
 
 `bh_significant` corrects across the ~5 *independent* conditions within one
 `(arm, group, bound)` family (`all` gets its own `.../derived` family, see
@@ -78,8 +94,7 @@ tell the two families apart without parsing the `bh_family` string.
 `bh_significant_global` is a second, additional correction across every
 `excluded`/`not_applicable`-bound, non-derived row from the whole run
 (**now spanning both `--metric exact` and `--metric mae` in one pass** --
-see `--metric` below), excluding `best_case`/`worst_case` rows (a
-sensitivity bracket, not an independent hypothesis), excluding
+see `--metric` below), excluding
 `pooled across all models` rows in both arms (built from the same
 underlying pairs as their sibling per-model rows, so not an independent
 test either), and excluding derived-condition rows for the same reason as
@@ -93,17 +108,17 @@ one even if it were there":
 - `near_ceiling` -- the CONTROL condition's own mean `metric` is above
   `--near-ceiling-threshold` (default 95%) or below its complement (a
   floor, not just a ceiling -- e.g. `gemma4-e4b-think`'s 0% non-termination
-  baseline). Populated on `bound in ("excluded", "not_applicable")` rows
-  only; a
-  best_case/worst_case bracket forces non-terminating rows to fixed
-  extremes and would distort the read.
+  baseline). Now computed from every row, forced-wrong non-terminating
+  ones included -- a model whose apparent near-ceiling accuracy partly
+  depended on truncated rows being invisible will show a truer, slightly
+  lower rate here than before this refactor, which is a correct
+  consequence of no longer hiding them, not a regression.
 - `headroom` -- `min(control_mean, 1 - control_mean)`, the theoretical max
   fraction of rows that could still flip. Alongside `near_ceiling` and
-  `low_power`, this is what lets a reader tell "low_power *because of*
-  near-ceiling headroom" apart from "low_power despite real headroom left"
-  -- the two flags alone can't distinguish those, and on the current data
-  they happen to co-occur completely for one model. Same populated scope
-  as `near_ceiling`.
+  `high_non_termination_rate`, this is what lets a reader tell
+  "high_non_termination_rate *because of* near-ceiling headroom" apart
+  from "despite real headroom left" -- the two flags alone can't
+  distinguish those. Same populated scope as `near_ceiling`.
 - `task_delta_min`/`task_delta_max` -- per-task point-estimate deltas
   (`instance_id` already encodes its task as a `/`-prefix, e.g.
   `edge_count/27`, so no extra join is needed), purely descriptive, no new
@@ -135,8 +150,7 @@ one even if it were there":
   respective `mde_delta`/`mde_delta_negative` on a `near_ceiling` row,
   which is itself a second, independent confirmation that a ceiling effect
   is suppressing detectability there. Blank wherever not computed --
-  `bh_significant is True` (nothing to explain), a bracket row (not a
-  primary interpretive bound), or `--no-mde` was passed.
+  `bh_significant is True` (nothing to explain), or `--no-mde` was passed.
 
   PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
       --frame analysis/sweep_frame.csv
@@ -162,18 +176,33 @@ across all 6 tasks would conflate different quantities -- this mode's
 per-task split incidentally gives real per-task significance for these
 three tasks, unlike `exact`'s pooled-only view.
 
-Excludes `non_terminating` rows before pairing (same reasoning as the
-`exact` metric's `excluded` bound -- a truncated response's extracted
-number isn't a meaningful "how close" signal) and any row where
-`absolute_error` itself is undefined (`unparsed` responses). No
-`best_case`/`worst_case` bracket (unbounded metric, no principled "worst
-case" value the way 0/1 has), no `near_ceiling` (a 0-1-accuracy concept),
-no `task_delta_min`/`max` (redundant -- this mode doesn't pool across
-tasks to begin with). Reports `mae_delta = control_mae - treatment_mae`,
-not the raw `treatment - control` the underlying functions return --
-lower error is better, the opposite sign convention from `exact`'s
-"higher is better", so this flip keeps a positive number meaning "helped"
-in both modes.
+Non-terminating rows are **included**, matching the `exact` metric's own
+treatment -- but a truncated response's extracted number is not a
+meaningful "how close" signal any more than its extracted exact-match
+answer is (see `graphtalk.analysis.build_frame`'s reasoning for
+`exact`/`primary`), so its own `absolute_error`, real or missing, is never
+used. Instead `_mae_imputation_table` substitutes the **median
+`absolute_error` among genuinely-wrong (parsed, terminating) rows for the
+same task**, computed once from the whole frame -- a principled "typical
+wrong answer's error" stand-in, not a guess, and not the arbitrary
+worst-case constant the old `best_case`/`worst_case` bracket would have
+suggested (rejected for the same reason that bracket was retired for
+`exact`: it isn't grounded in this data). Median rather than mean, since a
+badly-wrong integer guess is heavy-tailed and a few large misses
+shouldn't dominate the "typical" value. `n_mae_imputed` reports how many
+of a cell's rows got this substitution.
+
+Genuinely-*unparsed*-but-terminated rows (a complete response that never
+stated a number) are unaffected by this refactor and remain excluded, via
+`absolute_error.notna()` -- out of scope for the non-terminating-row
+question this exists to answer.
+
+No `near_ceiling` (a 0-1-accuracy concept), no `task_delta_min`/`max`
+(redundant -- this mode doesn't pool across tasks to begin with). Reports
+`mae_delta = control_mae - treatment_mae`, not the raw `treatment -
+control` the underlying functions return -- lower error is better, the
+opposite sign convention from `exact`'s "higher is better", so this flip
+keeps a positive number meaning "helped" in both modes.
 
   PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
       --frame analysis/sweep_frame.csv --metric mae
@@ -218,7 +247,6 @@ from graphtalk import significance
 
 CONTROL = "none"
 _KEYS = ["model", "instance_id", "style", "node_naming"]
-_BRACKET_BOUNDS = ("best_case", "worst_case")
 _MAE_TASKS = ("node_count", "edge_count", "node_degree")
 
 
@@ -313,10 +341,11 @@ def _paired_values(frame: pd.DataFrame, condition: str, metric: str):
   return joined["control"].tolist(), joined["treatment"].tolist(), cluster_ids
 
 
-def _count_excluded_non_terminating(raw_frame: pd.DataFrame, condition: str) -> int:
-  """How many `condition`-or-`CONTROL` rows in `raw_frame` were dropped for
-  being `non_terminating` -- the size of the confound the `excluded` bound
-  removes, kept visible rather than silently disappearing."""
+def _count_forced_wrong_non_terminating(raw_frame: pd.DataFrame, condition: str) -> int:
+  """How many `condition`-or-`CONTROL` rows in `raw_frame` are
+  `non_terminating` -- the size of the confound `graphtalk.analysis
+  .build_frame` resolves by forcing these rows to score as wrong, kept
+  visible rather than silently absorbed into the pooled `delta`."""
   relevant = raw_frame[raw_frame["condition"].isin([CONTROL, condition])]
   return int((relevant["failure_type"] == "non_terminating").sum())
 
@@ -324,9 +353,45 @@ def _count_excluded_non_terminating(raw_frame: pd.DataFrame, condition: str) -> 
 def _count_looped_on_correct_answer(raw_frame: pd.DataFrame, condition: str) -> int:
   """How many of those same `non_terminating` rows settled on the correct
   answer before getting cut off, rather than genuinely drifting -- same
-  scope as `_count_excluded_non_terminating`, see its docstring."""
+  scope as `_count_forced_wrong_non_terminating`, see its docstring."""
   relevant = raw_frame[raw_frame["condition"].isin([CONTROL, condition])]
   return int((relevant["looped_on_correct_answer"] == True).sum())  # noqa: E712
+
+
+def _count_forced_wrong_pairs(frame: pd.DataFrame, condition: str) -> int:
+  """How many of `condition`'s *paired* rows (control-and-treatment both
+  present, same join `_paired_values` performs) are `non_terminating` on
+  either side -- the numerator `high_non_termination_rate` actually needs,
+  at the same granularity as its denominator (`n_pairs`).
+
+  `_count_forced_wrong_non_terminating` (the `n_forced_wrong_non_terminating`
+  diagnostic) counts raw rows summed across *both* condition sides
+  independently -- a pair where both sides are non-terminating counts
+  twice there, against a denominator (`n_pairs`) that counts it once, so
+  the resulting ratio isn't a true fraction of pairs (and could exceed 1.0
+  in the extreme). This function mirrors `_paired_values`'s own
+  `set_index(_KEYS)` inner join exactly, so its count is guaranteed to
+  match `n_pairs`' own unit -- one increment per pair, never per side.
+
+  Reads `failure_type == "non_terminating"`, not a separate
+  `non_terminating` boolean column -- `graphtalk.analysis.build_frame`
+  guarantees the two agree exactly (`_failure_type` returns
+  `"non_terminating"` if and only if that boolean is True), and every
+  other helper in this module (`_count_forced_wrong_non_terminating`,
+  `_count_looped_on_correct_answer`) already reads `failure_type` for the
+  same reason, so a hand-built frame that carries one but not the other
+  (every direct-`_report()`-call test fixture in `tests/test_significance
+  .py` predates the `non_terminating` column existing at all) still works.
+  """
+  control = frame[frame["condition"] == CONTROL].set_index(_KEYS)
+  treatment = frame[frame["condition"] == condition].set_index(_KEYS)
+  control_nt = control["failure_type"] == "non_terminating"
+  treatment_nt = treatment["failure_type"] == "non_terminating"
+  joined = pd.concat(
+      [control_nt.rename("control"), treatment_nt.rename("treatment")],
+      axis=1, join="inner",
+  )
+  return int((joined["control"] | joined["treatment"]).sum())
 
 
 def _task_delta_range(control, treatment, cluster_ids):
@@ -349,18 +414,6 @@ def _task_delta_range(control, treatment, cluster_ids):
   return min(task_means), max(task_means)
 
 
-def _bracket_frame(raw_frame: pd.DataFrame, value: float) -> pd.DataFrame:
-  """`raw_frame` with `exact` overridden to `value` on `non_terminating`
-  rows, every other row's actual observed value left untouched -- the
-  best_case (`value=1.0`) / worst_case (`value=0.0`) bracket: a
-  non-terminating response's true outcome is unknown, so this asks "what if
-  it had gone the best/worst possible way" instead of trusting the
-  truncated-text extractor's guess."""
-  frame = raw_frame.copy()
-  frame.loc[frame["failure_type"] == "non_terminating", "exact"] = value
-  return frame
-
-
 def _report(
     frame: pd.DataFrame, raw_frame: pd.DataFrame, metric: str, label: str,
     args, arm: str, records: list, bound: str = "not_applicable",
@@ -381,18 +434,17 @@ def _report(
   )
   near_ceiling = None
   headroom = None
-  if bound not in _BRACKET_BOUNDS:
-    control_mean = frame.loc[frame["condition"] == CONTROL, metric].mean()
-    if pd.notna(control_mean):
-      near_ceiling = bool(
-          control_mean > args.near_ceiling_threshold
-          or control_mean < 1 - args.near_ceiling_threshold
-      )
-      # The theoretical max fraction of rows that could still flip --
-      # `near_ceiling` alone can't say whether a `low_power` row is
-      # low_power *because* of that headroom limit or despite having real
-      # headroom left; this makes the two separable.
-      headroom = min(control_mean, 1 - control_mean)
+  control_mean = frame.loc[frame["condition"] == CONTROL, metric].mean()
+  if pd.notna(control_mean):
+    near_ceiling = bool(
+        control_mean > args.near_ceiling_threshold
+        or control_mean < 1 - args.near_ceiling_threshold
+    )
+    # The theoretical max fraction of rows that could still flip --
+    # `near_ceiling` alone can't say whether a `high_non_termination_rate`
+    # row is that *because* of that headroom limit or despite having real
+    # headroom left; this makes the two separable.
+    headroom = min(control_mean, 1 - control_mean)
   for condition in conditions:
     control, treatment, cluster_ids = _paired_values(frame, condition, metric)
     if not control:
@@ -414,33 +466,35 @@ def _report(
     task_delta_min, task_delta_max = _task_delta_range(
         control, treatment, cluster_ids
     )
-    if bound in _BRACKET_BOUNDS:
-      # Nothing was excluded here -- non_terminating rows were overridden,
-      # not dropped -- so both diagnostics are inapplicable, not just zero.
-      n_excluded, n_looped, low_power = 0, None, None
+    n_forced_wrong = _count_forced_wrong_non_terminating(raw_frame, condition)
+    if bound == "excluded":
+      n_looped = _count_looped_on_correct_answer(raw_frame, condition)
+      # Pair-level count, not `n_forced_wrong` -- that sums non-terminating
+      # rows across both condition sides independently (double-counting a
+      # pair where both sides are non-terminating), which isn't a true
+      # fraction of `n_pairs`; see `_count_forced_wrong_pairs`'s docstring.
+      n_forced_wrong_pairs = _count_forced_wrong_pairs(frame, condition)
+      denom = perm["n_pairs"]  # every row is paired now; nothing is dropped
+      high_non_termination_rate = (
+          (n_forced_wrong_pairs / denom) > args.high_non_termination_threshold
+          if denom else False
+      )
     else:
-      n_excluded = _count_excluded_non_terminating(raw_frame, condition)
-      if bound == "excluded":
-        n_looped = _count_looped_on_correct_answer(raw_frame, condition)
-        denom = perm["n_pairs"] + n_excluded
-        low_power = (
-            (n_excluded / denom) > args.low_power_threshold if denom else False
-        )
-      else:
-        # Thinking arm (`bound == "not_applicable"`): `n_excluded` here is really the
-        # non-termination count itself, the outcome being tested, not a
-        # confound to flag power against -- so these stay inapplicable too.
-        n_looped, low_power = None, None
+      # Thinking arm (`bound == "not_applicable"`): `n_forced_wrong` here is
+      # really the non-termination count itself, the outcome being tested,
+      # not a confound to flag against -- so these stay inapplicable.
+      n_looped, high_non_termination_rate = None, None
     n_instances_missing = total_clusters_possible - perm["n_clusters"]
     rows.append((
-        condition, perm, boot, n_excluded, n_looped, low_power,
-        n_instances_missing, task_delta_min, task_delta_max,
-        control, treatment, cluster_ids, _is_derived_condition(condition),
+        condition, perm, boot, n_forced_wrong, n_looped,
+        high_non_termination_rate, n_instances_missing, task_delta_min,
+        task_delta_max, control, treatment, cluster_ids,
+        _is_derived_condition(condition),
     ))
 
   if not rows:
     return
-  mde_eligible = args.mde and bound not in _BRACKET_BOUNDS
+  mde_eligible = args.mde
   print(f"    {'condition':<12}{'n_clusters':>11}{'delta':>10}"
         f"{'95% CI':>22}{'p (perm)':>10}  BH-sig")
 
@@ -462,9 +516,10 @@ def _report(
     reject = significance.benjamini_hochberg(
         [row[1]["p_value"] for row in group_rows], q=args.q
     )
-    for (condition, perm, boot, n_excluded, n_looped, low_power, n_missing,
-         task_delta_min, task_delta_max, control, treatment, cluster_ids,
-         is_derived), sig in zip(group_rows, reject):
+    for (condition, perm, boot, n_forced_wrong, n_looped,
+         high_non_termination_rate, n_missing, task_delta_min, task_delta_max,
+         control, treatment, cluster_ids, is_derived), sig in zip(
+             group_rows, reject):
       ci = f"[{boot['ci_low']:+.3f}, {boot['ci_high']:+.3f}]"
       print(f"    {condition:<12}{perm['n_clusters']:>11}"
             f"{perm['observed_diff']:>+10.3f}{ci:>22}"
@@ -503,9 +558,9 @@ def _report(
           "n_pairs": perm["n_pairs"],
           "n_clusters": perm["n_clusters"],
           "n_instances_missing": n_missing,
-          "n_excluded_non_terminating": n_excluded,
+          "n_forced_wrong_non_terminating": n_forced_wrong,
           "n_looped_on_correct_answer": n_looped,
-          "low_power": low_power,
+          "high_non_termination_rate": high_non_termination_rate,
           "near_ceiling": near_ceiling,
           "headroom": headroom,
           "task_delta_min": task_delta_min,
@@ -529,14 +584,18 @@ def _report(
 def _apply_global_bh(records: list, q: float) -> None:
   """The whole-table BH pass, mutating `records` in place.
 
-  Eligible rows are every `bound not in _BRACKET_BOUNDS` row (excludes the
-  best_case/worst_case sensitivity bracket) whose `group` is not
-  `"pooled across all models"` (excludes a row built from the same
-  underlying pairs as its sibling per-model rows in the same arm -- not an
-  independent hypothesis) and whose condition is not derived (excludes
-  `all`, mechanically the union of degree/clustering/rwse -- see
-  `_is_derived_condition` -- also not an independent hypothesis). Called
-  once per `main()` run, over every record collected regardless of which
+  Eligible rows are every row whose `group` is not `"pooled across all
+  models"` (excludes a row built from the same underlying pairs as its
+  sibling per-model rows in the same arm -- not an independent hypothesis)
+  and whose condition is not derived (excludes `all`, mechanically the
+  union of degree/clustering/rwse -- see `_is_derived_condition` -- also
+  not an independent hypothesis). `bound` no longer needs its own
+  eligibility check here -- `_report` now only ever produces
+  `bound="excluded"` (main sweep) or `bound="not_applicable"` (thinking
+  arm) rows, both real, independently-interpretable results now that the
+  best_case/worst_case sensitivity bracket has been retired (see the
+  module docstring); there is no bracket row left to exclude. Called once
+  per `main()` run, over every record collected regardless of which
   metric produced it (`exact`, `non_terminating`, `mae`) -- exact and mae
   are two lenses on the same underlying (model, condition) hypotheses, so
   they share one multiplicity budget rather than two separate ones.
@@ -553,8 +612,7 @@ def _apply_global_bh(records: list, q: float) -> None:
   """
   eligible = [
       r for r in records
-      if r["bound"] not in _BRACKET_BOUNDS
-      and r["group"] != "pooled across all models"
+      if r["group"] != "pooled across all models"
       and not r["is_derived_condition"]
   ]
   by_hypothesis_type: dict = {}
@@ -570,16 +628,71 @@ def _apply_global_bh(records: list, q: float) -> None:
     r.setdefault("bh_significant_global", None)
 
 
-def _mae_eligible_frame(main_sweep_raw: pd.DataFrame) -> pd.DataFrame:
-  """Rows `--metric mae` can pair: one of `_MAE_TASKS`, `non_terminating`
-  excluded, and `absolute_error` actually defined (an `unparsed` row has
-  none) -- see the module docstring's `mae` mode section for why each of
-  these is excluded."""
-  return main_sweep_raw[
+def _mae_imputation_table(raw_frame: pd.DataFrame) -> dict[str, float]:
+  """Per-task median `absolute_error` among genuinely-wrong (parsed,
+  terminating) rows -- the value substituted for a non-terminating row's
+  own `absolute_error` in `_mae_eligible_frame`.
+
+  There is no trustworthy `absolute_error` to read directly off a
+  non-terminating row: an unparsed truncation has none at all, and a
+  parsed-but-truncated one carries the same "the abandoned text
+  coincidentally looks informative" risk `graphtalk.analysis.build_frame`
+  already rejects for `exact` -- so neither case uses the row's own value,
+  even when one exists. Median, not mean: a wrong integer guess's error is
+  heavy-tailed (a badly wrong `edge_count` guess can be off by dozens), and
+  the median is the "typical wrong answer", not one a few large misses can
+  dominate. Computed once from `raw_frame` as a whole, not per (model,
+  condition) -- those cells are often under 30 wrong rows, too few for a
+  stable estimate, and there is no evidence a condition changes the *size*
+  of a wrong guess's error, only whether the model is right at all.
+
+  Raises if any `_MAE_TASKS` task has zero genuinely-wrong rows to impute
+  from (e.g. an aggressive `--filter`, or a hypothetical future model
+  that's simply never wrong on some task). `pandas.Series.median()` on an
+  empty selection is silently `NaN`, not an error -- left unguarded, that
+  `NaN` would propagate into every non-terminating row's `absolute_error`
+  for that task and corrupt the permutation test (a `NaN` participates in
+  `sum()`/`mean()` calls as `NaN`, poisoning the whole cell) with nothing
+  visibly wrong until someone notices garbage output far downstream.
+  Raising here instead is loud and immediate, at the one place the actual
+  cause is knowable.
+  """
+  wrong = raw_frame[raw_frame["failure_type"] == "wrong"]
+  table = {}
+  for task in _MAE_TASKS:
+    values = wrong.loc[wrong["task"] == task, "absolute_error"]
+    if values.empty:
+      raise ValueError(
+          f"no wrong rows for task {task!r} to impute a non-terminating "
+          f"row's absolute_error from -- see _mae_imputation_table's "
+          f"docstring"
+      )
+    table[task] = values.median()
+  return table
+
+
+def _mae_eligible_frame(
+    main_sweep_raw: pd.DataFrame, imputation_table: dict[str, float],
+) -> pd.DataFrame:
+  """Rows `--metric mae` can pair: one of `_MAE_TASKS`, and either a real
+  `absolute_error` (a terminated, parsed row) or `non_terminating` (in
+  which case `absolute_error` is overwritten with `imputation_table`'s
+  value for that task -- see `_mae_imputation_table`). A genuinely
+  *unparsed*-but-terminated row (a complete response that never stated a
+  number) is excluded exactly as before this refactor -- out of scope for
+  the non-terminating-row question `_mae_imputation_table` exists to
+  answer.
+  """
+  eligible = main_sweep_raw[
       main_sweep_raw["task"].isin(_MAE_TASKS)
-      & (main_sweep_raw["failure_type"] != "non_terminating")
-      & main_sweep_raw["absolute_error"].notna()
-  ]
+      & (main_sweep_raw["absolute_error"].notna()
+         | (main_sweep_raw["failure_type"] == "non_terminating"))
+  ].copy()
+  is_non_terminating = eligible["failure_type"] == "non_terminating"
+  eligible.loc[is_non_terminating, "absolute_error"] = (
+      eligible.loc[is_non_terminating, "task"].map(imputation_table)
+  )
+  return eligible
 
 
 def _report_mae(
@@ -589,12 +702,15 @@ def _report_mae(
   """`--metric mae`'s counterpart to `_report`, scoped to one
   `(label, task)` pair.
 
-  Deliberately does not call `_report`: its bracket/`near_ceiling`/
-  `task_delta`/MDE logic is all specific to the 0-1 `exact` metric and
-  doesn't translate to an unbounded error metric (see the module
-  docstring). The underlying clustering/permutation/bootstrap/BH
-  primitives are metric-agnostic and are reused as-is; only the
-  orchestration and the `mae_delta` sign flip are new.
+  Deliberately does not call `_report`: its `near_ceiling`/`task_delta`/MDE
+  logic is all specific to the 0-1 `exact` metric and doesn't translate to
+  an unbounded error metric (see the module docstring). The underlying
+  clustering/permutation/bootstrap/BH primitives are metric-agnostic and
+  are reused as-is; only the orchestration and the `mae_delta` sign flip
+  are new. `frame` is expected to already have non-terminating rows'
+  `absolute_error` imputed (see `_mae_eligible_frame`) -- this function
+  does not know or care which rows were imputed, only how many
+  (`n_mae_imputed`, for transparency in the output).
   """
   print(f"\n  {label} / {task}")
   conditions = sorted(c for c in frame["condition"].unique() if c != CONTROL)
@@ -614,8 +730,8 @@ def _report_mae(
         control, treatment, cluster_ids, n_boot=args.n_boot, seed=seed,
         alpha=args.alpha,
     )
-    n_excluded = _count_excluded_non_terminating(raw_frame, condition)
-    rows.append((condition, perm, boot, n_excluded, _is_derived_condition(condition)))
+    n_imputed = _count_forced_wrong_non_terminating(raw_frame, condition)
+    rows.append((condition, perm, boot, n_imputed, _is_derived_condition(condition)))
 
   if not rows:
     return
@@ -636,7 +752,7 @@ def _report_mae(
     reject = significance.benjamini_hochberg(
         [perm["p_value"] for _, perm, _, _, _ in group_rows], q=args.q
     )
-    for (condition, perm, boot, n_excluded, is_derived), sig in zip(group_rows, reject):
+    for (condition, perm, boot, n_imputed, is_derived), sig in zip(group_rows, reject):
       # Flip sign: the underlying functions return treatment - control (raw
       # error, higher = worse); mae_delta = control - treatment so positive
       # still means "the condition helped", matching `exact`'s convention.
@@ -660,7 +776,7 @@ def _report_mae(
           "bh_family": bh_family,
           "n_pairs": perm["n_pairs"],
           "n_clusters": perm["n_clusters"],
-          "n_excluded_non_terminating": n_excluded,
+          "n_mae_imputed": n_imputed,
           "mae_delta": mae_delta,
           "ci_low": ci_low,
           "ci_high": ci_high,
@@ -733,10 +849,12 @@ def main() -> None:
                        help="bootstrap CI level (default 95%% CI)")
   parser.add_argument("--q", type=float, default=0.05,
                        help="Benjamini-Hochberg FDR level")
-  parser.add_argument("--low-power-threshold", type=float, default=0.15,
-                       help="flag a row's `low_power` column when its "
-                            "non-terminating exclusion rate exceeds this "
-                            "fraction of its would-be sample")
+  parser.add_argument("--high-non-termination-threshold", type=float, default=0.15,
+                       help="flag a row's `high_non_termination_rate` "
+                            "column when the fraction of its pairs that "
+                            "are non-terminating (and so forced to score "
+                            "as wrong -- see the module docstring) "
+                            "exceeds this")
   parser.add_argument("--near-ceiling-threshold", type=float, default=0.95,
                        help="flag a row's `near_ceiling` column when its "
                             "control condition's mean metric is above this "
@@ -856,33 +974,22 @@ def main() -> None:
   main_sweep_raw = frame[~frame["is_think"]]
 
   if args.metric in ("exact", "both"):
-    # main_sweep_raw is what n_excluded_non_terminating/n_instances_missing
-    # count against; main_sweep (non_terminating dropped) is the `excluded`
-    # bound; main_sweep_best/worst (non_terminating overridden, not dropped)
-    # are the bracket -- see the module docstring on why all three are kept.
-    main_sweep = main_sweep_raw[main_sweep_raw["failure_type"] != "non_terminating"]
-    main_sweep_best = _bracket_frame(main_sweep_raw, 1.0)
-    main_sweep_worst = _bracket_frame(main_sweep_raw, 0.0)
+    # main_sweep_raw is what n_forced_wrong_non_terminating/
+    # n_instances_missing count against; main_sweep IS main_sweep_raw now --
+    # `graphtalk.analysis.build_frame` already forces every non_terminating
+    # row's `exact`/`primary` to 0.0, so there is nothing left to drop or
+    # bracket here (see the module docstring; this used to be three bounds,
+    # `excluded`/`best_case`/`worst_case`).
+    main_sweep = main_sweep_raw
     think = frame[frame["is_think"]]
 
     print("=" * 78)
     print("Main sweep: accuracy (exact) vs `none`, pooled across task + style")
     for model_family, group in main_sweep.groupby("model_family"):
-      raw_group = main_sweep_raw[main_sweep_raw["model_family"] == model_family]
-      best_group = main_sweep_best[main_sweep_best["model_family"] == model_family]
-      worst_group = main_sweep_worst[main_sweep_worst["model_family"] == model_family]
-      _report(group, raw_group, "exact", model_family, args, "main_sweep",
+      _report(group, group, "exact", model_family, args, "main_sweep",
               records, bound="excluded")
-      _report(best_group, raw_group, "exact", model_family, args, "main_sweep",
-              records, bound="best_case")
-      _report(worst_group, raw_group, "exact", model_family, args, "main_sweep",
-              records, bound="worst_case")
     _report(main_sweep, main_sweep_raw, "exact", "pooled across all models",
             args, "main_sweep", records, bound="excluded")
-    _report(main_sweep_best, main_sweep_raw, "exact", "pooled across all models",
-            args, "main_sweep", records, bound="best_case")
-    _report(main_sweep_worst, main_sweep_raw, "exact", "pooled across all models",
-            args, "main_sweep", records, bound="worst_case")
 
     if not think.empty:
       print(f"\n{'=' * 78}")
@@ -896,8 +1003,12 @@ def main() -> None:
   if args.metric in ("mae", "both"):
     print("=" * 78)
     print("Main sweep: mean absolute error vs `none`, per task (not pooled)")
+    # Computed once, from every model pooled together -- a per-(model, task)
+    # slice is often too small (<30 wrong rows) for a stable median; see
+    # `_mae_imputation_table`'s own docstring.
+    imputation_table = _mae_imputation_table(main_sweep_raw)
     for model_family, raw_group in main_sweep_raw.groupby("model_family"):
-      eligible = _mae_eligible_frame(raw_group)
+      eligible = _mae_eligible_frame(raw_group, imputation_table)
       for task in _MAE_TASKS:
         _report_mae(
             eligible[eligible["task"] == task], raw_group[raw_group["task"] == task],

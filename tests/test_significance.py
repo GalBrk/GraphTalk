@@ -29,7 +29,7 @@ def _default_args(**overrides):
   than in every direct `_report` call in this file."""
   base = dict(
       n_perm=200, n_boot=200, alpha=0.05, q=0.05, seed=1,
-      low_power_threshold=0.15, near_ceiling_threshold=0.95,
+      high_non_termination_threshold=0.15, near_ceiling_threshold=0.95,
       mde=False, mde_power_target=0.8, mde_replicates=50, mde_n_perm=100,
       mde_n_steps=5, confirmatory=None,
   )
@@ -228,41 +228,79 @@ def test_assert_unique_pairing_key_needs_condition_for_a_whole_frame():
   )
 
 
-# --- scripts/check_significance.py: the non_terminating exclusion ----------
+# --- scripts/check_significance.py: non_terminating rows, forced wrong -----
 
 
-def test_count_excluded_non_terminating():
+def test_count_forced_wrong_non_terminating():
   raw = pd.DataFrame({
       "condition": ["none", "degree", "degree"],
       "failure_type": ["correct", "non_terminating", "correct"],
   })
-  assert cs._count_excluded_non_terminating(raw, "degree") == 1
-  assert cs._count_excluded_non_terminating(raw, "clustering") == 0
+  assert cs._count_forced_wrong_non_terminating(raw, "degree") == 1
+  assert cs._count_forced_wrong_non_terminating(raw, "clustering") == 0
 
 
-def test_non_terminating_rows_excluded_before_pairing():
-  """A non_terminating row that happens to score exact=1.0 must not be
-  paired in -- confirming the exclusion `main()` applies before
-  `_paired_values` runs actually removes the row, not just makes it visible
-  in the count above.
+def test_count_forced_wrong_pairs_counts_pairs_not_raw_rows():
+  # Three pairs for "degree": (1) only the treatment side is
+  # non-terminating, (2) *both* sides are, (3) neither is.
+  # `_count_forced_wrong_non_terminating` (raw rows, summed across both
+  # condition sides) would read 1 + 2 = 3 here -- more than the 2 pairs
+  # that are actually affected, and not a fraction `n_pairs` can use.
+  # `_count_forced_wrong_pairs` must read 2: one increment per pair,
+  # regardless of whether one or both sides triggered it.
+  frame = pd.DataFrame({
+      "model": ["m"] * 6,
+      "instance_id": ["a", "a", "b", "b", "c", "c"],
+      "style": ["zero_shot"] * 6,
+      "node_naming": ["integer"] * 6,
+      "condition": ["none", "degree", "none", "degree", "none", "degree"],
+      "failure_type": ["correct", "non_terminating", "non_terminating",
+                        "non_terminating", "correct", "correct"],
+  })
+  assert cs._count_forced_wrong_pairs(frame, "degree") == 2
+
+
+def test_count_forced_wrong_pairs_only_counts_actual_pairs():
+  # An unpaired row (no partner on the other side) must not contribute --
+  # matches `_paired_values`'s own inner join exactly.
+  frame = pd.DataFrame({
+      "model": ["m"] * 3,
+      "instance_id": ["a", "a", "b"],
+      "style": ["zero_shot"] * 3,
+      "node_naming": ["integer"] * 3,
+      "condition": ["none", "degree", "degree"],  # "b" has no "none" row
+      "failure_type": ["correct", "non_terminating", "non_terminating"],
+  })
+  assert cs._count_forced_wrong_pairs(frame, "degree") == 1
+
+
+def test_non_terminating_rows_are_paired_in_not_dropped():
+  """`main()` no longer filters `failure_type != "non_terminating"` before
+  pairing -- `graphtalk.analysis.build_frame` already forces a
+  non-terminating row's `exact` to 0.0 upstream (tested in
+  test_analysis.py), so `_paired_values` sees it as an ordinary,
+  trustworthy row and pairs it like any other. This is the load-bearing
+  behavior change from the old `excluded` bound, which used to drop this
+  row from `filtered` before it ever reached `_paired_values`.
   """
-  raw = pd.DataFrame({
+  frame = pd.DataFrame({
       "model": ["gemma4-12b"] * 4,
       "instance_id": ["node_count/0", "node_count/0", "node_count/1", "node_count/1"],
       "style": ["zero_shot"] * 4,
       "node_naming": ["integer"] * 4,
       "condition": ["none", "degree", "none", "degree"],
       "failure_type": ["correct", "non_terminating", "correct", "correct"],
-      "exact": [1.0, 1.0, 0.0, 1.0],
+      # node_count/0's degree row is non_terminating, forced to exact=0.0 by
+      # build_frame -- reflected here directly, since this test starts from
+      # a frame already in that post-build_frame state.
+      "exact": [1.0, 0.0, 0.0, 1.0],
   })
-  filtered = raw[raw["failure_type"] != "non_terminating"]
-  control, treatment, cluster_ids = cs._paired_values(filtered, "degree", "exact")
-  # node_count/0's degree row was non_terminating and dropped -- its control
-  # row (none) now has no treatment partner, so the pair disappears entirely
-  # rather than pairing a real control against a truncated treatment.
-  assert cluster_ids == [("gemma4-12b", "node_count/1")]
-  assert control == [0.0]
-  assert treatment == [1.0]
+  control, treatment, cluster_ids = cs._paired_values(frame, "degree", "exact")
+  assert cluster_ids == [
+      ("gemma4-12b", "node_count/0"), ("gemma4-12b", "node_count/1"),
+  ]
+  assert control == [1.0, 0.0]
+  assert treatment == [0.0, 1.0]
 
 
 # --- Fix 2: cluster id carries model, not just instance_id -----------------
@@ -291,22 +329,38 @@ def test_cluster_id_carries_model_preventing_cross_model_merge():
   assert len(set(cluster_ids)) == 2
 
 
-# --- Fix 1: the best_case/worst_case bracket --------------------------------
-
-
-def test_bracket_frame_overrides_only_non_terminating_rows():
+def test_high_non_termination_rate_uses_the_pair_level_count():
+  """Regression for the ratio-precision fix: 10 pairs, 1 of which has
+  *both* sides non-terminating and none of the other 9 do. The old
+  raw-row-summed numerator would read 2 (both sides of that one pair)
+  against `n_pairs=10` -> 0.2, above the default 0.15 threshold -> flagged
+  True. The correct pair-level numerator reads 1 (one pair affected,
+  regardless of how many of its sides triggered it) -> 0.1, below
+  threshold -> False. This fixture is specifically chosen so the two
+  computations disagree, proving the fix changes real behavior rather
+  than being a no-op relabeling.
+  """
+  n = 10
   raw = pd.DataFrame({
-      "failure_type": ["correct", "non_terminating", "wrong"],
-      "exact": [1.0, 0.3, 0.0],
+      "model": ["gemma4-12b"] * (2 * n),
+      "instance_id": [f"a{i}" for i in range(n)] * 2,
+      "style": ["zero_shot"] * (2 * n),
+      "node_naming": ["integer"] * (2 * n),
+      "condition": ["none"] * n + ["degree"] * n,
+      "failure_type": (
+          ["non_terminating"] + ["correct"] * (n - 1)
+      ) * 2,
+      "non_terminating": ([True] + [False] * (n - 1)) * 2,
+      "exact": ([0.0] + [1.0] * (n - 1)) * 2,
+      "looped_on_correct_answer": [None] * (2 * n),
   })
-  best = cs._bracket_frame(raw, 1.0)
-  worst = cs._bracket_frame(raw, 0.0)
-  assert best["exact"].tolist() == [1.0, 1.0, 0.0]
-  assert worst["exact"].tolist() == [1.0, 0.0, 0.0]
-  # The input frame itself is untouched -- `_bracket_frame` must copy, not
-  # mutate in place, since `main()` builds both bounds from the same
-  # `main_sweep_raw`.
-  assert raw["exact"].tolist() == [1.0, 0.3, 0.0]
+  records = []
+  cs._report(raw, raw, "exact", "gemma4-12b", _default_args(),
+             "main_sweep", records, bound="excluded")
+  row = next(r for r in records if r["condition"] == "degree")
+  assert row["n_pairs"] == n
+  assert row["n_forced_wrong_non_terminating"] == 2   # raw rows, both sides
+  assert row["high_non_termination_rate"] is False    # pair-level: 1/10 = 0.1
 
 
 def test_report_n_instances_missing_is_computed_from_data_not_hardcoded():
@@ -380,11 +434,9 @@ def test_count_looped_on_correct_answer():
 # --- Fix 3: the whole-table BH pass -----------------------------------------
 
 
-def test_apply_global_bh_excludes_bracket_and_pooled_rows():
+def test_apply_global_bh_excludes_pooled_rows():
   records = [
       {"group": "gemma4-12b", "bound": "excluded", "p_value": 0.001, "is_derived_condition": False, "hypothesis_type": None},
-      {"group": "gemma4-12b", "bound": "best_case", "p_value": 0.001, "is_derived_condition": False, "hypothesis_type": None},
-      {"group": "gemma4-12b", "bound": "worst_case", "p_value": 0.001, "is_derived_condition": False, "hypothesis_type": None},
       {"group": "pooled across all models", "bound": "excluded", "p_value": 0.001, "is_derived_condition": False, "hypothesis_type": None},
       {"group": "gemma4-e4b", "bound": "not_applicable", "p_value": 0.9, "is_derived_condition": False, "hypothesis_type": None},
   ]
@@ -392,10 +444,9 @@ def test_apply_global_bh_excludes_bracket_and_pooled_rows():
   by_key = {(r["group"], r["bound"]): r["bh_significant_global"] for r in records}
   assert by_key[("gemma4-12b", "excluded")] is True
   assert by_key[("gemma4-e4b", "not_applicable")] is False
-  # Bracket and pooled rows are excluded from the family entirely -- `None`
-  # ("not tested"), not `False` ("tested, not significant").
-  assert by_key[("gemma4-12b", "best_case")] is None
-  assert by_key[("gemma4-12b", "worst_case")] is None
+  # A pooled row is excluded from the family entirely -- `None` ("not
+  # tested"), not `False` ("tested, not significant") -- built from the
+  # same underlying pairs as its sibling per-model rows.
   assert by_key[("pooled across all models", "excluded")] is None
 
 
@@ -622,17 +673,6 @@ def test_near_ceiling_false_mid_range():
   assert all(r["near_ceiling"] is False for r in records)
 
 
-def test_near_ceiling_not_populated_for_bracket_bounds():
-  """A best_case/worst_case bracket forces non-terminating rows to fixed
-  extremes -- reading `near_ceiling` off that would be measuring the
-  bracket's own construction, not the model."""
-  raw = _near_ceiling_frame(0.98)
-  records = []
-  cs._report(raw, raw, "exact", "gemma4-12b", _default_args(),
-             "main_sweep", records, bound="best_case")
-  assert all(r["near_ceiling"] is None for r in records)
-
-
 # --- headroom -----------------------------------------------------------------
 
 
@@ -653,17 +693,6 @@ def test_headroom_matches_hand_computed_value_below_half():
   # min(0.3, 1 - 0.3) = 0.3 -- below the midpoint, headroom is the control
   # rate itself, not its complement.
   assert all(r["headroom"] == pytest.approx(0.3) for r in records)
-
-
-def test_headroom_not_populated_for_bracket_bounds():
-  """Same populated scope as `near_ceiling` -- a best_case/worst_case
-  bracket forces non-terminating rows to fixed extremes, so headroom read
-  off it would measure the bracket's own construction, not the model."""
-  raw = _near_ceiling_frame(0.98)
-  records = []
-  cs._report(raw, raw, "exact", "gemma4-12b", _default_args(),
-             "main_sweep", records, bound="best_case")
-  assert all(r["headroom"] is None for r in records)
 
 
 # --- `all` is a derived condition, corrected as its own family -------------
@@ -1004,15 +1033,56 @@ def test_mde_no_pairs_returns_none_with_a_note():
 # --- --metric mae ------------------------------------------------------------
 
 
-def test_mae_eligible_frame_filters_correctly():
+def test_mae_imputation_table_is_the_median_wrong_row_error_per_task():
+  raw = pd.DataFrame({
+      "task": ["node_count", "node_count", "node_count", "edge_count",
+               "node_degree"],
+      "failure_type": ["wrong", "wrong", "wrong", "wrong", "wrong"],
+      "absolute_error": [1.0, 3.0, 100.0, 7.0, 2.0],
+  })
+  table = cs._mae_imputation_table(raw)
+  # Median, not mean -- the node_count outlier (100.0) must not drag the
+  # imputed value up the way a mean would.
+  assert table["node_count"] == pytest.approx(3.0)
+  assert table["edge_count"] == pytest.approx(7.0)
+  assert table["node_degree"] == pytest.approx(2.0)
+
+
+def test_mae_imputation_table_raises_when_a_task_has_no_wrong_rows():
+  # No node_degree rows at all here -- .median() on an empty selection is
+  # silently NaN, which would otherwise poison every non-terminating
+  # node_degree row's imputed absolute_error with no visible error. Must
+  # raise loudly instead.
+  raw = pd.DataFrame({
+      "task": ["node_count", "edge_count"],
+      "failure_type": ["wrong", "wrong"],
+      "absolute_error": [1.0, 7.0],
+  })
+  with pytest.raises(ValueError, match="node_degree"):
+    cs._mae_imputation_table(raw)
+
+
+def test_mae_eligible_frame_includes_non_terminating_with_imputed_error():
+  """Non-terminating rows are now included (not dropped), with their
+  `absolute_error` overwritten by the imputation table regardless of
+  whether the row happened to carry a real (untrusted) one -- see
+  `_mae_eligible_frame`'s docstring. Genuinely unparsed-but-terminated
+  rows remain excluded, unchanged from before this refactor."""
   raw = pd.DataFrame({
       "task": ["node_count", "node_count", "cycle_check", "node_count"],
       "failure_type": ["correct", "non_terminating", "correct", "unparsed"],
+      # The non_terminating row's own absolute_error (3.0, from a parsed-
+      # but-truncated response) must be ignored in favor of the imputed
+      # value below, not trusted just because it happens to be present.
       "absolute_error": [2.0, 3.0, None, None],
   })
-  eligible = cs._mae_eligible_frame(raw)
-  assert len(eligible) == 1
-  assert eligible.iloc[0]["absolute_error"] == 2.0
+  table = {"node_count": 9.0, "edge_count": 1.0, "node_degree": 1.0}
+  eligible = cs._mae_eligible_frame(raw, table)
+  # correct + non_terminating survive; unparsed (and the non-MAE task) don't.
+  assert len(eligible) == 2
+  by_failure_type = dict(zip(eligible["failure_type"], eligible["absolute_error"]))
+  assert by_failure_type["correct"] == 2.0
+  assert by_failure_type["non_terminating"] == 9.0   # imputed, not the raw 3.0
 
 
 def test_report_mae_sign_convention_positive_means_helped():

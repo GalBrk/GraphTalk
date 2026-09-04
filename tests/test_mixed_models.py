@@ -163,25 +163,53 @@ def test_fit_gee_all_models_iterates_per_model():
   assert len(result) == 2  # one non-control condition ("treat") per model
 
 
-def test_fit_gee_all_models_excludes_thinking_arm_and_non_terminating():
+def test_fit_gee_all_models_excludes_thinking_arm():
   frame = _synthetic_frame(control_rate=0.4, treatment_rate=0.9, n=30, seed=11)
   frame["model"] = "m"
   frame["is_think"] = False
   frame["failure_type"] = "correct"
-  # A thinking-arm copy and a non-terminating copy, both with an opposite
-  # (near-zero) effect -- if either leaked into the fit, delta would move
-  # sharply toward zero.
+  # A thinking-arm copy with an opposite (near-zero) effect -- if it leaked
+  # into the fit, delta would move sharply toward zero. The thinking arm is
+  # a genuinely different question (`check_significance.py`'s own
+  # non-termination-rate test), unaffected by the non-terminating-row
+  # refactor -- unlike the case below, this exclusion still applies.
   think = frame.copy()
   think["is_think"] = True
   think["exact"] = 0.5
-  non_terminating = frame.copy()
-  non_terminating["instance_id"] = non_terminating["instance_id"] + "-nt"
-  non_terminating["failure_type"] = "non_terminating"
-  non_terminating["exact"] = 0.5
-  combined = pd.concat([frame, think, non_terminating], ignore_index=True)
+  combined = pd.concat([frame, think], ignore_index=True)
 
   clean_result = mixed_models.fit_gee_one_model(frame)
   combined_result = mixed_models.fit_gee_all_models(combined)
   assert combined_result.iloc[0]["delta"] == pytest.approx(
       clean_result.iloc[0]["delta"], abs=1e-9
   )
+
+
+def test_fit_gee_all_models_includes_non_terminating():
+  """Non-terminating rows are no longer excluded from this fit -- see
+  `_main_sweep_scope`'s docstring. Real data reaches this module through
+  `graphtalk.analysis.build_frame`, which already forces a non-terminating
+  row's `exact` to 0.0 before it gets here; this test bypasses build_frame
+  (a hand-built synthetic frame) specifically to isolate *this module's own
+  scoping* from that upstream forcing -- a non-terminating row with a
+  distinct `exact` value must still visibly move the fit, proving it was
+  not silently dropped the way it used to be.
+  """
+  frame = _synthetic_frame(control_rate=0.4, treatment_rate=0.9, n=30, seed=11)
+  frame["model"] = "m"
+  frame["is_think"] = False
+  frame["failure_type"] = "correct"
+  non_terminating = frame.copy()
+  non_terminating["instance_id"] = non_terminating["instance_id"] + "-nt"
+  non_terminating["failure_type"] = "non_terminating"
+  non_terminating["exact"] = 0.5
+  combined = pd.concat([frame, non_terminating], ignore_index=True)
+
+  clean_result = mixed_models.fit_gee_one_model(frame)
+  combined_result = mixed_models.fit_gee_all_models(combined)
+  assert combined_result.iloc[0]["delta"] != pytest.approx(
+      clean_result.iloc[0]["delta"], abs=1e-9
+  )
+  # And it's not a fluke of exclusion elsewhere -- n_obs must actually
+  # reflect the doubled row count.
+  assert combined_result.iloc[0]["n_obs"] == 2 * clean_result.iloc[0]["n_obs"]

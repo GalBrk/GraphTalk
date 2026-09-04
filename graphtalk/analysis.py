@@ -241,6 +241,32 @@ def build_frame(
   canonical frame keeps every groupby/export cheap. It is re-joined only in
   `sample_failures`'s companion CLI (`scripts/sample_failures.py`), where full
   text is the actual point.
+
+  `exact`/`primary` are forced to 0.0 on every `non_terminating` row,
+  regardless of what `scoring.score_one` computed from the (possibly
+  truncated) text -- a cut-off response's coincidental resemblance to the
+  gold answer is not evidence of correct reasoning, and every downstream
+  consumer (significance testing, MDE) trusts these columns outright, with
+  no bound/bracket mechanism left to second-guess them (see
+  `scripts/check_significance.py`, which used to bracket this uncertainty
+  via `best_case`/`worst_case` and no longer does -- the row is simply,
+  unconditionally, scored as wrong). `truncated_but_correct` preserves the
+  discarded fact for anyone who wants it: `True` only when the forcing
+  actually overrode a real hit, never a synonym for `non_terminating`
+  itself. `truncated_but_partial_credit` is its sibling for `primary`'s
+  F1 grading on `connected_nodes` (the one task where `primary != exact`):
+  `True` when a non-terminating row had real, but not full, neighbour-list
+  overlap discarded by `primary`'s forcing -- the two flags partition
+  non-terminating rows (exact hit / partial credit only / no credit) with
+  no overlap. `failure_type` (below) is unaffected by this forcing -- it still
+  reads `"non_terminating"` for these rows, not `"wrong"`, so the
+  diagnostic distinction between "genuinely wrong" and "unknown, treated as
+  wrong" survives in the data even though the two now score identically.
+  `absolute_error` is left as `scoring.score_one` computed it (a real
+  number when the truncated text happened to parse, `None` otherwise) --
+  unlike `exact`/`primary`, there is no single "mimics wrong" value for an
+  unbounded metric, so that decision is left to
+  `scripts/check_significance.py::_mae_imputation_table`, not made here.
   """
   rows = []
   for record in scored_records:
@@ -289,6 +315,41 @@ def build_frame(
         and predicted_first == record["predicted"]
         and score["exact"] > 0.5
     ) if non_terminating else None
+    # A truncated response's `exact`/`primary` must never accidentally read
+    # as a hit: the text it stopped on can coincidentally match the gold
+    # answer with no bearing on whether the model actually reasoned its way
+    # there, and every downstream consumer (accuracy, significance, MDE)
+    # trusts these two columns as ground truth. Forced to 0.0 -- "mimic a
+    # standard wrong prediction" -- rather than left at whatever `score_one`
+    # computed from the abandoned text. `truncated_but_correct` keeps the
+    # discarded information visible instead of silently losing it: `True`
+    # only when the forcing actually changed something (the raw, pre-force
+    # `exact` was a real hit), `False` on every other row including
+    # non-terminating-but-actually-wrong ones, so it stays a meaningful flag
+    # rather than a synonym for `non_terminating`. `absolute_error` is
+    # deliberately NOT forced here -- there is no single value that "mimics
+    # wrong" for an unbounded error metric, and choosing one is a modeling
+    # decision that belongs where the empirical wrong-row error distribution
+    # needed to do it well is actually computable (see
+    # `scripts/check_significance.py::_mae_imputation_table`), not here,
+    # one row at a time.
+    truncated_but_correct = non_terminating and score["exact"] == 1.0
+    # Sibling to `truncated_but_correct`, for `primary`'s F1 grading on
+    # `connected_nodes` specifically: `exact`==`primary` for every other
+    # task (see `scoring.score_one`), so a row with `primary > 0` there
+    # already has `exact == 1.0` and `truncated_but_correct` already
+    # covers it -- this flag only ever fires where `truncated_but_correct`
+    # doesn't, on a `connected_nodes` row with real partial neighbour-list
+    # overlap (some but not all of the right nodes named) that `primary`'s
+    # forcing to 0.0 below would otherwise discard with no trace. `and not
+    # truncated_but_correct` keeps the two flags a strict partition of
+    # non-terminating rows (exact hit / partial credit only / no credit at
+    # all) rather than overlapping on a full hit.
+    truncated_but_partial_credit = (
+        non_terminating and score["primary"] > 0 and not truncated_but_correct
+    )
+    exact = 0.0 if non_terminating else score["exact"]
+    primary = 0.0 if non_terminating else score["primary"]
     rows.append({
         "instance_id": record["instance_id"],
         "task": record["task"],
@@ -303,8 +364,10 @@ def build_frame(
         "predicted_first": predicted_first,
         "looped_on_correct_answer": looped_on_correct_answer,
         "parsed": score["parsed"],
-        "exact": score["exact"],
-        "primary": score["primary"],
+        "exact": exact,
+        "primary": primary,
+        "truncated_but_correct": truncated_but_correct,
+        "truncated_but_partial_credit": truncated_but_partial_credit,
         "absolute_error": score["absolute_error"],
         "non_terminating": non_terminating,
         "non_terminating_source": cap_source,
