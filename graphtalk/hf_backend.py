@@ -91,3 +91,103 @@ def generate(tokenizer, model, prompt: str, max_new_tokens: int,
       # `generate` stops *at* the budget, so equality is the cap being reached.
       hit_cap=n_new_tokens >= max_new_tokens,
   )
+
+
+def generate_batch(tokenizer, model, prompts: list[str], max_new_tokens: int,
+                    chat_kwargs: dict | None = None) -> list[Completion]:
+  """Like `generate`, but one forward pass for the whole `prompts` list
+  instead of one call per prompt -- Track 2.3, the infrastructure 2.1/2.2's
+  larger recommended `--count`s need to be affordable at all (single-stream
+  leaves most of the GPU idle; see `cluster/README.md`'s "Two levers"
+  section, which already measured the padding-side hazard this function
+  has to get right).
+
+  **NOT YET VALIDATED ON A GPU** -- this dev environment has no `torch`
+  install and no CUDA device, so this function has only been checked by
+  reading, not by running. Before trusting it for a real sweep: run it
+  against the same prompts `analysis/budget-gemma4-e4b.jsonl` and
+  `analysis/budget-qwen3-8b.jsonl` came from and confirm the decoded text
+  matches `generate`'s single-stream output near-identically (greedy
+  decoding, so it should be exact modulo the known floating-point
+  non-associativity of batched vs. unbatched matmuls) -- for *both*
+  families, since they need opposite padding sides (below) and only
+  testing one would leave the other's hazard unchecked.
+
+  **Padding side.** Decoder-only generation must left-pad: the model
+  predicts each batch member's next token from the *last* position of its
+  input, so right-padding would have it predict from a pad token instead
+  of the real last prompt token for every row shorter than the batch's
+  longest. `gemma-4-E4B-it` already defaults to `padding_side='left'`, but
+  **`Qwen3` defaults to `'right'`** -- wrong padding produces fluent,
+  well-formed, entirely wrong text rather than an error, so this is set
+  explicitly here rather than trusted to the tokenizer's default for
+  either family.
+
+  **Missing pad token.** Several causal-LM tokenizers (Qwen3 among them)
+  ship no `pad_token` at all, which left-padding requires; falls back to
+  the model's own `eos_token` (the standard workaround -- an extra
+  padding-shaped "end of sequence" costs nothing the model wasn't already
+  trained to emit).
+
+  **Recovering each row's true length.** `model.generate` runs the whole
+  batch until every member has produced an EOS or the batch hits
+  `max_new_tokens`; a row that finishes earlier than the batch's longest
+  gets `pad_token_id`-filled for the remaining steps rather than truly
+  stopping there. So `out.shape[-1] - prompt_len` (the single-stream
+  formula) is the *batch's* length, not each row's -- reusing it directly
+  would report every early-finishing row as having hit the cap. Instead,
+  each row's true `n_new_tokens` is the index of the first `pad_token_id`
+  in its generated slice, plus one (matching `generate`'s own convention
+  of counting the terminating token itself, see `Completion.n_new_tokens`'s
+  docstring) -- or the full slice length, with `hit_cap=True`, if no pad
+  id appears (that row used the entire budget without producing its own
+  stop). This assumes `pad_token_id` never appears as *real* generated
+  content, which is true whenever it is a genuine special/reserved token
+  (always true for the `pad_token = eos_token` fallback above, since a
+  content token identical to EOS would have stopped generation already).
+  """
+  original_padding_side = tokenizer.padding_side
+  tokenizer.padding_side = "left"
+  if tokenizer.pad_token_id is None:
+    tokenizer.pad_token = tokenizer.eos_token
+  pad_token_id = tokenizer.pad_token_id
+  try:
+    conversations = [[{"role": "user", "content": prompt}] for prompt in prompts]
+    inputs = tokenizer.apply_chat_template(
+        conversations,
+        add_generation_prompt=True,
+        tokenize=True,
+        return_dict=True,
+        return_tensors="pt",
+        padding=True,
+        **(chat_kwargs or {}),
+    ).to(model.device)
+
+    prompt_len = inputs["input_ids"].shape[-1]
+    with torch.inference_mode():
+      out = model.generate(
+          **inputs, max_new_tokens=max_new_tokens, do_sample=False,
+          pad_token_id=pad_token_id,
+      )
+  finally:
+    # Restored even on failure -- `generate` (single-stream) is called on
+    # the same shared tokenizer object elsewhere in the same process and
+    # does not expect `padding_side` to have been changed out from under it.
+    tokenizer.padding_side = original_padding_side
+
+  completions = []
+  for row in out[:, prompt_len:]:
+    row = row.tolist()
+    pad_positions = [i for i, tok in enumerate(row) if tok == pad_token_id]
+    if pad_positions:
+      n_new_tokens = pad_positions[0] + 1
+      hit_cap = False
+    else:
+      n_new_tokens = len(row)
+      hit_cap = n_new_tokens >= max_new_tokens
+    completions.append(Completion(
+        text=tokenizer.decode(row[:n_new_tokens], skip_special_tokens=True),
+        n_new_tokens=n_new_tokens,
+        hit_cap=hit_cap,
+    ))
+  return completions

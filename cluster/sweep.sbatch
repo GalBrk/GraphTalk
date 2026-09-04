@@ -115,6 +115,18 @@ if [[ "$NSHARDS" -gt 1 ]]; then
   EXTRA+=(--shard "$SHARD" --num-shards "$NSHARDS")
 fi
 
+# Track 2.3: batched generation (graphtalk.hf_backend.generate_batch), opt-in
+# and unset by default so every existing invocation keeps using the exact
+# single-stream code path every row on disk so far was generated with.
+# NOT YET VALIDATED against a GPU -- see generate_batch's docstring for the
+# reference check (analysis/budget-gemma4-e4b.jsonl /
+# budget-qwen3-8b.jsonl) to run before using this for a real sweep, not a
+# smoke test.
+BATCH_SIZE="${GRAPHTALK_BATCH_SIZE:-}"
+if [[ -n "$BATCH_SIZE" ]]; then
+  EXTRA+=(--batch-size "$BATCH_SIZE")
+fi
+
 # Which env, and therefore which half of the cluster is reachable.
 #
 # The default is the cu130 build the first sweep was generated with. It needs

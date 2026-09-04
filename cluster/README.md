@@ -342,6 +342,18 @@ them and add links to the chain rather than assuming three is enough.
   fluent garbage, not an error. Verify against the single-stream responses in
   `analysis/budget-*.jsonl`: decoding is greedy, so a correct
   batched implementation reproduces them near-identically.
+
+  Implemented as `graphtalk.hf_backend.generate_batch` and
+  `scripts/run_sweep.py --batch-size N` (forwarded here as
+  `GRAPHTALK_BATCH_SIZE=N sbatch cluster/sweep.sbatch <model>`), handling
+  both the padding-side hazard above and the per-row-length recovery a
+  batch's ragged finish times require (see the function's docstring). This
+  was written and reasoned through on a dev machine with no `torch`
+  install and no GPU, so it is **unvalidated** -- run the
+  `analysis/budget-*.jsonl` reproduction check above for *both* model
+  families before trusting `--batch-size > 1` for a real sweep. Default
+  stays `--batch-size 1` (today's exact single-stream path), so nothing
+  about an ordinary invocation changes until this flag is opted into.
 - **Ask for a faster card.** The h100s are **not** reachable from `killable` —
   n-102 and t-100 live in `gpu-h100-killable`, so the `h100` term in the
   `--constraint` can never match while `--partition` is `killable`. Override the

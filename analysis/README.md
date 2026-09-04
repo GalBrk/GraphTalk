@@ -436,6 +436,63 @@ the project, so that comparison is no longer reproducible; the tables above
 are now `zero_shot`-only by construction; see the matching retraction note
 in `docs/sweep-findings.md`.
 
+## Track 2: data-collection planning (dry runs, no GPU time yet)
+
+Track 1 is analysis of already-collected data; Track 2 is about what a
+*future* sweep should look like. Both scripts below are dry runs against
+already-collected data -- deliberately, so a `--count`/sampling decision
+is checked before any new GPU time is spent, not after.
+
+### 2.1: `scripts/recommend_count.py` -- MDE-targeted `--count`
+
+Translates each non-significant `main_sweep`/`exact` cell's already-computed
+`mde_delta`/`mde_delta_negative` into a recommended `--count`, via the
+closed-form `MDE ~ 1/sqrt(N)` scaling
+(`n_clusters_needed = n_clusters * (mde_delta / delta) ** 2`; see the
+script's own docstring for the full derivation and skip conditions). Against
+the current `significance_report.csv`: 16 of 20 non-significant cells get a
+finite recommendation, and only 6 of those 16 are affordable within the
+published split's 500-graph-per-task cap -- the rest (mostly `qwen3-14b`,
+which needs 2,430-36,490 clusters depending on condition) would need a
+larger or restructured corpus (see 2.2) rather than just a bigger `--count`.
+4 cells are unrecommendable outright: 2 have an exactly-zero observed delta,
+2 didn't converge (near-ceiling/near-floor, where headroom -- not sample
+size -- is the binding constraint; see the third pass above).
+
+`scripts/validate_recommend_count.py` checks that extrapolation against a
+real bootstrap power simulation at the recommended size, for cells small
+enough to simulate in reasonable time (`--max-n-clusters-target`, default
+10,000 -- the largest real recommendations, 30,000+ clusters, are already
+far past the published cap regardless of whether the closed-form estimate
+is exact, so aren't worth the simulation cost). Result on the 6
+under-3,000-cluster cells: 5/6 land at simulated power 0.87-1.00, one
+right at 0.87 (near the 80% target), the rest well above it -- i.e. the
+closed-form extrapolation is **conservative** here (recommends more
+clusters than strictly needed for 80% power), never optimistic, in every
+cell checked so far. That's the safe direction for a planning number to
+err in, but it means `recommended_count` should be read as an upper
+bound, not a precise minimum.
+
+### 2.2: `scripts/validate_stratified_sampling.py` -- does graph size predict discordant pairs?
+
+`build_prompts.py --graph-source stratified` (Track 2.2's proposed fix)
+oversamples the largest graphs per task instead of scaling `--count`
+uniformly, on the theory that larger graphs concentrate more of a
+near-ceiling model's errors (and so more of a primer's chance to flip an
+answer) per graph collected. Checked against already-collected responses
+(`sweep_frame.csv` joined against `prompts.jsonl` for per-instance
+`nodes`), splitting each near-ceiling model's (`gemma4-12b`, `gemma4-e4b`
+at the default 0.95 threshold) paired instances into small/large node-count
+strata at the per-cell median: 7 of 12 (model, condition) cells show a
+higher discordant-pair rate in the large-graph stratum, and the mean
+discordant rate across all cells is higher for large graphs (0.0217 vs.
+0.0185) -- a real but modest effect, not a dramatic one. Individual
+per-cell permutation p-values stay far from significance in both strata at
+current sample sizes (as expected -- these are the same near-ceiling cells
+Track 1 already flagged as underpowered), so this is a directional signal
+supporting the stratified-sampling strategy, not yet a confirmed effect;
+worth re-checking once a stratified run's own data exists.
+
 ## The batching baseline
 
 `budget-gemma4-e4b.jsonl` and `budget-qwen3-8b.jsonl` are the reference for
