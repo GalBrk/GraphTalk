@@ -240,6 +240,40 @@ def test_count_forced_wrong_non_terminating():
   assert cs._count_forced_wrong_non_terminating(raw, "clustering") == 0
 
 
+def test_count_forced_wrong_pairs_counts_pairs_not_raw_rows():
+  # Three pairs for "degree": (1) only the treatment side is
+  # non-terminating, (2) *both* sides are, (3) neither is.
+  # `_count_forced_wrong_non_terminating` (raw rows, summed across both
+  # condition sides) would read 1 + 2 = 3 here -- more than the 2 pairs
+  # that are actually affected, and not a fraction `n_pairs` can use.
+  # `_count_forced_wrong_pairs` must read 2: one increment per pair,
+  # regardless of whether one or both sides triggered it.
+  frame = pd.DataFrame({
+      "model": ["m"] * 6,
+      "instance_id": ["a", "a", "b", "b", "c", "c"],
+      "style": ["zero_shot"] * 6,
+      "node_naming": ["integer"] * 6,
+      "condition": ["none", "degree", "none", "degree", "none", "degree"],
+      "failure_type": ["correct", "non_terminating", "non_terminating",
+                        "non_terminating", "correct", "correct"],
+  })
+  assert cs._count_forced_wrong_pairs(frame, "degree") == 2
+
+
+def test_count_forced_wrong_pairs_only_counts_actual_pairs():
+  # An unpaired row (no partner on the other side) must not contribute --
+  # matches `_paired_values`'s own inner join exactly.
+  frame = pd.DataFrame({
+      "model": ["m"] * 3,
+      "instance_id": ["a", "a", "b"],
+      "style": ["zero_shot"] * 3,
+      "node_naming": ["integer"] * 3,
+      "condition": ["none", "degree", "degree"],  # "b" has no "none" row
+      "failure_type": ["correct", "non_terminating", "non_terminating"],
+  })
+  assert cs._count_forced_wrong_pairs(frame, "degree") == 1
+
+
 def test_non_terminating_rows_are_paired_in_not_dropped():
   """`main()` no longer filters `failure_type != "non_terminating"` before
   pairing -- `graphtalk.analysis.build_frame` already forces a
@@ -293,6 +327,40 @@ def test_cluster_id_carries_model_preventing_cross_model_merge():
       ("gemma4-12b", "node_count/0"), ("qwen3-8b", "node_count/0"),
   ]
   assert len(set(cluster_ids)) == 2
+
+
+def test_high_non_termination_rate_uses_the_pair_level_count():
+  """Regression for the ratio-precision fix: 10 pairs, 1 of which has
+  *both* sides non-terminating and none of the other 9 do. The old
+  raw-row-summed numerator would read 2 (both sides of that one pair)
+  against `n_pairs=10` -> 0.2, above the default 0.15 threshold -> flagged
+  True. The correct pair-level numerator reads 1 (one pair affected,
+  regardless of how many of its sides triggered it) -> 0.1, below
+  threshold -> False. This fixture is specifically chosen so the two
+  computations disagree, proving the fix changes real behavior rather
+  than being a no-op relabeling.
+  """
+  n = 10
+  raw = pd.DataFrame({
+      "model": ["gemma4-12b"] * (2 * n),
+      "instance_id": [f"a{i}" for i in range(n)] * 2,
+      "style": ["zero_shot"] * (2 * n),
+      "node_naming": ["integer"] * (2 * n),
+      "condition": ["none"] * n + ["degree"] * n,
+      "failure_type": (
+          ["non_terminating"] + ["correct"] * (n - 1)
+      ) * 2,
+      "non_terminating": ([True] + [False] * (n - 1)) * 2,
+      "exact": ([0.0] + [1.0] * (n - 1)) * 2,
+      "looped_on_correct_answer": [None] * (2 * n),
+  })
+  records = []
+  cs._report(raw, raw, "exact", "gemma4-12b", _default_args(),
+             "main_sweep", records, bound="excluded")
+  row = next(r for r in records if r["condition"] == "degree")
+  assert row["n_pairs"] == n
+  assert row["n_forced_wrong_non_terminating"] == 2   # raw rows, both sides
+  assert row["high_non_termination_rate"] is False    # pair-level: 1/10 = 0.1
 
 
 def test_report_n_instances_missing_is_computed_from_data_not_hardcoded():
@@ -967,15 +1035,31 @@ def test_mde_no_pairs_returns_none_with_a_note():
 
 def test_mae_imputation_table_is_the_median_wrong_row_error_per_task():
   raw = pd.DataFrame({
-      "task": ["node_count", "node_count", "node_count", "edge_count"],
-      "failure_type": ["wrong", "wrong", "wrong", "wrong"],
-      "absolute_error": [1.0, 3.0, 100.0, 7.0],
+      "task": ["node_count", "node_count", "node_count", "edge_count",
+               "node_degree"],
+      "failure_type": ["wrong", "wrong", "wrong", "wrong", "wrong"],
+      "absolute_error": [1.0, 3.0, 100.0, 7.0, 2.0],
   })
   table = cs._mae_imputation_table(raw)
   # Median, not mean -- the node_count outlier (100.0) must not drag the
   # imputed value up the way a mean would.
   assert table["node_count"] == pytest.approx(3.0)
   assert table["edge_count"] == pytest.approx(7.0)
+  assert table["node_degree"] == pytest.approx(2.0)
+
+
+def test_mae_imputation_table_raises_when_a_task_has_no_wrong_rows():
+  # No node_degree rows at all here -- .median() on an empty selection is
+  # silently NaN, which would otherwise poison every non-terminating
+  # node_degree row's imputed absolute_error with no visible error. Must
+  # raise loudly instead.
+  raw = pd.DataFrame({
+      "task": ["node_count", "edge_count"],
+      "failure_type": ["wrong", "wrong"],
+      "absolute_error": [1.0, 7.0],
+  })
+  with pytest.raises(ValueError, match="node_degree"):
+    cs._mae_imputation_table(raw)
 
 
 def test_mae_eligible_frame_includes_non_terminating_with_imputed_error():

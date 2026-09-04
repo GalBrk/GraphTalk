@@ -187,6 +187,67 @@ def test_truncated_but_correct_is_false_on_every_terminating_row():
   assert bool(row["truncated_but_correct"]) is False
 
 
+def test_truncated_but_partial_credit_flags_connected_nodes_f1_overlap():
+  # gold {0, 1, 2}, predicted {0, 1}: real but partial overlap -- F1=0.8,
+  # not an exact set match. truncated_but_correct must stay False (this
+  # isn't a full hit); its sibling must be True (real credit was
+  # discarded); primary itself must still be forced to 0.0 like any other
+  # non-terminating row.
+  record = {
+      "instance_id": "connected_nodes/0", "task": "connected_nodes",
+      "condition": "none", "style": "zero_shot", "gold": "0, 1, 2",
+      "model": "gemma4-12b-think", "response": "A: 0, 1",
+  }
+  scored = score_sweep.score_records([record])
+  truncated = {("gemma4-12b-think", "connected_nodes/0", "none", "zero_shot", "integer")}
+  frame = analysis.build_frame(scored, truncated, {})
+  row = frame.iloc[0]
+  assert row["primary"] == 0.0
+  assert bool(row["truncated_but_correct"]) is False
+  assert bool(row["truncated_but_partial_credit"]) is True
+
+
+def test_truncated_but_partial_credit_is_false_on_a_full_hit():
+  # gold and predicted sets match exactly -- truncated_but_correct alone
+  # covers this; the partial-credit sibling must not also fire (the two
+  # flags partition non-terminating rows, never overlap).
+  record = {
+      "instance_id": "connected_nodes/0", "task": "connected_nodes",
+      "condition": "none", "style": "zero_shot", "gold": "0, 1",
+      "model": "gemma4-12b-think", "response": "A: 0, 1",
+  }
+  scored = score_sweep.score_records([record])
+  truncated = {("gemma4-12b-think", "connected_nodes/0", "none", "zero_shot", "integer")}
+  frame = analysis.build_frame(scored, truncated, {})
+  row = frame.iloc[0]
+  assert bool(row["truncated_but_correct"]) is True
+  assert bool(row["truncated_but_partial_credit"]) is False
+
+
+def test_truncated_but_partial_credit_is_false_when_no_overlap_at_all():
+  record = {
+      "instance_id": "connected_nodes/0", "task": "connected_nodes",
+      "condition": "none", "style": "zero_shot", "gold": "0, 1",
+      "model": "gemma4-12b-think", "response": "A: 5, 6",
+  }
+  scored = score_sweep.score_records([record])
+  truncated = {("gemma4-12b-think", "connected_nodes/0", "none", "zero_shot", "integer")}
+  frame = analysis.build_frame(scored, truncated, {})
+  row = frame.iloc[0]
+  assert bool(row["truncated_but_correct"]) is False
+  assert bool(row["truncated_but_partial_credit"]) is False
+
+
+def test_truncated_but_partial_credit_is_false_on_integer_tasks():
+  # exact == primary for every task but connected_nodes, so a non-hit here
+  # already has primary == 0 raw -- the sibling flag should never fire.
+  record = _record("node_count/0", "gemma4-12b-think", "A: 9")  # gold " 5."
+  scored = score_sweep.score_records([record])
+  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot", "integer")}
+  frame = analysis.build_frame(scored, truncated, {})
+  assert bool(frame.iloc[0]["truncated_but_partial_credit"]) is False
+
+
 def test_truncated_keys_do_not_cross_naming_schemes():
   # A GOT row sharing (model, instance_id, condition, style) with an
   # integer-run truncated_keys.json entry, but missing its own `hit_cap`,

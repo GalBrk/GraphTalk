@@ -536,19 +536,28 @@ The tables above are `integer` node-naming only, matching this section's
 long-standing scope. The GOT (Game-of-Thrones node-naming) sweep has its
 own, separately-corrected `significance_report.got.csv` -- not reproduced
 as full tables here, to avoid this section doubling in length, but the
-headline result: `qwen3-8b`/`degree` is the one cell that clears the
-whole-table correction in the GOT run (✅, delta +0.078, p=0.0018),
-corroborated by an independent GEE fit (p=0.0007) -- traced to the
-`edge_count` task specifically (+35.7pp on that task alone, 0pp on
-`edge_existence`/`node_degree`), consistent with the `degree` primer being
-close to a worked shortcut for summing degrees. This is **not** yet
-pre-registered as confirmatory (see `--confirmatory-config` in Phase 1.4
-above) -- read it as a real, GEE-corroborated signal worth a targeted
-follow-up sweep (Track 2), not a confirmed finding. `docs/sweep-findings.md`'s
-separate `naming_effect.py` comparison (renaming has a precise, ~nil effect
-on *overall* accuracy pooled across all seven conditions) is not
-contradicted by this -- that comparison averages away a `degree`-specific
-effect at a coarser aggregation level.
+headline result: `qwen3-8b`/`degree` (⚠️, delta +0.078, p=0.0018) reaches
+significance within its own model's five-condition family, but **does
+not** survive the whole-table correction (`bh_significant_global=False`
+-- corrected here; an earlier version of this section overstated this as
+✅). Pooled `degree` is significant within its own family too (⚠️,
+p=0.0001), but as a "pooled across all models" row it is structurally
+excluded from `bh_significant_global`'s family altogether (built from the
+same underlying pairs as its sibling per-model rows, so not an
+independent test -- see "A second pass" above), not a row that was tested
+and failed. Both corroborated by an independent GEE fit
+(`qwen3-8b`/`degree` p=0.0007) --
+traced to the `edge_count` task specifically (+35.7pp on that task alone,
+0pp on `edge_existence`/`node_degree`), consistent with the `degree`
+primer being close to a worked shortcut for summing degrees. This is
+**not** yet pre-registered as confirmatory (see `--confirmatory-config` in
+Phase 1.4 above) -- read it as a real, GEE-corroborated, per-family signal
+worth a targeted follow-up sweep (Track 2), not a finding that has cleared
+this project's strongest test. `docs/sweep-findings.md`'s separate
+`naming_effect.py` comparison (renaming has a precise, ~nil effect on
+*overall* accuracy pooled across all seven conditions) is not contradicted
+by this -- that comparison averages away a `degree`-specific effect at a
+coarser aggregation level.
 
 ### Retracted: "What holds up without `zero_cot`"
 

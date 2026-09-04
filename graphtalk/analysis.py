@@ -253,7 +253,12 @@ def build_frame(
   unconditionally, scored as wrong). `truncated_but_correct` preserves the
   discarded fact for anyone who wants it: `True` only when the forcing
   actually overrode a real hit, never a synonym for `non_terminating`
-  itself. `failure_type` (below) is unaffected by this forcing -- it still
+  itself. `truncated_but_partial_credit` is its sibling for `primary`'s
+  F1 grading on `connected_nodes` (the one task where `primary != exact`):
+  `True` when a non-terminating row had real, but not full, neighbour-list
+  overlap discarded by `primary`'s forcing -- the two flags partition
+  non-terminating rows (exact hit / partial credit only / no credit) with
+  no overlap. `failure_type` (below) is unaffected by this forcing -- it still
   reads `"non_terminating"` for these rows, not `"wrong"`, so the
   diagnostic distinction between "genuinely wrong" and "unknown, treated as
   wrong" survives in the data even though the two now score identically.
@@ -329,6 +334,20 @@ def build_frame(
     # `scripts/check_significance.py::_mae_imputation_table`), not here,
     # one row at a time.
     truncated_but_correct = non_terminating and score["exact"] == 1.0
+    # Sibling to `truncated_but_correct`, for `primary`'s F1 grading on
+    # `connected_nodes` specifically: `exact`==`primary` for every other
+    # task (see `scoring.score_one`), so a row with `primary > 0` there
+    # already has `exact == 1.0` and `truncated_but_correct` already
+    # covers it -- this flag only ever fires where `truncated_but_correct`
+    # doesn't, on a `connected_nodes` row with real partial neighbour-list
+    # overlap (some but not all of the right nodes named) that `primary`'s
+    # forcing to 0.0 below would otherwise discard with no trace. `and not
+    # truncated_but_correct` keeps the two flags a strict partition of
+    # non-terminating rows (exact hit / partial credit only / no credit at
+    # all) rather than overlapping on a full hit.
+    truncated_but_partial_credit = (
+        non_terminating and score["primary"] > 0 and not truncated_but_correct
+    )
     exact = 0.0 if non_terminating else score["exact"]
     primary = 0.0 if non_terminating else score["primary"]
     rows.append({
@@ -348,6 +367,7 @@ def build_frame(
         "exact": exact,
         "primary": primary,
         "truncated_but_correct": truncated_but_correct,
+        "truncated_but_partial_credit": truncated_but_partial_credit,
         "absolute_error": score["absolute_error"],
         "non_terminating": non_terminating,
         "non_terminating_source": cap_source,

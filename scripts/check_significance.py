@@ -74,11 +74,15 @@ genuinely drifting (see `graphtalk.analysis.build_frame`'s
 `looped_on_correct_answer` column -- closely related to, but not the same
 computation as, `truncated_but_correct`, since one reads the *first*
 stated value and the other the score of the *last*; they usually agree).
-`high_non_termination_rate` flags a row where the forced-wrong share is
-high enough that its accuracy number should be read with real caution --
-not "not enough clean data" (nothing is dropped any more), but "a
-meaningful part of what moved this number is truncation rate, not
-reasoning" (default threshold 15%, `--low-power-threshold`).
+`high_non_termination_rate` flags a row where the forced-wrong share of
+its *pairs* (either side non-terminating, matching `_paired_values`'s own
+join -- not raw rows summed across both condition sides, which would
+double-count a pair with both sides non-terminating and isn't a fraction
+of `n_pairs`; see `_count_forced_wrong_pairs`) is high enough that its
+accuracy number should be read with real caution -- not "not enough clean
+data" (nothing is dropped any more), but "a meaningful part of what moved
+this number is truncation rate, not reasoning" (default threshold 15%,
+`--high-non-termination-threshold`).
 `n_instances_missing` (every row) is the count of graph instances with
 zero surviving pairs -- computed from the data, not a hardcoded total,
 since the sweep's instance count changes with `--count`.
@@ -354,6 +358,42 @@ def _count_looped_on_correct_answer(raw_frame: pd.DataFrame, condition: str) -> 
   return int((relevant["looped_on_correct_answer"] == True).sum())  # noqa: E712
 
 
+def _count_forced_wrong_pairs(frame: pd.DataFrame, condition: str) -> int:
+  """How many of `condition`'s *paired* rows (control-and-treatment both
+  present, same join `_paired_values` performs) are `non_terminating` on
+  either side -- the numerator `high_non_termination_rate` actually needs,
+  at the same granularity as its denominator (`n_pairs`).
+
+  `_count_forced_wrong_non_terminating` (the `n_forced_wrong_non_terminating`
+  diagnostic) counts raw rows summed across *both* condition sides
+  independently -- a pair where both sides are non-terminating counts
+  twice there, against a denominator (`n_pairs`) that counts it once, so
+  the resulting ratio isn't a true fraction of pairs (and could exceed 1.0
+  in the extreme). This function mirrors `_paired_values`'s own
+  `set_index(_KEYS)` inner join exactly, so its count is guaranteed to
+  match `n_pairs`' own unit -- one increment per pair, never per side.
+
+  Reads `failure_type == "non_terminating"`, not a separate
+  `non_terminating` boolean column -- `graphtalk.analysis.build_frame`
+  guarantees the two agree exactly (`_failure_type` returns
+  `"non_terminating"` if and only if that boolean is True), and every
+  other helper in this module (`_count_forced_wrong_non_terminating`,
+  `_count_looped_on_correct_answer`) already reads `failure_type` for the
+  same reason, so a hand-built frame that carries one but not the other
+  (every direct-`_report()`-call test fixture in `tests/test_significance
+  .py` predates the `non_terminating` column existing at all) still works.
+  """
+  control = frame[frame["condition"] == CONTROL].set_index(_KEYS)
+  treatment = frame[frame["condition"] == condition].set_index(_KEYS)
+  control_nt = control["failure_type"] == "non_terminating"
+  treatment_nt = treatment["failure_type"] == "non_terminating"
+  joined = pd.concat(
+      [control_nt.rename("control"), treatment_nt.rename("treatment")],
+      axis=1, join="inner",
+  )
+  return int((joined["control"] | joined["treatment"]).sum())
+
+
 def _task_delta_range(control, treatment, cluster_ids):
   """Per-task point-estimate deltas (`mean(treatment) - mean(control)`),
   descriptive only -- no new hypothesis test, no new multiple-comparison
@@ -429,9 +469,14 @@ def _report(
     n_forced_wrong = _count_forced_wrong_non_terminating(raw_frame, condition)
     if bound == "excluded":
       n_looped = _count_looped_on_correct_answer(raw_frame, condition)
+      # Pair-level count, not `n_forced_wrong` -- that sums non-terminating
+      # rows across both condition sides independently (double-counting a
+      # pair where both sides are non-terminating), which isn't a true
+      # fraction of `n_pairs`; see `_count_forced_wrong_pairs`'s docstring.
+      n_forced_wrong_pairs = _count_forced_wrong_pairs(frame, condition)
       denom = perm["n_pairs"]  # every row is paired now; nothing is dropped
       high_non_termination_rate = (
-          (n_forced_wrong / denom) > args.high_non_termination_threshold
+          (n_forced_wrong_pairs / denom) > args.high_non_termination_threshold
           if denom else False
       )
     else:
@@ -600,12 +645,30 @@ def _mae_imputation_table(raw_frame: pd.DataFrame) -> dict[str, float]:
   condition) -- those cells are often under 30 wrong rows, too few for a
   stable estimate, and there is no evidence a condition changes the *size*
   of a wrong guess's error, only whether the model is right at all.
+
+  Raises if any `_MAE_TASKS` task has zero genuinely-wrong rows to impute
+  from (e.g. an aggressive `--filter`, or a hypothetical future model
+  that's simply never wrong on some task). `pandas.Series.median()` on an
+  empty selection is silently `NaN`, not an error -- left unguarded, that
+  `NaN` would propagate into every non-terminating row's `absolute_error`
+  for that task and corrupt the permutation test (a `NaN` participates in
+  `sum()`/`mean()` calls as `NaN`, poisoning the whole cell) with nothing
+  visibly wrong until someone notices garbage output far downstream.
+  Raising here instead is loud and immediate, at the one place the actual
+  cause is knowable.
   """
   wrong = raw_frame[raw_frame["failure_type"] == "wrong"]
-  return {
-      task: wrong.loc[wrong["task"] == task, "absolute_error"].median()
-      for task in _MAE_TASKS
-  }
+  table = {}
+  for task in _MAE_TASKS:
+    values = wrong.loc[wrong["task"] == task, "absolute_error"]
+    if values.empty:
+      raise ValueError(
+          f"no wrong rows for task {task!r} to impute a non-terminating "
+          f"row's absolute_error from -- see _mae_imputation_table's "
+          f"docstring"
+      )
+    table[task] = values.median()
+  return table
 
 
 def _mae_eligible_frame(
