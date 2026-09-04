@@ -91,20 +91,27 @@ not artificially wide from an assumption the data doesn't support.
 
 **Excluding `non_terminating` rows is not free of bias either.** The first
 fix already noted non-termination responds to the primer condition; dropping
-those rows before pairing (`bound == "excluded"`, unchanged) can still make
-a condition that happens to truncate on instances it would have gotten
-wrong anyway look artificially better. Rather than trust the truncated-text
-extractor's guess as a second point estimate, `best_case`/`worst_case` rows
-now bracket the true unknown outcome by forcing every non-terminating row's
-score to 1.0/0.0 -- a real range, not another single number. On
-`gemma4-e4b`/`filler`, the row with the most exclusions (67 of 382 rows,
-`low_power = True`): `excluded` reports -0.038, and the bracket is
-[-0.050, -0.031] -- `excluded` falls inside it, as it should, but the range
-itself is the more honest thing to report. `n_looped_on_correct_answer`
-(1 of those 67 rows) shows the extractor's guess would rarely have moved
-that estimate much on this data -- most non-terminating rows really were
-headed somewhere other than the right answer, not cut off one token short
-of it.
+those rows before pairing (`bound == "excluded"`) can still make a condition
+that happens to truncate on instances it would have gotten wrong anyway look
+artificially better. This originally motivated a `best_case`/`worst_case`
+bracket, forcing every non-terminating row's score to 1.0/0.0 to show the
+range of the unknown true outcome rather than trusting the truncated-text
+extractor's guess as a second point estimate. **That bracket is retired --
+see "Phase 2: non-terminating rows forced wrong, not bracketed or excluded"
+below**, which replaced it with always forcing the conservative (0.0/wrong)
+side and including the row, rather than reporting a range. The paragraph
+below is kept for its historical reasoning, not as a description of the
+current pipeline.
+
+On `gemma4-e4b`/`filler`, the row with the most exclusions (67 of 382 rows,
+`low_power = True` -- `low_power` is also retired, see Phase 2, renamed
+`high_non_termination_rate`): `excluded` reported -0.038, and the bracket
+was [-0.050, -0.031] -- `excluded` fell inside it, as it should have, but
+the range itself was the more honest thing to report at the time.
+`n_looped_on_correct_answer` (1 of those 67 rows) showed the extractor's
+guess would rarely have moved that estimate much on this data -- most
+non-terminating rows really were headed somewhere other than the right
+answer, not cut off one token short of it.
 
 **`bh_significant` never covered more than one `(arm, group, bound)`
 family (~6 conditions) at a time.** A reader treating the whole table as one
@@ -292,6 +299,95 @@ applies to is the discipline this flag makes possible, not something code
 can verify from inside a process reading the file after the run -- that
 part still depends on actually doing it in that order.
 
+### Phase 2: non-terminating rows forced wrong, not bracketed or excluded
+
+A further methodology change, prompted by a simple question: a
+non-terminating response's abandoned text can coincidentally parse to the
+gold answer, and until this phase, that coincidence was allowed to read as
+a real hit in `sweep_frame.csv` itself -- `graphtalk.scoring.score_one`
+has no notion of truncation, so it scored a cut-off response exactly like
+a complete one, and `graphtalk.analysis.build_frame` passed that score
+through unmodified. `check_significance.py`'s `excluded`/`best_case`/
+`worst_case` bounds were a downstream attempt to manage the resulting
+uncertainty (drop the row, or bracket it both ways); this phase resolves
+the uncertainty at its source instead.
+
+**`graphtalk.analysis.build_frame` now forces `exact`/`primary` to 0.0 on
+every `non_terminating` row, unconditionally** -- never trusting a
+truncated response's coincidental resemblance to the gold answer, and
+never dropping the row either. `truncated_but_correct` (new column)
+preserves the discarded fact: `True` only when the forcing actually
+overrode a real hit (79 of 348 non-terminating rows in the current
+`sweep_frame.csv`; 65 of 341 in `sweep_frame.got.csv`). `failure_type`
+stays `"non_terminating"`, not `"wrong"` -- the label remains truthful
+even though the two now score identically.
+
+**`check_significance.py`'s three-way bound is gone.** With every row
+already trustworthy, there is nothing left to bracket: `excluded` is now
+the only main-sweep `bound` value (kept as the literal string for schema
+stability, even though nothing is excluded any more), and it uses every
+row. `n_excluded_non_terminating` is renamed `n_forced_wrong_non_terminating`
+(same count, relabelled -- these rows were never dropped from `sweep_frame`,
+only from the old pairing); `low_power` is renamed
+`high_non_termination_rate` and reinterpreted: not "not enough clean data"
+(nothing is dropped), but "a meaningful part of this cell's accuracy
+number reflects forced-wrong rows, not reasoning quality" -- the
+`--low-power-threshold` CLI flag is renamed `--high-non-termination-threshold`
+to match.
+
+**This is not free of bias either -- it resolves the old `excluded`
+bound's bias in the conservative direction, not away.** A condition that
+induces more truncation now mechanically looks *worse* here, partly
+reflecting generation length rather than reasoning quality -- the mirror
+image of `excluded`'s old bias (a condition that happened to truncate on
+instances it would have gotten wrong anyway looked artificially *better*
+there). Confirmed on the real regenerated data: comparing the pre- and
+post-Phase-2 `significance_report.csv`, the mean shift in `delta` across
+every main-sweep cell is -0.0013 (small, and in the predicted direction),
+concentrated almost entirely on `gemma4-e4b` (34 non-terminating rows in
+this data) -- `qwen3-14b` (0 non-terminating rows) shows exactly zero
+shift on every cell, `gemma4-12b`/`qwen3-8b` (3 and 2 rows respectively)
+show near-zero shift. This is the expected, mechanical signature of the
+change working as designed, not noise.
+
+**`--metric mae` now includes non-terminating rows too, via imputation
+rather than trusting their own `absolute_error`.** A non-terminating row's
+own `absolute_error` (real when the truncated text happened to parse,
+`None` otherwise) is never used, for the same reason its `exact` isn't --
+a partially-generated response's stated number carries the same
+"coincidentally looks informative" risk. Instead
+`_mae_imputation_table` substitutes the **median `absolute_error` among
+genuinely-wrong (parsed, terminating) rows for the same task**, computed
+once from the whole frame (a per-model/condition slice is often under 30
+wrong rows, too few for a stable median). `n_mae_imputed` reports how many
+of a cell's rows got this substitution. Genuinely *unparsed*-but-terminated
+rows remain excluded, unchanged -- out of scope for this phase, which is
+specifically about non-terminating rows. Real effect on the current data:
+`qwen3-8b`/`edge_count`/`rwse` moved from surviving the whole-table
+correction (✅, p=0.0010, pre-Phase-2) to significant only within its own
+model's five-condition family (⚠️, p=0.0011, now ranked lower in the
+unified family once every model's MAE cells shifted slightly from the same
+imputation).
+
+**Consistency fix, found while implementing this phase, not part of the
+original ask:** `graphtalk/mixed_models.py`'s GEE cross-check and
+`scripts/check_significance_glmm.py`'s own frame-scoping both used to
+exclude non-terminating rows too, matching the old `excluded` bound so the
+cross-check stayed comparable. Left alone, GEE would have silently
+reverted to the retired scope and stopped being a real cross-check of the
+current pipeline. `_main_sweep_excluded` is renamed `_main_sweep_scope`
+(the old name became actively misleading once it stopped excluding
+anything) and both call sites now include non-terminating rows, matching
+`check_significance.py` exactly.
+
+Covers both the `integer` and `got` `node_naming` schemes automatically --
+no scheme-specific code exists anywhere in this phase, since `node_naming`
+is carried as data throughout the pipeline, never branched on (see
+`README.md#node-naming`). Both `analysis/sweep_frame.csv` and
+`analysis/sweep_frame.got.csv`, and both `analysis/significance_report.csv`
+and `analysis/significance_report.got.csv`, were regenerated together
+under this phase.
+
 ### The `mae` metric mode
 
 Accuracy is not the only lens `check_significance.py` applies to
@@ -336,11 +432,15 @@ where it previously read ⚠️, or vice versa, purely from being pooled with
 
 ### Main sweep -- accuracy vs. `none`
 
-**No cell is significant.** `gemma4-12b` and `gemma4-e4b` are `near_ceiling`
+**No individual-model cell is significant; two pooled cells are, within
+their own family only.** `gemma4-12b` and `gemma4-e4b` are `near_ceiling`
 on all six conditions (96-99% control accuracy, per "A third pass" above),
 genuinely inconclusive rather than null; `qwen3-14b` and `qwen3-8b` have real
 headroom (88-90% control accuracy) and still show no significant effect --
-closer to a genuine null.
+closer to a genuine null. Pooling across all four models gives `degree`
+(p=0.0050) and `rwse` (p=0.0105) enough power to clear their own
+per-family threshold -- new since Phase 2 (non-terminating rows forced
+wrong, above); neither survives the whole-table correction.
 
 | Model | all | clustering | components | degree | filler | rwse |
 |---|---|---|---|---|---|---|
@@ -348,14 +448,14 @@ closer to a genuine null.
 | `gemma4-e4b` [^ceiling] | -- | -- | -- | -- | -- | -- |
 | `qwen3-14b` | -- | -- | -- | -- | -- | -- |
 | `qwen3-8b` | -- | -- | -- | -- | -- | -- |
-| pooled across all models | -- | -- | -- | -- | -- | -- |
+| pooled across all models | -- | -- | -- | ⚠️ helps | -- | ⚠️ hurts |
 
 [^ceiling]: `near_ceiling=True` on all six conditions (96-99% control
 accuracy) -- see the CI-based bound in "A third pass" above before reading
 any of these cells as a confirmed null.
 
 Unchanged by excluding `all` from the independent-condition family (its own
-raw p-value ranges 0.54-1.0 across all five groups -- nowhere close to
+raw p-value ranges 0.46-1.0 across all five groups -- nowhere close to
 significant on its own either). An earlier version of this table, computed
 while `zero_cot` rows were still pooled into the main sweep, showed several
 ✅/⚠️ cells (`gemma4-12b`/`components`, `gemma4-e4b`/`components`,
@@ -410,22 +510,45 @@ No significant cells.
 | `gemma4-12b` | -- | -- | -- | -- | -- | -- |
 | `gemma4-e4b` | -- | -- | -- | -- | -- | -- |
 | `qwen3-14b` | -- | ⚠️ helps | -- | -- | -- | -- |
-| `qwen3-8b` | -- | -- | -- | -- | -- | ✅ hurts |
+| `qwen3-8b` | -- | -- | -- | -- | -- | ⚠️ hurts |
 
 `edge_count` is still where essentially all of the MAE-specific signal
 lives, consistent with "Why `gemma4-e4b` truncates more"
 (`docs/sweep-findings.md`): it is exactly the task where models fall into
 exhaustive, error-prone manual counting, so it is the task where a bad
 primer's damage shows up as *larger* miscounts before it shows up as *more
-frequent* wrong answers. `qwen3-14b`/`clustering` is significant only within
-its own model's five-condition comparison; `qwen3-8b`/`rwse` (p=0.0010) now
-survives the whole-table correction (✅, upgraded from ⚠️) since `--metric
-both` pools it with `exact`'s mostly-null p-values rather than testing `mae`
-against its own, smaller, separately-corrected family -- rank 2 of 100 in
-the unified family, comfortably under its BH threshold. An earlier,
-`zero_cot`-pooled version of this table showed five significant cells;
-three did not survive restricting to `zero_shot`-only data (see the
-retraction note in `docs/sweep-findings.md`).
+frequent* wrong answers. Both cells here are significant only within their
+own model's five-condition comparison, not the whole-table correction.
+`qwen3-8b`/`rwse` (p=0.0011) is the one cell Phase 2 (above) moved: it
+briefly survived the whole-table correction (✅) in the version of this
+table computed right after `--metric both` first unified `exact` and `mae`
+into one multiplicity budget, then dropped back to ⚠️ once non-terminating
+rows were forced wrong rather than excluded -- a small shift in every
+model's MAE p-values was enough to move this one cell's rank past its BH
+threshold in the unified family. An earlier, `zero_cot`-pooled version of
+this table showed five significant cells; three did not survive
+restricting to `zero_shot`-only data (see the retraction note in
+`docs/sweep-findings.md`).
+
+### The GOT run (`sweep_frame.got.csv` / `significance_report.got.csv`)
+
+The tables above are `integer` node-naming only, matching this section's
+long-standing scope. The GOT (Game-of-Thrones node-naming) sweep has its
+own, separately-corrected `significance_report.got.csv` -- not reproduced
+as full tables here, to avoid this section doubling in length, but the
+headline result: `qwen3-8b`/`degree` is the one cell that clears the
+whole-table correction in the GOT run (✅, delta +0.078, p=0.0018),
+corroborated by an independent GEE fit (p=0.0007) -- traced to the
+`edge_count` task specifically (+35.7pp on that task alone, 0pp on
+`edge_existence`/`node_degree`), consistent with the `degree` primer being
+close to a worked shortcut for summing degrees. This is **not** yet
+pre-registered as confirmatory (see `--confirmatory-config` in Phase 1.4
+above) -- read it as a real, GEE-corroborated signal worth a targeted
+follow-up sweep (Track 2), not a confirmed finding. `docs/sweep-findings.md`'s
+separate `naming_effect.py` comparison (renaming has a precise, ~nil effect
+on *overall* accuracy pooled across all seven conditions) is not
+contradicted by this -- that comparison averages away a `degree`-specific
+effect at a coarser aggregation level.
 
 ### Retracted: "What holds up without `zero_cot`"
 

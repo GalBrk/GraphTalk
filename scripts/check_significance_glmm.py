@@ -215,12 +215,16 @@ def main() -> None:
   # computed here, once, from the frame actually loaded, not assumed from
   # --frame's filename.
   scheme = analysis.frame_node_naming(frame)
-  # Same scope as `graphtalk.mixed_models._main_sweep_excluded` -- main
-  # sweep only, non-terminating rows dropped. `fit_gee_all_models` does
-  # this filtering itself per model; `hierarchical_model.fit` fits every
-  # model jointly in one call and does no filtering of its own, so it has
-  # to happen here.
-  main_sweep = frame[(~frame["is_think"]) & (frame["failure_type"] != "non_terminating")]
+  # Same scope as `graphtalk.mixed_models._main_sweep_scope` -- main sweep
+  # only. Non-terminating rows are NOT dropped here (nor anywhere in this
+  # script) -- `graphtalk.analysis.build_frame` already forces their
+  # `exact`/`primary` to 0.0 upstream, so they enter both `--method gee`
+  # and `--method bayes` as ordinary rows, matching
+  # `check_significance.py`'s own main-sweep scope exactly (see that
+  # module's docstring). `fit_gee_all_models` re-derives this same scope
+  # itself per model; `hierarchical_model.fit` fits every model jointly in
+  # one call and does no filtering of its own, so it has to happen here.
+  main_sweep = frame[~frame["is_think"]]
 
   if args.method == "bayes":
     trace, index = hierarchical_model.fit(

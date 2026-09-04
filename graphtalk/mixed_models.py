@@ -87,17 +87,20 @@ def _condition_from_term(term: str) -> str | None:
   return term[len(_TERM_PREFIX):-1]
 
 
-def _main_sweep_excluded(frame: pd.DataFrame, model: str) -> pd.DataFrame:
-  """One model's main-sweep (non-thinking-arm) rows, non-terminating
-  responses dropped -- the same scope as `check_significance.py`'s
-  `excluded` bound, so this module's `delta` is comparable to
-  `significance_report.csv`'s `excluded`-bound rows specifically (not
-  `best_case`/`worst_case`, which this module has no analogue for)."""
-  return frame[
-      (frame["model"] == model)
-      & (~frame["is_think"])
-      & (frame["failure_type"] != "non_terminating")
-  ]
+def _main_sweep_scope(frame: pd.DataFrame, model: str) -> pd.DataFrame:
+  """One model's main-sweep (non-thinking-arm) rows -- the same scope as
+  `check_significance.py`'s main-sweep report, so this module's `delta` is
+  comparable to `significance_report.csv`'s rows cell for cell.
+  Non-terminating rows are **not** filtered out here (nor is their `exact`
+  overridden) -- `graphtalk.analysis.build_frame` already forces them to
+  0.0 upstream, so they enter this fit as ordinary, trustworthy rows,
+  exactly like `check_significance.py`'s own main-sweep frame. This
+  function used to drop them (matching that pipeline's old `excluded`
+  bound); it no longer needs to, now that bound is gone -- see
+  `scripts/check_significance.py`'s module docstring for the full
+  reasoning. Renamed from `_main_sweep_excluded`, which became actively
+  misleading once it stopped excluding anything."""
+  return frame[(frame["model"] == model) & (~frame["is_think"])]
 
 
 def fit_gee_one_model(frame: pd.DataFrame, metric: str = "exact") -> pd.DataFrame:
@@ -107,10 +110,9 @@ def fit_gee_one_model(frame: pd.DataFrame, metric: str = "exact") -> pd.DataFram
   correlation, not exchangeable" section for why).
 
   `frame` must already be scoped to exactly one model and the rows that
-  should enter the fit (see `_main_sweep_excluded`) -- this function does
-  not filter by model or exclude non-terminating rows itself, so a caller
-  iterating over several models doesn't have to re-derive that scope from
-  this module.
+  should enter the fit (see `_main_sweep_scope`) -- this function does not
+  filter by model itself, so a caller iterating over several models
+  doesn't have to re-derive that scope from this module.
 
   Returns one row per non-control condition actually present in `frame`:
   `condition`, `delta` (the identity-link coefficient -- directly a
@@ -162,14 +164,14 @@ def fit_gee_one_model(frame: pd.DataFrame, metric: str = "exact") -> pd.DataFram
 
 def fit_gee_all_models(frame: pd.DataFrame, metric: str = "exact") -> pd.DataFrame:
   """`fit_gee_one_model`, once per distinct `model` in `frame`
-  (main-sweep-only, non-terminating-excluded -- see `_main_sweep_excluded`),
-  concatenated with a `model`/`model_family` column so the result lines up
-  against `analysis/significance_report.csv`'s `group` column for the same
-  main-sweep/`excluded` rows.
+  (main-sweep-only -- see `_main_sweep_scope`), concatenated with a
+  `model`/`model_family` column so the result lines up against
+  `analysis/significance_report.csv`'s `group` column for the same
+  main-sweep rows.
   """
   frames = []
   for model in sorted(frame["model"].unique()):
-    scoped = _main_sweep_excluded(frame, model)
+    scoped = _main_sweep_scope(frame, model)
     if scoped.empty:
       continue
     fit = fit_gee_one_model(scoped, metric=metric)
