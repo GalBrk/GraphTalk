@@ -102,8 +102,9 @@ def _main_sweep_excluded(frame: pd.DataFrame, model: str) -> pd.DataFrame:
 
 def fit_gee_one_model(frame: pd.DataFrame, metric: str = "exact") -> pd.DataFrame:
   """Fits one identity-link binomial GEE of `metric` on `condition`
-  (`none` reference), clustered on `instance_id` via an exchangeable
-  working correlation.
+  (`none` reference), clustered on `instance_id` via an independence
+  working correlation (see the module docstring's "Independence working
+  correlation, not exchangeable" section for why).
 
   `frame` must already be scoped to exactly one model and the rows that
   should enter the fit (see `_main_sweep_excluded`) -- this function does

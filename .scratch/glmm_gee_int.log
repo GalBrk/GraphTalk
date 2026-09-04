@@ -1,0 +1,34 @@
+model           condition        delta                95% CI   p-value  converged
+gemma4-12b      all            +0.0056      [-0.013, +0.024]    0.5610  True
+gemma4-12b      clustering     -0.0056      [-0.017, +0.005]    0.3107  True
+gemma4-12b      components     -0.0167      [-0.035, +0.002]    0.0807  True
+gemma4-12b      degree         +0.0111      [-0.004, +0.026]    0.1513  True
+gemma4-12b      filler         -0.0112      [-0.027, +0.004]    0.1527  True
+gemma4-12b      rwse           -0.0056      [-0.017, +0.005]    0.3107  True
+gemma4-e4b      all            -0.0056      [-0.031, +0.019]    0.6590  True
+gemma4-e4b      clustering     -0.0057      [-0.031, +0.019]    0.6546  True
+gemma4-e4b      components     -0.0343      [-0.069, +0.001]    0.0550  True
+gemma4-e4b      degree         -0.0054      [-0.030, +0.019]    0.6679  True
+gemma4-e4b      filler         +0.0001      [-0.022, +0.022]    0.9954  True
+gemma4-e4b      rwse           -0.0178      [-0.037, +0.002]    0.0761  True
+qwen3-14b       all            +0.0111      [-0.016, +0.038]    0.4133  True
+qwen3-14b       clustering     +0.0222      [+0.001, +0.044]    0.0431  True
+qwen3-14b       components     +0.0167      [-0.012, +0.045]    0.2551  True
+qwen3-14b       degree         +0.0444      [+0.011, +0.078]    0.0100  True
+qwen3-14b       filler         -0.0000      [-0.022, +0.022]    1.0000  True
+qwen3-14b       rwse           +0.0111      [-0.004, +0.026]    0.1550  True
+qwen3-8b        all            +0.0162      [-0.020, +0.052]    0.3757  True
+qwen3-8b        clustering     +0.0278      [-0.001, +0.056]    0.0563  True
+qwen3-8b        components     +0.0000      [-0.034, +0.034]    1.0000  True
+qwen3-8b        degree         +0.0278      [-0.008, +0.064]    0.1292  True
+qwen3-8b        filler         -0.0500      [-0.094, -0.006]    0.0269  True
+qwen3-8b        rwse           -0.0285      [-0.064, +0.007]    0.1168  True
+
+=== Comparison against analysis/significance_report.csv (main_sweep/excluded, raw p <= 0.05) ===
+  direction agreement: 24/24
+  raw-significance agreement: 23/24
+
+  1 cells disagree on raw significance (GEE pools all 6 conditions per model in one fit; the permutation test tests each condition alone -- a disagreement here is the kind of thing this cross-check exists to surface, not necessarily an error in either method):
+    qwen3-14b       clustering  GEE p=0.0431 (delta=+0.0222)  perm p=0.1274 (delta=+0.0222)
+
+wrote 24 rows to analysis/glmm_report.csv

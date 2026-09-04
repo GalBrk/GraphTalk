@@ -148,10 +148,23 @@ def tagged_path(path: str, scheme: str) -> str:
   """`path` unchanged for `"integer"`; `.<scheme>` inserted before the
   extension otherwise -- `analysis/sweep_frame.csv` -> `.got.csv`, matching
   the `.rerun.`/`.shard<i>of<n>.` dot-tag convention already live in `runs/`.
+
+  Idempotent: a `path` that already ends in `.<scheme>` right before its
+  extension is returned unchanged rather than tagged a second time. Without
+  this, a caller who (reasonably) passes an already-tagged `--out` -- e.g.
+  `--out analysis/significance_report.got.csv` against a `got`-scheme frame,
+  instead of the base `analysis/significance_report.csv` this function is
+  designed to be handed -- silently gets
+  `analysis/significance_report.got.got.csv` instead, which looks like a
+  distinct, correctly-tagged file rather than the mistake it is (caught
+  while producing the first real GOT-scheme significance report, see
+  `scripts/check_significance.py`).
   """
   if scheme == "integer":
     return path
   root, ext = os.path.splitext(path)
+  if root.endswith(f".{scheme}"):
+    return path
   return f"{root}.{scheme}{ext}"
 
 

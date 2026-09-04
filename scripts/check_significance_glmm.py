@@ -50,6 +50,7 @@ import argparse
 
 import pandas as pd
 
+from graphtalk import analysis
 from graphtalk import hierarchical_model
 from graphtalk import mixed_models
 
@@ -188,7 +189,16 @@ def main() -> None:
                             "--compare-against agreement summary, not a "
                             "multiplicity-corrected cutoff")
   parser.add_argument("--out", default=None,
-                       help="optional path to write the results table as CSV")
+                       help="optional path to write the results table as CSV "
+                            "-- pass the base name (e.g. "
+                            "analysis/glmm_report.csv); "
+                            "graphtalk.analysis.tagged_path suffixes it "
+                            "automatically for a non-integer --frame scheme "
+                            "(e.g. .got.csv), same convention "
+                            "check_significance.py's --out uses, so a GOT "
+                            "run can never collide with or overwrite an "
+                            "integer-scheme output written to the same base "
+                            "name")
   parser.add_argument("--draws", type=int, default=1000,
                        help="--method bayes only: posterior draws per chain")
   parser.add_argument("--tune", type=int, default=1000,
@@ -201,6 +211,10 @@ def main() -> None:
   args = parser.parse_args()
 
   frame = pd.read_csv(args.frame)
+  # Same scheme-tagging convention as `check_significance.py`'s --out --
+  # computed here, once, from the frame actually loaded, not assumed from
+  # --frame's filename.
+  scheme = analysis.frame_node_naming(frame)
   # Same scope as `graphtalk.mixed_models._main_sweep_excluded` -- main
   # sweep only, non-terminating rows dropped. `fit_gee_all_models` does
   # this filtering itself per model; `hierarchical_model.fit` fits every
@@ -219,8 +233,9 @@ def main() -> None:
     if args.compare_against:
       _compare_bayes_against(result, args.compare_against)
     if args.out:
-      result.to_csv(args.out, index=False)
-      print(f"\nwrote {len(result)} rows to {args.out}")
+      out = analysis.tagged_path(args.out, scheme)
+      result.to_csv(out, index=False)
+      print(f"\nwrote {len(result)} rows to {out}")
     return
 
   result = mixed_models.fit_gee_all_models(main_sweep, metric=args.metric)
@@ -237,8 +252,9 @@ def main() -> None:
     _compare_against(result, args.compare_against, args.alpha)
 
   if args.out:
-    result.to_csv(args.out, index=False)
-    print(f"\nwrote {len(result)} rows to {args.out}")
+    out = analysis.tagged_path(args.out, scheme)
+    result.to_csv(out, index=False)
+    print(f"\nwrote {len(result)} rows to {out}")
 
 
 if __name__ == "__main__":

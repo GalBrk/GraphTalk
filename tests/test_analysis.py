@@ -271,6 +271,15 @@ def test_tagged_path_handles_no_extension():
   )
 
 
+def test_tagged_path_is_idempotent_on_an_already_tagged_path():
+  # A caller who passes an already-`.got.`-tagged --out (instead of the
+  # base name this function is designed to be handed) must not get a
+  # double-tagged `....got.got.csv` -- see the function's own docstring.
+  once = analysis.tagged_path("analysis/significance_report.csv", "got")
+  twice = analysis.tagged_path(once, "got")
+  assert once == twice == "analysis/significance_report.got.csv"
+
+
 def test_build_frame_carries_the_node_naming_column():
   integer_record = _record("node_count/0", "gemma4-12b", "A: 5")
   got_record = _record("node_count/1", "gemma4-12b", "A: 5")
