@@ -1,7 +1,7 @@
 # First full sweep: results, and what the design cannot yet answer
 
-Four models over the 2,520-prompt file, 10,080 generations. Verified complete and
-clean: every model has all 2,520 unique `(instance_id, condition, style)` keys,
+Four models over the 1,260-prompt file, 5,040 generations. Verified complete and
+clean: every model has all 1,260 unique `(instance_id, condition, style)` keys,
 with no duplicates, no gaps and no empty responses, across several preemptions and
 resumes.
 
@@ -29,35 +29,18 @@ difficulty and is shown here only for orientation — read the per-task table fr
 > `3545662`. One of the three patterns below did not survive -- it turned out to be the
 > length control misbehaving rather than a property of primers; see `filler`.
 
-| model | style | `none` | `degree` | `all` | `filler` |
-|---|---|---|---|---|---|
-| gemma4-e4b | zero_shot | 95.6% | 96.1% | 95.6% | 96.1% † |
-| gemma4-e4b | zero_cot | 82.8% | 80.0% | 82.8% | 71.7% ‡ |
-| gemma4-12b | zero_shot | 98.3% | **100.0%** | 99.4% | 96.7% † |
-| gemma4-12b | zero_cot | 95.6% | 93.9% | 92.8% | 92.2% ‡ |
-| qwen3-8b | zero_shot | 89.4% | 91.1% | 90.6% | 81.7% † |
-| qwen3-8b | zero_cot | 66.1% | 78.3% | 80.0% | 65.0% ‡ |
-| qwen3-14b | zero_shot | 83.3% | 91.7% | 89.4% | 82.2% † |
-| qwen3-14b | zero_cot | 71.7% | 78.3% | 75.6% | 69.4% ‡ |
+| model | `none` | `degree` | `all` | `filler` |
+|---|---|---|---|---|
+| gemma4-e4b | 95.6% | 96.1% | 95.6% | 96.1% |
+| gemma4-12b | 98.3% | **100.0%** | 99.4% | 96.7% |
+| qwen3-8b | 89.4% | 91.1% | 90.6% | 81.7% |
+| qwen3-14b | 83.3% | 91.7% | 89.4% | 82.2% |
 
-† revised `filler` wording  ‡ **original** `filler` wording.
+All at `zero_shot`, the only prompt style this project generates or scores.
 
-**The `zero_cot` rows are historical.** That prompt style is retired — chain-of-thought
-in this project is the thinking arm, which superseded it — and nothing new will be
-generated in it. Two consequences for reading this table: its `filler` cells were not
-regenerated, so the two `filler` values in each model's pair answer *different prompts*
-and must not be read down the column (`graphtalk/analysis.py` exposes this as the
-`wording` column); and `zero_cot` was given half the token budget, so its numbers are
-depressed by truncation as well as by the prompt. The `zero_shot` rows are the live
-result.
+Two patterns hold across every model:
 
-Three patterns were originally stated here as holding across every model. Two still
-do. The third turned out to be an artefact of the primer's wording rather than a
-property of primers, which is the main thing the 2026-08-29 re-run established:
-
-- **Primers help, modestly.** `degree` or `all` beats `none` in six of eight
-  model-style combinations (seven before the re-scoring). The largest gain is
-  qwen3-8b under `zero_cot`, 66.1% to 80.0%.
+- **Primers help, modestly.** `degree` or `all` beats `none` in every model.
 - **`filler` is inert, as the design predicted — the earlier penalty was the
   control being broken.** The hypothesis for this arm was never that filler would
   hurt: `docs/plans/primer-computation.md` §"An inert length control" requires it
@@ -76,27 +59,15 @@ property of primers, which is the main thing the 2026-08-29 re-run established:
   design warned against, produced by the safeguard that was supposed to prevent it.
 
   With a genuinely content-free primer the penalty collapses from a mean of −5.7
-  points to +0.6 across the eight arms, and on `gemma4-e4b` `zero_shot` it lands at
+  points to +0.6 across the four models, and on `gemma4-e4b` it lands at
   96.1% against 95.6% for `none` — the same thing, which is what the control was
-  specified to be. A small residual may survive in the non-thinking arms
-  (`qwen3-8b` is still 7.7 points below `none`) and is worth checking; the large
-  uniform effect does not. See §"Non-termination responds to the primer", where the
-  same reversal shows up on an independent measure.
-- **`zero_cot` is worse than `zero_shot`, but a third of the gap is a token budget
-  — and the format is obsolete anyway.** The direction holds everywhere. The size
-  does not survive scrutiny: `zero_cot` is given **1024** new tokens against
-  `zero_shot`'s **2048** while being asked to reason more, and hits that cap **8
-  times as often** (331 rows against 39). Those rows parse 84.6% of the time, so
-  they score as confident wrong answers rather than as gaps. Excluding them the
-  mean gap falls from **+13.0 to +8.5 points**, and on `gemma4-12b` to **exactly
-  zero** (98.3% either way) — its entire apparent CoT penalty was truncation.
+  specified to be. A small residual may survive on `qwen3-8b` (still 7.7 points
+  below `none`) and is worth checking; the large uniform effect does not. See
+  §"Non-termination responds to the primer", where the same reversal shows up on
+  an independent measure.
 
-  **This is not worth fixing, because `zero_cot` is retired.** Chain-of-thought
-  in this project is the thinking arm, which superseded it; no further rows will
-  be generated in this style. Quote the gap on terminated rows only, or drop the
-  claim — but do not spend GPU time raising a budget for a prompt style the
-  project no longer uses. The live CoT comparison is thinking arm against plain,
-  both at `zero_shot`, and it is not affected by any of this.
+Chain-of-thought in this project is measured by the thinking arm against the
+plain arms, both at `zero_shot` — see below.
 
 These are far above the paper's numbers — Fatemi et al. report 18.8% for PaLM 2
 on `node_count`, against 98-100% here. The task is not hard for current models,
@@ -105,39 +76,44 @@ which is the root of the problem in the next section.
 ## The McNemar analysis is underpowered, and n is only half the reason
 
 The proposal's test is McNemar against the `none` control on paired instances.
-There are **72 such cells per model** (6 tasks x 2 styles x 6 non-control
-conditions), each with 30 pairs.
+There are **36 such cells per model** (6 tasks x 6 non-control conditions),
+each with 30 pairs.
 
 McNemar uses only **discordant** pairs — instances where the primer flips the
 verdict. Concordant pairs contribute nothing. Measured:
 
 | model | median discordant | mean | max | cells with <10 | p<0.05 (uncorrected) | concordance |
 |---|---|---|---|---|---|---|
-| gemma4-e4b | 5 | 5.1 | 14 | 60/72 | 4 | 82.9% |
-| gemma4-12b | **0** | 1.2 | 8 | **72/72** | 3 | **96.0%** |
-| qwen3-8b | 3 | 4.7 | 16 | 59/72 | 12 | 84.4% |
-| qwen3-14b | 2 | 3.6 | 12 | 68/72 | 9 | 88.0% |
+| gemma4-e4b | 0.5 | 1.6 | 8 | **36/36** | 0 | 94.7% |
+| gemma4-12b | **0** | 0.4 | 3 | **36/36** | 0 | **98.6%** |
+| qwen3-8b | 0.5 | 1.8 | 9 | **36/36** | 2 | 94.0% |
+| qwen3-14b | 0.5 | 0.9 | 8 | **36/36** | 0 | 96.9% |
 
-**259 of 288 cells have fewer than 10 discordant pairs**, below any threshold at
-which McNemar is interpretable. Across all four models 28 of 288 cells reach
-p<0.05 uncorrected, against ~14 expected by chance at that alpha; almost none
-would survive a correction for 288 tests.
+**Every one of the 144 cells has fewer than 10 discordant pairs**, below any
+threshold at which McNemar is interpretable. Across all four models 2 of 144
+cells reach p<0.05 uncorrected, against ~7 expected by chance at that alpha —
+fewer false positives than chance alone predicts, not more; none would survive
+a correction for 144 tests.
 
 ### Two different causes, needing two different responses
 
 The instinct is to raise `--count`. That helps one cause and not the other.
 
-**Cause 1: genuinely low discordance.** For gemma4-e4b, qwen3-8b and qwen3-14b
-the discordance rate is 12-17%. Here more instances is exactly the right fix and
-scales linearly: at `--count 500` those models would see 60-85 discordant pairs
-per cell, comfortably enough.
+**Cause 1: genuinely low discordance.** All four models now show single-digit
+discordance rates (1.4-6.0%) at `zero_shot` — lower than the 12-17% measured
+when `zero_cot` rows were still pooled in, which were driving much of the
+earlier discordance with noisier output. More instances still helps
+proportionally: at `--count 500`, even the highest rate here (qwen3-8b, 6.0%)
+would yield only ~30 discordant pairs per cell — better, but still thin.
 
-**Cause 2: a ceiling.** gemma4-12b scores 98.3% under `none` and 100% under
-`degree` on zero_shot. Its 96% concordance is not evidence that the primer does
-nothing — it is that **there is almost nothing left to flip**. Only 1.7% of rows
-are even available to be improved. No value of `--count` fixes this, because the
-limit is headroom rather than sample size. At `--count 500` gemma4-12b would
-still reach only ~20 discordant pairs per cell.
+**Cause 2: a ceiling.** gemma4-12b scores 98.9% under `none` and 100% under
+`degree`; gemma4-e4b is close behind at 96.7% under `none`. Both leave little
+headroom to flip — gemma4-12b would reach only ~7 discordant pairs per cell
+even at `--count 500`, because the limit is headroom, not sample size.
+qwen3-8b and qwen3-14b (90.0% and 88.9% under `none`) have real headroom left
+but still show low discordance, meaning the primer rarely changes the verdict
+even on rows the model gets wrong at baseline — closer to Cause 1 than Cause 2,
+but not cleanly either.
 
 The ceiling is the more important finding. The proposal's question — does the
 primer help the model reason? — presumes the tasks are hard enough for help to be
@@ -146,13 +122,14 @@ visible. For a 12B model on 30-row GraphQA prompts, mostly they are not.
 ### What `--count 500` would cost, and what it would buy
 
 The published `zero_shot_test` split holds 500 rows per task, so 500 is the
-ceiling on `--count`. That is **16.7x** the current sweep: 42,000 prompts per
-model, an estimated 130-215 h each at measured single-stream rates, or six to
-nine chained 24 h links per model.
+ceiling on `--count`. That is **16.7x** the current sweep: 21,000 prompts per
+model. The 130-215 h estimate measured against the original, larger
+`zero_cot`-included sweep no longer applies directly -- re-measure single-stream
+rate against the current `zero_shot`-only sweep before re-quoting a chain length.
 
 `build_prompts.py` takes a *prefix* of each split, so a larger `--count` is a
-strict superset of a smaller one: verified that `--count 40` contains all 2,520
-`--count 30` keys with byte-identical prompt text. The existing 10,080 responses
+strict superset of a smaller one: verified that `--count 40` contains all 1,260
+`--count 30` keys with byte-identical prompt text. The existing 5,040 responses
 are therefore reusable — `run_sweep.py` skips them and generates only the new
 rows. Scaling up costs the difference, not the whole.
 
@@ -161,14 +138,13 @@ remains unimplemented. At 3-5x it turns a week per model into a couple of days.
 
 ### Cheaper alternatives that cost no GPU time
 
-- **Pool the cells.** 72 tests of 30 pairs each is what destroys the power, both
+- **Pool the cells.** 36 tests of 30 pairs each is what destroys the power, both
   through small n and through the multiple-comparison penalty. A single
-  mixed-effects logistic model over all 2,520 rows per model, with instance as a
-  random effect, uses the same data without slicing it into 72 groups.
-- **Report the effect sizes.** The three patterns above are consistent in
-  direction across four models and eight model-style combinations. Consistency
-  across independent models is evidence that per-cell significance testing at
-  n=30 will not produce.
+  mixed-effects logistic model over all 1,260 rows per model, with instance as a
+  random effect, uses the same data without slicing it into 36 groups.
+- **Report the effect sizes.** The two patterns above are consistent in
+  direction across all four models. Consistency across independent models is
+  evidence that per-cell significance testing at n=30 will not produce.
 - **Target the headroom.** If the ceiling is the obstacle, the fix is harder
   instances — larger graphs, or the tasks where accuracy is not already near 100%
   — rather than more of the easy ones.
@@ -182,16 +158,18 @@ A response cut off at the token budget still *parses* — the extractor pulls an
 integer or a yes/no out of the abandoned working — so it scores as a confident
 wrong answer rather than as missing data. It is invisible in a parse rate and
 invisible in a gap; it shows up only as a condition or a model looking worse.
-Three separate results in this document turned out to be that and nothing else:
+Two separate results in this document turned out to be that and nothing else:
 
 - **"`filler` hurts"** — the length control scored below the no-primer control
   on accuracy *and* had the highest non-termination rate. Both measures were
   responding to the primer's false numeral, not to padding.
-- **"`zero_cot` is worse than `zero_shot`"** — true, but a third of the gap is
-  that `zero_cot` runs at half the token budget and truncates 8× as often. On
-  `gemma4-12b` the entire penalty is truncation.
 - **"GoT naming costs 4 points"** — GoT names are ~8% longer, on an arm already
   truncating 20% of responses. On terminated rows the effect is −0.1.
+
+A third, "`zero_cot` is worse than `zero_shot`", was the same pattern (`zero_cot`
+ran at half the token budget and truncated 8x as often) but is no longer
+reproducible from tracked data -- `zero_cot` and its 5,040 rows were removed
+from the project once the format was fully retired.
 
 Every one of these looked statistically solid before the capped rows came out.
 `hit_cap` is now recorded on every row (`scripts/backfill_hit_cap.py`), so there
@@ -202,12 +180,10 @@ is no longer an excuse for pooling them in; `scripts/check_significance.py` and
 **`zero_shot` now reasons.** The `zero_shot` budget was raised from 64 to 2,048
 tokens after measurement showed 64 truncated ~90% of answers mid-sentence (see
 `graphtalk/models.py`). With room, these instruction-tuned models narrate their
-working before answering on the `zero_shot` prompt too. On a paired sample the
-two styles produced near-identical text, opening with the same "### Step 1:
-Understand the structure". The contrast between the styles is therefore about
-prompt wording, not about whether reasoning happens — and `zero_cot` still scores
-6-18 points *worse*, which is a finding in its own right but not the one the
-design set out to make.
+working before answering, opening with headers like "### Step 1: Understand the
+structure" unprompted. Chain-of-thought in this project is measured by the
+thinking arm (native reasoning) against this same `zero_shot` prompt, not by a
+separate prompt style.
 
 **955 rows were generated on CPU.** Before a driver mismatch was diagnosed (see
 `cluster/README.md`), three jobs silently ran on the host: 438 rows of
@@ -215,11 +191,12 @@ gemma4-e4b, 426 of qwen3-14b, 91 of qwen3-8b. Greedy decoding and identical
 arithmetic mean they should match GPU output exactly, but this has **not been
 verified**. Regenerating a sample on GPU and diffing would retire the caveat.
 
-**Thinking modes are off for both families, deliberately.** Gemma 4 defaults to
-thinking off; Qwen3 defaults to thinking *on*. Left alone, Qwen would have
-reasoned in a hidden `<think>` channel on both prompt styles, collapsing the
-style contrast for one family only. `enable_thinking=False` on the Qwen specs
-aligns them. Verified: zero `<think>` blocks across all 10,080 responses.
+**Thinking modes are off for both families, deliberately, in the plain arms.**
+Gemma 4 defaults to thinking off; Qwen3 defaults to thinking *on*. Left alone,
+Qwen would have reasoned in a hidden `<think>` channel even in the plain arm,
+collapsing the plain-vs-thinking-arm contrast for one family only.
+`enable_thinking=False` on the Qwen specs aligns them. Verified: zero `<think>`
+blocks across all 5,040 plain-arm responses.
 
 **`gemma4-e4b` is not a 4B model.** It generates 1,244 mean characters against
 631-870 for the others, and its per-character throughput (45.6 chars/s) matches
@@ -328,25 +305,26 @@ re-tokenizing responses against their own budget, validated at **100% agreement*
 count. That was done to remove an instrument confound from the `filler` comparison
 above. It also turned up something no one was looking for.
 
-**The main sweep has 370 truncated rows**, where non-termination was treated as a
-property of thinking mode. But almost all of them are in `zero_cot`, the obsolete
-prompt style, which gets half the token budget. Split by whether the format is
-still in use:
+**The plain (non-thinking) arms have 39 truncated rows**, where non-termination
+was treated as a property of thinking mode. (An earlier version of this
+finding measured 370 and attributed almost all of it to `zero_cot`, the
+retired prompt style, which got half the token budget -- that comparison is
+no longer reproducible now that `zero_cot` and its rows are gone; what
+survives is the plain-arm count below.)
 
 | | capped | rate |
 |---|---|---|
-| plain arms, `zero_shot` (live) | 39 / 5,040 | **0.77%** |
-| thinking arm, `zero_shot` (live) | 309 / 5,040 | 6.13% |
-| plain arms, `zero_cot` (obsolete) | 331 / 5,040 | 6.57% |
+| plain arms | 39 / 5,040 | **0.77%** |
+| thinking arm | 309 / 5,040 | 6.13% |
 
-**In the live format this is small.** 34 of those 39 rows are `gemma4-e4b`, which
+**This is small.** 34 of those 39 rows are `gemma4-e4b`, which
 gains 2.4 points when they are excluded (94.4% → 96.8%); every other plain arm
 moves by 0.2 points or less, and `qwen3-14b` has none at all. So the practical
 correction is one arm, and the headline `zero_shot` numbers stand.
 
 It is worth knowing anyway, for two reasons. `gemma4-e4b` is the arm this document
 already singles out as anomalous, and 2.4 points of that anomaly is truncation
-rather than capability. And these rows average **9.5% accuracy while parsing 84.6%
+rather than capability. And these rows average **7.7% accuracy while parsing 89.7%
 of the time** — they surface as wrong answers, not as gaps, which is why nothing
 caught them: `analysis/truncated_keys.json` never covered the main sweep at all.
 
@@ -608,12 +586,12 @@ usable answers.
 `zero_shot` rows in each of the eight arms -- were regenerated after the `filler`
 primer and `edge_existence` question were reworded. Each arm's original build was
 kept (cu130 for the four plain arms, cu126 for the four thinking arms), so the
-re-run adds no new torch stratum. The 1,440 affected rows in the obsolete `zero_cot`
-prompt style were **not** regenerated and retain the original wording; the prompts
-that produced them are preserved in `prompts.original-wording.jsonl`, and the frame's
-`wording` column marks which is which. Rows generated from this point carry
-`n_new_tokens` and `hit_cap`, so non-termination is recorded per row rather than
-depending on `analysis/truncated_keys.json`; older rows still depend on it.
+re-run adds no new torch stratum. The frame's `wording` column still marks which
+cells the rewording touched (`revised` vs `unaffected`) — it no longer needs an
+`original` value, since the only rows that kept the pre-rewording text were the
+now-removed `zero_cot` ones. Rows generated from this point carry `n_new_tokens`
+and `hit_cap`, so non-termination is recorded per row rather than depending on
+`analysis/truncated_keys.json`; older rows still depend on it.
 
 **The GoT-naming sweep, 2026-09-02.** A second 10,080-row sweep over the same
 graphs and queries with Game-of-Thrones node names, `zero_shot` only across all
@@ -629,10 +607,10 @@ is concentrated in `filler`, for the reason given above.
 ## Missing instances skew toward larger graphs, and it's the same two tasks
 
 `scripts/characterize_non_termination.py` re-derives, from the `excluded` bound's
-own pairing join, exactly which `(model, instance_id)` clusters contribute zero
-surviving pairs (`n_instances_missing` in `analysis/significance_report.csv`) --
-49 across the whole main sweep. They are **not** spread evenly: 43 are `edge_count`,
-6 are `cycle_check`, and every other task has zero. Their mean graph size is **16.9
+own pairing join, exactly which `(model, condition, instance_id)` rows contribute
+zero surviving pairs (`n_instances_missing` in `analysis/significance_report.csv`) --
+52 across the whole main sweep. They are **not** spread evenly: 45 are `edge_count`,
+7 are `cycle_check`, and every other task has zero. Their mean graph size is **16.8
 nodes** against **12.8** for the corpus as a whole -- missingness concentrates on
 the larger, harder end of the size range, on exactly the two tasks that require
 exhaustive per-edge or per-node reasoning (counting every edge; walking the whole
@@ -643,18 +621,17 @@ easier `edge_count`/`cycle_check` instances than the full 180.
 
 ## Why `gemma4-e4b` truncates more: frequency, not length, and the same two tasks again
 
-Main-sweep non-termination rate by model: `gemma4-12b` 2.7%, `gemma4-e4b` **9.3%**,
-`qwen3-14b` 0.8%, `qwen3-8b` 1.9%. The obvious guess -- that `gemma4-e4b` just writes
+Main-sweep non-termination rate by model: `gemma4-12b` 0.2%, `gemma4-e4b` **2.7%**,
+`qwen3-14b` 0%, `qwen3-8b` 0.2%. The obvious guess -- that `gemma4-e4b` just writes
 longer before getting cut off -- is wrong: its mean length on non-terminating rows
-(2,475 chars) is in the same range as the other three models' (1,798-2,719). It
-truncates about as *late* as everyone else, just far more *often*.
+(4,020 chars) is in the same range as `gemma4-12b`'s (3,394) and `qwen3-8b`'s
+(4,031). It truncates about as *late* as everyone else, just more *often*.
 
-`edge_count` (150 of 235) and `cycle_check` (77 of 235) account for 97% of
+`edge_count` (27 of 34) and `cycle_check` (7 of 34) account for **all** of
 `gemma4-e4b`'s non-terminating rows -- the identical two tasks driving the missing-
-instances finding above, and 201 of 235 are in `zero_cot` (the obsolete, half-budget
-style), consistent with "Non-termination is not only a thinking-arm problem" above.
+instances finding above.
 
-A stratified read of 9 raw `gemma4-e4b` non-terminating responses (in
+A stratified read of raw `gemma4-e4b` non-terminating responses (in
 `analysis/non_termination_sample.csv`) shows a consistent pattern on both tasks:
 exhaustive, node-by-node or edge-by-edge manual re-verification rather than a
 direct computation. On `edge_count`, it re-derives the adjacency list edge by edge
@@ -662,11 +639,11 @@ with running "already counted" bookkeeping instead of summing degrees and dividi
 by two. On `cycle_check`, it narrates a full manual DFS, checking every neighbor of
 every node against the current stack. Both scale with graph size in a way a more
 direct method wouldn't -- consistent with missing instances skewing larger above.
-`edge_existence`'s adjacency-list contradiction-checking (the `filler` primer
-mechanism from "Non-termination responds to the primer") shows the same
-exhaustive-verification instinct on a third task, at a much lower rate (5 rows)
-since `edge_existence` only requires checking one pair, not all of them. This reads
-as `gemma4-e4b` defaulting into exhaustive self-verification on tasks whose
+(An earlier reading also attributed a handful of `edge_existence` non-terminating
+rows to the same exhaustive-verification instinct; those were entirely `zero_cot`
+rows and no longer exist -- `gemma4-e4b`'s live non-terminating rows are `edge_count`
+and `cycle_check` only.) This reads as `gemma4-e4b` defaulting into exhaustive
+self-verification on tasks whose
 direct-computation shortcut it doesn't reliably take, not a token-budget or
 formatting problem -- a generation-behavior question, not a scoring-pipeline one,
 and out of scope for anything `check_significance.py` can fix.
@@ -674,69 +651,47 @@ and out of scope for anything `check_significance.py` can fix.
 `edge_count`'s fragility is not unique to `gemma4-e4b`, only most visible there
 as non-termination. `check_significance.py --metric mae` (`analysis/README.md`,
 "The `mae` metric mode") scores mean absolute error instead of exact-match on
-the three integer tasks, and finds `edge_count` carrying essentially all of
-that signal too: `filler` and `rwse` significantly widen `qwen3-14b`'s and
-`qwen3-8b`'s `edge_count` errors, in cells where exact-match accuracy shows
-no effect at all -- the same task where a bad primer's damage tends to land,
-whether it surfaces as never finishing (`gemma4-e4b`) or as a wrong answer
-landing further from correct (`qwen3-14b`, `qwen3-8b`). This `mae` result
-pools `zero_shot` and `zero_cot`, like everything else in this section --
-see "Most primer findings depend on the retired `zero_cot` style" below for
-how much of it survives on `zero_shot` alone (most of it does not).
+the three integer tasks, and `edge_count` carries essentially all of that
+signal too, on `zero_shot` data alone: `qwen3-8b`/`rwse` (mae_delta −12.8,
+p=0.001) and `qwen3-14b`/`clustering` (mae_delta +0.93, p=0.008) both survive
+significance, in cells where exact-match accuracy shows no effect at all --
+the same task where a bad primer's damage tends to land, whether it surfaces
+as never finishing (`gemma4-e4b`) or as a wrong answer landing further from
+correct. The `filler`/`edge_count` pattern reported by an earlier, pooled
+`zero_shot`+`zero_cot` reading of this data did not survive restricting to
+`zero_shot` alone.
 
-## The `filler` instrument confound is reduced, not fully closed
+## The `filler` instrument confound is closed
 
 `non_terminating_source` (`generator` = `scripts/run_sweep.py`'s own recorded
 `hit_cap`; `retokenized` = `scripts/backfill_hit_cap.py`'s independent audit, see
 "Non-termination is not only a thinking-arm problem" above) splits roughly
-1:8 (`generator`:`retokenized`) for every condition **except** `filler`, which
-splits roughly 2:1 the other way. Both instruments are hit_cap-based now -- neither
-is the old, unreliable `ground_truth_file` fallback -- so this is no longer the
-comparability problem it was when `filler` and the other six conditions were
-measured by genuinely different routes. But `filler`'s rows come overwhelmingly
-from the 2026-08-29 prompt-rewording re-run (see above), which hasn't been through
-the same retokenization audit as the other six conditions' rows have. Not urgent --
-both instruments agree at 100% where they've both been checked (see above) -- but
-worth knowing before treating `filler`'s non-termination numbers as measured
-identically to the rest of the table.
+1:5 (`generator`:`retokenized`) for every condition **except** `filler`, which is
+**100% `generator`** (1,440:0) -- every remaining `filler` row comes from the
+2026-08-29 prompt-rewording re-run, which recorded `hit_cap` directly and so
+never needed the retokenization backfill the other six conditions partly rely
+on. Removing `zero_cot` removed exactly the older, pre-rewording `filler` rows
+that depended on retokenization, so this is no longer a mixed-instrument
+comparability concern -- `filler`'s non-termination numbers are now on one
+instrument, not two.
 
-## Most primer findings depend on the retired `zero_cot` style
+## Retracted: "Most primer findings depend on the retired `zero_cot` style"
 
-`scripts/check_significance.py`'s main-sweep tests have pooled `zero_shot` and
-`zero_cot` together throughout this project. Re-scoped to one style at a time
-(`analysis/README.md`, "What holds up without `zero_cot`"): **0 of 24
-`zero_shot`-only accuracy cells are significant, against 7 of 24 for
-`zero_cot`-only.** Most of the pooled table's primer-helps/primer-hurts
-findings trace back to the retired, half-token-budget style
-(`graphtalk/prompts.py`: *"`zero_cot` is retired. Do not generate new rows in
-it"*), not to the live prompt format. The same pattern holds for the `mae`
-metric: 1 of 72 `zero_shot`-only cells (not surviving whole-table correction)
-against 6 of 72 for `zero_cot`-only.
+This project used to carry a finding here comparing `zero_shot`-only accuracy
+significance against `zero_cot`-only, concluding that most of the pooled
+main-sweep primer-helps/primer-hurts table traced back to the retired,
+half-token-budget style rather than to the live prompt format. `zero_cot` and
+its 5,040 rows have since been fully removed from the project (code, data, and
+docs), so that comparison can no longer be reproduced and the finding is
+retracted along with the data it depended on.
 
-Checking effect size rather than only significance, this is not "`zero_cot`
-invents fake effects" -- most `zero_shot`-only deltas share the pooled/`zero_cot`
-numbers' sign, just smaller, at roughly half the sample size
-(`n_clusters≈170-180` vs `≈350` pooled). A few cells (`gemma4-e4b`/`filler`,
-`qwen3-8b`/`all`) show a `zero_shot` delta near zero against a large `zero_cot`
-delta, closer to genuinely `zero_cot`-specific; one cell
-(`qwen3-8b`/`filler`) runs the other way, with its only signal in `zero_shot`.
-So most of the pooled accuracy story is *underpowered and unconfirmed* on live
-data, not *disproven*.
+The underlying concern it raised -- that a pooled `zero_shot`+`zero_cot` table
+could overstate what holds on live data -- is now moot by construction rather
+than resolved by re-analysis: every accuracy table in this document is
+`zero_shot`-only, because that is the only style the project generates or
+scores. There is no pooled-vs-`zero_shot`-only distinction left to draw.
 
-A simulated minimum-detectable-effect check (same method as "A third pass",
-`analysis/README.md`) confirms this is not fixable by running more graphs of
-the same shape. Of the 24 `zero_shot`-only cells: 12 never reach 80% power
-even at the maximum simulated effect (the same near-ceiling problem as
-`gemma4-12b`/`gemma4-e4b` elsewhere in this document), 2 have an observed
-effect of exactly zero, and the 10 that do converge all need far more than
-the published split's 500-graph cap (~2,232 to ~49,207). The thinking arm's
-own accuracy -- unaffected by `zero_cot`, since it never used that style --
-fails to converge on all 24 cells too. No amount of additional graphs from
-the published GraphQA split resolves the accuracy question on live-format
-data, for either arm.
-
-The one finding that survives intact is the thinking arm's non-termination
-result ("Non-termination responds to the primer" above) -- a reliability
-effect, not an accuracy one. Read every accuracy claim elsewhere in this
-document and in `analysis/README.md` as real in the pooled data but not yet
-confirmed on `zero_shot` alone.
+The one part of the retracted finding that was never about `zero_cot` at all
+survives unchanged: the thinking arm's non-termination result ("Non-termination
+responds to the primer" above) is a reliability effect measured entirely within
+`zero_shot`, on both arms, and was never confounded with the retired style.

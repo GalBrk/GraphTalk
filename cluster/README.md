@@ -75,7 +75,7 @@ token from earlier work was present and does no harm.
 
 ```bash
 # stage 1, on the login node
-python scripts/build_prompts.py --count 30      # writes 2520 prompts
+python scripts/build_prompts.py --count 30      # writes 1260 prompts
 
 # stage 2, on the cluster, a chain per model (see below)
 sbatch --exclude=n-801 --mem=32G cluster/sweep.sbatch qwen3-8b
@@ -287,9 +287,9 @@ override it downward per model.
 
 ## Runtime: submit a chain, not a job
 
-At the measured `zero_shot` budget of 2048 tokens a model needs roughly **45
-hours** — about 22 h for the zero_shot half and a comparable amount for zero_cot.
-`killable` caps at 24 h, so no single job finishes a model.
+At the measured `zero_shot` budget of 2048 tokens a model needs roughly **22
+hours**, close enough to `killable`'s 24 h cap that a single job is not a safe
+bet -- chain anyway, as below.
 
 `run_sweep.py` appends each response and skips work already present, so a later
 job resumes rather than restarts. That logic was written for preemption and works
@@ -319,15 +319,12 @@ every one of them start over.
 
 ## Sizing
 
-At 30 rows per task the prompt file is **2,520 prompts** per model (180 instances
-x 7 conditions x 2 styles), so 10,080 generations across the four models. That
-count is historical: `zero_cot` is retired, so a sweep run today is
-`--styles zero_shot` and half the size, 1,260 prompts per model.
+At 30 rows per task the prompt file is **1,260 prompts** per model (180 instances
+x 7 conditions), so 5,040 generations across the four models.
 
-Both styles now generate freely — `zero_shot` at 2048 new tokens and `zero_cot`
-at 1024 — because these instruction-tuned models narrate their working before
-answering. See `graphtalk/models.py` for the measurement behind those numbers and
-for what it does to the contrast between the two styles.
+Generation runs freely at 2048 new tokens because these instruction-tuned
+models narrate their working before answering. See `graphtalk/models.py` for
+the measurement behind that number.
 
 Measured single-stream throughput is 7.1-7.6 tok/s on an l40s for the smaller two
 models; the 12B and 14B are slower per token, so treat 45 h as optimistic for
@@ -345,6 +342,18 @@ them and add links to the chain rather than assuming three is enough.
   fluent garbage, not an error. Verify against the single-stream responses in
   `analysis/budget-*.jsonl`: decoding is greedy, so a correct
   batched implementation reproduces them near-identically.
+
+  Implemented as `graphtalk.hf_backend.generate_batch` and
+  `scripts/run_sweep.py --batch-size N` (forwarded here as
+  `GRAPHTALK_BATCH_SIZE=N sbatch cluster/sweep.sbatch <model>`), handling
+  both the padding-side hazard above and the per-row-length recovery a
+  batch's ragged finish times require (see the function's docstring). This
+  was written and reasoned through on a dev machine with no `torch`
+  install and no GPU, so it is **unvalidated** -- run the
+  `analysis/budget-*.jsonl` reproduction check above for *both* model
+  families before trusting `--batch-size > 1` for a real sweep. Default
+  stays `--batch-size 1` (today's exact single-stream path), so nothing
+  about an ordinary invocation changes until this flag is opted into.
 - **Ask for a faster card.** The h100s are **not** reachable from `killable` —
   n-102 and t-100 live in `gpu-h100-killable`, so the `h100` term in the
   `--constraint` can never match while `--partition` is `killable`. Override the

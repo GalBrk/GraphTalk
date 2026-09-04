@@ -67,16 +67,11 @@ GPU time is spent, and so every model in the sweep is handed the identical file.
 The design is paired — the same graph and query appear under all seven conditions
 and both prompt styles — which is what the proposal's McNemar test requires.
 
-**`zero_cot` is retired.** Chain-of-thought is measured by the thinking arm (the
-`-think` specs, native reasoning at `zero_shot`), which superseded it. The 5,040
-`zero_cot` rows in the sweep are kept as a record and are still read by the
-analysis, but nothing new is generated in that style — pass `--styles zero_shot`
-to `build_prompts.py`. See `graphtalk/prompts.py` for what that means when
-reading those rows.
+Chain-of-thought is measured by the thinking arm (the `-think` specs, native
+reasoning at `zero_shot`) rather than by a separate prompt style.
 
-At the proposal's 30 rows per task that is 2,520 prompts per model: 180 instances
-x 7 conditions x 2 prompt styles (`zero_shot` and `zero_cot`, both using the
-published dataset's own wording).
+At the proposal's 30 rows per task that is 1,260 prompts per model: 180 instances
+x 7 conditions, at `zero_shot` (the published dataset's own wording).
 
 ## Node naming
 
@@ -98,10 +93,8 @@ Every prompt names nodes one of two ways, chosen with `--node-naming` on
 PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 30
 
 # GoT character names -- --out keeps this from overwriting prompts.jsonl.
-# --styles zero_shot because zero_cot is retired: generating those rows would
-# produce 1,260 prompts nothing will ever be run against.
 PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 30 \
-    --node-naming got --styles zero_shot --out prompts_got.jsonl
+    --node-naming got --out prompts_got.jsonl
 ```
 
 Generation is the same `cluster/sweep.sbatch` as [the sweep](#the-sweep)

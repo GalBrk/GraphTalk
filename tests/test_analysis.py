@@ -60,7 +60,7 @@ def test_non_terminating_matches_ground_truth():
   expected = collections.Counter()
   for record in records:
     key = (record["model"], record["instance_id"], record["condition"],
-           record["style"])
+           record["style"], record.get("node_naming", "integer"))
     recorded = record.get("hit_cap")
     if recorded if recorded is not None else key in truncated:
       expected[record["model"]] += 1
@@ -73,10 +73,11 @@ def test_non_terminating_matches_ground_truth():
   # Not vacuous: every labelled row still on disk and not regenerated must be
   # flagged. This is what would break if `load`/`is_excluded` started dropping a
   # shard, or if the key tuple were built in a different order.
-  on_disk = {(r["model"], r["instance_id"], r["condition"], r["style"])
+  on_disk = {(r["model"], r["instance_id"], r["condition"], r["style"],
+              r.get("node_naming", "integer"))
              for r in records if r.get("hit_cap") is None}
   still_governed = truncated & on_disk
-  flagged = {(r.model, r.instance_id, r.condition, r.style)
+  flagged = {(r.model, r.instance_id, r.condition, r.style, r.node_naming)
              for r in frame[frame["non_terminating"]].itertuples()}
   assert still_governed <= flagged, (
       f"{len(still_governed - flagged)} labelled rows on disk went unflagged"
@@ -129,9 +130,138 @@ def test_non_terminating_takes_precedence_even_when_parsed():
   # abandoned working -- non_terminating must win over wrong/correct.
   record = _record("node_count/0", "gemma4-12b-think", "A: 5")
   scored = score_sweep.score_records([record])
-  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot")}
+  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot", "integer")}
   frame = analysis.build_frame(scored, truncated, {})
   assert frame.iloc[0]["failure_type"] == "non_terminating"
+
+
+def test_non_terminating_row_is_forced_wrong_even_when_it_coincidentally_parses_correct():
+  # The abandoned working happens to state the exactly-right integer --
+  # this must never read as a hit downstream (exact/primary forced to
+  # 0.0), but the fact that it *was* a coincidental hit must not be lost
+  # either (truncated_but_correct=True). failure_type still says
+  # "non_terminating", not "wrong" -- the label stays truthful even
+  # though the score now matches a wrong row's.
+  record = _record("node_count/0", "gemma4-12b-think", "A: 5")  # gold is " 5."
+  scored = score_sweep.score_records([record])
+  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot", "integer")}
+  frame = analysis.build_frame(scored, truncated, {})
+  row = frame.iloc[0]
+  assert row["failure_type"] == "non_terminating"
+  assert row["exact"] == 0.0
+  assert row["primary"] == 0.0
+  assert bool(row["truncated_but_correct"]) is True
+
+
+def test_non_terminating_row_that_parses_wrong_is_not_flagged_truncated_but_correct():
+  record = _record("node_count/0", "gemma4-12b-think", "A: 9")  # gold is " 5."
+  scored = score_sweep.score_records([record])
+  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot", "integer")}
+  frame = analysis.build_frame(scored, truncated, {})
+  row = frame.iloc[0]
+  assert row["exact"] == 0.0
+  assert bool(row["truncated_but_correct"]) is False
+
+
+def test_non_terminating_unparsed_row_is_forced_wrong_and_not_flagged():
+  record = _record("node_count/0", "gemma4-12b-think", "")  # nothing to parse
+  scored = score_sweep.score_records([record])
+  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot", "integer")}
+  frame = analysis.build_frame(scored, truncated, {})
+  row = frame.iloc[0]
+  assert row["failure_type"] == "non_terminating"
+  assert not bool(row["parsed"])
+  assert row["exact"] == 0.0
+  assert bool(row["truncated_but_correct"]) is False
+
+
+def test_truncated_but_correct_is_false_on_every_terminating_row():
+  # A correctly-parsed, terminating row must never carry the flag -- it's
+  # specifically about the forcing having overridden something, not a
+  # general "was this exactly right" restatement of `exact`.
+  record = _record("node_count/0", "gemma4-12b", "A: 5")  # correct, terminates normally
+  scored = score_sweep.score_records([record])
+  frame = analysis.build_frame(scored, set(), {})
+  row = frame.iloc[0]
+  assert row["exact"] == 1.0
+  assert bool(row["truncated_but_correct"]) is False
+
+
+def test_truncated_but_partial_credit_flags_connected_nodes_f1_overlap():
+  # gold {0, 1, 2}, predicted {0, 1}: real but partial overlap -- F1=0.8,
+  # not an exact set match. truncated_but_correct must stay False (this
+  # isn't a full hit); its sibling must be True (real credit was
+  # discarded); primary itself must still be forced to 0.0 like any other
+  # non-terminating row.
+  record = {
+      "instance_id": "connected_nodes/0", "task": "connected_nodes",
+      "condition": "none", "style": "zero_shot", "gold": "0, 1, 2",
+      "model": "gemma4-12b-think", "response": "A: 0, 1",
+  }
+  scored = score_sweep.score_records([record])
+  truncated = {("gemma4-12b-think", "connected_nodes/0", "none", "zero_shot", "integer")}
+  frame = analysis.build_frame(scored, truncated, {})
+  row = frame.iloc[0]
+  assert row["primary"] == 0.0
+  assert bool(row["truncated_but_correct"]) is False
+  assert bool(row["truncated_but_partial_credit"]) is True
+
+
+def test_truncated_but_partial_credit_is_false_on_a_full_hit():
+  # gold and predicted sets match exactly -- truncated_but_correct alone
+  # covers this; the partial-credit sibling must not also fire (the two
+  # flags partition non-terminating rows, never overlap).
+  record = {
+      "instance_id": "connected_nodes/0", "task": "connected_nodes",
+      "condition": "none", "style": "zero_shot", "gold": "0, 1",
+      "model": "gemma4-12b-think", "response": "A: 0, 1",
+  }
+  scored = score_sweep.score_records([record])
+  truncated = {("gemma4-12b-think", "connected_nodes/0", "none", "zero_shot", "integer")}
+  frame = analysis.build_frame(scored, truncated, {})
+  row = frame.iloc[0]
+  assert bool(row["truncated_but_correct"]) is True
+  assert bool(row["truncated_but_partial_credit"]) is False
+
+
+def test_truncated_but_partial_credit_is_false_when_no_overlap_at_all():
+  record = {
+      "instance_id": "connected_nodes/0", "task": "connected_nodes",
+      "condition": "none", "style": "zero_shot", "gold": "0, 1",
+      "model": "gemma4-12b-think", "response": "A: 5, 6",
+  }
+  scored = score_sweep.score_records([record])
+  truncated = {("gemma4-12b-think", "connected_nodes/0", "none", "zero_shot", "integer")}
+  frame = analysis.build_frame(scored, truncated, {})
+  row = frame.iloc[0]
+  assert bool(row["truncated_but_correct"]) is False
+  assert bool(row["truncated_but_partial_credit"]) is False
+
+
+def test_truncated_but_partial_credit_is_false_on_integer_tasks():
+  # exact == primary for every task but connected_nodes, so a non-hit here
+  # already has primary == 0 raw -- the sibling flag should never fire.
+  record = _record("node_count/0", "gemma4-12b-think", "A: 9")  # gold " 5."
+  scored = score_sweep.score_records([record])
+  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot", "integer")}
+  frame = analysis.build_frame(scored, truncated, {})
+  assert bool(frame.iloc[0]["truncated_but_partial_credit"]) is False
+
+
+def test_truncated_keys_do_not_cross_naming_schemes():
+  # A GOT row sharing (model, instance_id, condition, style) with an
+  # integer-run truncated_keys.json entry, but missing its own `hit_cap`,
+  # must NOT borrow that entry's ground truth -- `node_naming` has to be
+  # part of the lookup key, not just the pairing key elsewhere in the
+  # pipeline. Every real GOT row on disk does carry `hit_cap` (so this
+  # fallback path is never hit in practice today), but the key must still
+  # be correct independent of that.
+  record = _record("node_count/0", "gemma4-12b-think", "A: 5")
+  record["node_naming"] = "got"
+  scored = score_sweep.score_records([record])
+  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot", "integer")}
+  frame = analysis.build_frame(scored, truncated, {})
+  assert frame.iloc[0]["failure_type"] != "non_terminating"
 
 
 def test_shortcut_score_joins_on_task_and_condition():
@@ -156,21 +286,23 @@ def test_sample_failures_excludes_correct_and_respects_stratum_cap():
 # --- recorded hit_cap, and the wording split ---------------------------------
 
 
-def test_wording_separates_the_two_filler_primers():
-  """`condition: filler` means two different primers depending on style.
-
-  Only the `zero_shot` rows were regenerated after the rewording; the obsolete
-  `zero_cot` style keeps the original `Node N has <n-1> other nodes` text. A
-  mean over both is a mean over two independent variables.
-  """
+def test_wording_separates_the_revised_and_unaffected_primers():
+  """`condition: filler` and the `edge_existence` question were reworded;
+  everything else is byte-identical to before and must not be reported as
+  revised."""
   assert analysis.wording("node_count", "filler", "zero_shot") == "revised"
-  assert analysis.wording("node_count", "filler", "zero_cot") == "original"
   assert analysis.wording("edge_existence", "none", "zero_shot") == "revised"
-  assert analysis.wording("edge_existence", "none", "zero_cot") == "original"
-  # Untouched by either rewording: both wordings are byte-identical here, so the
+  # Untouched by the rewording: both wordings are byte-identical here, so the
   # distinction does not arise and must not be invented.
   assert analysis.wording("node_count", "degree", "zero_shot") == "unaffected"
-  assert analysis.wording("node_count", "none", "zero_cot") == "unaffected"
+  assert analysis.wording("node_count", "none", "zero_shot") == "unaffected"
+
+
+def test_wording_rejects_non_zero_shot_style():
+  """`zero_cot` is retired; a row claiming that style predates a wording this
+  function can no longer label and must fail loudly rather than guess."""
+  with pytest.raises(ValueError, match="zero_shot"):
+    analysis.wording("node_count", "filler", "zero_cot")
 
 
 def test_backfilled_rows_are_labelled_as_such():
@@ -207,7 +339,7 @@ def test_recorded_hit_cap_false_is_not_treated_as_missing():
   record["n_new_tokens"] = 120
   record["hit_cap"] = False
   scored = score_sweep.score_records([record])
-  stale = {("gemma4-12b-think", "node_count/0", "none", "zero_shot")}
+  stale = {("gemma4-12b-think", "node_count/0", "none", "zero_shot", "integer")}
   frame = analysis.build_frame(scored, stale, {})
   assert not bool(frame.iloc[0]["non_terminating"])
   assert frame.iloc[0]["non_terminating_source"] == "generator"
@@ -217,7 +349,7 @@ def test_rows_without_hit_cap_still_use_the_ground_truth_file():
   """The 12,240 rows generated before the instrumentation must not regress."""
   record = _record("node_count/0", "gemma4-12b-think", "A: 5")
   scored = score_sweep.score_records([record])
-  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot")}
+  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot", "integer")}
   frame = analysis.build_frame(scored, truncated, {})
   assert bool(frame.iloc[0]["non_terminating"])
   assert frame.iloc[0]["non_terminating_source"] == "ground_truth_file"
@@ -267,6 +399,15 @@ def test_tagged_path_handles_no_extension():
   assert analysis.tagged_path("significance_report", "got") == (
       "significance_report.got"
   )
+
+
+def test_tagged_path_is_idempotent_on_an_already_tagged_path():
+  # A caller who passes an already-`.got.`-tagged --out (instead of the
+  # base name this function is designed to be handed) must not get a
+  # double-tagged `....got.got.csv` -- see the function's own docstring.
+  once = analysis.tagged_path("analysis/significance_report.csv", "got")
+  twice = analysis.tagged_path(once, "got")
+  assert once == twice == "analysis/significance_report.got.csv"
 
 
 def test_build_frame_carries_the_node_naming_column():

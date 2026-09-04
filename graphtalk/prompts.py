@@ -7,31 +7,14 @@ conditions -- same encoding, same question, same wording -- because Fatemi et
 al.'s central result is that phrasing alone moves accuracy by tens of points, so
 a condition that differed in format as well as content would be uninterpretable.
 
-Two prompt styles, both taken from the published dataset rather than invented
-here, so a number can be compared with the paper's without arguing about
-wording. `zero_shot` ends the question at `A: `; `zero_cot` appends the dataset's
-own `Let's think step by step. `. Verified against `zero_shot_test` and
-`zero_cot_test` rows of `baharef/GraphQA`.
+The prompt style is `zero_shot`, taken from the published dataset rather than
+invented here, so a number can be compared with the paper's without arguing
+about wording: the question ends at `A: `. Verified against `zero_shot_test`
+rows of `baharef/GraphQA`.
 
-**`zero_cot` is retired. Do not generate new rows in it.** Chain-of-thought in
-this project is measured by the thinking arm -- the `-think` model specs in
-`graphtalk/models.py`, which enable the model's native reasoning channel at
-`zero_shot`. That arm superseded this prompt style, and the two are not
-alternatives: `zero_cot` asks the model to narrate, the thinking arm lets it
-reason in the channel it was trained for.
-
-The style stays in the code because the sweep contains 5,040 `zero_cot` rows and
-a response is only interpretable against the prompt that produced it. It is a
-historical record, not an option. Three things follow, and all of them bite:
-
-  * its `filler` and `edge_existence` cells answer prompts that **no longer
-    exist** -- those rows were not regenerated in the 2026-08-29 rewording, so
-    `condition` alone does not identify the prompt (see `analysis.wording`);
-  * it was given half the token budget of `zero_shot` (`models.MAX_NEW_TOKENS`)
-    while being asked to reason more, so it is truncated eight times as often and
-    a third of its apparent accuracy penalty is that budget;
-  * `build_prompts.py` still defaults to both styles, so ask for
-    `--styles zero_shot` unless you specifically want the historical set.
+Chain-of-thought in this project is measured by the thinking arm -- the
+`-think` model specs in `graphtalk/models.py`, which enable the model's native
+reasoning channel at `zero_shot` -- rather than by a separate prompt style.
 
 The encoding is regenerated rather than taken from the row. The published
 dataset ships only the `adjacency` encoding and this project uses `incident`, so
@@ -45,12 +28,7 @@ from graphtalk import primers
 
 ENCODING = "incident"
 
-# The dataset's own zero-shot-CoT continuation, copied from a `zero_cot_test`
-# row. The trailing space is part of it: the question ends `A: ` and the model
-# continues from `A: Let's think step by step. `.
-COT_SUFFIX = "Let's think step by step. "
-
-PROMPT_STYLES = ("zero_shot", "zero_cot")
+PROMPT_STYLES = ("zero_shot",)
 
 
 def encode(graph) -> str:
@@ -76,8 +54,6 @@ def build_prompt(
       graph, condition, k_min=k_min, k_max=k_max, target_chars=target_chars
   )
   body = encode(graph) + task_description
-  if style == "zero_cot":
-    body += COT_SUFFIX
   # A blank line rather than a space: the primer is a preamble, and running it
   # into `G describes a graph...` would read as one sentence stream and make the
   # primer's boundary invisible to both the model and anyone reading a log.

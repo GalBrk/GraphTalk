@@ -11,14 +11,13 @@ should not have to spend again to check the claim.
 | `budget-qwen3-8b.jsonl` | the same 24 prompts on Qwen3-8B with `enable_thinking=False` |
 | `budget-qwen3-8b-THINKING.jsonl` | three of those rows with thinking **on**, kept as the before-picture: 1179 mean tokens on a `node_count` question the same model answers in 105 without |
 | `truncated_keys.json` | historical record of the **271** thinking-arm rows that were hand-labelled non-terminating. No longer consulted: every tracked row now carries `hit_cap`. Kept because it is the provenance of a claim, and because two of its rows turn out to have terminated. |
-| `sweep_frame.csv` | one row per scored response over the whole tracked sweep, 15,120 rows. **Stale — do not cite; see below.** |
-| `failure_sample.csv` | the stratified manual-inspection sample, 56 rows with full response text. **Stale — do not cite; see below.** |
-| `significance_report.csv`/`.txt` | `scripts/check_significance.py`'s pooled permutation/bootstrap/BH-corrected results, one row per (arm, group, condition). See "The significance report" below — this one has a real methodology fix behind its most recent regeneration, not just fresher input. |
-| `significance_report_mae.csv` | `check_significance.py --metric mae`'s per-`(model, task, condition)` results on mean absolute error, for the 3 integer tasks -- see "The `mae` metric mode" below. Costs no GPU time to regenerate; reuses `sweep_frame.csv`. |
-| `significance_report_exact_by_style.csv` | accuracy significance re-scoped to one style/arm at a time -- `zero_shot`-only and `zero_cot`-only main sweep, plus (new) the thinking arm's own accuracy. See "What holds up without `zero_cot`" below. |
-| `significance_report_mae_by_style.csv` | the `mae` metric re-scoped to `zero_shot`-only main sweep and the thinking arm. |
-| `significance_report_mae_zerocot_only.csv` | the `mae` metric re-scoped to `zero_cot`-only main sweep -- the counterpart that shows how much of `significance_report_mae.csv`'s pooled signal traces back to `zero_cot`. |
-| `significance_report_exact_zeroshot_and_thinking_mde.csv` | simulated minimum-detectable-effect for every non-significant `zero_shot`-only main-sweep and thinking-arm accuracy cell -- the basis for "How much more data would confirm it" below. |
+| `sweep_frame.csv` | one row per scored response over the whole tracked sweep, 10,080 rows. |
+| `failure_sample.csv` | the stratified manual-inspection sample, with full response text. **Stale — do not cite; see below.** |
+| `significance_report.csv`/`.txt` | `scripts/check_significance.py --metric both` (the default)'s pooled permutation/bootstrap/BH-corrected results, one row per (arm, group, metric, condition) -- `exact`, `mae`, and the thinking arm's `non_terminating` all in one file, sharing **one** multiplicity-correction budget. See "Phase 1.1: multiplicity & scope fixes" below. |
+| `significance_report_mae.csv` | `check_significance.py --metric mae`'s own, **separately**-corrected reading of the same `mae` rows -- its `bh_significant_global` answers "does this survive correction among just the 72 `mae` tests", a different (weaker-family, easier-to-clear) question than `significance_report.csv`'s "does this survive correction among all 192 `exact`+`mae`+`non_terminating` tests". The two can and do disagree on the same cell (see "Phase 1.1" below) -- read whichever question you're actually asking. Costs no GPU time to regenerate; reuses `sweep_frame.csv`. |
+| `significance_report_exact_by_style.csv` | accuracy significance re-scoped to one style/arm at a time -- the main sweep's own accuracy plus the thinking arm's own accuracy. Now that `zero_shot` is the only prompt style, its "by style" scoping is a historical name; kept because it also carries the thinking-arm breakdown. **Stale — predates the `all`-exclusion/unified-correction fix below; do not cite until regenerated (planned for Phase 1.4's checked-in scoped-comparison script).** |
+| `significance_report_mae_by_style.csv` | the `mae` metric re-scoped to the main sweep and the thinking arm. **Stale — same caveat as above.** |
+| `significance_report_exact_zeroshot_and_thinking_mde.csv` | simulated minimum-detectable-effect for every non-significant main-sweep and thinking-arm accuracy cell. **Stale — same caveat as above.** |
 
 ## The two CSVs, and what is in them now
 
@@ -29,10 +28,10 @@ badly -- `unparsed` alone fell from 342 rows to 70.
 
 `sweep_frame.csv` carries three columns the earlier version did not:
 
-- `wording` -- `revised` / `original` / `unaffected`, marking which text produced the
-  row. The obsolete `zero_cot` rows keep the original `filler` and `edge_existence`
-  wording, so `condition` alone does not identify the prompt. Group by this before
-  comparing anything that touches those cells.
+- `wording` -- `revised` / `unaffected`, marking which text produced the
+  row: `filler` and `edge_existence` were reworded and every tracked row was
+  regenerated against the new text, so `wording` now only distinguishes which
+  cells that rewording touched.
 - `non_terminating_source` -- `recorded` where the row carries its own `hit_cap`,
   `ground_truth_file` where `truncated_keys.json` is still the only record.
 - `n_new_tokens` -- present only on regenerated rows; empty, not zero, elsewhere.
@@ -92,20 +91,27 @@ not artificially wide from an assumption the data doesn't support.
 
 **Excluding `non_terminating` rows is not free of bias either.** The first
 fix already noted non-termination responds to the primer condition; dropping
-those rows before pairing (`bound == "excluded"`, unchanged) can still make
-a condition that happens to truncate on instances it would have gotten
-wrong anyway look artificially better. Rather than trust the truncated-text
-extractor's guess as a second point estimate, `best_case`/`worst_case` rows
-now bracket the true unknown outcome by forcing every non-terminating row's
-score to 1.0/0.0 -- a real range, not another single number. On
-`gemma4-e4b`/`filler`, the row with the most exclusions (67 of 382 rows,
-`low_power = True`): `excluded` reports -0.038, and the bracket is
-[-0.050, -0.031] -- `excluded` falls inside it, as it should, but the range
-itself is the more honest thing to report. `n_looped_on_correct_answer`
-(1 of those 67 rows) shows the extractor's guess would rarely have moved
-that estimate much on this data -- most non-terminating rows really were
-headed somewhere other than the right answer, not cut off one token short
-of it.
+those rows before pairing (`bound == "excluded"`) can still make a condition
+that happens to truncate on instances it would have gotten wrong anyway look
+artificially better. This originally motivated a `best_case`/`worst_case`
+bracket, forcing every non-terminating row's score to 1.0/0.0 to show the
+range of the unknown true outcome rather than trusting the truncated-text
+extractor's guess as a second point estimate. **That bracket is retired --
+see "Phase 2: non-terminating rows forced wrong, not bracketed or excluded"
+below**, which replaced it with always forcing the conservative (0.0/wrong)
+side and including the row, rather than reporting a range. The paragraph
+below is kept for its historical reasoning, not as a description of the
+current pipeline.
+
+On `gemma4-e4b`/`filler`, the row with the most exclusions (67 of 382 rows,
+`low_power = True` -- `low_power` is also retired, see Phase 2, renamed
+`high_non_termination_rate`): `excluded` reported -0.038, and the bracket
+was [-0.050, -0.031] -- `excluded` fell inside it, as it should have, but
+the range itself was the more honest thing to report at the time.
+`n_looped_on_correct_answer` (1 of those 67 rows) showed the extractor's
+guess would rarely have moved that estimate much on this data -- most
+non-terminating rows really were headed somewhere other than the right
+answer, not cut off one token short of it.
 
 **`bh_significant` never covered more than one `(arm, group, bound)`
 family (~6 conditions) at a time.** A reader treating the whole table as one
@@ -208,6 +214,180 @@ requiring a manual CI read as above. Not implemented because the CI-based
 read already answers the specific case that motivated it; worth doing if a
 formal power-style number for harm detection is needed later.
 
+### Phase 1.1: multiplicity & scope fixes
+
+Two scope bugs, both about what counts as one multiple-comparison family.
+
+**`all` was pooled into the same BH family as the conditions it's derived
+from.** `all` is the union of `degree`/`clustering`/`rwse`
+(`graphtalk/primers.CONDITIONS`), not a sixth independent manipulation --
+correcting it alongside the five real conditions overstated how many
+independent hypotheses were being tested (and let a mechanically-correlated
+result dilute or inflate the real family's BH threshold). Every row now
+carries `is_derived_condition`; `all` gets its own single-hypothesis
+`bh_family` (suffixed `/derived`) and is excluded from `bh_significant_global`
+by the same logic that already excluded `best_case`/`worst_case` and
+`pooled across all models` rows. Consequence for the legend below: `all` can
+only ever read • (significant at raw α, no family to be corrected against)
+or `--`, never ✅ or ⚠️; a `pooled across all models` row can still be ⚠️
+(it has its own 5-condition family) but, like `all`, is structurally
+excluded from `bh_significant_global` and so can never be ✅ either -- an
+existing rule this pass didn't change, but one an earlier version of this
+table had marked inconsistently (`pooled across all models`/`filler` shown
+✅; fixed below to ⚠️).
+
+**`--metric exact` and `--metric mae` had two separate BH families when run
+together informally.** They're two lenses on the same (model, condition)
+hypotheses, not two independent questions, so treating them as separate
+families understated the true number of comparisons made. `--metric both`
+(now the default) runs both in one pass into one shared `records` list, and
+`_apply_global_bh` corrects across the union once, written to
+`significance_report.csv`. `--metric mae` alone still works and still
+writes its own `significance_report_mae.csv` (kept, not retired -- see the
+file table above), but that file's `bh_significant_global` answers a
+narrower question (survives correction among just the 60 eligible `mae`
+tests) than
+`significance_report.csv`'s (survives correction among all 192 `exact`+
+`mae`+`non_terminating` tests together). One concrete effect of the
+difference: `qwen3-8b`/`edge_count`/`rwse` (`mae_delta=-12.8`, p=0.0010) is
+`bh_significant_global=False` in the standalone `significance_report_mae.csv`
+but `True` in the unified `significance_report.csv` -- rank 2 of 100 eligible
+pooled tests (threshold 0.001) clears the line that rank 1 of 60 eligible
+mae-only tests (threshold 0.00083) didn't, since p=0.0010 sits just above
+the mae-only threshold but exactly at the pooled one. Both numbers are
+correct; they're answers to different questions, and the unified one is the
+one to cite going forward.
+
+**Also added: `headroom`** (`min(control_mean, 1 - control_mean)`) alongside
+`near_ceiling`/`low_power`, so a `low_power` row can be read as "low_power
+*because of* near-ceiling headroom" versus "low_power despite real headroom
+left" -- the two booleans alone couldn't distinguish those, and on the
+current data they happen to co-occur completely for `gemma4-e4b`.
+
+### Phase 1.4: reproducibility & process hardening
+
+**`--filter`.** The `*_by_style.csv` artifacts (now deleted, see the
+zero_cot purge) were produced by an undocumented manual pre-filter step --
+someone hand-edited `sweep_frame.csv` down to one style before running
+`check_significance.py`, a process this repo never checked in a script
+for. `--filter "<pandas query expression>"` (e.g. `--filter "model ==
+'gemma4-12b'"`) formalizes that into one flag applied to `--frame`
+immediately after loading, before anything else runs -- any future "what
+holds up under subset X" question is now one documented command instead
+of a remembered snippet. The multiplicity correction is computed only over
+the filtered rows: a `--filter`'d run answers a genuinely different,
+smaller-family question than the unfiltered one, not a display slice of it.
+
+**`--confirmatory-config`.** A JSON file naming which (arm, model,
+condition, metric) cells were decided *before a sweep's results were
+seen* to be the ones a claim will actually rest on -- see
+`scripts/check_significance.py`'s module docstring for the exact format.
+Every record gets a `hypothesis_type` column (`"confirmatory"`/
+`"exploratory"`, blank when no config is given) and `bh_significant_global`
+corrects the two groups in **separate** families: a small, strict
+confirmatory family, and an exploratory family that's still reported (not
+suppressed) but explicitly labelled hypothesis-generating rather than
+confirmed. This is the direct answer to the pattern this project has hit
+more than once (see "Retracted: 'Most primer findings depend on the
+retired `zero_cot` style'" and the `filler`-primer episode in
+`docs/sweep-findings.md`) -- a large exploratory sweep produces findings
+that later turn out to be artifacts of pooling or of the specific format
+tested, and there was previously no structural way to tell "this was
+predicted in advance" apart from "this was noticed after the fact and
+looks real." Committing the config file before running the sweep it
+applies to is the discipline this flag makes possible, not something code
+can verify from inside a process reading the file after the run -- that
+part still depends on actually doing it in that order.
+
+### Phase 2: non-terminating rows forced wrong, not bracketed or excluded
+
+A further methodology change, prompted by a simple question: a
+non-terminating response's abandoned text can coincidentally parse to the
+gold answer, and until this phase, that coincidence was allowed to read as
+a real hit in `sweep_frame.csv` itself -- `graphtalk.scoring.score_one`
+has no notion of truncation, so it scored a cut-off response exactly like
+a complete one, and `graphtalk.analysis.build_frame` passed that score
+through unmodified. `check_significance.py`'s `excluded`/`best_case`/
+`worst_case` bounds were a downstream attempt to manage the resulting
+uncertainty (drop the row, or bracket it both ways); this phase resolves
+the uncertainty at its source instead.
+
+**`graphtalk.analysis.build_frame` now forces `exact`/`primary` to 0.0 on
+every `non_terminating` row, unconditionally** -- never trusting a
+truncated response's coincidental resemblance to the gold answer, and
+never dropping the row either. `truncated_but_correct` (new column)
+preserves the discarded fact: `True` only when the forcing actually
+overrode a real hit (79 of 348 non-terminating rows in the current
+`sweep_frame.csv`; 65 of 341 in `sweep_frame.got.csv`). `failure_type`
+stays `"non_terminating"`, not `"wrong"` -- the label remains truthful
+even though the two now score identically.
+
+**`check_significance.py`'s three-way bound is gone.** With every row
+already trustworthy, there is nothing left to bracket: `excluded` is now
+the only main-sweep `bound` value (kept as the literal string for schema
+stability, even though nothing is excluded any more), and it uses every
+row. `n_excluded_non_terminating` is renamed `n_forced_wrong_non_terminating`
+(same count, relabelled -- these rows were never dropped from `sweep_frame`,
+only from the old pairing); `low_power` is renamed
+`high_non_termination_rate` and reinterpreted: not "not enough clean data"
+(nothing is dropped), but "a meaningful part of this cell's accuracy
+number reflects forced-wrong rows, not reasoning quality" -- the
+`--low-power-threshold` CLI flag is renamed `--high-non-termination-threshold`
+to match.
+
+**This is not free of bias either -- it resolves the old `excluded`
+bound's bias in the conservative direction, not away.** A condition that
+induces more truncation now mechanically looks *worse* here, partly
+reflecting generation length rather than reasoning quality -- the mirror
+image of `excluded`'s old bias (a condition that happened to truncate on
+instances it would have gotten wrong anyway looked artificially *better*
+there). Confirmed on the real regenerated data: comparing the pre- and
+post-Phase-2 `significance_report.csv`, the mean shift in `delta` across
+every main-sweep cell is -0.0013 (small, and in the predicted direction),
+concentrated almost entirely on `gemma4-e4b` (34 non-terminating rows in
+this data) -- `qwen3-14b` (0 non-terminating rows) shows exactly zero
+shift on every cell, `gemma4-12b`/`qwen3-8b` (3 and 2 rows respectively)
+show near-zero shift. This is the expected, mechanical signature of the
+change working as designed, not noise.
+
+**`--metric mae` now includes non-terminating rows too, via imputation
+rather than trusting their own `absolute_error`.** A non-terminating row's
+own `absolute_error` (real when the truncated text happened to parse,
+`None` otherwise) is never used, for the same reason its `exact` isn't --
+a partially-generated response's stated number carries the same
+"coincidentally looks informative" risk. Instead
+`_mae_imputation_table` substitutes the **median `absolute_error` among
+genuinely-wrong (parsed, terminating) rows for the same task**, computed
+once from the whole frame (a per-model/condition slice is often under 30
+wrong rows, too few for a stable median). `n_mae_imputed` reports how many
+of a cell's rows got this substitution. Genuinely *unparsed*-but-terminated
+rows remain excluded, unchanged -- out of scope for this phase, which is
+specifically about non-terminating rows. Real effect on the current data:
+`qwen3-8b`/`edge_count`/`rwse` moved from surviving the whole-table
+correction (✅, p=0.0010, pre-Phase-2) to significant only within its own
+model's five-condition family (⚠️, p=0.0011, now ranked lower in the
+unified family once every model's MAE cells shifted slightly from the same
+imputation).
+
+**Consistency fix, found while implementing this phase, not part of the
+original ask:** `graphtalk/mixed_models.py`'s GEE cross-check and
+`scripts/check_significance_glmm.py`'s own frame-scoping both used to
+exclude non-terminating rows too, matching the old `excluded` bound so the
+cross-check stayed comparable. Left alone, GEE would have silently
+reverted to the retired scope and stopped being a real cross-check of the
+current pipeline. `_main_sweep_excluded` is renamed `_main_sweep_scope`
+(the old name became actively misleading once it stopped excluding
+anything) and both call sites now include non-terminating rows, matching
+`check_significance.py` exactly.
+
+Covers both the `integer` and `got` `node_naming` schemes automatically --
+no scheme-specific code exists anywhere in this phase, since `node_naming`
+is carried as data throughout the pipeline, never branched on (see
+`README.md#node-naming`). Both `analysis/sweep_frame.csv` and
+`analysis/sweep_frame.got.csv`, and both `analysis/significance_report.csv`
+and `analysis/significance_report.got.csv`, were regenerated together
+under this phase.
+
 ### The `mae` metric mode
 
 Accuracy is not the only lens `check_significance.py` applies to
@@ -238,27 +418,50 @@ significant and survives the whole-table correction
 (`bh_significant_global`); ⚠️ = significant within its own model's (or
 model-and-task's) comparison only; -- = not significant.
 
+**`all`, the union of `degree`/`clustering`/`rwse`, is corrected as its own
+single-hypothesis family** (`_is_derived_condition`, `scripts/check_significance.py`)
+rather than pooled with the five independent conditions -- it's mechanically
+correlated with them, not a sixth independent test. • marks a significant
+`all` result: significant at raw α (p ≤ 0.05), but not eligible for
+`bh_significant_global` (a single-hypothesis test needs no multiplicity
+correction, but also can't be said to "survive" one). **`exact` and `mae`
+now share one multiplicity-correction budget** (`--metric both`, the
+default) rather than two separate ones -- a `mae` cell can newly read ✅
+where it previously read ⚠️, or vice versa, purely from being pooled with
+`exact`'s rows rather than any change in the underlying data.
+
 ### Main sweep -- accuracy vs. `none`
 
-Where a model's row is footnoted, every one of its `near_ceiling`-flagged,
-not-significant cells should be read per the direction-specific caveat in
-"A third pass" above, not as a confirmed null.
+**No individual-model cell is significant; two pooled cells are, within
+their own family only.** `gemma4-12b` and `gemma4-e4b` are `near_ceiling`
+on all six conditions (96-99% control accuracy, per "A third pass" above),
+genuinely inconclusive rather than null; `qwen3-14b` and `qwen3-8b` have real
+headroom (88-90% control accuracy) and still show no significant effect --
+closer to a genuine null. Pooling across all four models gives `degree`
+(p=0.0050) and `rwse` (p=0.0105) enough power to clear their own
+per-family threshold -- new since Phase 2 (non-terminating rows forced
+wrong, above); neither survives the whole-table correction.
 
 | Model | all | clustering | components | degree | filler | rwse |
 |---|---|---|---|---|---|---|
-| `gemma4-12b` [^ceiling] | -- | -- | ✅ hurts | -- | ✅ hurts | -- |
-| `gemma4-e4b` [^ceiling] | -- | -- | ✅ hurts | -- | ⚠️ hurts | -- |
-| `qwen3-14b` | ⚠️ helps | ⚠️ helps | -- | ✅ helps | -- | -- |
-| `qwen3-8b` | ✅ helps | ✅ helps | -- | ✅ helps | -- | -- |
-| pooled across all models | ✅ helps | ✅ helps | ✅ hurts | ✅ helps | ✅ hurts | -- |
+| `gemma4-12b` [^ceiling] | -- | -- | -- | -- | -- | -- |
+| `gemma4-e4b` [^ceiling] | -- | -- | -- | -- | -- | -- |
+| `qwen3-14b` | -- | -- | -- | -- | -- | -- |
+| `qwen3-8b` | -- | -- | -- | -- | -- | -- |
+| pooled across all models | -- | -- | -- | ⚠️ helps | -- | ⚠️ hurts |
 
-[^ceiling]: `near_ceiling=True` on all six conditions (96-98% control
-accuracy). The `all`/`degree` not-significant cells (harmless direction)
-are genuinely inconclusive rather than null; `clustering`/`rwse`
-(harmful direction, `gemma4-12b` only -- `gemma4-e4b`'s `clustering`/`rwse`
-move in the helpful direction) are not excused by the ceiling and should
-be read as closer to a genuine null; see the CI-based bound in "A third
-pass" above.
+[^ceiling]: `near_ceiling=True` on all six conditions (96-99% control
+accuracy) -- see the CI-based bound in "A third pass" above before reading
+any of these cells as a confirmed null.
+
+Unchanged by excluding `all` from the independent-condition family (its own
+raw p-value ranges 0.46-1.0 across all five groups -- nowhere close to
+significant on its own either). An earlier version of this table, computed
+while `zero_cot` rows were still pooled into the main sweep, showed several
+✅/⚠️ cells (`gemma4-12b`/`components`, `gemma4-e4b`/`components`,
+`qwen3-14b`/`degree`, `qwen3-8b`/`all`, and others). None of them survive on
+`zero_shot`-only data -- see "Retracted: 'Most primer findings depend on the
+retired `zero_cot` style'" in `docs/sweep-findings.md`.
 
 ### Thinking arm -- non-termination rate vs. `none`
 
@@ -266,11 +469,23 @@ pass" above.
 
 | Model | all | clustering | components | degree | filler | rwse |
 |---|---|---|---|---|---|---|
-| `gemma4-12b` | ✅ fewer timeouts | -- | ⚠️ fewer timeouts | -- | ✅ fewer timeouts | -- |
+| `gemma4-12b` | • fewer timeouts | -- | -- | -- | ✅ fewer timeouts | -- |
 | `gemma4-e4b` | -- | -- | -- | -- | -- | -- |
 | `qwen3-14b` | -- | -- | -- | -- | -- | -- |
 | `qwen3-8b` | -- | -- | -- | -- | -- | -- |
-| pooled across all models | -- | -- | -- | -- | ✅ fewer timeouts | -- |
+| pooled across all models | • fewer timeouts | -- | -- | -- | ⚠️ fewer timeouts | -- |
+
+`components` no longer reads significant for `gemma4-12b` once `all` is
+removed from its family: at the old family size of 6, `all`'s very small
+p-value (0.0037) reshaped the BH rejection region enough to carry
+`components` (own p-value unchanged) over the line too -- exactly the kind
+of family-composition artifact excluding derived conditions is meant to
+close (BH's rejection region depends on the whole family, not just each
+p-value in isolation, so this can go either direction; see
+`tests/test_significance.py::test_global_bh_can_be_stricter_than_per_family_bh`
+for the general phenomenon). `all` itself is still a real, if narrower,
+effect on `gemma4-12b` (p=0.0037) and pooled (p=0.048, barely) -- both •,
+not ✅, since a single-hypothesis test isn't part of the global correction.
 
 ### Per-task error (MAE) vs. `none`
 
@@ -279,10 +494,12 @@ task regardless of condition) and is omitted; the other two tasks:
 
 **`node_count`**
 
+No significant cells.
+
 | Model | all | clustering | components | degree | filler | rwse |
 |---|---|---|---|---|---|---|
 | `gemma4-12b` | -- | -- | -- | -- | -- | -- |
-| `gemma4-e4b` | -- | -- | ✅ hurts | -- | -- | -- |
+| `gemma4-e4b` | -- | -- | -- | -- | -- | -- |
 | `qwen3-14b` | -- | -- | -- | -- | -- | -- |
 | `qwen3-8b` | -- | -- | -- | -- | -- | -- |
 
@@ -292,87 +509,121 @@ task regardless of condition) and is omitted; the other two tasks:
 |---|---|---|---|---|---|---|
 | `gemma4-12b` | -- | -- | -- | -- | -- | -- |
 | `gemma4-e4b` | -- | -- | -- | -- | -- | -- |
-| `qwen3-14b` | -- | ✅ helps | -- | -- | ✅ hurts | -- |
-| `qwen3-8b` | ✅ helps | -- | -- | -- | ✅ hurts | ✅ hurts |
+| `qwen3-14b` | -- | ⚠️ helps | -- | -- | -- | -- |
+| `qwen3-8b` | -- | -- | -- | -- | -- | ⚠️ hurts |
 
-`edge_count` is where essentially all of the MAE-specific signal lives,
-and three of these cells (`qwen3-14b`/`filler`, `qwen3-8b`/`filler`,
-`qwen3-8b`/`rwse`) have no counterpart at all in the main-sweep accuracy
-table above -- `filler` and `rwse` push these models' wrong `edge_count`
-answers substantially further from correct without flipping enough of
-them to exact matches to register on accuracy. Reads as consistent with
-"Why `gemma4-e4b` truncates more" (`docs/sweep-findings.md`): `edge_count`
-is exactly the task where models fall into exhaustive, error-prone manual
-counting, so it is the task where a bad primer's damage shows up as
-*larger* miscounts before it shows up as *more frequent* wrong answers.
+`edge_count` is still where essentially all of the MAE-specific signal
+lives, consistent with "Why `gemma4-e4b` truncates more"
+(`docs/sweep-findings.md`): it is exactly the task where models fall into
+exhaustive, error-prone manual counting, so it is the task where a bad
+primer's damage shows up as *larger* miscounts before it shows up as *more
+frequent* wrong answers. Both cells here are significant only within their
+own model's five-condition comparison, not the whole-table correction.
+`qwen3-8b`/`rwse` (p=0.0011) is the one cell Phase 2 (above) moved: it
+briefly survived the whole-table correction (✅) in the version of this
+table computed right after `--metric both` first unified `exact` and `mae`
+into one multiplicity budget, then dropped back to ⚠️ once non-terminating
+rows were forced wrong rather than excluded -- a small shift in every
+model's MAE p-values was enough to move this one cell's rank past its BH
+threshold in the unified family. An earlier, `zero_cot`-pooled version of
+this table showed five significant cells; three did not survive
+restricting to `zero_shot`-only data (see the retraction note in
+`docs/sweep-findings.md`).
 
-### What holds up without `zero_cot`
+### The GOT run (`sweep_frame.got.csv` / `significance_report.got.csv`)
 
-Every table above pools `zero_shot` and `zero_cot` together for the main
-sweep. `zero_cot` is explicitly retired (`graphtalk/prompts.py`: *"`zero_cot`
-is retired. Do not generate new rows in it"*) and gets half the token
-budget of `zero_shot`, so it is worth checking how much of the above
-depends on it. Same tooling, just re-scoped to one style/arm at a time.
+The tables above are `integer` node-naming only, matching this section's
+long-standing scope. The GOT (Game-of-Thrones node-naming) sweep has its
+own, separately-corrected `significance_report.got.csv` -- not reproduced
+as full tables here, to avoid this section doubling in length, but the
+headline result: `qwen3-8b`/`degree` (⚠️, delta +0.078, p=0.0018) reaches
+significance within its own model's five-condition family, but **does
+not** survive the whole-table correction (`bh_significant_global=False`
+-- corrected here; an earlier version of this section overstated this as
+✅). Pooled `degree` is significant within its own family too (⚠️,
+p=0.0001), but as a "pooled across all models" row it is structurally
+excluded from `bh_significant_global`'s family altogether (built from the
+same underlying pairs as its sibling per-model rows, so not an
+independent test -- see "A second pass" above), not a row that was tested
+and failed. Both corroborated by an independent GEE fit
+(`qwen3-8b`/`degree` p=0.0007) --
+traced to the `edge_count` task specifically (+35.7pp on that task alone,
+0pp on `edge_existence`/`node_degree`), consistent with the `degree`
+primer being close to a worked shortcut for summing degrees. This is
+**not** yet pre-registered as confirmatory (see `--confirmatory-config` in
+Phase 1.4 above) -- read it as a real, GEE-corroborated, per-family signal
+worth a targeted follow-up sweep (Track 2), not a finding that has cleared
+this project's strongest test. `docs/sweep-findings.md`'s separate
+`naming_effect.py` comparison (renaming has a precise, ~nil effect on
+*overall* accuracy pooled across all seven conditions) is not contradicted
+by this -- that comparison averages away a `degree`-specific effect at a
+coarser aggregation level.
 
-**`zero_shot`-only main sweep, accuracy: 0 of 24 `(model, condition)`
-cells significant.** `zero_cot`-only, the same 24 cells:
+### Retracted: "What holds up without `zero_cot`"
 
-| Model | Condition | delta | p |
-|---|---|---|---|
-| `gemma4-e4b` | `components` | -0.109 | 0.0003 |
-| `gemma4-e4b` | `filler` | -0.092 | 0.0023 |
-| `qwen3-8b` | `all` | +0.105 | 0.0001 |
-| `qwen3-8b` | `degree` | +0.116 | 0.0004 |
-| `gemma4-12b` | `filler` | -0.047 | 0.0070 |
-| `qwen3-14b` | `components` | -0.053 | 0.0048 |
-| `qwen3-8b` | `clustering` | +0.076 | 0.0081 |
+This subsection used to compare `zero_shot`-only significance against
+`zero_cot`-only to show how much of the tables above depended on the
+retired style. `zero_cot` and its rows have since been fully removed from
+the project, so that comparison is no longer reproducible; the tables above
+are now `zero_shot`-only by construction; see the matching retraction note
+in `docs/sweep-findings.md`.
 
-Most of the pooled main-sweep accuracy findings in "Main sweep" above
-trace back to `zero_cot`, not `zero_shot`.
+## Track 2: data-collection planning (dry runs, no GPU time yet)
 
-**`zero_shot`-only, `mae`: 1 of 72 cells** (`qwen3-8b`/`edge_count`/`rwse`,
-and it does not survive the whole-table correction). **`zero_cot`-only:
-6 of 72**, including that same cell at a larger magnitude -- `zero_cot`
-amplifies rather than invents, but the same pattern repeats: most of "Per-task
-error (MAE)" above lives in the retired format, not the live one.
+Track 1 is analysis of already-collected data; Track 2 is about what a
+*future* sweep should look like. Both scripts below are dry runs against
+already-collected data -- deliberately, so a `--count`/sampling decision
+is checked before any new GPU time is spent, not after.
 
-**Thinking-arm accuracy: 0 of 24 cells, on exact-match or `mae`.**
-Unaffected by this question, since the thinking arm never used `zero_cot`
-in the first place -- its own significant findings ("Thinking arm" above)
-stand as-is; they are about non-termination, not accuracy.
+### 2.1: `scripts/recommend_count.py` -- MDE-targeted `--count`
 
-Not every pooled finding is a `zero_cot` artifact, though -- checking
-effect size, not just significance, most `zero_shot`-only deltas share
-the pooled/`zero_cot` numbers' sign, just smaller and underpowered at
-roughly half the sample (`n_clusters≈170-180` vs `≈350` pooled) --
-e.g. `qwen3-8b`/`degree`: `zero_shot`-only delta +0.028 (not significant),
-`zero_cot`-only +0.116 (significant), same direction. A few
-(`gemma4-e4b`/`filler`, `qwen3-8b`/`all`) show a `zero_shot` delta near
-zero against a large `zero_cot` delta -- closer to genuinely
-`zero_cot`-specific. One cell runs the other way
-(`qwen3-8b`/`filler`'s only signal sits in `zero_shot`, not `zero_cot`).
-So the honest read on most of the pooled accuracy story is
-*underpowered and unconfirmed*, not *disproven*.
+Translates each non-significant `main_sweep`/`exact` cell's already-computed
+`mde_delta`/`mde_delta_negative` into a recommended `--count`, via the
+closed-form `MDE ~ 1/sqrt(N)` scaling
+(`n_clusters_needed = n_clusters * (mde_delta / delta) ** 2`; see the
+script's own docstring for the full derivation and skip conditions). Against
+the current `significance_report.csv`: 16 of 20 non-significant cells get a
+finite recommendation, and only 6 of those 16 are affordable within the
+published split's 500-graph-per-task cap -- the rest (mostly `qwen3-14b`,
+which needs 2,430-36,490 clusters depending on condition) would need a
+larger or restructured corpus (see 2.2) rather than just a bigger `--count`.
+4 cells are unrecommendable outright: 2 have an exactly-zero observed delta,
+2 didn't converge (near-ceiling/near-floor, where headroom -- not sample
+size -- is the binding constraint; see the third pass above).
 
-**How much more data would confirm it:** the same simulated MDE used in
-"A third pass" above, rescoped to `zero_shot`-only main sweep and to the
-thinking arm's own accuracy. Of the 24 `zero_shot`-only cells: 12 never
-converge (the same near-ceiling problem as `gemma4-12b`/`gemma4-e4b`
-elsewhere), 2 have an observed delta of exactly zero (no amount of data
-shows an effect that isn't there), and the 10 that do converge all need
-far more than the published dataset's 500-graph cap -- from ~2,232
-(`qwen3-14b`/`degree`, the closest) to ~49,207. All 24 of the thinking
-arm's own accuracy cells fail to converge too. **No `--count` within the
-published GraphQA split resolves the accuracy question on live-format
-data, for either arm.**
+`scripts/validate_recommend_count.py` checks that extrapolation against a
+real bootstrap power simulation at the recommended size, for cells small
+enough to simulate in reasonable time (`--max-n-clusters-target`, default
+10,000 -- the largest real recommendations, 30,000+ clusters, are already
+far past the published cap regardless of whether the closed-form estimate
+is exact, so aren't worth the simulation cost). Result on the 6
+under-3,000-cluster cells: 5/6 land at simulated power 0.87-1.00, one
+right at 0.87 (near the 80% target), the rest well above it -- i.e. the
+closed-form extrapolation is **conservative** here (recommends more
+clusters than strictly needed for 80% power), never optimistic, in every
+cell checked so far. That's the safe direction for a planning number to
+err in, but it means `recommended_count` should be read as an upper
+bound, not a precise minimum.
 
-**Bottom line**: the only primer finding that survives excluding
-`zero_cot` entirely is the thinking arm's non-termination result above
-(`gemma4-12b`: `all`/`filler`/`components`; pooled: `filler`) -- a
-reliability effect, not an accuracy one. Every accuracy claim in the
-tables above is real *in the pooled data* but not yet confirmed on the
-live prompt format alone, and this dataset cannot resolve that with more
-of the same graphs.
+### 2.2: `scripts/validate_stratified_sampling.py` -- does graph size predict discordant pairs?
+
+`build_prompts.py --graph-source stratified` (Track 2.2's proposed fix)
+oversamples the largest graphs per task instead of scaling `--count`
+uniformly, on the theory that larger graphs concentrate more of a
+near-ceiling model's errors (and so more of a primer's chance to flip an
+answer) per graph collected. Checked against already-collected responses
+(`sweep_frame.csv` joined against `prompts.jsonl` for per-instance
+`nodes`), splitting each near-ceiling model's (`gemma4-12b`, `gemma4-e4b`
+at the default 0.95 threshold) paired instances into small/large node-count
+strata at the per-cell median: 7 of 12 (model, condition) cells show a
+higher discordant-pair rate in the large-graph stratum, and the mean
+discordant rate across all cells is higher for large graphs (0.0217 vs.
+0.0185) -- a real but modest effect, not a dramatic one. Individual
+per-cell permutation p-values stay far from significance in both strata at
+current sample sizes (as expected -- these are the same near-ceiling cells
+Track 1 already flagged as underpowered), so this is a directional signal
+supporting the stratified-sampling strategy, not yet a confirmed effect;
+worth re-checking once a stratified run's own data exists.
 
 ## The batching baseline
 

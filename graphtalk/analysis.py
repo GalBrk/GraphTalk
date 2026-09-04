@@ -43,20 +43,13 @@ _EXCLUDE_SUBSTRINGS = ("smoke-", ".redo.shard")
 FAILURE_TYPES = ("non_terminating", "unparsed", "wrong", "correct")
 
 # Which wording of the prompt a row was generated from. The `filler` primer and
-# the `edge_existence` question were both reworded, and only the `zero_shot`
-# rows were regenerated -- the obsolete `zero_cot` prompt style keeps the
-# original wording, because it is no longer used and not worth the GPU time.
+# the `edge_existence` question were both reworded in the 2026-08-29 re-run.
 #
-# So `condition: filler` does NOT mean one thing across this frame, and pooling
-# it across styles averages two different independent variables. That is exactly
-# the quiet source of measurement error `graphtalk/scoring.py`'s own docstring
-# warns about, which is why this is a column rather than a footnote: group by it,
-# or filter on it, but never sum across it.
-#
-# `unaffected` is the honest label for the 10,800 rows the rewording never
-# touched -- for those the two wordings are byte-identical and the distinction
-# does not arise.
-WORDINGS = ("revised", "original", "unaffected")
+# `unaffected` is the honest label for the rows the rewording never touched --
+# for those the two wordings are byte-identical and the distinction does not
+# arise. This is a column rather than a footnote so `filler`/`edge_existence`
+# rows can be grouped by wording rather than silently pooling the two.
+WORDINGS = ("revised", "unaffected")
 
 # Tukey's extreme-outlier rule (Q3 + 3*IQR), applied per (model, task,
 # condition, style) cell rather than as a fixed length cutoff -- there is no
@@ -69,10 +62,17 @@ _OUTLIER_IQR_MULTIPLIER = 3.0
 
 
 def wording(task: str, condition: str, style: str) -> str:
-  """Which prompt wording produced a row; see `WORDINGS`."""
+  """Which prompt wording produced a row; see `WORDINGS`.
+
+  Raises on any `style` other than `"zero_shot"` -- the only style this
+  project generates or scores rows in; a different value means the row
+  predates a wording it can't be labelled against.
+  """
+  if style != "zero_shot":
+    raise ValueError(f"unknown prompt style: {style!r}; only 'zero_shot' is supported")
   if condition != "filler" and task != "edge_existence":
     return "unaffected"
-  return "revised" if style == "zero_shot" else "original"
+  return "revised"
 
 
 def is_excluded(path: str) -> bool:
@@ -148,14 +148,27 @@ def tagged_path(path: str, scheme: str) -> str:
   """`path` unchanged for `"integer"`; `.<scheme>` inserted before the
   extension otherwise -- `analysis/sweep_frame.csv` -> `.got.csv`, matching
   the `.rerun.`/`.shard<i>of<n>.` dot-tag convention already live in `runs/`.
+
+  Idempotent: a `path` that already ends in `.<scheme>` right before its
+  extension is returned unchanged rather than tagged a second time. Without
+  this, a caller who (reasonably) passes an already-tagged `--out` -- e.g.
+  `--out analysis/significance_report.got.csv` against a `got`-scheme frame,
+  instead of the base `analysis/significance_report.csv` this function is
+  designed to be handed -- silently gets
+  `analysis/significance_report.got.got.csv` instead, which looks like a
+  distinct, correctly-tagged file rather than the mistake it is (caught
+  while producing the first real GOT-scheme significance report, see
+  `scripts/check_significance.py`).
   """
   if scheme == "integer":
     return path
   root, ext = os.path.splitext(path)
+  if root.endswith(f".{scheme}"):
+    return path
   return f"{root}.{scheme}{ext}"
 
 
-def load_truncated_keys(path: str) -> set[tuple[str, str, str, str]]:
+def load_truncated_keys(path: str) -> set[tuple[str, str, str, str, str]]:
   """Ground truth for the non-terminating thinking-arm rows that predate `hit_cap`.
 
   Originally all 350 known non-terminating rows. Since the 2026-08-29 re-run,
@@ -166,13 +179,21 @@ def load_truncated_keys(path: str) -> set[tuple[str, str, str, str]]:
   that cannot state the fact themselves.
 
   `analysis/truncated_keys.json` is `{model: [[instance_id, condition, style],
-  ...]}`; flattened here to `(model, instance_id, condition, style)` tuples
-  for O(1) row lookup in `build_frame`.
+  ...]}`; flattened here to `(model, instance_id, condition, style, "integer")`
+  tuples for O(1) row lookup in `build_frame`. The trailing `"integer"` is not
+  read from the file -- it predates `node_naming`/GOT entirely (every row it
+  governs was generated before `--node-naming got` existed, and every GOT row
+  carries its own `hit_cap`, so this file never needs to state a non-integer
+  scheme), but `build_frame`'s lookup key includes `node_naming` so a GOT row
+  can never key-collide with an integer-run entry sharing the same `(model,
+  instance_id, condition, style)`; matching that key shape here, rather than
+  leaving this file's tuples one element short, is what actually closes that
+  gap rather than working around it at the call site.
   """
   with open(path) as handle:
     raw = json.load(handle)
   return {
-      (model, instance_id, condition, style)
+      (model, instance_id, condition, style, "integer")
       for model, keys in raw.items()
       for instance_id, condition, style in keys
   }
@@ -205,7 +226,7 @@ def _failure_type(non_terminating: bool, score: dict) -> str:
 
 def build_frame(
     scored_records: list[dict],
-    truncated_keys: set[tuple[str, str, str, str]],
+    truncated_keys: set[tuple[str, str, str, str, str]],
     shortcuts_by_cell: dict[tuple[str, str], float],
 ) -> pd.DataFrame:
   """The canonical table: one row per scored response.
@@ -220,6 +241,32 @@ def build_frame(
   canonical frame keeps every groupby/export cheap. It is re-joined only in
   `sample_failures`'s companion CLI (`scripts/sample_failures.py`), where full
   text is the actual point.
+
+  `exact`/`primary` are forced to 0.0 on every `non_terminating` row,
+  regardless of what `scoring.score_one` computed from the (possibly
+  truncated) text -- a cut-off response's coincidental resemblance to the
+  gold answer is not evidence of correct reasoning, and every downstream
+  consumer (significance testing, MDE) trusts these columns outright, with
+  no bound/bracket mechanism left to second-guess them (see
+  `scripts/check_significance.py`, which used to bracket this uncertainty
+  via `best_case`/`worst_case` and no longer does -- the row is simply,
+  unconditionally, scored as wrong). `truncated_but_correct` preserves the
+  discarded fact for anyone who wants it: `True` only when the forcing
+  actually overrode a real hit, never a synonym for `non_terminating`
+  itself. `truncated_but_partial_credit` is its sibling for `primary`'s
+  F1 grading on `connected_nodes` (the one task where `primary != exact`):
+  `True` when a non-terminating row had real, but not full, neighbour-list
+  overlap discarded by `primary`'s forcing -- the two flags partition
+  non-terminating rows (exact hit / partial credit only / no credit) with
+  no overlap. `failure_type` (below) is unaffected by this forcing -- it still
+  reads `"non_terminating"` for these rows, not `"wrong"`, so the
+  diagnostic distinction between "genuinely wrong" and "unknown, treated as
+  wrong" survives in the data even though the two now score identically.
+  `absolute_error` is left as `scoring.score_one` computed it (a real
+  number when the truncated text happened to parse, `None` otherwise) --
+  unlike `exact`/`primary`, there is no single "mimics wrong" value for an
+  unbounded metric, so that decision is left to
+  `scripts/check_significance.py::_mae_imputation_table`, not made here.
   """
   rows = []
   for record in scored_records:
@@ -227,7 +274,17 @@ def build_frame(
     is_think = model.endswith("-think")
     model_family = model[: -len("-think")] if is_think else model
     score = record["score"]
-    key = (model, record["instance_id"], record["condition"], record["style"])
+    # `node_naming` is part of the key -- without it, a GOT row missing its
+    # own `hit_cap` would key-collide with an integer-run row sharing the
+    # same `(model, instance_id, condition, style)` and silently borrow that
+    # row's ground truth across naming schemes. Not currently reachable (every
+    # GOT row on disk carries its own `hit_cap`, so this fallback lookup is
+    # never hit for GOT data today), but the key itself must be correct
+    # regardless of what happens to be true of today's data -- see
+    # `load_truncated_keys`'s docstring for why its own tuples all carry
+    # `"integer"`.
+    key = (model, record["instance_id"], record["condition"], record["style"],
+           record.get("node_naming", "integer"))
     # The row's own `hit_cap` when it has one, the hand-maintained ground-truth
     # file otherwise. Rows generated before `scripts/run_sweep.py` started
     # recording token counts carry no `hit_cap`, and for those
@@ -258,6 +315,41 @@ def build_frame(
         and predicted_first == record["predicted"]
         and score["exact"] > 0.5
     ) if non_terminating else None
+    # A truncated response's `exact`/`primary` must never accidentally read
+    # as a hit: the text it stopped on can coincidentally match the gold
+    # answer with no bearing on whether the model actually reasoned its way
+    # there, and every downstream consumer (accuracy, significance, MDE)
+    # trusts these two columns as ground truth. Forced to 0.0 -- "mimic a
+    # standard wrong prediction" -- rather than left at whatever `score_one`
+    # computed from the abandoned text. `truncated_but_correct` keeps the
+    # discarded information visible instead of silently losing it: `True`
+    # only when the forcing actually changed something (the raw, pre-force
+    # `exact` was a real hit), `False` on every other row including
+    # non-terminating-but-actually-wrong ones, so it stays a meaningful flag
+    # rather than a synonym for `non_terminating`. `absolute_error` is
+    # deliberately NOT forced here -- there is no single value that "mimics
+    # wrong" for an unbounded error metric, and choosing one is a modeling
+    # decision that belongs where the empirical wrong-row error distribution
+    # needed to do it well is actually computable (see
+    # `scripts/check_significance.py::_mae_imputation_table`), not here,
+    # one row at a time.
+    truncated_but_correct = non_terminating and score["exact"] == 1.0
+    # Sibling to `truncated_but_correct`, for `primary`'s F1 grading on
+    # `connected_nodes` specifically: `exact`==`primary` for every other
+    # task (see `scoring.score_one`), so a row with `primary > 0` there
+    # already has `exact == 1.0` and `truncated_but_correct` already
+    # covers it -- this flag only ever fires where `truncated_but_correct`
+    # doesn't, on a `connected_nodes` row with real partial neighbour-list
+    # overlap (some but not all of the right nodes named) that `primary`'s
+    # forcing to 0.0 below would otherwise discard with no trace. `and not
+    # truncated_but_correct` keeps the two flags a strict partition of
+    # non-terminating rows (exact hit / partial credit only / no credit at
+    # all) rather than overlapping on a full hit.
+    truncated_but_partial_credit = (
+        non_terminating and score["primary"] > 0 and not truncated_but_correct
+    )
+    exact = 0.0 if non_terminating else score["exact"]
+    primary = 0.0 if non_terminating else score["primary"]
     rows.append({
         "instance_id": record["instance_id"],
         "task": record["task"],
@@ -272,8 +364,10 @@ def build_frame(
         "predicted_first": predicted_first,
         "looped_on_correct_answer": looped_on_correct_answer,
         "parsed": score["parsed"],
-        "exact": score["exact"],
-        "primary": score["primary"],
+        "exact": exact,
+        "primary": primary,
+        "truncated_but_correct": truncated_but_correct,
+        "truncated_but_partial_credit": truncated_but_partial_credit,
         "absolute_error": score["absolute_error"],
         "non_terminating": non_terminating,
         "non_terminating_source": cap_source,

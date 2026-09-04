@@ -11,6 +11,7 @@ lose hours of generation every time that happened.
 """
 
 import argparse
+import collections
 import json
 import os
 import time
@@ -44,6 +45,27 @@ def done_keys(path: str) -> set:
   return keys
 
 
+def _group_by_budget(records: list[dict], spec, max_new_tokens_override) -> dict:
+  """Buckets `records` by the `max_new_tokens` each one actually needs.
+
+  A batched `model.generate` call takes one `max_new_tokens` for the whole
+  batch, so rows needing different budgets (different `style`s, or a
+  `--max-new-tokens` override applied selectively) can't share a batch --
+  see `models.budget`. Today's data is `style="zero_shot"` only (post-purge),
+  so this always yields a single group in practice, but stays correct if
+  that ever changes rather than silently mixing budgets.
+  """
+  groups = collections.defaultdict(list)
+  for record in records:
+    budget = max_new_tokens_override or models.budget(spec, record["style"])
+    groups[budget].append(record)
+  return groups
+
+
+def _chunk(items: list, size: int) -> list[list]:
+  return [items[i:i + size] for i in range(0, len(items), size)]
+
+
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--model", required=True, choices=sorted(models.MODELS))
@@ -58,6 +80,14 @@ def main() -> None:
                       help="which shard of the prompt file this job generates")
   parser.add_argument("--num-shards", type=int, default=1,
                       help="split the prompts across this many concurrent jobs")
+  parser.add_argument("--batch-size", type=int, default=1,
+                      help="rows generated per forward pass (Track 2.3). "
+                           "Default 1 keeps today's exact single-stream code "
+                           "path (hf_backend.generate); >1 routes through "
+                           "hf_backend.generate_batch, which is NOT YET "
+                           "VALIDATED against a GPU -- see its docstring. "
+                           "Do not use >1 for a real sweep before that "
+                           "validation has been done.")
   args = parser.parse_args()
 
   if not 0 <= args.shard < args.num_shards:
@@ -91,47 +121,79 @@ def main() -> None:
 
   tokenizer, model = hf_backend.load(spec)
   os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
+
+  # One list of (budget, batch) work units, computed up front so the
+  # progress counter below can report against the true total regardless of
+  # how budget-grouping split it up.
+  work: list[tuple[int, list[dict]]] = []
+  for budget, group in _group_by_budget(todo, spec, args.max_new_tokens).items():
+    if args.batch_size > 1:
+      # Sorted by prompt length so a batch's members are close in length --
+      # `model.generate` runs a batch until its *longest* member finishes
+      # (see hf_backend.generate_batch's docstring), so grouping similar
+      # lengths together avoids padding every short row out to one long
+      # outlier's length. Changes output file row order relative to the
+      # prompt file; harmless, since `done_keys` resumes by key, not order.
+      group = sorted(group, key=lambda r: len(r["prompt"]))
+    for batch in _chunk(group, args.batch_size):
+      work.append((budget, batch))
+
   started = time.time()
+  done_count = 0
   with open(args.out, "a") as handle:
-    for index, record in enumerate(todo, 1):
-      completion = hf_backend.generate(
-          tokenizer, model, record["prompt"],
-          args.max_new_tokens or models.budget(spec, record["style"]),
-          spec.chat_kwargs,
-      )
-      # `n_new_tokens`/`hit_cap` are new as of the prompt-rewording re-run; rows
-      # generated before it do not carry them, so anything reading these must
-      # treat absence as "unknown" and fall back to
-      # `analysis/truncated_keys.json` -- see `graphtalk/analysis.py`.
-      row = {
-          "instance_id": record["instance_id"],
-          "task": record["task"],
-          "condition": record["condition"],
-          "style": record["style"],
-          "gold": record["gold"],
-          "model": args.model,
-          "response": completion.text,
-          "n_new_tokens": completion.n_new_tokens,
-          "hit_cap": completion.hit_cap,
-      }
-      # The prompt file's node-naming scheme has to travel with the response.
-      # Everything downstream keys off this field on the *response* row --
-      # `scripts/score_sweep.py` converts GoT names back to integers before
-      # scoring, and `graphtalk/analysis.py` reads it for the frame's column and
-      # for its mixed-scheme guard. All three default a missing field to
-      # `integer`, so dropping it here does not raise: a GoT run would simply be
-      # scored against integer gold and come out near-zero, with the guard unable
-      # to fire because absence is not a conflict. Copied rather than defaulted,
-      # so an integer prompt file stays byte-identical to what it wrote before.
-      if "node_naming" in record:
-        row["node_naming"] = record["node_naming"]
-      handle.write(json.dumps(row) + "\n")
-      # Flushed every row so a preemption loses at most the row in flight.
+    for budget, batch in work:
+      if args.batch_size == 1:
+        # Unchanged from before batching existed: `generate_batch` at
+        # batch size 1 should be equivalent, but this path is the one
+        # every row on disk so far was generated with, so it stays the
+        # default rather than being replaced by an unvalidated one.
+        completions = [hf_backend.generate(
+            tokenizer, model, batch[0]["prompt"], budget, spec.chat_kwargs,
+        )]
+      else:
+        completions = hf_backend.generate_batch(
+            tokenizer, model, [r["prompt"] for r in batch], budget,
+            spec.chat_kwargs,
+        )
+      for record, completion in zip(batch, completions):
+        # `n_new_tokens`/`hit_cap` are new as of the prompt-rewording re-run; rows
+        # generated before it do not carry them, so anything reading these must
+        # treat absence as "unknown" and fall back to
+        # `analysis/truncated_keys.json` -- see `graphtalk/analysis.py`.
+        row = {
+            "instance_id": record["instance_id"],
+            "task": record["task"],
+            "condition": record["condition"],
+            "style": record["style"],
+            "gold": record["gold"],
+            "model": args.model,
+            "response": completion.text,
+            "n_new_tokens": completion.n_new_tokens,
+            "hit_cap": completion.hit_cap,
+        }
+        # The prompt file's node-naming scheme has to travel with the response.
+        # Everything downstream keys off this field on the *response* row --
+        # `scripts/score_sweep.py` converts GoT names back to integers before
+        # scoring, and `graphtalk/analysis.py` reads it for the frame's column and
+        # for its mixed-scheme guard. All three default a missing field to
+        # `integer`, so dropping it here does not raise: a GoT run would simply be
+        # scored against integer gold and come out near-zero, with the guard unable
+        # to fire because absence is not a conflict. Copied rather than defaulted,
+        # so an integer prompt file stays byte-identical to what it wrote before.
+        if "node_naming" in record:
+          row["node_naming"] = record["node_naming"]
+        handle.write(json.dumps(row) + "\n")
+      # Flushed once per *batch*, not per row: at batch_size 1 this is
+      # exactly the old per-row flush (a preemption loses at most the row
+      # in flight); at batch_size > 1 a preemption can lose up to one
+      # batch, traded deliberately for the forward-pass savings batching
+      # exists for.
       handle.flush()
-      if index % 25 == 0 or index == len(todo):
-        rate = index / (time.time() - started)
-        remaining = (len(todo) - index) / rate if rate else 0
-        print(f"  {index}/{len(todo)}  {rate:.2f} gen/s  "
+      done_count += len(batch)
+      if done_count % 25 < len(batch) or done_count == len(todo):
+        rate = done_count / (time.time() - started)
+        remaining = (len(todo) - done_count) / rate if rate else 0
+        print(f"  {done_count}/{len(todo)}  {rate:.2f} gen/s  "
               f"~{remaining/60:.1f} min left", flush=True)
 
   print(f"wrote {args.out} in {(time.time()-started)/60:.1f} min", flush=True)
