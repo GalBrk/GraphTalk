@@ -26,33 +26,110 @@ Positive-direction `delta` (the condition helps) is checked against
 `mde_delta`; negative-direction `delta` (the condition hurts) against
 `mde_delta_negative` -- matching the sign of the effect actually observed,
 not always the positive-direction MDE. A cell is skipped (not extrapolated)
-when: it's already significant (nothing to add data for), its observed
-`delta` is exactly zero (no effect to extrapolate from -- infinite data
-would still not detect a truly null effect), or the relevant MDE is `None`
-(the search didn't converge within `[0, 1]` at the current sample size --
-see `graphtalk.significance.minimum_detectable_effect_clustered`'s
-docstring; a near-ceiling/near-floor control usually lands here, and no
-finite `--count` fixes a ceiling problem, only more headroom would).
+when: it's already **globally** significant (`bh_significant_global` --
+nothing to add data for; see the note on family-significant-only cells
+below), its observed `delta` is exactly zero (no effect to extrapolate
+from -- infinite data would still not detect a truly null effect), or the
+relevant MDE is `None` (the search didn't converge within `[0, 1]` at the
+current sample size -- see `graphtalk.significance
+.minimum_detectable_effect_clustered`'s docstring; a near-ceiling/
+near-floor control usually lands here, and no finite `--count` fixes a
+ceiling problem, only more headroom would).
+
+**Family-significant, not globally significant, cells (`bh_significant`
+True but `bh_significant_global` False or blank) are a real, distinct
+case, not just "already significant".** This is exactly the situation a
+result worth replicating sits in: real per-model evidence that hasn't
+cleared the stricter whole-table bar. `check_significance.py` never
+simulates an MDE for these rows (its own trigger is `not
+{per-family significance}`, computed before the whole-table pass even
+runs -- there is no earlier point in that script where
+`bh_significant_global` exists yet to trigger on instead, so this could
+not be fixed by widening a condition there without a larger restructuring
+of its single-pass `main()`). Pass `--frame` (the `sweep_frame.csv` the
+report was built from) and this script computes a real MDE for exactly
+these cells, on demand, using the same
+`graphtalk.significance.minimum_detectable_effect_clustered` call
+`check_significance.py` itself makes -- see `_mde_for_family_significant_cell`.
+Without `--frame`, these cells are skipped with a `skip_reason` saying so,
+rather than silently treated as "nothing to do here" the way a plain
+`bh_significant` check would.
 
   PYTHONPATH=. .venv/bin/python scripts/recommend_count.py \
       --report analysis/significance_report.csv
+
+  # Also compute real MDEs for family-significant/not-global cells:
+  PYTHONPATH=. .venv/bin/python scripts/recommend_count.py \
+      --report analysis/significance_report.got.csv \
+      --frame analysis/sweep_frame.got.csv
 """
 
 import argparse
 
 import pandas as pd
 
+from graphtalk import significance
+from scripts import check_significance as cs
+
 _CURRENT_COUNT = 30
 _PUBLISHED_SPLIT_CAP = 500
+# Matches check_significance.py's own fast-approximate MDE preset
+# (Phase 1.3.2) -- this is a dry-run planning tool, not a final reported
+# number, so the same speed/precision tradeoff applies.
+_MDE_REPLICATES = 50
+_MDE_N_PERM = 200
+_MDE_N_STEPS = 5
 
 
-def recommend(report: pd.DataFrame, current_count: int = _CURRENT_COUNT) -> pd.DataFrame:
-  """One row per non-significant main-sweep `exact` cell (`bound ==
-  "excluded"`, not derived, not the pooled-across-models row -- a
-  per-model recommendation is the actionable unit; pooled rows are a
+def _mde_for_family_significant_cell(
+    frame: pd.DataFrame, model: str, condition: str, delta: float,
+    seed: int = 1234,
+) -> float | None:
+  """On-demand MDE for one (model, condition) cell that
+  `check_significance.py` never simulated one for, because the cell was
+  already significant within its own per-family correction (see the
+  module docstring). Mirrors `_report`'s own MDE call as closely as
+  possible: same main-sweep scope (`~is_think`, non-terminating rows
+  included -- `graphtalk.analysis.build_frame` already forces them to
+  score as wrong, so nothing is excluded here either), same
+  bootstrap-CI-width-seeded `initial_hi`, same direction convention
+  (search the side matching the observed `delta`'s own sign). Returns
+  `None` if the cell has no paired rows at all (shouldn't happen for a
+  cell the report already scored, but checked rather than assumed).
+  """
+  cell_frame = frame[(frame["model_family"] == model) & (~frame["is_think"])]
+  control, treatment, cluster_ids = cs._paired_values(cell_frame, condition, "exact")
+  if not control:
+    return None
+  ci = significance.cluster_bootstrap_ci_clustered(
+      control, treatment, cluster_ids, n_boot=1000, seed=seed,
+  )
+  ci_width = ci["ci_high"] - ci["ci_low"]
+  direction = "positive" if delta > 0 else "negative"
+  result = significance.minimum_detectable_effect_clustered(
+      control, treatment, cluster_ids, initial_hi=max(0.05, ci_width),
+      direction=direction, n_replicates=_MDE_REPLICATES, n_perm=_MDE_N_PERM,
+      n_steps=_MDE_N_STEPS, seed=seed,
+  )
+  return result["delta"] if delta > 0 else result["delta_negative"]
+
+
+def recommend(
+    report: pd.DataFrame, current_count: int = _CURRENT_COUNT,
+    frame: pd.DataFrame | None = None,
+) -> pd.DataFrame:
+  """One row per non-*globally*-significant main-sweep `exact` cell
+  (`bound == "excluded"`, not derived, not the pooled-across-models row --
+  a per-model recommendation is the actionable unit; pooled rows are a
   different, larger-family question `check_significance.py` already
   reports separately) with a finite recommendation, plus `skip_reason` for
   every cell this can't extrapolate for.
+
+  `frame` (optional, the `sweep_frame.csv` the report was built from):
+  when given, a cell that's family-significant but not globally
+  significant gets a real, freshly-simulated MDE via
+  `_mde_for_family_significant_cell` instead of being skipped outright --
+  see the module docstring.
   """
   scoped = report[
       (report["arm"] == "main_sweep") & (report["metric"] == "exact")
@@ -74,13 +151,30 @@ def recommend(report: pd.DataFrame, current_count: int = _CURRENT_COUNT) -> pd.D
         "recommended_count": None, "exceeds_published_cap": None,
         "skip_reason": None,
     }
-    if r["bh_significant"]:
-      rows.append({**base, "skip_reason": "already significant"})
+    # `bh_significant_global` is `NaN` for an ineligible row (already
+    # excluded from `scoped` above -- pooled/derived) or a real True/False
+    # for every row that reaches here; `pd.notna` guards the NaN case
+    # rather than let it evaluate as truthy the way a bare `if` would.
+    if pd.notna(r["bh_significant_global"]) and bool(r["bh_significant_global"]):
+      rows.append({**base, "skip_reason": "already globally significant"})
       continue
     if r["delta"] == 0:
       rows.append({**base, "skip_reason": "observed delta is exactly zero"})
       continue
-    mde = r["mde_delta"] if r["delta"] > 0 else r["mde_delta_negative"]
+    if r["bh_significant"]:
+      # Family-significant, not globally significant: check_significance.py
+      # never simulated an MDE for this row (see the module docstring) --
+      # compute one now, on demand, if a frame was given to compute it from.
+      if frame is None:
+        rows.append({**base, "skip_reason": "family-significant, not "
+                     "globally significant -- pass --frame to compute a "
+                     "real MDE for this cell instead of skipping it"})
+        continue
+      mde = _mde_for_family_significant_cell(
+          frame, r["group"], r["condition"], r["delta"],
+      )
+    else:
+      mde = r["mde_delta"] if r["delta"] > 0 else r["mde_delta_negative"]
     if pd.isna(mde):
       rows.append({**base, "skip_reason": "MDE did not converge at the "
                    "current sample size (near-ceiling/near-floor)"})
@@ -100,11 +194,18 @@ def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--report", default="analysis/significance_report.csv")
   parser.add_argument("--current-count", type=int, default=_CURRENT_COUNT)
+  parser.add_argument("--frame", default=None,
+                       help="the sweep_frame.csv --report was built from -- "
+                            "when given, family-significant-but-not-"
+                            "globally-significant cells get a real,  "
+                            "on-demand MDE instead of being skipped; see "
+                            "the module docstring")
   parser.add_argument("--out", default=None)
   args = parser.parse_args()
 
   report = pd.read_csv(args.report)
-  result = recommend(report, current_count=args.current_count)
+  frame = pd.read_csv(args.frame) if args.frame else None
+  result = recommend(report, current_count=args.current_count, frame=frame)
 
   finite = result[result["recommended_count"].notna()].sort_values("recommended_count")
   skipped = result[result["recommended_count"].isna()]
