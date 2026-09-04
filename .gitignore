@@ -28,3 +28,7 @@ out/
 # they look like a prompt set the sweep used in full, which they never are.
 /prompts.rerun.jsonl
 /prompts.smoke.jsonl
+
+# Local-only scratch files, kept on disk but not part of the tracked project.
+/non_terminating_manifest.json
+/orign.pdf
