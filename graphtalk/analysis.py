@@ -168,7 +168,7 @@ def tagged_path(path: str, scheme: str) -> str:
   return f"{root}.{scheme}{ext}"
 
 
-def load_truncated_keys(path: str) -> set[tuple[str, str, str, str]]:
+def load_truncated_keys(path: str) -> set[tuple[str, str, str, str, str]]:
   """Ground truth for the non-terminating thinking-arm rows that predate `hit_cap`.
 
   Originally all 350 known non-terminating rows. Since the 2026-08-29 re-run,
@@ -179,13 +179,21 @@ def load_truncated_keys(path: str) -> set[tuple[str, str, str, str]]:
   that cannot state the fact themselves.
 
   `analysis/truncated_keys.json` is `{model: [[instance_id, condition, style],
-  ...]}`; flattened here to `(model, instance_id, condition, style)` tuples
-  for O(1) row lookup in `build_frame`.
+  ...]}`; flattened here to `(model, instance_id, condition, style, "integer")`
+  tuples for O(1) row lookup in `build_frame`. The trailing `"integer"` is not
+  read from the file -- it predates `node_naming`/GOT entirely (every row it
+  governs was generated before `--node-naming got` existed, and every GOT row
+  carries its own `hit_cap`, so this file never needs to state a non-integer
+  scheme), but `build_frame`'s lookup key includes `node_naming` so a GOT row
+  can never key-collide with an integer-run entry sharing the same `(model,
+  instance_id, condition, style)`; matching that key shape here, rather than
+  leaving this file's tuples one element short, is what actually closes that
+  gap rather than working around it at the call site.
   """
   with open(path) as handle:
     raw = json.load(handle)
   return {
-      (model, instance_id, condition, style)
+      (model, instance_id, condition, style, "integer")
       for model, keys in raw.items()
       for instance_id, condition, style in keys
   }
@@ -218,7 +226,7 @@ def _failure_type(non_terminating: bool, score: dict) -> str:
 
 def build_frame(
     scored_records: list[dict],
-    truncated_keys: set[tuple[str, str, str, str]],
+    truncated_keys: set[tuple[str, str, str, str, str]],
     shortcuts_by_cell: dict[tuple[str, str], float],
 ) -> pd.DataFrame:
   """The canonical table: one row per scored response.
@@ -240,7 +248,17 @@ def build_frame(
     is_think = model.endswith("-think")
     model_family = model[: -len("-think")] if is_think else model
     score = record["score"]
-    key = (model, record["instance_id"], record["condition"], record["style"])
+    # `node_naming` is part of the key -- without it, a GOT row missing its
+    # own `hit_cap` would key-collide with an integer-run row sharing the
+    # same `(model, instance_id, condition, style)` and silently borrow that
+    # row's ground truth across naming schemes. Not currently reachable (every
+    # GOT row on disk carries its own `hit_cap`, so this fallback lookup is
+    # never hit for GOT data today), but the key itself must be correct
+    # regardless of what happens to be true of today's data -- see
+    # `load_truncated_keys`'s docstring for why its own tuples all carry
+    # `"integer"`.
+    key = (model, record["instance_id"], record["condition"], record["style"],
+           record.get("node_naming", "integer"))
     # The row's own `hit_cap` when it has one, the hand-maintained ground-truth
     # file otherwise. Rows generated before `scripts/run_sweep.py` started
     # recording token counts carry no `hit_cap`, and for those
