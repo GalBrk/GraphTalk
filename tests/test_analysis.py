@@ -60,7 +60,7 @@ def test_non_terminating_matches_ground_truth():
   expected = collections.Counter()
   for record in records:
     key = (record["model"], record["instance_id"], record["condition"],
-           record["style"])
+           record["style"], record.get("node_naming", "integer"))
     recorded = record.get("hit_cap")
     if recorded if recorded is not None else key in truncated:
       expected[record["model"]] += 1
@@ -73,10 +73,11 @@ def test_non_terminating_matches_ground_truth():
   # Not vacuous: every labelled row still on disk and not regenerated must be
   # flagged. This is what would break if `load`/`is_excluded` started dropping a
   # shard, or if the key tuple were built in a different order.
-  on_disk = {(r["model"], r["instance_id"], r["condition"], r["style"])
+  on_disk = {(r["model"], r["instance_id"], r["condition"], r["style"],
+              r.get("node_naming", "integer"))
              for r in records if r.get("hit_cap") is None}
   still_governed = truncated & on_disk
-  flagged = {(r.model, r.instance_id, r.condition, r.style)
+  flagged = {(r.model, r.instance_id, r.condition, r.style, r.node_naming)
              for r in frame[frame["non_terminating"]].itertuples()}
   assert still_governed <= flagged, (
       f"{len(still_governed - flagged)} labelled rows on disk went unflagged"
@@ -129,9 +130,25 @@ def test_non_terminating_takes_precedence_even_when_parsed():
   # abandoned working -- non_terminating must win over wrong/correct.
   record = _record("node_count/0", "gemma4-12b-think", "A: 5")
   scored = score_sweep.score_records([record])
-  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot")}
+  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot", "integer")}
   frame = analysis.build_frame(scored, truncated, {})
   assert frame.iloc[0]["failure_type"] == "non_terminating"
+
+
+def test_truncated_keys_do_not_cross_naming_schemes():
+  # A GOT row sharing (model, instance_id, condition, style) with an
+  # integer-run truncated_keys.json entry, but missing its own `hit_cap`,
+  # must NOT borrow that entry's ground truth -- `node_naming` has to be
+  # part of the lookup key, not just the pairing key elsewhere in the
+  # pipeline. Every real GOT row on disk does carry `hit_cap` (so this
+  # fallback path is never hit in practice today), but the key must still
+  # be correct independent of that.
+  record = _record("node_count/0", "gemma4-12b-think", "A: 5")
+  record["node_naming"] = "got"
+  scored = score_sweep.score_records([record])
+  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot", "integer")}
+  frame = analysis.build_frame(scored, truncated, {})
+  assert frame.iloc[0]["failure_type"] != "non_terminating"
 
 
 def test_shortcut_score_joins_on_task_and_condition():
@@ -209,7 +226,7 @@ def test_recorded_hit_cap_false_is_not_treated_as_missing():
   record["n_new_tokens"] = 120
   record["hit_cap"] = False
   scored = score_sweep.score_records([record])
-  stale = {("gemma4-12b-think", "node_count/0", "none", "zero_shot")}
+  stale = {("gemma4-12b-think", "node_count/0", "none", "zero_shot", "integer")}
   frame = analysis.build_frame(scored, stale, {})
   assert not bool(frame.iloc[0]["non_terminating"])
   assert frame.iloc[0]["non_terminating_source"] == "generator"
@@ -219,7 +236,7 @@ def test_rows_without_hit_cap_still_use_the_ground_truth_file():
   """The 12,240 rows generated before the instrumentation must not regress."""
   record = _record("node_count/0", "gemma4-12b-think", "A: 5")
   scored = score_sweep.score_records([record])
-  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot")}
+  truncated = {("gemma4-12b-think", "node_count/0", "none", "zero_shot", "integer")}
   frame = analysis.build_frame(scored, truncated, {})
   assert bool(frame.iloc[0]["non_terminating"])
   assert frame.iloc[0]["non_terminating_source"] == "ground_truth_file"

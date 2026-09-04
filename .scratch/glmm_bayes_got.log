@@ -1,3 +1,0 @@
-Initializing NUTS using jitter+adapt_diag...
-Multiprocess sampling (2 chains in 2 jobs)
-NUTS: [alpha_model, sigma_condition, beta_condition_raw, sigma_gamma, gamma_raw, sigma_instance, u_instance_raw]
