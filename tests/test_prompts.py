@@ -38,14 +38,6 @@ def test_primer_precedes_the_encoding():
   assert built.index(primer) < built.index("G describes a graph")
 
 
-def test_cot_appends_the_datasets_own_continuation():
-  """Copied from a zero_cot_test row rather than invented, so it is comparable."""
-  zero = prompts.build_prompt(GRAPH, "degree", QUESTION, style="zero_shot")
-  cot = prompts.build_prompt(GRAPH, "degree", QUESTION, style="zero_cot")
-  assert cot == zero + prompts.COT_SUFFIX
-  assert cot.endswith("Let's think step by step. ")
-
-
 @pytest.mark.parametrize("condition", sorted(primers.CONDITIONS))
 def test_every_condition_keeps_encoding_and_question_intact(condition):
   """Only the primer may vary between arms.
@@ -61,6 +53,13 @@ def test_every_condition_keeps_encoding_and_question_intact(condition):
 def test_unknown_style_raises():
   with pytest.raises(ValueError, match="unknown prompt style"):
     prompts.build_prompt(GRAPH, "degree", QUESTION, style="few_shot")
+
+
+def test_retired_zero_cot_style_raises():
+  """`zero_cot` is retired -- it must be rejected like any other unknown style,
+  not silently accepted or special-cased."""
+  with pytest.raises(ValueError, match="unknown prompt style"):
+    prompts.build_prompt(GRAPH, "degree", QUESTION, style="zero_cot")
 
 
 # --- edge_existence rewording -----------------------------------------------

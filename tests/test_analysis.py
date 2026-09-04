@@ -156,21 +156,23 @@ def test_sample_failures_excludes_correct_and_respects_stratum_cap():
 # --- recorded hit_cap, and the wording split ---------------------------------
 
 
-def test_wording_separates_the_two_filler_primers():
-  """`condition: filler` means two different primers depending on style.
-
-  Only the `zero_shot` rows were regenerated after the rewording; the obsolete
-  `zero_cot` style keeps the original `Node N has <n-1> other nodes` text. A
-  mean over both is a mean over two independent variables.
-  """
+def test_wording_separates_the_revised_and_unaffected_primers():
+  """`condition: filler` and the `edge_existence` question were reworded;
+  everything else is byte-identical to before and must not be reported as
+  revised."""
   assert analysis.wording("node_count", "filler", "zero_shot") == "revised"
-  assert analysis.wording("node_count", "filler", "zero_cot") == "original"
   assert analysis.wording("edge_existence", "none", "zero_shot") == "revised"
-  assert analysis.wording("edge_existence", "none", "zero_cot") == "original"
-  # Untouched by either rewording: both wordings are byte-identical here, so the
+  # Untouched by the rewording: both wordings are byte-identical here, so the
   # distinction does not arise and must not be invented.
   assert analysis.wording("node_count", "degree", "zero_shot") == "unaffected"
-  assert analysis.wording("node_count", "none", "zero_cot") == "unaffected"
+  assert analysis.wording("node_count", "none", "zero_shot") == "unaffected"
+
+
+def test_wording_rejects_non_zero_shot_style():
+  """`zero_cot` is retired; a row claiming that style predates a wording this
+  function can no longer label and must fail loudly rather than guess."""
+  with pytest.raises(ValueError, match="zero_shot"):
+    analysis.wording("node_count", "filler", "zero_cot")
 
 
 def test_backfilled_rows_are_labelled_as_such():
@@ -267,6 +269,15 @@ def test_tagged_path_handles_no_extension():
   assert analysis.tagged_path("significance_report", "got") == (
       "significance_report.got"
   )
+
+
+def test_tagged_path_is_idempotent_on_an_already_tagged_path():
+  # A caller who passes an already-`.got.`-tagged --out (instead of the
+  # base name this function is designed to be handed) must not get a
+  # double-tagged `....got.got.csv` -- see the function's own docstring.
+  once = analysis.tagged_path("analysis/significance_report.csv", "got")
+  twice = analysis.tagged_path(once, "got")
+  assert once == twice == "analysis/significance_report.got.csv"
 
 
 def test_build_frame_carries_the_node_naming_column():

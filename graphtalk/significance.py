@@ -207,14 +207,68 @@ def cluster_bootstrap_ci_clustered(
   return {"point_estimate": point, "ci_low": lo, "ci_high": hi, "n_clusters": m}
 
 
+def _search_one_direction(
+    power_and_realized, initial_hi: float, power_target: float, n_steps: int, sign: int,
+) -> dict:
+  """Geometric-expansion-then-bisection search for the smallest `|delta|`
+  in one direction (`sign=+1` for a candidate improvement, `sign=-1` for a
+  candidate harm) reaching `power_target`, calling `power_and_realized
+  (delta)` exactly the way the un-refactored single-direction search
+  always did. Shared by both directions of
+  `minimum_detectable_effect_clustered`'s bidirectional search -- this is
+  the same expansion/bisection logic that direction always used, extracted
+  so it can run twice instead of duplicated. `sign` only ever multiplies
+  the magnitude passed to `power_and_realized`; the search itself doesn't
+  know or care which direction it's sweeping.
+  """
+  hi = max(0.05, initial_hi)
+  power_hi, realized_hi = power_and_realized(sign * hi)
+  expansions = 0
+  while power_hi < power_target and hi < 1.0 and expansions < 10:
+    hi = min(1.0, hi * 2)
+    power_hi, realized_hi = power_and_realized(sign * hi)
+    expansions += 1
+  if power_hi < power_target:
+    return {
+        "delta": None, "realized_diff": realized_hi,
+        "note": "MDE exceeds 1.0 at this power target",
+    }
+  lo = 0.0
+  for _ in range(n_steps):
+    mid = (lo + hi) / 2
+    power_mid, realized_mid = power_and_realized(sign * mid)
+    if power_mid >= power_target:
+      hi, realized_hi = mid, realized_mid
+    else:
+      lo = mid
+  return {"delta": sign * hi, "realized_diff": realized_hi, "note": None}
+
+
 def minimum_detectable_effect_clustered(
     control, treatment, cluster_ids, initial_hi: float, alpha: float = 0.05,
     power_target: float = 0.8, n_replicates: int = 200, n_perm: int = 500,
-    n_steps: int = 8, seed=0,
+    n_steps: int = 8, seed=0, direction: str = "both",
 ) -> dict:
   """The smallest additive shift `delta` such that, if the true effect on
   data shaped like this row were `delta`, `paired_permutation_test_clustered`
   would detect it (`p <= alpha`) at least `power_target` of the time.
+
+  `direction` controls which sign(s) of `delta` are searched:
+  `"positive"` (a candidate *improvement*, the only direction this function
+  originally searched), `"negative"` (a candidate *harm*), or `"both"`
+  (the default -- runs both searches, since a near-ceiling or near-floor
+  control has very different headroom in each direction and a caller
+  reading only the positive side can't tell "no room to improve" apart
+  from "no room to get worse either", which are very different claims;
+  see `scripts/check_significance.py`'s `near_ceiling`). The positive
+  direction's `delta`/`realized_diff`/`note` keys keep their original
+  names and, for the same `seed`, their original values -- the positive
+  search runs first and is unaffected by whether the negative search runs
+  afterward, since they draw from the same `rng` stream in sequence rather
+  than sharing draws. The negative direction's results are the same three
+  fields suffixed `_negative`, `None` when not searched (`direction
+  != "negative" and direction != "both"`) or when there were no paired
+  rows to begin with.
 
   Answers a question `bh_significant=False` alone can't: is this a real
   null, or just not enough power to see one. Simulation-based, not a
@@ -245,12 +299,16 @@ def minimum_detectable_effect_clustered(
   (the replicates' actual mean `treatment* - control*` at that `delta`),
   since the two can differ and the gap between them is itself informative.
 
-  Search: expands `hi` geometrically from `max(0.05, initial_hi)` --
-  callers should pass their own bootstrap CI width as `initial_hi`, a good
-  anchor that avoids wasting steps on obviously-always-detectable deltas
-  near 1.0, computed once rather than redundantly inside this function --
-  until `power(hi) >= power_target` or `hi` reaches 1.0, then bisects
-  `n_steps` times between 0 and that `hi`.
+  Search (`_search_one_direction`, run once per requested direction):
+  expands `hi` geometrically from `max(0.05, initial_hi)` -- callers should
+  pass their own bootstrap CI width as `initial_hi`, a good anchor that
+  avoids wasting steps on obviously-always-detectable deltas near 1.0,
+  computed once rather than redundantly inside this function -- until
+  `power(hi) >= power_target` or `hi` reaches 1.0, then bisects `n_steps`
+  times between 0 and that `hi`. The negative-direction search is the same
+  procedure with every candidate delta negated before being handed to
+  `_power_and_realized`; `initial_hi` (a magnitude, not a signed value) is
+  reused as-is for both directions' starting point.
 
   Power estimates carry real Monte Carlo noise (SE ~= 0.03 at
   `n_replicates=200` near power=0.8), so bisection does not converge
@@ -259,6 +317,10 @@ def minimum_detectable_effect_clustered(
   stream drives every resample and every inner test's seed, so the whole
   search is deterministic given `seed`.
   """
+  if direction not in ("positive", "negative", "both"):
+    raise ValueError(
+        f"unknown direction: {direction!r}; known: 'positive', 'negative', 'both'"
+    )
   control, treatment = list(control), list(treatment)
   cluster_ids = list(cluster_ids)
   if not (len(control) == len(treatment) == len(cluster_ids)):
@@ -267,8 +329,12 @@ def minimum_detectable_effect_clustered(
         f"{len(treatment)} treatment, {len(cluster_ids)} cluster_ids"
     )
   if len(control) == 0:
-    return {"delta": None, "realized_diff": None, "power_target": power_target,
-            "note": "no paired rows"}
+    return {
+        "delta": None, "realized_diff": None, "power_target": power_target,
+        "note": "no paired rows",
+        "delta_negative": None, "realized_diff_negative": None,
+        "note_negative": "no paired rows" if direction != "positive" else None,
+    }
 
   by_cluster: dict = {}
   for cid, c, t in zip(cluster_ids, control, treatment):
@@ -305,27 +371,36 @@ def minimum_detectable_effect_clustered(
       realized_n += len(c_star)
     return hits / n_replicates, realized_total / realized_n
 
-  hi = max(0.05, initial_hi)
-  power_hi, realized_hi = _power_and_realized(hi)
-  expansions = 0
-  while power_hi < power_target and hi < 1.0 and expansions < 10:
-    hi = min(1.0, hi * 2)
-    power_hi, realized_hi = _power_and_realized(hi)
-    expansions += 1
-  if power_hi < power_target:
-    return {"delta": None, "realized_diff": realized_hi, "power_target": power_target,
-            "note": "MDE exceeds 1.0 at this power target"}
-
-  lo = 0.0
-  for _ in range(n_steps):
-    mid = (lo + hi) / 2
-    power_mid, realized_mid = _power_and_realized(mid)
-    if power_mid >= power_target:
-      hi, realized_hi = mid, realized_mid
-    else:
-      lo = mid
-  return {"delta": hi, "realized_diff": realized_hi, "power_target": power_target,
-          "note": None}
+  # The positive search runs first (when requested) so its draws from
+  # `rng` are identical, in the same order, to what the original
+  # single-direction function always drew -- direction="both"'s positive
+  # results are therefore byte-identical to a direction="positive"-only
+  # call at the same seed, and to this function's pre-bidirectional
+  # behavior.
+  result = {"power_target": power_target}
+  if direction in ("positive", "both"):
+    positive = _search_one_direction(
+        _power_and_realized, initial_hi, power_target, n_steps, sign=1
+    )
+    result["delta"] = positive["delta"]
+    result["realized_diff"] = positive["realized_diff"]
+    result["note"] = positive["note"]
+  else:
+    result["delta"] = None
+    result["realized_diff"] = None
+    result["note"] = None
+  if direction in ("negative", "both"):
+    negative = _search_one_direction(
+        _power_and_realized, initial_hi, power_target, n_steps, sign=-1
+    )
+    result["delta_negative"] = negative["delta"]
+    result["realized_diff_negative"] = negative["realized_diff"]
+    result["note_negative"] = negative["note"]
+  else:
+    result["delta_negative"] = None
+    result["realized_diff_negative"] = None
+    result["note_negative"] = None
+  return result
 
 
 def cluster_bootstrap_ci(

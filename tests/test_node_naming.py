@@ -140,17 +140,14 @@ def test_build_named_prompt_matches_unnamed_assembly_under_identity_map():
   assert named == plain
 
 
-def test_build_named_prompt_appends_cot_suffix():
-  task_description = "Q: How many nodes are in this graph?\nA: "
-  prompt = node_naming.build_named_prompt(
-      GRAPH, "none", task_description, NAME_MAP, style="zero_cot"
-  )
-  assert prompt.endswith(prompts.COT_SUFFIX)
-
-
 def test_build_named_prompt_rejects_unknown_style():
   with pytest.raises(ValueError, match="unknown prompt style"):
     node_naming.build_named_prompt(GRAPH, "none", "Q: ?\nA: ", NAME_MAP, style="bogus")
+
+
+def test_build_named_prompt_rejects_retired_zero_cot_style():
+  with pytest.raises(ValueError, match="unknown prompt style"):
+    node_naming.build_named_prompt(GRAPH, "none", "Q: ?\nA: ", NAME_MAP, style="zero_cot")
 
 
 def test_desubstitute_response_round_trips_a_node_list():
