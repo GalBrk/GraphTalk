@@ -139,7 +139,18 @@ cluster/submit_sweep.sh --node-naming got --exclude=n-801 --mem=32G \
 
 Every other `sbatch` flag or positional (`--array`, `--exclude`, the model
 key, the smoke-test limit) passes straight through in whatever position it's
-given -- only `--node-naming` and `--dry-run` are consumed by the wrapper.
+given -- only `--node-naming`, `--count`, and `--dry-run` are consumed by the
+wrapper. `--count N` (GoT scheme only) requests a prompt file larger than the
+tracked sweep's 30-per-task default -- e.g. for a targeted follow-up sized by
+`scripts/recommend_count.py` (see `analysis/README.md`'s Track 2 section) --
+tagged into both the prompt filename and `GRAPHTALK_RUN_TAG` so it can't
+collide with the tracked `--count 30` sweep's own files:
+
+```bash
+cluster/submit_sweep.sh --node-naming got --count 500 \
+    cluster/sweep.sbatch qwen3-8b
+```
+
 `--dry-run` prints what would run (and whether `prompts_got.jsonl` would be
 built) without touching anything, which is worth doing once before the real
 submission since the wrapper still can't be tested on a scheduler you don't

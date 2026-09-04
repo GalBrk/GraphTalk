@@ -605,6 +605,34 @@ cell checked so far. That's the safe direction for a planning number to
 err in, but it means `recommended_count` should be read as an upper
 bound, not a precise minimum.
 
+#### Gap found and fixed: family-significant cells never got a `--count` recommendation at all
+
+Deciding whether a follow-up SLURM run was warranted (this session)
+surfaced a real gap: `recommend_count.py`'s skip condition checked
+`bh_significant` (per-family), not `bh_significant_global` (whole-table).
+`qwen3-8b`/`degree` (GOT) -- family-significant, GEE-corroborated, but not
+globally significant, exactly the "worth replicating" case the audit
+recommended pre-registering -- was silently skipped as "already
+significant" even though a real question remained ("would more data push
+it over the *global* bar"). The deeper cause: `check_significance.py`
+never simulates an MDE for a family-significant row either (its own
+trigger, in `_report`, is `not {per-family significance}` -- computed
+*before* `bh_significant_global` even exists, since that's a separate
+whole-table pass over every collected record at the end of `main()`; there
+was no way to fix this by widening a condition in `_report` without
+restructuring its single-pass design). Fixed with a smaller, surgical
+addition instead: `recommend_count.py --frame <sweep_frame.csv>` now
+computes a fresh, on-demand MDE (`_mde_for_family_significant_cell`, same
+call `check_significance.py` itself makes) for exactly these cells, rather
+than restructuring `check_significance.py`.
+
+Real result: `PYTHONPATH=. .venv/bin/python scripts/recommend_count.py
+--report analysis/significance_report.got.csv --frame
+analysis/sweep_frame.got.csv` now recommends **515 graphs** (up from 180
+clusters today) for `qwen3-8b`/`degree` -- just over the published
+500-graph cap. `analysis/confirmatory_got_degree.json` pre-registers this
+cell as confirmatory ahead of any follow-up run that uses it.
+
 ### 2.2: `scripts/validate_stratified_sampling.py` -- does graph size predict discordant pairs?
 
 `build_prompts.py --graph-source stratified` (Track 2.2's proposed fix)
@@ -632,7 +660,35 @@ verifying a batched implementation. Decoding is greedy, so a correct batch must
 reproduce these responses near-identically. That check matters more than it
 sounds: **Qwen3's tokenizer defaults to `padding_side='right'` while Gemma's
 defaults to `'left'`**, and for a decoder-only model the wrong padding side
-produces fluent, well-formed, entirely wrong text rather than an error.
+produces fluent, well-formed, entirely wrong text rather than an error. This
+check has not yet been run on real hardware -- `graphtalk.hf_backend
+.generate_batch`/`scripts/run_sweep.py --batch-size` are implemented but
+unvalidated (no local GPU); do this before trusting `--batch-size > 1` for
+any real run, including the follow-up below.
+
+## Submitting a targeted follow-up (`--count` above 30)
+
+`cluster/submit_sweep.sh` now accepts `--count N` for the `got` scheme
+(`--node-naming got` only -- the `integer` scheme's `prompts.jsonl` is
+still assumed pre-built at the tracked 30 and errors if a different count
+is requested, since there's no equivalent auto-build step for it yet). A
+non-default count is tagged into both the prompt filename
+(`prompts_got.count<N>.jsonl`) and `GRAPHTALK_RUN_TAG`
+(`got.count<N>`), so the resulting `runs/<model>.got.count<N>.*.jsonl`
+files can never collide with the tracked, historical `--count 30` GoT
+sweep:
+
+```bash
+cluster/submit_sweep.sh --node-naming got --count 500 \
+    cluster/sweep.sbatch qwen3-8b
+```
+
+For the `qwen3-8b`/`degree` replication specifically (515 recommended, see
+2.1 above): round up to the 500-graph published cap (close enough given
+`recommend_count`'s own conservative bias, confirmed in 2.1's validation)
+rather than requesting a non-published split size. Validate
+`--batch-size` first (above); pre-register with
+`analysis/confirmatory_got_degree.json` before generating.
 
 ## Not kept
 
