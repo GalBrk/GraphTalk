@@ -661,10 +661,28 @@ reproduce these responses near-identically. That check matters more than it
 sounds: **Qwen3's tokenizer defaults to `padding_side='right'` while Gemma's
 defaults to `'left'`**, and for a decoder-only model the wrong padding side
 produces fluent, well-formed, entirely wrong text rather than an error. This
-check has not yet been run on real hardware -- `graphtalk.hf_backend
-.generate_batch`/`scripts/run_sweep.py --batch-size` are implemented but
-unvalidated (no local GPU); do this before trusting `--batch-size > 1` for
-any real run, including the follow-up below.
+check **has now been run** (2026-09-04, L40S, `--batch-size 4`, both
+families, via `cluster/validate_batching.sbatch` and
+`scripts/validate_batch_generation.py`) and batching **did not pass**:
+12/24 identical decoded responses for `gemma4-e4b`, 13/24 for `qwen3-8b`,
+and on `qwen3-8b` three of 24 *extracted answers* changed -- one flipping a
+correct `cycle_check` answer to a wrong one. Measured speedup was only
+1.44x, not the 3-5x projected. See `cluster/README.md`'s "Two levers"
+section for the full table, and for why this is floating-point
+non-associativity rather than the padding bug feared above.
+
+The consequence for the follow-up below: it was generated **single-stream**
+(`--batch-size 1`, the code path every other row in `runs/` came from). Do
+not enable `GRAPHTALK_BATCH_SIZE` for a run whose effect size is comparable
+to batching's own ~4% perturbation of the score.
+
+Note also that the 24 prompts behind these files are recoverable, but not by
+the obvious join: `(task, condition, style, gold)` is **not** unique --
+`('edge_existence', 'none', 'zero_shot', 'No.')` alone matches 18 rows of
+`prompts.jsonl`, so joining on it identifies only half the set. They are the
+first two instances of each task, `all` then `none`, in prompt-file order;
+`validate_batch_generation.py --build-prompts` reconstructs them that way and
+asserts all 24 golds match both budget files before returning.
 
 ## Submitting a targeted follow-up (`--count` above 30)
 
