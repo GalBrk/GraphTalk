@@ -621,6 +621,57 @@ worked shortcut for summing degrees. `docs/sweep-findings.md`'s separate
 by this -- that comparison averages away a `degree`-specific effect at a
 coarser aggregation level.
 
+### Phase A1 candidates: three cells pre-registered ahead of new data
+
+`scripts/check_significance.py`'s per-task `exact` testing (`--metric
+exact`'s per-model, per-task loop, added alongside the module's other
+Phase-A methodology work) turns what used to be a one-off manual scan of
+240 (scheme, model, condition, task) cells into a permanent, automated
+part of every run. Run against the existing tracked `--count 30` data for
+both schemes (no new GPU time), it reproduces every cell that scan found,
+plus confirms none of them clear `bh_significant_global` yet -- exactly
+the state a genuinely new, underpowered-at-n=30 candidate should be in,
+not evidence against them:
+
+| scheme | model | condition | task | n | delta | p | `bh_significant` (own family) |
+|---|---|---|---|---|---|---|---|
+| got | qwen3-8b | degree | edge_count | 30 | +0.367 | 0.0030 | already confirmed -- see above |
+| got | qwen3-14b | degree | edge_count | 30 | +0.300 | 0.0250 | yes |
+| integer | qwen3-8b | degree | edge_count | 30 | +0.233 | 0.0380 | no |
+| integer | qwen3-8b | filler | node_count | 30 | -0.233 | 0.0130 | no |
+
+The integer-scheme `qwen3-8b`/`degree`/`edge_count` row is the important
+one: the same primer, same model, same task, showing the same
+positive-direction effect in the *other* node-naming scheme independently
+-- real cross-scheme corroboration of the mechanism already confirmed in
+GOT, not a GOT-specific artifact of Game-of-Thrones names specifically.
+`qwen3-8b`/`filler`/`node_count` is a new, separate candidate (a
+content-free primer *hurting* accuracy) the pooled-across-task view never
+surfaced on its own.
+
+Three pre-registered configs commit these cells now, before any new data
+exists to select them with hindsight -- one file per cell rather than one
+shared file, because `--confirmatory-config` entries key on `(arm, model,
+condition, metric)` only, not on node-naming scheme: a single file
+listing `qwen3-8b`/`degree` would also silently mark GOT's *already
+independently confirmed* `qwen3-8b`/`degree` cell as freshly
+"confirmatory" if it were ever run against the GOT frame, conflating two
+different pieces of evidence under one label.
+
+- `analysis/confirmatory_got_qwen3-14b_degree.json`
+- `analysis/confirmatory_integer_qwen3-8b_degree.json`
+- `analysis/confirmatory_integer_qwen3-8b_filler.json`
+
+Each is meant to be run with `--filter "task == '<task>'"` scoping the
+whole analysis to the one task the cell is actually about (`edge_count`
+for the two `degree` cells, `node_count` for `filler`) -- `hypothesis_type`
+itself has no task field, so without `--filter` a pre-registered
+(model, condition) pair would mark all 6 of that pair's per-task rows
+confirmatory, not just the one being tested. Same discipline as
+`analysis/confirmatory_got_degree.json`'s already-completed replication
+above. Sizing and generating the follow-up data these configs will score
+is Track 2 (below) / Phase C, not yet done.
+
 ### Retracted: "What holds up without `zero_cot`"
 
 This subsection used to compare `zero_shot`-only significance against
