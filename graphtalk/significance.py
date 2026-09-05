@@ -434,6 +434,49 @@ def cluster_bootstrap_ci(
   return {"point_estimate": point, "ci_low": lo, "ci_high": hi}
 
 
+def unpaired_permutation_test(
+    group_a, group_b, n_perm: int = 10_000, seed: int = 0
+) -> dict:
+  """Two-sample permutation test on the difference of means, for comparing
+  two *unpaired* samples -- e.g. a structural feature's distribution across
+  two different sets of graph instances (old vs. new), where there is no
+  instance-to-instance pairing the way there is between a `condition` and
+  `CONTROL` row for the same graph.
+
+  Every other test in this module is paired (the same instance appears on
+  both sides), which is why they sign-flip a per-pair difference under the
+  null of exchangeability. Here the null is that `group_a` and `group_b` are
+  drawn from the same distribution, so the null is built by repeatedly
+  reshuffling the *pooled* values into two groups of the original sizes and
+  recomputing the mean difference -- the standard permutation test for this
+  design. Works identically for a continuous feature (e.g. density) or a
+  0/1 indicator (e.g. `has_isolated_node`), where the difference of means is
+  a difference of proportions.
+
+  Uses the same add-one correction (North et al. 2002) as
+  `paired_permutation_test`, so a Monte Carlo p-value is never reported as
+  exactly 0.
+  """
+  group_a, group_b = list(group_a), list(group_b)
+  n_a, n_b = len(group_a), len(group_b)
+  if n_a == 0 or n_b == 0:
+    return {"n_a": n_a, "n_b": n_b, "observed_diff": 0.0, "p_value": 1.0}
+  observed = sum(group_b) / n_b - sum(group_a) / n_a
+  observed_abs = abs(observed)
+  pooled = group_a + group_b
+  rng = random.Random(seed)
+  at_least_as_extreme = 0
+  for _ in range(n_perm):
+    rng.shuffle(pooled)
+    shuffled_b = pooled[n_a:]
+    shuffled_a = pooled[:n_a]
+    permuted = sum(shuffled_b) / n_b - sum(shuffled_a) / n_a
+    if abs(permuted) >= observed_abs - 1e-12:
+      at_least_as_extreme += 1
+  p_value = (at_least_as_extreme + 1) / (n_perm + 1)
+  return {"n_a": n_a, "n_b": n_b, "observed_diff": observed, "p_value": p_value}
+
+
 def benjamini_hochberg(p_values, q: float = 0.05) -> list:
   """Benjamini-Hochberg step-up FDR correction.
 

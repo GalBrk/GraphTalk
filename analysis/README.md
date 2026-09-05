@@ -590,6 +590,17 @@ negative deltas. Only `none`/`degree` were generated at `--count 500`
 `degree`-vs-`none` comparison at all, so the other five weren't worth the
 GPU time here.
 
+**Is this power, or a different effect at scale?** Investigated in full in
+`docs/plans/scale-vs-topology-investigation.md`: pure power (old-30 and
+new-470 slices have overlapping-CI, similar-magnitude deltas; 0/14
+structural features differ significantly between the two slices after BH
+correction), plus two side findings -- 5/180 shared-instance pairs flip
+between the two runs from decoding nondeterminism (not topology), and the
+effect is overwhelmingly driven by the `edge_count` task specifically,
+growing monotonically with graph size/density within that task (a naive
+pooled-across-task structural stratification looked informative but was a
+Simpson's-paradox artifact of task composition, not a real effect).
+
 ---
 
 *Original finding, kept for the historical record:* `qwen3-8b`/`degree`
