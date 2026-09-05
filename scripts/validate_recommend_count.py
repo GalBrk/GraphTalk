@@ -83,15 +83,20 @@ def main() -> None:
   parser.add_argument("--n-trials", type=int, default=200)
   parser.add_argument("--seed", type=int, default=1234)
   parser.add_argument(
-      "--max-n-clusters-target", type=float, default=10_000,
+      "--max-n-clusters-target", type=float, default=100_000,
       help="skip recommendations whose n_clusters_needed exceeds this -- "
            "this script's own simulation cost scales roughly linearly in "
            "n_clusters_target (pure-Python resampling + permutation test, "
-           "no vectorization), so the largest recommendations here (real "
-           "runs have needed 30,000+ clusters) would take hours to "
-           "simulate on their own and are already well beyond the "
-           "published 500-graph cap regardless -- not a size anyone would "
-           "actually request, so not worth validating precisely.")
+           "no vectorization), so a very large recommendation is expensive "
+           "to validate and is already well beyond the published 500-graph "
+           "cap regardless. Raised from 10,000: at that cap this script "
+           "silently checked only negative-`delta` cells, because the "
+           "units error it was supposed to catch inflated every "
+           "positive-`delta` recommendation past 14,580. It then reported "
+           "the method 'conservative in every cell checked' while never "
+           "having checked the broken direction. Keep this above the "
+           "largest live recommendation, and read a 'no cells to validate' "
+           "result as a failure of this script rather than a clean bill.")
   args = parser.parse_args()
 
   frame = pd.read_csv(args.frame)

@@ -18,7 +18,8 @@ def _report_row(**overrides) -> dict:
       "arm": "main_sweep", "metric": "exact", "bound": "excluded",
       "is_derived_condition": False, "group": "model_a", "condition": "degree",
       "n_clusters": 30, "delta": 0.1, "mde_delta": None,
-      "mde_delta_negative": None, "bh_significant": False,
+      "mde_realized_diff": None, "mde_delta_negative": None,
+      "mde_realized_diff_negative": None, "bh_significant": False,
       "bh_significant_global": False,
   }
   base.update(overrides)
@@ -40,11 +41,14 @@ def test_zero_delta_is_skipped():
   assert result.iloc[0]["skip_reason"] == "observed delta is exactly zero"
 
 
-def test_non_significant_cell_uses_the_reports_own_mde_unchanged():
-  # Existing behavior: bh_significant=False entirely -> use mde_delta from
-  # the report directly, no frame needed.
+def test_non_significant_cell_uses_the_reports_own_realized_mde():
+  """`bh_significant=False` -> take the MDE from the report, no frame
+  needed. It must be the **realized** column: `delta` is an observed
+  accuracy difference, and only `mde_realized_diff` is on that scale.
+  """
   report = pd.DataFrame([_report_row(
-      delta=0.1, mde_delta=0.2, bh_significant=False, bh_significant_global=False,
+      delta=0.1, mde_delta=0.6, mde_realized_diff=0.2,
+      bh_significant=False, bh_significant_global=False,
   )])
   result = rc.recommend(report)
   row = result.iloc[0]
@@ -52,6 +56,41 @@ def test_non_significant_cell_uses_the_reports_own_mde_unchanged():
   assert row["mde_used"] == pytest.approx(0.2)
   ratio = (0.2 / 0.1) ** 2
   assert row["n_clusters_needed"] == pytest.approx(30 * ratio)
+
+
+def test_the_swept_parameter_is_never_divided_by_an_observed_delta():
+  """The units bug, pinned so it cannot come back. `mde_delta` is the
+  parameter the MDE search swept; `mde_realized_diff` is what that
+  parameter actually produced on the row's data. Near the ceiling they
+  differ by an order of magnitude -- only ~11% of rows can move at 89%
+  control accuracy, so a swept 0.40 realizes ~0.044. Using the parameter
+  inflates the extrapolation by `(1 / headroom) ** 2`, which measured
+  53-163x on the real positive-`delta` cells and turned a cell already
+  significant at 30 graphs into a 515-graph cluster booking.
+  """
+  report = pd.DataFrame([_report_row(
+      delta=0.0444, mde_delta=0.40, mde_realized_diff=0.044,
+      bh_significant=False, bh_significant_global=False,
+  )])
+  row = rc.recommend(report).iloc[0]
+  inflated = 30 * (0.40 / 0.0444) ** 2       # ~2,435 graphs
+  correct = 30 * (0.044 / 0.0444) ** 2       # ~29 graphs
+  assert row["recommended_count"] == pytest.approx(correct, rel=1e-6)
+  assert row["recommended_count"] < inflated / 50
+
+
+def test_a_non_converged_search_is_skipped_not_extrapolated():
+  """"MDE exceeds 1.0" leaves `mde_delta` null but still reports the
+  realized value the search reached. Extrapolating from that would invent
+  a recommendation out of a bound the data never actually attained, so
+  convergence is still read off the parameter column."""
+  report = pd.DataFrame([_report_row(
+      delta=0.1, mde_delta=None, mde_realized_diff=0.013,
+      bh_significant=False, bh_significant_global=False,
+  )])
+  row = rc.recommend(report).iloc[0]
+  assert row["skip_reason"].startswith("MDE did not converge")
+  assert pd.isna(row["recommended_count"])
 
 
 def test_family_significant_not_global_is_skipped_without_a_frame():
