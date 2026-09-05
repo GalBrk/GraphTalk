@@ -695,6 +695,108 @@ def _mae_eligible_frame(
   return eligible
 
 
+def _report_exact_per_task(
+    frame: pd.DataFrame, label: str, task: str, args, arm: str, records: list,
+) -> None:
+  """Per-task counterpart to `_report`'s pooled `exact` test, for the
+  main sweep only -- mirrors `_report_mae`'s existing per-task design (same
+  primitives, same BH-family-per-task pattern) but for the 0-1 exact-match
+  metric instead of `absolute_error`.
+
+  Pooling across all 6 tasks (`_report`'s own scope, and the only view
+  `--metric exact` gave before this) can hide a real effect that is
+  concentrated in one task and flat everywhere else. Confirmed on real
+  data, not hypothetical: `qwen3-8b`/`degree`'s pooled delta is a modest
+  +0.028 (not significant) in both node-naming schemes, but scoped to
+  `edge_count` alone it is +0.37 (GOT) / +0.23 (integer) -- both real
+  signals five flat tasks were diluting past visibility.
+  `task_delta_min`/`task_delta_max` on the pooled row already *describes*
+  this heterogeneity; this function is the actual hypothesis test for it,
+  one BH family per task (`{arm}/{label}/task/{task}`, distinct from the
+  pooled family and from `mae`'s own per-task families), folded into the
+  same whole-table `_apply_global_bh` pass as everything else via
+  `metric="exact"` + a populated `task` column -- the same two fields
+  `_report_mae`'s rows already carry, so no schema change is needed for
+  this to slot into the existing global correction.
+
+  Deliberately simpler than `_report`: no `near_ceiling`/`headroom`/MDE/
+  bracket handling here -- those stay pooled-only diagnostics for now,
+  the same scope MAE's own per-task reporting already accepted. A
+  confirmatory pre-registration for one specific (model, condition, task)
+  triple needs `--filter "task == '<task>'"` to scope the whole run down
+  to it first (see the module docstring's `--confirmatory-config` section)
+  -- `hypothesis_type` here is computed the same way as the pooled row's,
+  which means an unfiltered run's per-task rows for a pre-registered
+  (model, condition) are *also* tagged confirmatory across all 6 tasks,
+  not just the one task actually being confirmed; `--filter` is what
+  narrows that down to the single row a real confirmatory test needs.
+  """
+  print(f"\n  {label} / {task} (exact, per-task)")
+  conditions = sorted(c for c in frame["condition"].unique() if c != CONTROL)
+  rows = []
+  for condition in conditions:
+    control, treatment, cluster_ids = _paired_values(frame, condition, "exact")
+    if not control:
+      print(f"    {condition:<12} -- no paired rows found")
+      continue
+    seed = f"{args.seed}:{arm}:{label}:task:{task}:{condition}"
+    perm = significance.paired_permutation_test_clustered(
+        control, treatment, cluster_ids, n_perm=args.n_perm, seed=seed
+    )
+    boot = significance.cluster_bootstrap_ci_clustered(
+        control, treatment, cluster_ids, n_boot=args.n_boot, seed=seed,
+        alpha=args.alpha,
+    )
+    rows.append((condition, perm, boot, _is_derived_condition(condition)))
+
+  if not rows:
+    return
+  print(f"    {'condition':<12}{'n_clusters':>11}{'delta':>10}"
+        f"{'95% CI':>22}{'p (perm)':>10}  BH-sig")
+
+  # Same split as `_report`/`_report_mae`: `all` is mechanically the union
+  # of degree/clustering/rwse, corrected as its own single-hypothesis
+  # family rather than pooled with the independent conditions.
+  independent_rows = [r for r in rows if not r[-1]]
+  derived_rows = [r for r in rows if r[-1]]
+
+  def _emit(group_rows: list, family_suffix: str) -> None:
+    if not group_rows:
+      return
+    bh_family = f"{arm}/{label}/task/{task}{family_suffix}"
+    reject = significance.benjamini_hochberg(
+        [perm["p_value"] for _, perm, _, _ in group_rows], q=args.q
+    )
+    for (condition, perm, boot, is_derived), sig in zip(group_rows, reject):
+      ci = f"[{boot['ci_low']:+.3f}, {boot['ci_high']:+.3f}]"
+      print(f"    {condition:<12}{perm['n_clusters']:>11}"
+            f"{perm['observed_diff']:>+10.3f}{ci:>22}"
+            f"{perm['p_value']:>10.4f}  {'yes' if sig else 'no'}")
+      records.append({
+          "arm": arm,
+          "group": label,
+          "metric": "exact",
+          "task": task,
+          "condition": condition,
+          "hypothesis_type": _hypothesis_type(
+              args.confirmatory, arm, label, condition, "exact"
+          ),
+          "is_derived_condition": is_derived,
+          "bound": "excluded",
+          "bh_family": bh_family,
+          "n_pairs": perm["n_pairs"],
+          "n_clusters": perm["n_clusters"],
+          "delta": perm["observed_diff"],
+          "ci_low": boot["ci_low"],
+          "ci_high": boot["ci_high"],
+          "p_value": perm["p_value"],
+          "bh_significant": sig,
+      })
+
+  _emit(independent_rows, "")
+  _emit(derived_rows, "/derived")
+
+
 def _report_mae(
     frame: pd.DataFrame, raw_frame: pd.DataFrame, label: str, task: str,
     args, records: list,
@@ -990,6 +1092,17 @@ def main() -> None:
               records, bound="excluded")
     _report(main_sweep, main_sweep_raw, "exact", "pooled across all models",
             args, "main_sweep", records, bound="excluded")
+
+    print(f"\n{'=' * 78}")
+    print("Main sweep: accuracy (exact) vs `none`, per task -- see "
+          "_report_exact_per_task's docstring for why this is a separate "
+          "test from the pooled one above, not just a redundant view of it")
+    for model_family, group in main_sweep.groupby("model_family"):
+      for task in sorted(group["task"].unique()):
+        _report_exact_per_task(
+            group[group["task"] == task], model_family, task, args,
+            "main_sweep", records,
+        )
 
     if not think.empty:
       print(f"\n{'=' * 78}")
