@@ -13,20 +13,30 @@ deliberately kept scipy out of its dependency set (see
 docs/plans/primer-computation.md), and a permutation test on a sign-flippable
 paired difference needs nothing beyond a source of randomness.
 
-Pooling across task and style (and, when comparing across models, across
-model too) means the same graph instance recurs many times in one pooled
-sample -- `paired_permutation_test`/`cluster_bootstrap_ci` treat every row as
-an independent draw, which overstates the effective sample size whenever
-rows sharing an `instance_id` are correlated (a graph the model finds easy,
-or a condition that happens to suit its structure, moves every row sharing
-that instance in the same direction). `paired_permutation_test_clustered`/
+Pooling across task (and, when comparing across models, across model too)
+means the same graph recurs many times in one pooled sample --
+`paired_permutation_test`/`cluster_bootstrap_ci` treat every row as an
+independent draw, which overstates the effective sample size whenever rows
+sharing a graph are correlated (a graph the model finds easy, or a
+condition that happens to suit its structure, moves every row sharing that
+graph in the same direction). `paired_permutation_test_clustered`/
 `cluster_bootstrap_ci_clustered` correct for that by resampling/sign-flipping
 whole clusters rather than individual rows -- see `scripts/check_significance.py`,
-which threads `(model, instance_id)` through as the cluster key, not
-`instance_id` alone: a cluster never spans more than one model, since
-different model families' errors on the same graph number are not assumed
-to correlate as strongly as one model's own repeated answers to it. The
-unclustered functions are kept, not replaced: they're still correct
+which threads `(model, graph_index)` through as the cluster key.
+
+What that key deliberately is and isn't. It is **not** `instance_id`: that
+string is `"<task>/<index>"`, and the six tasks sharing an index are the
+*same graph* asked six different questions, so keying on the full string
+put exactly one pair in every cluster and made this module's clustered
+variants no-ops on the real sweep. (The justification that used to sit here
+was repetition across prompt *styles*, which was true until the `zero_cot`
+purge left one style; nothing was updated to point at the per-task
+repetition that remained.) It is also **not** the bare graph index: a
+cluster never spans more than one model, since different model families'
+errors on the same graph number are not assumed to correlate as strongly as
+one model's own repeated answers to it.
+
+The unclustered functions are kept, not replaced: they're still correct
 wherever no cluster_id repeats.
 """
 
@@ -84,12 +94,12 @@ def paired_permutation_test_clustered(
   """Like `paired_permutation_test`, but flips every pair sharing a
   `cluster_ids` value together, not independently.
 
-  Pairs that share a cluster -- the same graph instance seen across
-  multiple styles, for one model (callers key clusters by
-  `(model, instance_id)`, not `instance_id` alone) -- are not independent
-  replicates: if that instance is unusually easy, or the condition happens
-  to help on its particular structure, every pair sharing it tends to move
-  together.
+  Pairs that share a cluster -- the same graph seen under several tasks,
+  for one model (callers key clusters by `(model, graph_index)`, never by
+  the `"<task>/<index>"` instance id, which would put one pair in each
+  cluster) -- are not independent replicates: if that graph is unusually
+  easy, or the condition happens to help on its particular structure, every
+  pair sharing it tends to move together.
   Flipping cluster-by-cluster rather than pair-by-pair preserves that
   dependence under the null, which is what keeps the p-value from being
   anti-conservative on pooled data. Reduces to `paired_permutation_test`
@@ -171,8 +181,8 @@ def _resample_clusters(clusters: list, rng: random.Random):
 def cluster_bootstrap_ci_clustered(
     control, treatment, cluster_ids, n_boot: int = 10_000, seed: int = 0, alpha: float = 0.05
 ) -> dict:
-  """Resamples whole clusters (e.g. one model's rows on a graph instance)
-  with replacement, carrying every pair that shares a cluster along
+  """Resamples whole clusters (e.g. one model's six per-task rows on one
+  graph) with replacement, carrying every pair that shares a cluster along
   together -- a real
   cluster bootstrap, unlike `cluster_bootstrap_ci`'s per-pair resampling,
   which understates variance when pairs sharing a cluster are correlated

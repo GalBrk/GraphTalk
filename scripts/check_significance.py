@@ -20,18 +20,39 @@ across schemes would be meaningless, not just mislabeled) or a duplicated
 `(model, instance_id, condition, style, node_naming)` key (silently corrupts
 every pairing downstream, via `pandas`'s cross-join on a non-unique index).
 
-Pooling across style (and, for "pooled across all models" rows, across
-model too) means the same graph instance recurs many times in one pooled
-sample, so `(model, instance_id)` is threaded through as a *cluster* id: the
+Pooling across task (and, for "pooled across all models" rows, across
+model too) means the same graph recurs many times in one pooled sample, so
+`(model, graph_index)` is threaded through as a *cluster* id: the
 permutation test flips and the bootstrap resamples whole clusters, not
 individual rows, so correlated rows sharing a graph don't get counted as
 independent evidence (see `graphtalk/significance.py`'s module docstring).
-The cluster id carries `model`, not just `instance_id` -- otherwise a
+
+The cluster id is the **graph number**, not the whole `instance_id`. An
+`instance_id` is `"<task>/<index>"`, and `node_count/7` and `edge_count/7`
+are the same graph -- same nodes, same edges, byte-identical encoding in
+`prompts.jsonl`, differing only in the question appended after it. Keying
+clusters on the full string therefore gave every cluster exactly one member
+(`n_clusters == n_pairs` on every row of the report this replaced), so the
+clustering corrected for nothing at all. That went unnoticed because this
+docstring used to justify clustering by repetition *across prompt styles*,
+which was true until the `zero_cot` purge left `zero_shot` as the only
+style; nothing was then updated to point at the six-tasks-per-graph
+repetition that remained. See `_paired_values` and `_within_graph_icc`.
+
+The cluster id carries `model`, not just the graph index -- otherwise a
 "pooled across all models" row would merge the same graph number from four
 different model families into one cluster, assuming those families'
 errors on that graph correlate as strongly as one model's own repeated
-answers to it do. They may not, so only same-model rows sharing an instance
+answers to it do. They may not, so only same-model rows sharing a graph
 are treated as correlated.
+
+`within_graph_icc` reports, per row, how much correlation this is actually
+correcting for, so the choice of unit is answerable from the data. On the
+current sweep it averages about -0.01 -- the six tasks on one graph move
+essentially independently -- and is clearly positive only on `rwse`, which
+is also the condition whose p-value moves most under the corrected key.
+The cluster-robust test is the right default because which cells carry
+correlation isn't knowable in advance, not because every cell does.
 
 Main-sweep `exact` rows: one row per condition, `bound="excluded"` (kept as
 the literal value for schema stability, even though nothing is excluded
@@ -308,6 +329,63 @@ def _hypothesis_type(
   return "exploratory"
 
 
+def _graph_index(instance_id: str) -> str:
+  """The graph number out of an `"<task>/<index>"` `instance_id`.
+
+  The same index under different tasks is the *same graph* -- same nodes,
+  same edges, byte-identical encoding in `prompts.jsonl` -- asked a
+  different question. So this, not the whole `instance_id`, is the unit
+  rows can be correlated within; see `_paired_values`. Raises rather than
+  guessing on an id that doesn't carry a task prefix, since silently
+  treating the whole string as an index would reintroduce exactly the
+  one-member-per-cluster no-op this function exists to prevent.
+  """
+  task, sep, index = instance_id.partition("/")
+  if not sep or not index:
+    raise ValueError(
+        f"instance_id {instance_id!r} has no '<task>/<index>' shape -- "
+        f"cannot derive the graph index the cluster id needs"
+    )
+  return index
+
+
+def _within_graph_icc(control, treatment, cluster_ids) -> float | None:
+  """One-way random-effects ICC of the paired differences within a cluster.
+
+  Reports how much correlation the clustering in `_paired_values` is
+  actually correcting for, so the choice of cluster unit is answerable from
+  the data rather than from a docstring. Roughly: the share of the paired
+  differences' variance that lives *between* graphs rather than within one.
+  ~0 means the six tasks on a graph move independently and clustering
+  changes nothing; clearly positive means they move together and an
+  unclustered test would overstate its evidence.
+
+  `None` when every cluster holds one pair (nothing to measure) or the
+  variance components are degenerate (a cell where no pair disagrees).
+  Descriptive only -- no hypothesis test, no multiple-comparison burden,
+  exactly like `task_delta_min`/`task_delta_max`.
+  """
+  by_cluster: dict = {}
+  for cluster_id, c, t in zip(cluster_ids, control, treatment):
+    by_cluster.setdefault(cluster_id, []).append(t - c)
+  sizes = [len(v) for v in by_cluster.values()]
+  if len(by_cluster) < 2 or max(sizes) < 2:
+    return None
+  k = sum(sizes) / len(sizes)
+  means = [sum(v) / len(v) for v in by_cluster.values()]
+  grand = sum(means) / len(means)
+  ms_between = k * sum((m - grand) ** 2 for m in means) / (len(means) - 1)
+  within = [
+      sum((d - m) ** 2 for d in v) / (len(v) - 1)
+      for v, m in zip(by_cluster.values(), means) if len(v) > 1
+  ]
+  ms_within = sum(within) / len(within)
+  denominator = ms_between + (k - 1) * ms_within
+  if denominator <= 0:
+    return None
+  return (ms_between - ms_within) / denominator
+
+
 def _paired_values(frame: pd.DataFrame, condition: str, metric: str):
   """Aligned (control, treatment, cluster_ids) for `condition` vs `CONTROL`.
 
@@ -320,13 +398,35 @@ def _paired_values(frame: pd.DataFrame, condition: str, metric: str):
   carry both schemes for one model would pair a `got` control row against an
   `integer` treatment row (or vice versa) via `set_index`, which raises on
   nothing; it just silently keeps one of the duplicates. `cluster_ids` is
-  `(model, instance_id)` pulled back out of the joined index -- the unit
+  `(model, graph_index)` pulled back out of the joined index -- the unit
   `paired_permutation_test_clustered`/`cluster_bootstrap_ci_clustered` need,
   since the *pairing* key has to include style/node_naming to be unique but
   the *correlation* those two functions correct for lives at the
-  per-model-per-instance level. `model` stays part of the cluster id (not
-  just `instance_id`) so a pooled-across-models call doesn't merge the same
-  graph number from different model families into one cluster.
+  per-model-per-graph level. `model` stays part of the cluster id so a
+  pooled-across-models call doesn't merge the same graph number from
+  different model families into one cluster -- a much stronger correlation
+  assumption than intended, and one this script has deliberately declined to
+  make since the second-pass audit.
+
+  **`graph_index`, not `instance_id`.** `instance_id` is `"<task>/<index>"`,
+  so clustering on it treats `node_count/7` and `edge_count/7` as unrelated.
+  They are the same graph: identical node set, identical edge list,
+  byte-identical encoding in `prompts.jsonl`, differing only in the question
+  appended at the end. Keying on the whole string gave every cluster exactly
+  one member on the current data (`n_clusters == n_pairs` on every committed
+  row), which made the clustering machinery a no-op -- it corrected for
+  nothing at all. That went unnoticed because the docstrings justified
+  clustering by repetition *across prompt styles*, which was real until the
+  `zero_cot` purge left `zero_shot` as the only style; the six-tasks-share-a-
+  graph repetition was never the one being corrected for. Splitting the task
+  prefix off restores the intended unit: 30 clusters per model, 120 pooled.
+
+  This is a conservative choice rather than a claim of strong dependence.
+  `_within_graph_icc` measures the actual correlation per row (mean ICC on
+  this data is about -0.01, i.e. essentially none, and positive only on
+  `rwse`) -- exactly the cell whose p-value moves most under the fix. The
+  cluster-robust test is the right default because which cells carry
+  correlation is not knowable in advance, not because every cell does.
   """
   control = frame[frame["condition"] == CONTROL].set_index(_KEYS)[metric]
   treatment = frame[frame["condition"] == condition].set_index(_KEYS)[metric]
@@ -336,7 +436,7 @@ def _paired_values(frame: pd.DataFrame, condition: str, metric: str):
   )
   cluster_ids = list(zip(
       joined.index.get_level_values("model"),
-      joined.index.get_level_values("instance_id"),
+      [_graph_index(i) for i in joined.index.get_level_values("instance_id")],
   ))
   return joined["control"].tolist(), joined["treatment"].tolist(), cluster_ids
 
@@ -394,24 +494,81 @@ def _count_forced_wrong_pairs(frame: pd.DataFrame, condition: str) -> int:
   return int((joined["control"] | joined["treatment"]).sum())
 
 
-def _task_delta_range(control, treatment, cluster_ids):
+def _paired_tasks(frame: pd.DataFrame, condition: str, metric: str) -> list:
+  """The task label of each pair `_paired_values` returns, in the same
+  order.
+
+  Mirrors `_paired_values`'s own `set_index(_KEYS)` inner join exactly (the
+  same guarantee `_count_forced_wrong_pairs` gives), so the result lines up
+  element-for-element with its `control`/`treatment`/`cluster_ids`.
+
+  A separate join rather than a fourth return value: six callers outside
+  this function unpack `_paired_values` as a 3-tuple, and only
+  `_task_delta_range` needs the task. It used to read the task off the
+  cluster id's `instance_id` prefix, which stopped working when the cluster
+  id became `(model, graph_index)` -- and would have failed *silently*,
+  grouping by graph number instead of task, since `"7".split("/")[0]` is
+  just `"7"`.
+  """
+  control = frame[frame["condition"] == CONTROL].set_index(_KEYS)[metric]
+  treatment = frame[frame["condition"] == condition].set_index(_KEYS)[metric]
+  joined = pd.concat(
+      [control.rename("control"), treatment.rename("treatment")],
+      axis=1, join="inner",
+  )
+  return [
+      instance_id.partition("/")[0]
+      for instance_id in joined.index.get_level_values("instance_id")
+  ]
+
+
+def _task_delta_range(control, treatment, tasks):
   """Per-task point-estimate deltas (`mean(treatment) - mean(control)`),
   descriptive only -- no new hypothesis test, no new multiple-comparison
-  burden. `instance_id` (the second element of each `cluster_ids` tuple)
-  already encodes its task as a `/`-prefix (e.g. `edge_count/27`), so no
-  extra join or `_paired_values` change is needed. Returns `(min, max)`
-  across tasks -- surfaces whether a near-zero pooled delta is hiding tasks
-  that actually disagree in direction, or genuinely reflects "nothing much
-  happening on any task."
+  burden. `tasks` is `_paired_tasks`'s aligned task label per pair. Returns
+  `(min, max)` across tasks -- surfaces whether a near-zero pooled delta is
+  hiding tasks that actually disagree in direction, or genuinely reflects
+  "nothing much happening on any task."
   """
   by_task: dict = {}
-  for (_model, instance_id), c, t in zip(cluster_ids, control, treatment):
-    task = instance_id.split("/")[0]
+  for task, c, t in zip(tasks, control, treatment):
     by_task.setdefault(task, []).append(t - c)
   if not by_task:
     return None, None
   task_means = [sum(diffs) / len(diffs) for diffs in by_task.values()]
   return min(task_means), max(task_means)
+
+
+def _near_threshold(p_value: float, group_rows: list, reject: list, args) -> bool:
+  """Whether this p-value sits close enough to its own BH threshold that
+  Monte Carlo noise, not the data, decides which side of it the row lands.
+
+  A permutation p-value is `(hits + 1) / (n_perm + 1)`, so it can only take
+  values on a grid of step `1 / (n_perm + 1)` and carries binomial sampling
+  noise of roughly `sqrt(p (1 - p) / n_perm)` around its true value. The
+  thresholds this project actually decides on are small -- the whole-table
+  BH pass puts rank 1 of 100 at 0.0005, ten grid steps from zero at the old
+  `n_perm=10_000` -- so a verdict can turn on a handful of individual random
+  draws. That happened: the report's only whole-table-significant row
+  cleared its threshold by 5e-8 against a grid resolution of 1e-4, and
+  reversed under most other seeds.
+
+  Flagged, not corrected: the honest reading of such a row is "on the
+  boundary, unresolved at this `n_perm`", and the fix is more permutations
+  (`--n-perm`), not a different verdict. Uses a 3-sigma band, so a flag
+  means the noise plausibly spans the threshold rather than merely touching
+  it.
+  """
+  if not group_rows or p_value is None or not (0.0 < p_value < 1.0):
+    return False
+  # This row's own BH threshold: (rank / m) * q at its rank in the family.
+  ordered = sorted(row[1]["p_value"] for row in group_rows)
+  m = len(ordered)
+  rank = ordered.index(p_value) + 1
+  threshold = (rank / m) * args.q
+  standard_error = (p_value * (1 - p_value) / args.n_perm) ** 0.5
+  grid_step = 1.0 / (args.n_perm + 1)
+  return abs(p_value - threshold) < max(3 * standard_error, grid_step)
 
 
 def _report(
@@ -421,16 +578,20 @@ def _report(
   print(f"\n  {label} [{bound}]")
   conditions = sorted(c for c in frame["condition"].unique() if c != CONTROL)
   rows = []
-  # The number of *clusters* -- (model, instance_id) pairs, matching Fix 2's
-  # cluster granularity, not bare instance_id -- available to this group
+  # The number of *clusters* -- (model, graph_index) pairs, matching
+  # `_paired_values`' own cluster granularity -- available to this group
   # before any exclusion. Read from the data, not hardcoded, so
   # `n_instances_missing` stays correct if the sweep's `--count` ever
-  # changes (see module docstring). Using bare instance_id here would
-  # undercount the baseline for a pooled-across-models call (up to 4
-  # clusters can share one instance_id) and make `n_instances_missing`
-  # go negative -- caught by running this against the real sweep data.
+  # changes (see module docstring). This has to track `_paired_values`
+  # exactly: counting bare `instance_id` would undercount the baseline for
+  # a pooled-across-models call (up to 4 clusters share one instance_id)
+  # and make `n_instances_missing` go negative, while counting
+  # `(model, instance_id)` -- correct before the cluster id dropped the
+  # task prefix -- now overcounts it 6x (once per task on the same graph)
+  # and would report 150 of 180 instances "missing" on a complete cell.
   total_clusters_possible = int(
-      raw_frame[["model", "instance_id"]].drop_duplicates().shape[0]
+      raw_frame.assign(_graph=raw_frame["instance_id"].map(_graph_index))
+      [["model", "_graph"]].drop_duplicates().shape[0]
   )
   near_ceiling = None
   headroom = None
@@ -464,8 +625,9 @@ def _report(
         alpha=args.alpha,
     )
     task_delta_min, task_delta_max = _task_delta_range(
-        control, treatment, cluster_ids
+        control, treatment, _paired_tasks(frame, condition, metric)
     )
+    within_graph_icc = _within_graph_icc(control, treatment, cluster_ids)
     n_forced_wrong = _count_forced_wrong_non_terminating(raw_frame, condition)
     if bound == "excluded":
       n_looped = _count_looped_on_correct_answer(raw_frame, condition)
@@ -488,7 +650,7 @@ def _report(
     rows.append((
         condition, perm, boot, n_forced_wrong, n_looped,
         high_non_termination_rate, n_instances_missing, task_delta_min,
-        task_delta_max, control, treatment, cluster_ids,
+        task_delta_max, within_graph_icc, control, treatment, cluster_ids,
         _is_derived_condition(condition),
     ))
 
@@ -518,12 +680,21 @@ def _report(
     )
     for (condition, perm, boot, n_forced_wrong, n_looped,
          high_non_termination_rate, n_missing, task_delta_min, task_delta_max,
-         control, treatment, cluster_ids, is_derived), sig in zip(
-             group_rows, reject):
+         within_graph_icc, control, treatment, cluster_ids,
+         is_derived), sig in zip(group_rows, reject):
       ci = f"[{boot['ci_low']:+.3f}, {boot['ci_high']:+.3f}]"
+      near_threshold = _near_threshold(
+          perm["p_value"], group_rows, reject, args
+      )
+      # Recomputed, not carried through `rows`: identical by construction to
+      # the string the permutation/bootstrap calls above were seeded with
+      # (same f-string, same inputs), and recording it is what lets a reader
+      # reproduce this exact p-value rather than a differently-seeded one.
+      seed_for_record = f"{args.seed}:{arm}:{label}:{bound}:{condition}"
       print(f"    {condition:<12}{perm['n_clusters']:>11}"
             f"{perm['observed_diff']:>+10.3f}{ci:>22}"
-            f"{perm['p_value']:>10.4f}  {'yes' if sig else 'no'}")
+            f"{perm['p_value']:>10.4f}  {'yes' if sig else 'no'}"
+            f"{'  <-- within MC noise of its threshold' if near_threshold else ''}")
       mde_delta = mde_realized = mde_power_target = None
       mde_delta_negative = mde_realized_negative = None
       if mde_eligible and not sig:
@@ -565,11 +736,15 @@ def _report(
           "headroom": headroom,
           "task_delta_min": task_delta_min,
           "task_delta_max": task_delta_max,
+          "within_graph_icc": within_graph_icc,
           "delta": perm["observed_diff"],
           "ci_low": boot["ci_low"],
           "ci_high": boot["ci_high"],
           "p_value": perm["p_value"],
+          "n_perm": args.n_perm,
+          "seed": seed_for_record,
           "bh_significant": sig,
+          "near_threshold": near_threshold,
           "mde_delta": mde_delta,
           "mde_realized_diff": mde_realized,
           "mde_delta_negative": mde_delta_negative,
@@ -619,11 +794,34 @@ def _apply_global_bh(records: list, q: float) -> None:
   for r in eligible:
     by_hypothesis_type.setdefault(r["hypothesis_type"], []).append(r)
   for group_rows in by_hypothesis_type.values():
-    reject_global = significance.benjamini_hochberg(
-        [r["p_value"] for r in group_rows], q=q
-    )
+    p_values = [r["p_value"] for r in group_rows]
+    reject_global = significance.benjamini_hochberg(p_values, q=q)
+    # The whole-table thresholds are the small ones -- rank 1 of 100 lands
+    # at 0.0005 -- so this, not the per-family pass, is where a verdict can
+    # turn on a handful of random draws. It is exactly where it did: the
+    # report this replaced had its only globally-significant row clear
+    # 0.00050000 with p=0.00049995, a margin of 5e-8 against a p-value grid
+    # of 1e-4. `near_threshold` is OR-ed rather than overwritten, so a row
+    # already flagged against its per-family threshold stays flagged.
+    ordered = sorted(p_values)
+    m = len(ordered)
     for r, sig in zip(group_rows, reject_global):
       r["bh_significant_global"] = sig
+      p_value = r["p_value"]
+      # `n_perm` is absent on a hand-built record (several tests construct
+      # these directly). The flag is a diagnostic, not part of the
+      # correction, so skip it rather than making every caller supply the
+      # field -- `bh_significant_global` above is unaffected either way.
+      n_perm = r.get("n_perm")
+      if not n_perm or not (0.0 < p_value < 1.0):
+        continue
+      threshold = ((ordered.index(p_value) + 1) / m) * q
+      standard_error = (p_value * (1 - p_value) / n_perm) ** 0.5
+      grid_step = 1.0 / (n_perm + 1)
+      r["near_threshold"] = bool(
+          r.get("near_threshold")
+          or abs(p_value - threshold) < max(3 * standard_error, grid_step)
+      )
   for r in records:
     r.setdefault("bh_significant_global", None)
 
@@ -759,9 +957,13 @@ def _report_mae(
       mae_delta = -perm["observed_diff"]
       ci_low, ci_high = -boot["ci_high"], -boot["ci_low"]
       ci = f"[{ci_low:+.3f}, {ci_high:+.3f}]"
+      near_threshold = _near_threshold(
+          perm["p_value"], group_rows, reject, args
+      )
       print(f"    {condition:<12}{perm['n_clusters']:>11}"
             f"{mae_delta:>+10.3f}{ci:>22}"
-            f"{perm['p_value']:>10.4f}  {'yes' if sig else 'no'}")
+            f"{perm['p_value']:>10.4f}  {'yes' if sig else 'no'}"
+            f"{'  <-- within MC noise of its threshold' if near_threshold else ''}")
       records.append({
           "arm": "main_sweep",
           "group": label,
@@ -781,7 +983,10 @@ def _report_mae(
           "ci_low": ci_low,
           "ci_high": ci_high,
           "p_value": perm["p_value"],
+          "n_perm": args.n_perm,
+          "seed": f"{args.seed}:mae:{label}:{task}:{condition}",
           "bh_significant": sig,
+          "near_threshold": near_threshold,
       })
 
   _emit(independent_rows, "")
@@ -841,8 +1046,20 @@ def main() -> None:
                             "metric, kept for faster single-metric runs during "
                             "development; its BH correction is then scoped to "
                             "just that metric's rows, not the union")
-  parser.add_argument("--n-perm", type=int, default=10_000,
-                       help="permutations for the pooled p-value")
+  parser.add_argument("--n-perm", type=int, default=200_000,
+                       help="permutations for the pooled p-value. A "
+                            "permutation p-value lands on a grid of step "
+                            "1/(n_perm+1), so at the old 10,000 default the "
+                            "whole-table BH threshold (0.0005 at rank 1 of "
+                            "100) sat five grid steps from zero and verdicts "
+                            "turned on single random draws -- the report's "
+                            "only globally-significant row cleared its "
+                            "threshold by 5e-8 and reversed under most other "
+                            "seeds. 200,000 puts the grid an order of "
+                            "magnitude below the smallest threshold in use; "
+                            "`near_threshold` flags any row still inside the "
+                            "noise band. Lower it for a fast development run, "
+                            "not for a reported number")
   parser.add_argument("--n-boot", type=int, default=10_000,
                        help="resamples for the pooled bootstrap CI")
   parser.add_argument("--alpha", type=float, default=0.05,

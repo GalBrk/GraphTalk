@@ -296,9 +296,7 @@ def test_non_terminating_rows_are_paired_in_not_dropped():
       "exact": [1.0, 0.0, 0.0, 1.0],
   })
   control, treatment, cluster_ids = cs._paired_values(frame, "degree", "exact")
-  assert cluster_ids == [
-      ("gemma4-12b", "node_count/0"), ("gemma4-12b", "node_count/1"),
-  ]
+  assert cluster_ids == [("gemma4-12b", "0"), ("gemma4-12b", "1")]
   assert control == [1.0, 0.0]
   assert treatment == [0.0, 1.0]
 
@@ -323,10 +321,90 @@ def test_cluster_id_carries_model_preventing_cross_model_merge():
   })
   control, treatment, cluster_ids = cs._paired_values(frame, "degree", "exact")
   assert len(control) == 2
-  assert cluster_ids == [
-      ("gemma4-12b", "node_count/0"), ("qwen3-8b", "node_count/0"),
-  ]
+  assert cluster_ids == [("gemma4-12b", "0"), ("qwen3-8b", "0")]
   assert len(set(cluster_ids)) == 2
+
+
+# --- Fix 3: the cluster id is the graph, not the "<task>/<index>" id -------
+
+
+def test_same_graph_under_different_tasks_is_one_cluster():
+  """The bug this fixes: `node_count/7` and `edge_count/7` are the *same
+  graph* asked two questions, so they must land in one cluster. Keying on
+  the whole `instance_id` put each in its own, which made every cluster a
+  singleton on the real sweep (`n_clusters == n_pairs` on every committed
+  row) -- the clustered permutation test then reduced exactly to the
+  unclustered one and corrected for nothing.
+  """
+  frame = pd.DataFrame({
+      "model": ["gemma4-12b"] * 4,
+      "instance_id": ["node_count/7", "node_count/7",
+                      "edge_count/7", "edge_count/7"],
+      "style": ["zero_shot"] * 4,
+      "node_naming": ["integer"] * 4,
+      "condition": ["none", "degree", "none", "degree"],
+      "exact": [1.0, 0.0, 1.0, 0.0],
+  })
+  _control, _treatment, cluster_ids = cs._paired_values(frame, "degree", "exact")
+  assert cluster_ids == [("gemma4-12b", "7"), ("gemma4-12b", "7")]
+  assert len(set(cluster_ids)) == 1
+
+
+def test_graph_index_refuses_an_instance_id_with_no_task_prefix():
+  """Guarding the silent-failure mode: an id without a `/` would otherwise
+  be used whole as the graph index, quietly restoring one-pair clusters."""
+  assert cs._graph_index("cycle_check/12") == "12"
+  with pytest.raises(ValueError, match="no '<task>/<index>' shape"):
+    cs._graph_index("12")
+
+
+def test_within_graph_icc_is_none_when_every_cluster_is_a_singleton():
+  """Nothing to measure when no graph repeats -- the state the old cluster
+  key put every real row in."""
+  assert cs._within_graph_icc([1.0, 0.0], [0.0, 1.0], [("m", "0"), ("m", "1")]) is None
+
+
+def _global_bh_records(p_value: float, n_perm: int, m: int = 100) -> list:
+  """`m` eligible whole-table records whose smallest p-value is `p_value`,
+  the rest well away from any threshold."""
+  return [
+      {"group": f"model{i}", "is_derived_condition": False,
+       "hypothesis_type": None, "n_perm": n_perm,
+       "p_value": p_value if i == 0 else 0.2 + i * 0.005}
+      for i in range(m)
+  ]
+
+
+def test_near_threshold_flags_a_verdict_monte_carlo_noise_decides():
+  """The concrete case this flag exists for. The superseded report's only
+  whole-table-significant row had p = 5/10001 = 0.00049995 against a rank-1-
+  of-100 BH threshold of 0.00050000 -- it cleared by 5e-8, while the
+  p-value's own grid step was 1e-4, 2000x coarser. It reversed under most
+  other seeds. The verdict was a property of the seed, not the data.
+  """
+  records = _global_bh_records(5 / 10001, n_perm=10_000)
+  cs._apply_global_bh(records, 0.05)
+  assert records[0]["bh_significant_global"] is True
+  assert records[0]["near_threshold"] is True
+
+
+def test_near_threshold_is_quiet_when_the_margin_beats_the_noise():
+  """The same cell at the current `--n-perm`: not significant, and not
+  close enough for noise to be what decided it."""
+  records = _global_bh_records(0.002165, n_perm=200_000)
+  cs._apply_global_bh(records, 0.05)
+  assert records[0]["bh_significant_global"] is False
+  assert records[0]["near_threshold"] is False
+
+
+def test_within_graph_icc_is_high_when_pairs_move_together():
+  """Two graphs, three tasks each: within a graph every pair moves the same
+  way, between graphs they move oppositely -- the case clustering exists
+  for, and the ICC should register it."""
+  control = [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
+  treatment = [1.0, 1.0, 1.0, 0.0, 0.0, 0.0]
+  cluster_ids = [("m", "0")] * 3 + [("m", "1")] * 3
+  assert cs._within_graph_icc(control, treatment, cluster_ids) > 0.9
 
 
 def test_high_non_termination_rate_uses_the_pair_level_count():
@@ -343,7 +421,7 @@ def test_high_non_termination_rate_uses_the_pair_level_count():
   n = 10
   raw = pd.DataFrame({
       "model": ["gemma4-12b"] * (2 * n),
-      "instance_id": [f"a{i}" for i in range(n)] * 2,
+      "instance_id": [f"node_count/{i}" for i in range(n)] * 2,
       "style": ["zero_shot"] * (2 * n),
       "node_naming": ["integer"] * (2 * n),
       "condition": ["none"] * n + ["degree"] * n,
@@ -371,7 +449,8 @@ def test_report_n_instances_missing_is_computed_from_data_not_hardcoded():
   """
   raw = pd.DataFrame({
       "model": ["gemma4-12b"] * 5,
-      "instance_id": ["a", "a", "b", "b", "c"],
+      "instance_id": ["node_count/0", "node_count/0", "node_count/1",
+                      "node_count/1", "node_count/2"],
       "style": ["zero_shot"] * 5,
       "node_naming": ["integer"] * 5,
       "condition": ["none", "degree", "none", "degree", "none"],
@@ -402,7 +481,7 @@ def test_report_n_instances_missing_uses_model_instance_pairs_for_pooled_data():
   """
   raw = pd.DataFrame({
       "model": ["gemma4-12b", "gemma4-12b", "qwen3-8b", "qwen3-8b"],
-      "instance_id": ["a", "a", "a", "a"],
+      "instance_id": ["node_count/0"] * 4,
       "style": ["zero_shot"] * 4,
       "node_naming": ["integer"] * 4,
       "condition": ["none", "degree", "none", "degree"],

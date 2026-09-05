@@ -101,8 +101,15 @@ def compare_strata(frame: pd.DataFrame, model: str, condition: str,
   control, treatment, cluster_ids = cs._paired_values(cell, condition, "exact")
   if not control:
     return None
-  nodes_by_instance = cell.drop_duplicates("instance_id").set_index("instance_id")["nodes"]
-  node_counts = [nodes_by_instance[instance_id] for _, instance_id in cluster_ids]
+  # Keyed by graph index, matching `cs._paired_values`' cluster id -- which
+  # is `(model, graph_index)`, not `(model, instance_id)`. `nodes` is a
+  # property of the graph, and the six tasks sharing an index share that
+  # graph exactly, so collapsing the task prefix here is a re-keying, not an
+  # approximation. Keying by `instance_id` would now raise `KeyError` on
+  # every lookup.
+  cell_graphs = cell.assign(_graph=cell["instance_id"].map(cs._graph_index))
+  nodes_by_graph = cell_graphs.drop_duplicates("_graph").set_index("_graph")["nodes"]
+  node_counts = [nodes_by_graph[graph_index] for _model, graph_index in cluster_ids]
   median = pd.Series(node_counts).median()
 
   strata = {"small": {"control": [], "treatment": [], "cluster_ids": []},

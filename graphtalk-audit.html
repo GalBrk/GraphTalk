@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GraphTalk statistics audit - plain-language explainer</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --ink-1: #0b0b0b;
+    --ink-2: #52514e;
+    --ink-3: #898781;
+    --rule: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --accent: #2a78d6;
+    --accent-soft: #cde2fb;
+    --good: #0ca30c;
+    --good-ink: #006300;
+    --warning: #fab219;
+    --serious: #ec835a;
+    --critical: #d03b3b;
+    --code-bg: #f0efec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-1: #1a1a19;
+      --page: #0d0d0d;
+      --ink-1: #ffffff;
+      --ink-2: #c3c2b7;
+      --ink-3: #898781;
+      --rule: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255,255,255,0.10);
+      --accent: #3987e5;
+      --accent-soft: #184f95;
+      --good: #0ca30c;
+      --good-ink: #0ca30c;
+      --code-bg: #262624;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --page: #0d0d0d;
+    --ink-1: #ffffff;
+    --ink-2: #c3c2b7;
+    --ink-3: #898781;
+    --rule: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255,255,255,0.10);
+    --accent: #3987e5;
+    --accent-soft: #184f95;
+    --good: #0ca30c;
+    --good-ink: #0ca30c;
+    --code-bg: #262624;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink-1);
+    font: 16px/1.62 system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+
+  /* ---------- top bar ---------- */
+  .bar {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--page) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--rule);
+  }
+  .bar-in {
+    max-width: 62rem; margin: 0 auto; padding: .7rem 1.5rem;
+    display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
+  }
+  .bar strong { font-size: .9rem; letter-spacing: -0.01em; }
+  .bar nav { display: flex; gap: .15rem; flex-wrap: wrap; margin-left: auto; }
+  .bar nav a, .tbtn {
+    font: inherit; font-size: .8rem; color: var(--ink-2);
+    text-decoration: none; padding: .3rem .55rem; border-radius: 6px;
+    border: 1px solid transparent; background: none; cursor: pointer;
+  }
+  .bar nav a:hover, .tbtn:hover { background: var(--code-bg); color: var(--ink-1); }
+  .tbtn { border-color: var(--border); }
+
+  /* ---------- headings ---------- */
+  h1 { font-size: 2.05rem; line-height: 1.16; letter-spacing: -0.025em; margin: 2.6rem 0 .5rem; }
+  h2 {
+    font-size: 1.28rem; letter-spacing: -0.015em; margin: 3.4rem 0 .3rem;
+    padding-bottom: .45rem; border-bottom: 1px solid var(--rule);
+  }
+  h3 { font-size: 1.02rem; margin: 0 0 .55rem; letter-spacing: -0.01em; }
+  .lede { font-size: 1.06rem; color: var(--ink-2); max-width: 46rem; }
+  .sub { color: var(--ink-3); font-size: .82rem; margin-top: .3rem; }
+  .secnote { color: var(--ink-2); font-size: .92rem; margin: .8rem 0 1.4rem; max-width: 46rem; }
+
+  /* ---------- verdict ---------- */
+  .verdict {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px; padding: 1.3rem 1.4rem; margin: 1.6rem 0 0;
+  }
+  .verdict p { margin: 0 0 .8rem; }
+  .verdict p:last-child { margin-bottom: 0; }
+
+  /* ---------- KPI row ---------- */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: .7rem; margin: 1.5rem 0 0; }
+  .kpi {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 10px; padding: .85rem .95rem;
+  }
+  .kpi .v { font-size: 1.65rem; line-height: 1.1; letter-spacing: -0.03em; display: block; }
+  .kpi .k { font-size: .74rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; margin-top: .3rem; display: block; }
+
+  /* ---------- cards ---------- */
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.25rem 1.35rem; margin: 1rem 0;
+  }
+  .card > h3 { display: flex; gap: .6rem; align-items: baseline; flex-wrap: wrap; }
+  .card .num {
+    font-size: .78rem; color: var(--ink-3); font-variant-numeric: tabular-nums;
+    border: 1px solid var(--border); border-radius: 5px; padding: .05rem .35rem;
+    flex: none;
+  }
+  .label { font-size: .73rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); margin: 1rem 0 .25rem; }
+  .label:first-of-type { margin-top: .6rem; }
+  .card p { margin: 0 0 .7rem; }
+  .card p:last-child { margin-bottom: 0; }
+  .analogy {
+    background: var(--code-bg); border-radius: 8px; padding: .8rem .95rem;
+    font-size: .95rem; color: var(--ink-2); margin: 0 0 .7rem;
+  }
+  .analogy b { color: var(--ink-1); }
+
+  /* ---------- severity badges ----------
+     Text always wears an ink token (never the status hue, which fails WCAG at this
+     size on the light surface); the status hue rides the dot, and the word is always
+     present, so severity is never carried by colour alone. */
+  .sev {
+    font-size: .7rem; font-weight: 650; text-transform: uppercase; letter-spacing: .06em;
+    padding: .13rem .45rem; border-radius: 5px; flex: none;
+    display: inline-flex; align-items: center; gap: .32rem;
+    color: var(--ink-1);
+  }
+  .sev::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--cue); flex: none; }
+  .sev-high { --cue: var(--critical); background: color-mix(in srgb, var(--critical) 13%, transparent); }
+  .sev-med  { --cue: var(--serious);  background: color-mix(in srgb, var(--serious) 16%, transparent); }
+  .sev-low  { --cue: var(--warning);  background: color-mix(in srgb, var(--warning) 20%, transparent); }
+  .sev-ok   { --cue: var(--good);     background: color-mix(in srgb, var(--good) 14%, transparent); }
+
+  /* ---------- before / after ---------- */
+  .ba { display: flex; flex-wrap: wrap; gap: .55rem; align-items: stretch; margin: .2rem 0 .9rem; }
+  .ba-item {
+    border: 1px solid var(--border); border-radius: 8px; padding: .55rem .8rem;
+    min-width: 8.5rem; background: var(--page);
+  }
+  .ba-item .t { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); display: block; }
+  .ba-item .n { font-size: 1.22rem; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; display: block; margin-top: .15rem; }
+  .ba-item .d { font-size: .76rem; color: var(--ink-3); display: block; }
+  .ba-item.is-claim { border-color: color-mix(in srgb, var(--ink-3) 45%, transparent); }
+  .ba-item.is-real  { border-color: var(--accent); border-width: 2px; padding: .5rem .75rem; }
+  .ba-arrow { align-self: center; color: var(--ink-3); font-size: 1.1rem; padding: 0 .1rem; }
+
+  /* ---------- little diagrams ---------- */
+  .diagram { border: 1px solid var(--border); border-radius: 8px; padding: .95rem; background: var(--page); margin: 0 0 .9rem; }
+  .dlabel { font-size: .74rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .45rem; }
+  .boxrow { display: flex; gap: 2px; flex-wrap: wrap; align-items: center; }
+  .bx {
+    width: 2.35rem; height: 1.6rem; border-radius: 4px;
+    background: var(--accent-soft); border: 1px solid var(--accent);
+    font-size: .6rem; color: var(--ink-2); display: flex; align-items: center; justify-content: center;
+  }
+  :root[data-theme="dark"] .bx { color: var(--ink-1); }
+  .bx.solo { width: 14.4rem; background: #1c5cab; color: #fff; border-color: #1c5cab; font-size: .72rem; }
+  .dots { display: flex; gap: 3px; flex-wrap: wrap; }
+  .dot { width: .78rem; height: .78rem; border-radius: 50%; background: var(--accent); border: 1px solid var(--accent); }
+  .dot.off { background: transparent; border-color: var(--ink-3); }
+
+  /* ---------- meta strip ---------- */
+  .meta { display: flex; gap: 1.1rem; flex-wrap: wrap; font-size: .8rem; color: var(--ink-3); margin-top: 1rem; padding-top: .8rem; border-top: 1px dashed var(--rule); }
+  .meta b { color: var(--ink-2); font-weight: 500; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .855em;
+    background: var(--code-bg); padding: .1rem .3rem; border-radius: 4px; word-break: break-word;
+  }
+
+  /* ---------- table ---------- */
+  table { width: 100%; border-collapse: collapse; font-size: .875rem; margin: .6rem 0 0; }
+  th, td { text-align: left; padding: .55rem .6rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); font-weight: 600; }
+  tbody tr:hover { background: var(--code-bg); }
+
+  ul.tight { margin: .3rem 0 0; padding-left: 1.1rem; }
+  ul.tight li { margin-bottom: .5rem; }
+  ul.check { list-style: none; padding-left: 0; margin: .5rem 0 0; }
+  ul.check li { padding-left: 1.5rem; position: relative; margin-bottom: .65rem; }
+  ul.check li::before {
+    content: ""; position: absolute; left: 0; top: .52em;
+    width: .62rem; height: .62rem; border: 1.5px solid var(--baseline); border-radius: 3px;
+  }
+  .fix { font-size: .92rem; color: var(--ink-2); border-left: 2px solid var(--good); padding-left: .8rem; margin: .2rem 0 0; }
+  .fix b { color: var(--good-ink); }
+  footer { margin-top: 4rem; padding-top: 1.2rem; border-top: 1px solid var(--rule); font-size: .82rem; color: var(--ink-3); }
+
+  /* ---------- print / PDF ----------
+     Forces the light token set (print has no prefers-color-scheme), keeps the
+     badge and callout tints via print-color-adjust, and stops cards splitting
+     across pages. */
+  @media print {
+    :root, :root[data-theme="dark"], :root[data-theme="light"] {
+      color-scheme: light;
+      --surface-1: #ffffff; --page: #ffffff;
+      --ink-1: #000000; --ink-2: #333333; --ink-3: #666666;
+      --rule: #cccccc; --baseline: #999999; --border: rgba(0,0,0,0.22);
+      --accent: #1c5cab; --accent-soft: #e4eefb;
+      --good: #0ca30c; --good-ink: #006300;
+      --warning: #fab219; --serious: #ec835a; --critical: #d03b3b;
+      --code-bg: #f2f2f0;
+    }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { font-size: 10.5pt; background: #fff; }
+    .wrap { max-width: none; padding: 0; }
+    .bar { display: none; }
+    h1 { font-size: 20pt; margin-top: 0; }
+    h2 { font-size: 13pt; margin-top: 20pt; break-after: avoid; page-break-after: avoid; }
+    h3 { break-after: avoid; page-break-after: avoid; }
+    .card, .verdict, .diagram, .analogy, .kpi, table {
+      break-inside: avoid; page-break-inside: avoid;
+    }
+    .card { border: 1px solid #bbb; box-shadow: none; }
+    .ba-item { break-inside: avoid; }
+    tbody tr:hover { background: none; }
+    a { color: inherit; text-decoration: none; }
+    footer { margin-top: 24pt; }
+    @page { margin: 14mm 13mm; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="bar-in">
+  <strong>GraphTalk statistics audit</strong>
+  <nav>
+    <a href="#verdict">Verdict</a>
+    <a href="#tier1">Changes a result</a>
+    <a href="#tier2">Reporting</a>
+    <a href="#stale">Stale</a>
+    <a href="#fine">What's fine</a>
+    <a href="#wrong">Audit's own errors</a>
+    <a href="#todo">To do</a>
+    <button class="tbtn" id="tt" type="button">Dark / light</button>
+  </nav>
+</div></div>
+
+<div class="wrap">
+
+<h1>What the audit found, in plain language</h1>
+<p class="lede">A review of every piece of statistical work by Nitzan Zacharia and Inbal Moryles in the
+GraphTalk repository. This page explains each problem without statistics jargon: what the code
+does, why it is wrong, and what it costs the project.</p>
+<p class="sub">Method: 16 independent audit lenses, then adversarial verification of every finding by two
+more agents whose job was to <em>disprove</em> it, then three critics including one instructed to
+defend the students' work. 98 agents, roughly 8 million tokens, about four hours. Findings that
+could not be reproduced were thrown out and are listed near the bottom.</p>
+
+<!-- ============================================================ VERDICT -->
+<h2 id="verdict">The short answer</h2>
+
+<div class="verdict">
+<p><b>The numbers are real, the reasoning around them is not always.</b> Nothing is fabricated.
+Three of the main committed data files rebuild byte-for-byte from the current code, nothing is
+silently dropped from the pipeline, and only 2 rows out of 10,080 fail to parse. That is a
+genuinely good foundation, and better than most course projects.</p>
+
+<p><b>But there is one real statistical error that removes one of the two headline results</b> — the
+code miscounts how much independent data it has — <b>and both surviving results are decided by a
+random seed rather than by the data.</b> Separately, the sample-size calculator is wrong by a factor
+of 64-100, and it is about to be used to book a GPU run that isn't needed.</p>
+
+<p><b>On your specific worry:</b> "measuring partial information" — mostly no. Rows are not being
+quietly discarded; the pipeline uses all 180 pairs in every cell. "Cherry picking" — not in the
+sense of hiding data, but yes in the sense of <b>selective reporting</b>: a full replication run
+exists in the repo and only the one cell that agrees with the hypothesis is written up.</p>
+
+<p><b>The most likely thing to embarrass you in a write-up is not the statistics — it is the prose.</b>
+The documentation has drifted badly behind the data. The headline accuracy table is stale in 14 of
+16 cells, and one number under a conclusion has the wrong sign.</p>
+</div>
+
+<div class="kpis">
+  <div class="kpi"><span class="v">32</span><span class="k">findings verified</span></div>
+  <div class="kpi"><span class="v">6</span><span class="k">high severity</span></div>
+  <div class="kpi"><span class="v">1 of 2</span><span class="k">main results removed</span></div>
+  <div class="kpi"><span class="v">3 of 3</span><span class="k">data files reproduce</span></div>
+  <div class="kpi"><span class="v">8</span><span class="k">claims disproved by the audit itself</span></div>
+</div>
+
+<!-- ============================================================ TIER 1 -->
+<h2 id="tier1">Problems that change a result</h2>
+<p class="secnote">These six are the ones that matter for what the project can claim. Each was
+confirmed by an agent whose instructions were to refute it.</p>
+
+<!-- P1 -->
+<div class="card">
+<h3><span class="sev sev-high">High</span> <span>Counting the same graph six times</span> <span class="num">1</span></h3>
+
+<div class="label">What the code does</div>
+<p>You have 30 graphs. You ask 6 different questions about each one (how many nodes? how many edges?
+what is node 3's degree? and so on). That is 180 question-answers per model.</p>
+<p>A statistics test needs to know how many <em>independent</em> pieces of evidence you have.
+Independent means: knowing one does not help you guess another. The code told the test it had
+<b>180 independent items</b>. It actually has <b>30</b> — because all 6 questions are about the same
+graph, with the same primer text attached. If a graph is easy, the model tends to get all 6 right;
+if it is awkward, it tends to struggle on several. They move together.</p>
+
+<div class="analogy">
+<b>Think of it like this.</b> You survey 30 households and ask 6 people in each household who they
+will vote for. You then tell your statistics software you have 180 independent voters. You do not —
+you have 30 households. Family members agree with each other, so you have far less information than
+the count suggests. Your error bars come out too narrow and results look more significant than they
+really are.
+</div>
+
+<div class="diagram">
+  <div class="dlabel">What the code counted as independent</div>
+  <div class="boxrow">
+    <div class="bx">nodes</div><div class="bx">edges</div><div class="bx">degree</div>
+    <div class="bx">neigh.</div><div class="bx">edge?</div><div class="bx">cycle?</div>
+  </div>
+  <div class="dlabel" style="margin-top:.7rem">What is actually there</div>
+  <div class="boxrow"><div class="bx solo">one graph, asked six ways</div></div>
+</div>
+
+<div class="label">Why it happened</div>
+<p>A row's ID looks like <code>node_count/7</code> — the task name plus the graph number. The code
+grouped by that whole string. But graph 7 in the <code>node_count</code> task is <em>literally the
+same graph</em> as graph 7 in the <code>edge_count</code> task; verified from
+<code>prompts.jsonl</code>, the text is byte-identical. So one graph was treated as six.</p>
+
+<div class="label">What it costs</div>
+<div class="ba">
+  <div class="ba-item is-claim"><span class="t">reported</span><span class="n">p = 0.0105</span><span class="d">"rwse hurts", significant</span></div>
+  <div class="ba-arrow">&rarr;</div>
+  <div class="ba-item is-real"><span class="t">corrected</span><span class="n">p = 0.034</span><span class="d">not significant</span></div>
+  <div class="ba-item is-real"><span class="t">corrected further</span><span class="n">p = 0.081</span><span class="d">not significant</span></div>
+</div>
+<p>One of the project's two main-sweep findings disappears. <b>The other one survives, and gets
+stronger:</b> "degree helps" holds under every way the audit recomputed it (p = 0.0050 to 0.0048),
+and its error bars were if anything already too <em>wide</em>. Fixing this also makes one extra
+result appear (<code>qwen3-14b</code>/degree, p = 0.0205 to 0.0092). So the fix does not run one way
+against the project.</p>
+
+<div class="label">The part that is hardest to defend</div>
+<p><code>analysis/README.md</code> lines 88-90 reassure the reader that "No <code>bh_significant</code>
+flag flipped from this change alone in the current data." That is no longer true. Reverting to the
+older grouping gives p = 0.0208 and p = 0.0188 — <em>neither</em> significant. So this choice is
+exactly what created both of the project's significant results, while the documentation says it
+changed nothing. Two other places describe the count as "real graph instances", which it is not.</p>
+<p>A curious side effect: because the task name is inside the ID, every group currently has exactly
+one member — so the whole clustering machinery does literally nothing on the committed data. It only
+starts working once the key is fixed.</p>
+
+<div class="fix"><b>Fix:</b> key the groups on the graph number alone (drop the task prefix), re-run,
+and update the two sentences that describe what the count means. Then re-check which cells survive.</div>
+
+<div class="meta"><span><b>Where:</b> <code>scripts/check_significance.py:337</code></span>
+<span><b>Whose:</b> code Inbal (<code>52a2255</code>), headline prose Nitzan (<code>b86b743</code>)</span>
+<span><b>Disclosed:</b> no</span></div>
+</div>
+
+<!-- P2 -->
+<div class="card">
+<h3><span class="sev sev-high">High</span> <span>Both surviving results are decided by a random seed</span> <span class="num">2</span></h3>
+
+<div class="label">What the code does</div>
+<p>The p-value here is not calculated from a formula. It is <em>estimated</em> by shuffling the data
+10,000 times at random and counting how often the shuffled version looks as extreme as the real one.
+That means the answer can only ever land on a multiple of 1/10,001 — steps of about 0.0001.</p>
+<p>The pass/fail lines the project uses are 0.0005 and 0.001. Those are only 5 and 10 steps up from
+zero. So the verdicts land <em>on</em> the measurement grid, decided by a handful of individual
+random draws.</p>
+
+<div class="analogy">
+<b>Think of it like this.</b> You have a ruler marked only in centimetres, and you need to decide
+whether something is over or under 5&nbsp;mm. Sometimes it will read 0&nbsp;cm and sometimes
+1&nbsp;cm for the same object, depending on how you happen to hold it. That is not a measurement of
+the object; it is a measurement of how you held the ruler.
+</div>
+
+<div class="label">What it costs</div>
+<div class="ba">
+  <div class="ba-item is-claim"><span class="t">margin of the project's only fully-corrected result</span><span class="n">0.00000005</span><span class="d">it clears the bar by 5 hundred-millionths</span></div>
+  <div class="ba-item is-claim"><span class="t">the measurement's own resolution</span><span class="n">0.0001</span><span class="d">2,000&times; coarser than that margin</span></div>
+</div>
+<p>The second case is worse, because it was written up as a finding. <code>analysis/README.md</code>
+describes one cell moving from "survives correction" to "does not" as a "Real effect on the current
+data" caused by a methodology change. It is <b>one hit out of 10,001</b> (10 versus 11), and it
+reverses under 16 of 18 other random seeds:</p>
+
+<div class="diagram">
+  <div class="dlabel">Same data, same code, only the random seed changed &mdash; 18 seeds tested</div>
+  <div class="dots">
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <span class="dot off"></span><span class="dot off"></span>
+  </div>
+  <div class="sub">Filled = the 16 seeds that give the opposite verdict to the one published.
+  Outlined = the 2 that agree with it. Raising the shuffle count to 200,000 with the committed seed
+  also gives the opposite answer.</div>
+</div>
+<p>Neither results document mentions the seed or the resolution anywhere — the word "seed" appears
+0 times in 697 lines of <code>analysis/README.md</code>.</p>
+
+<div class="fix"><b>Fix:</b> raise the shuffle count (200,000 is cheap here), record the seed and the
+count in the emitted report, and have the script flag any cell whose p-value sits within noise of its
+threshold. Then delete the "Real effect on the current data" sentence — that cell is simply on the
+boundary and cannot be resolved at the current setting.</div>
+
+<div class="meta"><span><b>Where:</b> <code>analysis/README.md:366</code>, <code>:520-528</code></span>
+<span><b>Whose:</b> Nitzan (<code>b86b743</code>)</span>
+<span><b>Disclosed:</b> no</span></div>
+</div>
+
+<!-- P3 -->
+<div class="card">
+<h3><span class="sev sev-high">High</span> <span>The sample-size calculator is wrong by 64-100&times;</span> <span class="num">3</span></h3>
+
+<div class="label">What the code does</div>
+<p>There is a script that answers a planning question: "this result was not significant — how many
+more graphs would I need to collect?" It gets the answer wrong, in one direction only, by about
+80&times;.</p>
+<p>The cause is that two different quantities are both called "the effect size", and they are in
+different units:</p>
+<ul class="tight">
+<li><b>Quantity A</b> — "push each wrong answer's chance of becoming right up by 40 percentage points."</li>
+<li><b>Quantity B</b> — "overall accuracy went up by 4.4 percentage points."</li>
+</ul>
+<p>These are not the same scale. If the model is already 89% correct, only 11% of its answers
+<em>can</em> flip. So a 40-point push applied to that 11% produces just 0.40 &times; 0.11 = 4.4 points
+of overall movement. The simulator returns A. The report column is B. The script divides A by B and
+squares the result.</p>
+
+<div class="analogy">
+<b>Think of it like this.</b> Your instrument reports a distance as "40" in kilometres and "4.4" in
+miles. You divide them, get 9, square it, and conclude you need to travel 81 times further. You
+actually need to travel about the same distance. The units were never comparable.
+</div>
+
+<div class="label">Why the direction matters</div>
+<p>The squashing factor is "how much room is left to improve". Near the top of the scale there is
+almost no room, so improvements get inflated enormously. Near the bottom there is lots of room to
+fall, so harms barely get inflated at all. The result:</p>
+<div class="ba">
+  <div class="ba-item is-claim"><span class="t">"primer helps" questions</span><span class="n">64-100&times;</span><span class="d">inflated, so all look unaffordable</span></div>
+  <div class="ba-item is-real"><span class="t">"primer hurts" questions</span><span class="n">1.1-1.3&times;</span><span class="d">roughly correct, so all look cheap</span></div>
+</div>
+<p>So the conclusion "we would need a larger or restructured corpus" for every helps-hypothesis is
+not a finding about your data. It is an artifact of this bug.</p>
+
+<div class="label">What it is about to cost in GPU hours</div>
+<div class="ba">
+  <div class="ba-item is-claim"><span class="t">recommended, and pre-registered</span><span class="n">515 graphs</span><span class="d">a 500-graph cluster run is planned</span></div>
+  <div class="ba-arrow">&rarr;</div>
+  <div class="ba-item is-real"><span class="t">actually needed</span><span class="n">~30 graphs</span><span class="d">already have 30; power is ~90%</span></div>
+</div>
+<p>The cell in question (<code>qwen3-8b</code>/degree under GoT naming) already has p = 0.0018 with
+the 30 graphs you have. You are about to spend cluster time confirming something you already have.</p>
+
+<div class="label">Why the safety check missed it</div>
+<p><code>validate_recommend_count.py</code> skips any cell needing more than 10,000 units. Every
+affected cell needs at least 14,580. So the validation that reports the method is "conservative in
+every cell checked" only ever checked the direction that is not broken.</p>
+
+<div class="fix"><b>Fix:</b> compare like with like — use the simulator's own
+<code>mde_realized_diff</code> column, which is already on the same scale as <code>delta</code>.
+Then re-run and re-size the follow-up (it may not be needed at all). Raise the validator's cap so it
+covers the affected cells.</div>
+
+<div class="meta"><span><b>Where:</b> <code>scripts/recommend_count.py:182</code></span>
+<span><b>Whose:</b> Nitzan (<code>46a530d</code>, <code>83c9b7b</code>)</span>
+<span><b>Disclosed:</b> no</span></div>
+</div>
+
+<!-- P4 -->
+<div class="card">
+<h3><span class="sev sev-high">High</span> <span>The power simulator can only ever simulate improvement, never harm</span> <span class="num">4</span></h3>
+
+<div class="label">What the code does</div>
+<p>To answer "how big an effect could I have detected with this much data?", the code invents a fake
+effect of a known size, injects it into the data, and checks whether its own test would find it.
+That is a good idea. But the way it injects the fake effect, answers can <em>only</em> flip from
+wrong to right. Never right to wrong.</p>
+<p>Real data flips both ways — in one pooled cell, 10 answers improve and 21 get worse. A fake effect
+that only ever pushes one way is much easier to detect than a real one of the same size, so the test
+looks more sensitive than it is.</p>
+
+<div class="analogy">
+<b>Think of it like this.</b> You are testing whether a scale can detect a 1&nbsp;kg change. You test
+it by only ever <em>adding</em> weight, in a room with no vibration. It passes. In the real world
+weight goes both up and down and the room shakes, and the same scale misses the change most of the
+time. You measured the easy case and reported it as the general one.
+</div>
+
+<div class="label">What it costs</div>
+<div class="ba">
+  <div class="ba-item is-claim"><span class="t">claimed detection power</span><span class="n">80%</span><span class="d">at the published effect sizes</span></div>
+  <div class="ba-arrow">&rarr;</div>
+  <div class="ba-item is-real"><span class="t">actual, re-simulated properly</span><span class="n">20-33%</span><span class="d">across four cells checked</span></div>
+</div>
+<p>Every "we could have detected an effect this size" number in the reports is optimistic. Five
+committed rows are internally contradictory as a result: they claim 80% power for an effect they
+also report as not detected. And the docstring specifically claims the design prevents this exact
+problem, which it does not.</p>
+<p>This sits underneath problem 3 and is independent of it: even the quantity problem 3 treats as
+"the correct scale" is itself too small by 2-4&times;.</p>
+
+<div class="fix"><b>Fix:</b> inject the fake effect so it produces flips in both directions,
+calibrated to each cell's own observed rate of disagreement. The verifier wrote out the exact
+replacement formula; mirror it in <code>validate_recommend_count.py</code> too, and add one test
+that checks the simulator's power estimate is honest.</div>
+
+<div class="meta"><span><b>Where:</b> <code>graphtalk/significance.py:362</code></span>
+<span><b>Whose:</b> injection Inbal (<code>52a2255</code>), the contradictory rows Nitzan</span>
+<span><b>Disclosed:</b> no</span></div>
+</div>
+
+<!-- P5 -->
+<div class="card">
+<h3><span class="sev sev-high">High</span> <span>The headline results table is out of date, and one number under a conclusion has the wrong sign</span> <span class="num">5</span></h3>
+
+<div class="label">What happened</div>
+<p>Nitzan fixed the answer-extraction code three times on 30 August. Those were <em>good</em> fixes —
+they corrected over 500 rows that were being mis-scored. But they changed all the accuracy numbers.
+On 3 September he edited the results document, recomputed <em>some</em> of its tables from the new
+data, and copy-pasted the main results table forward unchanged.</p>
+<p>So the same file now states two different things about the same cell:</p>
+<div class="ba">
+  <div class="ba-item is-claim"><span class="t">line 37 (the headline table)</span><span class="n">83.3%</span><span class="d">qwen3-14b, no primer</span></div>
+  <div class="ba-item is-real"><span class="t">line 113, same file</span><span class="n">88.9%</span><span class="d">same cell, correct</span></div>
+</div>
+<p>14 of the table's 16 cells are wrong, by up to 6.7 points. Nothing marks it stale, and line 323
+affirmatively says "the headline numbers stand".</p>
+
+<div class="label">The one that actually matters</div>
+<p>The document argues that the "filler" condition — the deliberately meaningless primer used as a
+control — has no effect, which is what makes the control valid. The number it cites for that:</p>
+<div class="ba">
+  <div class="ba-item is-claim"><span class="t">stated</span><span class="n">+0.6 pts</span><span class="d">"filler is inert, control works"</span></div>
+  <div class="ba-arrow">&rarr;</div>
+  <div class="ba-item is-real"><span class="t">actual</span><span class="n">&minus;1.53 pts</span><span class="d">opposite sign</span></div>
+</div>
+<p>The sentence was re-scoped from "across the eight arms" to "across the four models" without
+recomputing. Other stale figures: the flagship primer gain reads +8.4 points when it is +4.4 (about
+double), and "still 7.7 points below" is actually 5.0.</p>
+
+<div class="label">What survives</div>
+<p>The <em>direction</em> is fine. "degree or all beats none in every model" is true on current data.
+It is the sizes, and the filler-control verdict, that are wrong.</p>
+
+<div class="fix"><b>Fix:</b> regenerate the table from <code>analysis/sweep_frame.csv</code> and
+recompute the four derived figures in the prose around it. This is 20 minutes of work and it removes
+the single most quotable error in the repository.</div>
+
+<div class="meta"><span><b>Where:</b> <code>docs/sweep-findings.md:32-37</code>, plus lines 61-64, 323</span>
+<span><b>Whose:</b> Nitzan (<code>23d31d4</code>)</span>
+<span><b>Disclosed:</b> no</span></div>
+</div>
+
+<!-- P6 -->
+<div class="card">
+<h3><span class="sev sev-high">High</span> <span>A whole methodology section says "confirmed on the current data" and is not</span> <span class="num">6</span></h3>
+
+<div class="label">What is wrong</div>
+<p>The section headed "A third pass" in <code>analysis/README.md</code> (lines 131-198) says
+"Confirmed on the current data" and "Confirmed on the real regenerated data". Every number in it
+reproduces only against a superseded version of the report.</p>
+<p>Two of the failures carry weight:</p>
+<ul class="tight">
+<li>Its central argument is that being near 100% accuracy does not stop you detecting <em>harm</em>,
+evidenced by two cells that "detected harm without difficulty". On the committed report both cells
+are p = 0.246 and p = 0.251 — not significant. The same file's own summary table prints all six of
+that model's cells as blank.</li>
+<li>It hands the reader a bound to use instead: "bounds any hidden harm to under one accuracy point",
+citing an interval of [&minus;0.009, 0.000]. The committed interval is [&minus;0.028, 0.000] — about
+3&times; wider.</li>
+</ul>
+
+<div class="analogy">
+<b>Why this one is dangerous.</b> Unlike a stale table, this section tells a reader how to
+<em>interpret</em> everything else — "do not read these blank cells as proof of no effect, here is the
+bound instead". If the bound is 3&times; too tight, every downstream reading is too confident.
+</div>
+
+<div class="fix"><b>Fix:</b> regenerate the section's numbers, and withdraw the "detected harm
+without difficulty" support — on the current report that model has zero significant cells, so that
+specific argument has to be re-sourced or dropped.</div>
+
+<div class="meta"><span><b>Where:</b> <code>analysis/README.md:131-198</code>, footnote at <code>:453-455</code></span>
+<span><b>Whose:</b> section Inbal, invalidated by Nitzan's regenerations without update</span>
+<span><b>Disclosed:</b> no</span></div>
+</div>
+
+<!-- ============================================================ TIER 2 -->
+<h2 id="tier2">Selective reporting and disclosure</h2>
+<p class="secnote">This is the closest thing to your "cherry picking" worry. Nothing here is hidden
+data — it is all sitting in committed files. The problem is which parts got written up.</p>
+
+<!-- P7 -->
+<div class="card">
+<h3><span class="sev sev-med">Medium</span> <span>A full replication run exists, and only the agreeing cell was reported</span> <span class="num">7</span></h3>
+
+<div class="label">What is there</div>
+<p>The Game-of-Thrones naming run is not a side experiment. It re-tests <b>the same 100 hypotheses on
+the same 180 graphs with the same correct answers</b>, with only the node names changed. That makes it
+a replication. It found 7 cells significant within their family. The write-up reports <b>1</b> — the
+one that supports "primers help".</p>
+
+<div class="label">What the same committed file also says, unmentioned anywhere</div>
+<ul class="tight">
+<li>Pooled <code>rwse</code> — the integer run's <em>other</em> flagged headline (p = 0.0105) —
+measures <b>exactly 0.000, p = 1.000</b> in the replication. A flat non-replication of a headline
+cell, on the same graphs.</li>
+<li>The same model and the same condition being promoted also significantly <em>increases</em>
+timeouts in the thinking arm (0 out of 180 to 7 out of 180, p = 0.014). That is a cost, in the
+unfavourable direction, for the thing being recommended.</li>
+<li>Correcting the two runs as one family of tests, which is what they are, leaves nothing
+significant.</li>
+</ul>
+
+<div class="analogy">
+<b>Think of it like this.</b> You run your experiment twice. The second run agrees on one result and
+flatly disagrees on the other. Writing up only the agreement is not fraud — the second run is right
+there in the repo — but a reader who does not open the CSV gets a much stronger impression than the
+evidence supports.
+</div>
+
+<div class="label">In fairness</div>
+<p>A verifier checked whether the two <code>rwse</code> estimates genuinely conflict and found they
+are statistically compatible (the naming-by-condition interaction is p = 0.085). So the replication
+neither confirms nor refutes that cell — which is exactly what should have been written down. This is
+a completeness gap, not a false claim.</p>
+
+<div class="fix"><b>Fix:</b> three sentences in the GoT subsection. State that degree replicates and
+rwse does not, that the difference between runs is itself not significant so neither cell is settled,
+and that the same condition raises timeouts.</div>
+
+<div class="meta"><span><b>Where:</b> <code>analysis/README.md:533-556</code> vs <code>analysis/significance_report.got.csv</code></span>
+<span><b>Whose:</b> Nitzan (<code>b32d3a5</code>)</span>
+<span><b>Disclosed:</b> no</span></div>
+</div>
+
+<!-- P8 -->
+<div class="card">
+<h3><span class="sev sev-med">Medium</span> <span>The "independent confirmation" is the same calculation, and the one that disagreed was deleted</span> <span class="num">8</span></h3>
+
+<div class="label">What is claimed</div>
+<p><code>analysis/README.md</code> says a result is "corroborated by an independent GEE fit
+(p = 0.0007)". A GEE is a second, different statistical model, so this reads as independent
+confirmation.</p>
+
+<div class="label">What is actually true</div>
+<p>The second model was deliberately set up so its answer equals the first model's answer. Checked
+across all 48 cells, the two agree to 14 decimal places. Its p-value is <em>smaller</em> than the
+first test's in 48 out of 48 cells. So agreement is guaranteed by construction, and the "confirmation"
+adds no evidence — it just re-tests the same number with a more permissive test.</p>
+
+<div class="analogy">
+<b>Think of it like this.</b> You weigh a parcel, then confirm the weight by weighing it again on the
+same scale with a magnifying glass on the dial. You have not independently confirmed anything, and
+the magnifying glass makes you more confident, not more correct.
+</div>
+
+<div class="label">Three further problems</div>
+<ul class="tight">
+<li>The stated reason for not correcting the second model for multiple comparisons — "the joint fit
+already adjusts each condition for the others" — is arithmetically false. Refitting each condition
+on its own reproduces the joint fit to 13 decimal places. So these <em>are</em> six separate tests,
+and uncorrected: 0 of them survive the project's own correction.</li>
+<li>Half the cited claim has no supporting file at all — the pooled result it says was corroborated
+does not exist in the GEE output.</li>
+<li>There <em>is</em> one cell where the second model disagrees with the first. It is reported
+nowhere, and its only written record was in a scratch log deleted under an unrelated commit message
+("fix the truncated_keys node_naming key gap").</li>
+</ul>
+
+<div class="fix"><b>Fix:</b> replace the false rationale in the docstring with the true one, apply the
+project's own correction to the GEE output before citing it, drop the word "independent", and either
+report the disagreeing cell or say why not.</div>
+
+<div class="meta"><span><b>Where:</b> <code>analysis/README.md:548</code>, <code>graphtalk/mixed_models.py:56-66</code></span>
+<span><b>Whose:</b> Nitzan (<code>e482b2a</code>, <code>b32d3a5</code>, <code>6f8ab74</code>)</span>
+<span><b>Disclosed:</b> partly</span></div>
+</div>
+
+<!-- P9 -->
+<div class="card">
+<h3><span class="sev sev-med">Medium</span> <span>Of three ways to handle cut-off answers, the one kept is the only one that produced a result</span> <span class="num">9</span></h3>
+
+<div class="label">The situation</div>
+<p>Some model answers never finish — they hit the token limit and stop mid-sentence (348 rows). There
+are three defensible ways to handle them, and at one point the code reported all three side by side:</p>
+<table>
+<thead><tr><th>Option</th><th>Significant main-sweep results</th></tr></thead>
+<tbody>
+<tr><td>(a) throw them away</td><td>none (p = 0.0110 / 0.0757)</td></tr>
+<tr><td>(b) count them all as correct</td><td>none (p = 0.0125 / 0.1406)</td></tr>
+<tr><td>(c) count them all as wrong</td><td><b>two</b> (p = 0.0065 / 0.0118)</td></tr>
+</tbody>
+</table>
+<p>The code was then changed to do only (c), and (a) and (b) were deleted from the report so a reader
+can no longer compare. Both of the project's main-sweep accuracy findings exist only under (c).</p>
+
+<div class="label">Why this is ranked medium, not high</div>
+<p>The audit's defence critic pushed back here and was right. Option (c) is genuinely the most
+defensible of the three: a cut-off answer that happens to contain the right number should not count
+as the model getting it right. It is also the <em>harsher</em> choice — it makes "primers help"
+harder to claim, not easier. And the README does say the results are "new since Phase 2" and does
+discuss the direction of the bias with a measured magnitude.</p>
+<p>So this is <b>a missing disclosure, not data selection.</b> What no file says is that the retained
+option was the only one of three previously-published options that produced any result.</p>
+
+<div class="fix"><b>Fix:</b> one sentence — "these two cells were significant under only one of the
+three bounds previously reported; under the excluded and best-case bounds neither reaches
+significance."</div>
+
+<div class="meta"><span><b>Where:</b> <code>analysis/README.md:441</code></span>
+<span><b>Whose:</b> Nitzan (<code>b86b743</code>)</span>
+<span><b>Disclosed:</b> partly</span></div>
+</div>
+
+<!-- P10 -->
+<div class="card">
+<h3><span class="sev sev-med">Medium</span> <span>A finding was retracted for a reason that is not true &mdash; and the finding holds</span> <span class="num">10</span></h3>
+
+<div class="label">What happened</div>
+<p>There used to be a finding that most of the primer results came from a prompt style called
+<code>zero_cot</code>, which was later deleted from the project. The retraction says the comparison
+"can no longer be reproduced" because the data was fully removed.</p>
+<p>It can be reproduced. The pre-deletion data is a committed git object, and current unmodified code
+runs the comparison with one documented flag. The same document cites a git object as a preserved
+artifact 650 lines earlier, so the technique was known.</p>
+
+<div class="label">And when you reproduce it</div>
+<div class="ba">
+  <div class="ba-item is-claim"><span class="t">on the deleted style</span><span class="n">6 of 24</span><span class="d">per-model cells significant</span></div>
+  <div class="ba-item is-claim"><span class="t">pooled</span><span class="n">5 of 6</span><span class="d">cells significant</span></div>
+  <div class="ba-arrow">vs</div>
+  <div class="ba-item is-real"><span class="t">on the live data</span><span class="n">0 of 24</span><span class="d">per-model cells significant</span></div>
+</div>
+<p>The retracted finding is <b>confirmed</b>, not unverifiable. The results really did depend heavily
+on the style that was removed.</p>
+
+<div class="label">In fairness</div>
+<p>No currently published number depends on this, the deletion itself had an independent
+justification, and the document does call the concern "moot by construction" rather than claiming it
+was disproven. The defect is the stated ground, which is checkably false and appears in three places.</p>
+
+<div class="fix"><b>Fix:</b> replace "can no longer be reproduced" with the actual command and the
+actual outcome. It is more honest and it costs two lines.</div>
+
+<div class="meta"><span><b>Where:</b> <code>docs/sweep-findings.md:685</code>, also <code>:171</code> and <code>:310-312</code></span>
+<span><b>Whose:</b> Nitzan (<code>23d31d4</code>)</span>
+<span><b>Disclosed:</b> no</span></div>
+</div>
+
+<!-- P11 -->
+<div class="card">
+<h3><span class="sev sev-low">Low</span> <span>The "pre-registration" was written after the result it registers</span> <span class="num">11</span></h3>
+
+<div class="label">The background</div>
+<p>Pre-registration means writing down which hypothesis you are testing <em>before</em> you look at
+the data. It is what stops you finding a pattern by luck and then claiming you predicted it. It also
+earns you an easier significance threshold, because you are making fewer claims.</p>
+
+<div class="label">The timeline</div>
+<div class="ba">
+  <div class="ba-item is-claim"><span class="t">15:23, 4 Sept</span><span class="n">result</span><span class="d">report identifies qwen3-8b/degree as the significant cell</span></div>
+  <div class="ba-arrow">&rarr;</div>
+  <div class="ba-item is-real"><span class="t">18:32, same day</span><span class="n">+3h09m</span><span class="d">"pre-registration" file names exactly that cell</span></div>
+</div>
+<p><code>analysis/README.md</code> describes the mechanism as naming cells "decided <em>before a
+sweep's results were seen</em>".</p>
+
+<div class="label">Why this ends up low, not high</div>
+<p>The verifiers checked and softened this, correctly. The file is scoped to a <em>future</em> run
+that has not happened yet, and it is applied to no committed result — the relevant column is empty in
+every shipped file. Pre-registering a cell for a genuine future replication is normal, good practice.
+So no published number is corrupted.</p>
+<p>What survives is a wording problem with real teeth: the code and docs both call a one-cell
+pre-registered family "small, strict". A family with one member is tested at the plain 0.05 threshold
+while the other 99 cells face 0.000505 — <b>about 99&times; more permissive</b>. That is the opposite
+of strict, and nothing says so.</p>
+
+<div class="fix"><b>Fix:</b> correct the "strict" wording, and add a field to the config recording
+which dataset it was written for, so a pre-registration can never be silently applied to the data it
+was chosen from.</div>
+
+<div class="meta"><span><b>Where:</b> <code>analysis/confirmatory_got_degree.json</code>, <code>scripts/check_significance.py:230</code>, <code>analysis/README.md:287</code></span>
+<span><b>Whose:</b> Nitzan (<code>83c9b7b</code>)</span>
+<span><b>Disclosed:</b> no</span></div>
+</div>
+
+<!-- P12 -->
+<div class="card">
+<h3><span class="sev sev-med">Medium</span> <span>The README states a result the committed report contradicts</span> <span class="num">12</span></h3>
+<p>The paragraph that tells the reader which file to cite going forward asserts that a particular
+cell survives the whole-table correction. The committed row says it does not — and <b>0 of 72</b> such
+rows do.</p>
+<div class="ba">
+  <div class="ba-item is-claim"><span class="t">README says</span><span class="n">&minus;12.8, p=0.0010</span><span class="d">survives correction</span></div>
+  <div class="ba-arrow">&rarr;</div>
+  <div class="ba-item is-real"><span class="t">committed file says</span><span class="n">&minus;12.4, p=0.0011</span><span class="d">does not survive</span></div>
+</div>
+<p>The same paragraph gets the size of the correction family wrong in two places ("192 tests"; it is
+132 rows, 100 eligible), and contradicts another line in the same file about which of two families
+applies. These are leftovers from a refactor that regenerated the data but not the prose.</p>
+<div class="fix"><b>Fix:</b> rewrite the paragraph in the past tense as a historical note and correct
+the example to the current committed values.</div>
+<div class="meta"><span><b>Where:</b> <code>analysis/README.md:246-259</code>, <code>:17</code></span>
+<span><b>Whose:</b> Nitzan (<code>c703923</code>)</span></div>
+</div>
+
+<!-- P13 -->
+<div class="card">
+<h3><span class="sev sev-med">Medium</span> <span>The validation scripts validate a different dataset than the pipeline they certify</span> <span class="num">13</span></h3>
+<p>When the pipeline changed to keep cut-off rows instead of dropping them, two call sites were
+updated. Four others were not: <code>validate_recommend_count.py</code>,
+<code>benchmark_mde.py</code>, <code>validate_stratified_sampling.py</code> and
+<code>validate_hierarchical_model.py</code> all still filter those rows out — while their docstrings
+claim to mirror the pipeline's scoping, which the pipeline explicitly says is no longer what it does.</p>
+<p>So every "we validated this" claim was measured on a different set of rows than the thing it
+validates. It is not cosmetic — one published result changes materially:</p>
+<div class="ba">
+  <div class="ba-item is-claim"><span class="t">published</span><span class="n">7 of 12</span><span class="d">"a real but modest effect"</span></div>
+  <div class="ba-arrow">&rarr;</div>
+  <div class="ba-item is-real"><span class="t">at the correct scope</span><span class="n">11 of 12</span><span class="d">0.0516 vs 0.0226, much stronger</span></div>
+</div>
+<p>Interesting wrinkle: at the correct scope the conclusion gets <em>stronger</em>, and a supposed
+"direction reversal" in one model disappears. So the published version was conservative, not flattering.</p>
+<div class="fix"><b>Fix:</b> export one shared scoping helper from
+<code>check_significance.py</code> and use it in all four scripts, so it cannot drift again. Then
+re-run and update the numbers.</div>
+<div class="meta"><span><b>Where:</b> <code>scripts/validate_recommend_count.py:119</code> and three siblings</span>
+<span><b>Whose:</b> Nitzan (<code>46a530d</code>)</span></div>
+</div>
+
+<!-- P14 -->
+<div class="card">
+<h3><span class="sev sev-med">Medium</span> <span>Some "95% confidence intervals" are really 87%, and six of them are zero width</span> <span class="num">14</span></h3>
+<p>The confidence intervals are built by resampling. On cells where almost nothing disagrees — as
+little as 2 out of 180 pairs — that method breaks down. Measured true coverage on those rows is
+<b>86.8%</b>, not 95%, and the miss is entirely on one side: the harm side, which is exactly the side
+the README reads as a safety bound.</p>
+<p>17 of 60 rows are in this regime, including all six cells for one model. Six rows publish a
+zero-width "95% CI" of [0.000, 0.000], which is not an interval at all.</p>
+<div class="analogy">
+<b>Think of it like this.</b> A survey where only 2 of 180 people expressed any preference cannot
+support a 95% confidence interval — resampling those 2 people over and over just returns the same 2
+opinions. The interval it prints is a description of the resampling, not of the population.
+</div>
+<div class="fix"><b>Fix:</b> when there are too few disagreeing pairs, print no interval (or an exact
+binomial one) instead of a percentile interval, and add a coverage test to the suite.</div>
+<div class="meta"><span><b>Where:</b> <code>graphtalk/significance.py:204-206</code></span>
+<span><b>Whose:</b> both</span></div>
+</div>
+
+<!-- P15 -->
+<div class="card">
+<h3><span class="sev sev-med">Medium</span> <span>All 12 tests for the cross-check pass with the cross-check switched off</span> <span class="num">15</span></h3>
+<p>The GEE module exists for exactly one reason: to account for the fact that answers about the same
+graph are related. The audit deleted that accounting from the code and <b>all 12 of its tests still
+passed.</b></p>
+<p>The reason is that every test fixture generates each row independently, so there is no relatedness
+for the code to account for. And the one test that looks like it verifies the grouping reads the
+number from pandas rather than from the fitted model — so it tests pandas, not the model.</p>
+<div class="analogy">
+<b>Think of it like this.</b> A smoke detector with a test that only ever checks the battery light.
+It will pass forever, including after someone removes the sensor.
+</div>
+<p>No committed number is wrong because of this. The risk is that a future change silently breaks the
+cross-check while the test suite stays green.</p>
+<div class="fix"><b>Fix:</b> read the group count off the fit rather than from pandas, and add one
+fixture with genuine within-graph correlation that fails if the grouping is removed.</div>
+<div class="meta"><span><b>Where:</b> <code>tests/test_mixed_models.py:120</code></span>
+<span><b>Whose:</b> Nitzan (all 215 lines)</span></div>
+</div>
+
+<!-- ============================================================ STALE -->
+<h2 id="stale">Files and numbers that are out of date</h2>
+<p class="secnote">Individually minor, collectively the reason a reader cannot trust the docs. Every
+one of these was verified by recomputing the number or checking whether the file rebuilds.</p>
+
+<table>
+<thead><tr><th style="width:22%">What</th><th>The problem</th><th style="width:16%">Fix</th></tr></thead>
+<tbody>
+<tr>
+  <td><code>significance_report.txt</code></td>
+  <td>The only human-readable report. Never regenerated after the methodology change; still contains
+  two retired analysis arms that current code cannot even produce. Its pooled numbers
+  <b>contradict the project's two headline results</b> (p = 0.0110 / 0.0757 versus the claimed 0.0050 /
+  0.0105), and its last line says "wrote 192 rows" next to a 132-row file. Listed as current while
+  four sibling files are stamped "Stale — do not cite".</td>
+  <td>Regenerate, or stamp it stale like its siblings</td>
+</tr>
+<tr>
+  <td><code>significance_report_mae.csv</code></td>
+  <td>Also pre-change, also unmarked, and offered to the reader as a live alternative reading.
+  Regenerating changes 11 of 72 cells and flips 4 effect signs. The stated reason for keeping it —
+  "the two do disagree on the same cell" — is now false: there are 0 disagreements.</td>
+  <td>Regenerate or mark stale; delete the justifying sentence</td>
+</tr>
+<tr>
+  <td><code>failure_sample.csv</code></td>
+  <td>Deleted from the repo, but <b>7 present-tense citations across 4 documents</b> still cite it as
+  the evidence for specific findings, including the reframing of the filler control as a
+  misinformation placebo. A reader cannot check any of them.</td>
+  <td>Regenerate it, or convert the citations to quoted evidence</td>
+</tr>
+<tr>
+  <td><code>docs/DATA.md</code> inventory</td>
+  <td>Claims 25,267 response rows (10,080 main sweep). Counted directly: <b>20,237</b> rows, of which
+  the main sweep is <b>5,040</b>. The deletion of one prompt style halved it and the table was never
+  updated. "10,080" now collides with a different total elsewhere.</td>
+  <td>Recount and update</td>
+</tr>
+<tr>
+  <td>"Missing instances skew toward larger graphs"</td>
+  <td>An entire selection-bias section describing an exclusion that no longer happens — the column it
+  cites is 0 on every row. It is also the <em>only</em> empirical basis given for the new stratified
+  sampling mode, whose documented defaults select 30 graphs that all have exactly 19 nodes.</td>
+  <td>Add a retraction note; re-justify the sampling mode</td>
+</tr>
+<tr>
+  <td>Two figures presented as current</td>
+  <td>The GoT headline's mechanism figure ("+35.7pp on edge_count") and the Track 2.1 counts
+  ("16 of 20 / 6 of 16 / 4 skipped", now 15 / 8 / 5) both reproduce only against superseded files.</td>
+  <td>Recompute both</td>
+</tr>
+<tr>
+  <td>The documented reproduce command</td>
+  <td><code>--responses runs/*.jsonl</code> now always crashes: the glob picks up the GoT files and
+  the mixed-scheme guard correctly refuses. Every doc that prints this command is un-runnable as
+  written. (This one is not Nitzan's or Inbal's — the guard was added later.)</td>
+  <td>Print a glob that excludes <code>.got.</code></td>
+</tr>
+</tbody>
+</table>
+
+<!-- ============================================================ FINE -->
+<h2 id="fine">What is genuinely good</h2>
+<p class="secnote">Included so you can tell signal from noise. Several of these are things a reviewer
+would specifically look for, and they hold up.</p>
+
+<div class="card">
+<ul class="tight">
+<li><b>Three major data files rebuild byte-for-byte</b> from the current code:
+<code>sweep_frame.csv</code>, <code>sweep_frame.got.csv</code> and
+<code>significance_report.csv</code>. Nothing is hand-edited or fabricated; the pipeline is
+deterministic. This is the single most important thing to be able to say, and you can say it.</li>
+<li><b>Nothing is silently dropped.</b> Every main-sweep cell uses all 180 pairs, every pooled cell
+all 720. The audit specifically looked for exclusion rates that differ by condition and found none.
+Your "measuring partial information" worry does not hold in that form.</li>
+<li><b>Only 2 rows out of 10,080 fail to parse.</b> The extraction work, whatever else is true of how
+it was developed, works.</li>
+<li><b>"degree helps" is robust.</b> It survived every alternative grouping the audit could construct
+and got stronger, and its error bars were already conservative. Your central claim is the one that
+holds.</li>
+<li><b>The Benjamini-Hochberg implementation is correct</b>, checked against the textbook procedure,
+as are the resampling units for the permutation test and the bootstrap.</li>
+<li><b>The MAE imputation cannot favour a condition</b> — it uses a per-task constant computed
+across all conditions. This was specifically suspected and cleared.</li>
+<li><b>The filler-condition instrument asymmetry is empirically harmless.</b> The document argues it
+badly, but the conclusion is right: no row anywhere sits close enough to its token budget for the
+asymmetry to bite.</li>
+<li><b>The unvalidated length-outlier heuristic feeds nothing.</b> It is a diagnostic column only, so
+its 81 extra flagged rows never enter a reported number.</li>
+<li><b>The repository documents its own limitations unusually thoroughly</b>, including explicit
+retractions. That is why this audit could go as deep as it did — most of the raw material came from
+the authors' own notes.</li>
+</ul>
+</div>
+
+<!-- ============================================================ WRONG -->
+<h2 id="wrong">Claims the audit itself got wrong</h2>
+<p class="secnote">Each finding was reviewed by agents whose instructions were to disprove it. Eight
+claims did not survive. They are listed because an audit that only reports hits is not trustworthy —
+and because if any of these reach the group as criticism, they are wrong.</p>
+
+<div class="card">
+<ul class="tight">
+<li><b>"The confidence intervals collapse to 59.7% coverage."</b> False. A 2,000-run simulation gave
+98.6% and 96.1% — slightly <em>over</em>-covered. Only the very sparsest one-sided case is degraded
+(86.8%), which is what problem 14 reports.</li>
+<li><b>"Fixing the grouping also kills the degree result."</b> False, and this was the audit's own
+headline claim initially. Degree survives every respecification.</li>
+<li><b>"The bias diagnostics can never fire."</b> False — the threshold is adjustable and the
+underlying count is reported on every row.</li>
+<li><b>"The thinking arm's 5,040 rows get no accuracy analysis, hiding the largest effects."</b>
+Refuted — the missing cells were computed and all 24 are null.</li>
+<li><b>"The MAE imputation flips four effect signs."</b> Refuted; the sign convention was read
+backwards.</li>
+<li><b>"The Bayesian model's shared instance effect is indefensible."</b> Refuted by all verifiers.</li>
+<li><b>"The edge-existence extraction fallback can only ever help accuracy."</b> Refuted.</li>
+<li><b>"Including the omitted comparisons can only destroy significance."</b> Measured, and the
+opposite is true — adding them yields 3 survivors, not 0.</li>
+</ul>
+</div>
+
+<!-- ============================================================ TODO -->
+<h2 id="todo">What to do, in order</h2>
+
+<div class="card">
+<h3><span class="sev sev-high">Must fix</span> <span>before anything is written up or submitted</span></h3>
+<ul class="check">
+<li><b>Fix the grouping key</b> (problem 1) and re-run. Then find out which results actually survive.
+Everything downstream depends on this answer.</li>
+<li><b>Raise the shuffle count and record the seed</b> (problem 2). Right now two published verdicts
+are coin flips, and one of them is written up as a substantive finding.</li>
+<li><b>Regenerate the headline accuracy table</b> and the four derived figures around it
+(problem 5) — including the filler number whose sign is wrong. Cheapest high-value fix on the list.</li>
+<li><b>Fix the sample-size formula before booking any GPU time</b> (problems 3 and 4). The planned
+500-graph run is probably unnecessary.</li>
+<li><b>Regenerate or retract "A third pass"</b> (problem 6). It tells readers how to interpret
+everything else and its bound is 3&times; too tight.</li>
+</ul>
+</div>
+
+<div class="card">
+<h3><span class="sev sev-med">Should fix</span> <span>cheap, and each one closes a real gap</span></h3>
+<ul class="check">
+<li>Report the replication run honestly — degree replicates, rwse does not, neither is settled
+(problem 7).</li>
+<li>Stop calling the GEE "independent", correct its false rationale, and apply the correction before
+citing it (problem 8).</li>
+<li>One sentence disclosing that the two pooled results held under only one of three previously
+reported treatments (problem 9).</li>
+<li>Point the four validation scripts at the same rows the pipeline uses (problem 13), and re-run.</li>
+<li>Suppress confidence intervals where there are too few disagreeing pairs (problem 14).</li>
+<li>Regenerate or stamp the stale artifacts, and fix the row counts in
+<code>docs/DATA.md</code>.</li>
+</ul>
+</div>
+
+<div class="card">
+<h3><span class="sev sev-low">Say more clearly</span> <span>no re-analysis needed</span></h3>
+<ul class="check">
+<li>Correct "small, strict" for the one-cell pre-registered family, and record which dataset a
+pre-registration was written for (problem 11).</li>
+<li>Replace "can no longer be reproduced" with the command that reproduces it and what it shows
+(problem 10).</li>
+<li>Add a test that fails when the cross-check's grouping is removed (problem 15).</li>
+</ul>
+</div>
+
+<div class="card">
+<h3><span class="sev sev-ok">Worth saying out loud</span> <span>a note on how to read this</span></h3>
+<p>Almost every problem on this page is a <b>documentation-drift</b> problem, not a competence
+problem. The pattern is consistent and recognisable: the data was regenerated many times, the code
+was fixed repeatedly and correctly, and the prose was not always regenerated alongside it. Two of the
+findings — the grouping key and the sample-size formula — are genuine technical errors of a kind that
+is easy to make and hard to see. Neither suggests anyone was trying to reach a particular answer.</p>
+<p>The one place to be careful is the replication run, because the shape there — a second full pass
+exists, only the agreeing cell is written up — is the shape a reviewer is trained to look for, and it
+is fixable with three sentences. Fix it before someone else notices it.</p>
+</div>
+
+<footer>
+Audit of commits by Nitzan Zacharia and Inbal Moryles in <code>ArnavShahor/GraphTalk</code>,
+main branch at <code>c519fd5</code>. Read-only: no tracked file was modified.
+Analysis re-run in an isolated environment (pandas 2.3.3, statsmodels 0.15); the PyMC model could not
+be executed because pymc and arviz are not installed, so its claims are unverified.
+This file lives outside the repository on purpose &mdash; it names collaborators, so publishing it is
+your call, not mine.
+</footer>
+
+</div>
+
+<script>
+  const btn = document.getElementById('tt');
+  const root = document.documentElement;
+  const stored = localStorage.getItem('gt-audit-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  btn.addEventListener('click', () => {
+    const dark = getComputedStyle(root).getPropertyValue('--surface-1').trim() === '#1a1a19';
+    const next = dark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('gt-audit-theme', next);
+  });
+</script>
+</body>
+</html>
