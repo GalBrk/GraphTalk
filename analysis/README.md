@@ -821,6 +821,107 @@ rather than requesting a non-published split size. Validate
 `--batch-size` first (above); pre-register with
 `analysis/confirmatory_got_degree.json` before generating.
 
+## Phase C: three follow-ups sized and ready to submit
+
+Sizing for the 3 cells pre-registered above, computed the same way as the
+already-completed `qwen3-8b`/`degree` (GOT) replication above: bootstrap-
+resample the existing `--count 30` task-scoped pairs
+(`scripts/validate_recommend_count.py`'s `simulate_power_at_n`, the same
+primitive that already validates `recommend_count.py`'s own numbers),
+inject a candidate true effect, and find the smallest `--count` reaching
+~80% simulated power. Two effect-size estimates are shown for each cell,
+not one -- the raw observed delta and the 95% bootstrap CI's near-zero
+bound:
+
+| cell | observed delta (n=30) | 95% CI | **conservative `--count`** (80% power @ CI bound) | optimistic `--count` (80% power @ observed delta) |
+|---|---|---|---|---|
+| got/`qwen3-14b`/`degree`/`edge_count` | +0.300 | [+0.100, +0.500] | **150** (80.5% @ +0.100) | 50 (88% @ +0.300) |
+| integer/`qwen3-8b`/`degree`/`edge_count` | +0.233 | [+0.067, +0.400] | **200** (80.7% @ +0.067) | 50 (65% @ +0.233) |
+| integer/`qwen3-8b`/`filler`/`node_count` | -0.233 | [-0.400, -0.100] | **75** (86.8% @ -0.100) | 30-50 (73-99% @ -0.233) |
+
+The `qwen3-8b`/`degree` (GOT) replication's own +7.8pp-observed ->
++6.5pp-true shrinkage is direct, measured proof that sizing off the raw
+observed delta on a cell selected because it looked good is optimistic --
+so **conservative is the recommended column**, not a hedge. All three are
+small enough that even the conservative count stays far under the
+500-graph published-split cap, and -- because `--tasks` (Phase A3) scopes
+each build to the one task its cell needs -- generation cost is one
+task's worth of rows, not all 6.
+
+**Not run**: generating this data needs a HF row fetch beyond what's
+cached locally (60 rows/task max today) and GPU time on the TAU CS
+cluster, neither available here. Exact commands, ready to hand off:
+
+**1. got/`qwen3-14b`/`degree`/`edge_count` (`--count 150`)**
+
+```bash
+# login node (network, no GPU)
+PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 150 \
+    --conditions none degree --tasks edge_count --node-naming got \
+    --out prompts_got.phaseC_qwen14b_degree_edgecount.jsonl
+
+# compute node (GPU) -- sweep.sbatch reads these two env vars directly,
+# the same mechanism cluster/submit_sweep.sh uses internally for --count
+GRAPHTALK_PROMPTS=prompts_got.phaseC_qwen14b_degree_edgecount.jsonl \
+GRAPHTALK_RUN_TAG=phaseC_qwen14b_degree_edgecount \
+    sbatch cluster/sweep.sbatch qwen3-14b
+```
+
+**2. integer/`qwen3-8b`/`degree`/`edge_count` (`--count 200`)**
+
+```bash
+PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 200 \
+    --conditions none degree --tasks edge_count \
+    --out prompts.phaseC_qwen8b_degree_edgecount.jsonl
+
+GRAPHTALK_PROMPTS=prompts.phaseC_qwen8b_degree_edgecount.jsonl \
+GRAPHTALK_RUN_TAG=phaseC_qwen8b_degree_edgecount \
+    sbatch cluster/sweep.sbatch qwen3-8b
+```
+
+**3. integer/`qwen3-8b`/`filler`/`node_count` (`--count 75`)**
+
+```bash
+PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 75 \
+    --conditions none filler --tasks node_count \
+    --out prompts.phaseC_qwen8b_filler_nodecount.jsonl
+
+GRAPHTALK_PROMPTS=prompts.phaseC_qwen8b_filler_nodecount.jsonl \
+GRAPHTALK_RUN_TAG=phaseC_qwen8b_filler_nodecount \
+    sbatch cluster/sweep.sbatch qwen3-8b
+```
+
+Cells 2 and 3 both run `qwen3-8b` -- they're kept as two separate builds/
+jobs rather than one merged prompt file so each stays minimal (no
+`edge_count`/`filler` or `node_count`/`degree` combinations neither cell
+asked for); merge them by hand (`cat` the two prompt files, submit once)
+if saving one model-load's worth of cluster overhead matters more than
+that separation.
+
+**After each job completes** (`runs/<model>.<run_tag>.jsonl`), same
+three-step check used for the GOT replication -- `--filter` scopes the
+whole run to the one task the cell was sized for, and `--confirmatory-
+config` is the matching file from the section above:
+
+```bash
+PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py \
+    --responses runs/qwen3-14b.phaseC_qwen14b_degree_edgecount.jsonl \
+    --shortcuts shortcuts.json \
+    --out analysis/sweep_frame.phaseC_qwen14b_degree_edgecount.csv
+
+PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
+    --frame analysis/sweep_frame.phaseC_qwen14b_degree_edgecount.csv \
+    --metric exact --filter "task == 'edge_count'" \
+    --confirmatory-config analysis/confirmatory_got_qwen3-14b_degree.json
+```
+
+(swap the frame/filter/config for cells 2 and 3), then run Phase D's
+circularity and consistency checks (re-run without `--confirmatory-
+config`; `check_old_vs_new_subsample.py`-style old-vs-new comparison
+against the tracked `--count 30` slice) before treating any result as
+confirmed -- exactly the discipline the GOT replication above already
+went through.
+
 ## Not kept
 
 The prompt subsets used to drive these runs (`diag_prompts`, `think_probe`,

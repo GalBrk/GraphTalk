@@ -205,6 +205,32 @@ def test_selected_graphs_carry_correct_gold_answers(monkeypatch):
     assert record["gold"] == str(record["nodes"])
 
 
+def test_tasks_param_restricts_which_tasks_are_built(monkeypatch):
+  """Phase C: a targeted follow-up sized for one pre-registered cell (e.g.
+  `edge_count` for `qwen3-14b`/`degree`) must not spend any of its --count
+  budget building prompts for the other 5 tasks it isn't testing."""
+  sizes = [5, 9, 3, 12]
+  _pool, calls = _stub_pool(monkeypatch, sizes)
+  records = build_prompts.build_stratified(
+      count=2, conditions=["none"], styles=["zero_shot"], split="x",
+      cache="unused", k_min=2, k_max=3, pool_size=len(sizes),
+      tasks=["edge_count"],
+  )
+  assert {r["task"] for r in records} == {"edge_count"}
+  assert len(calls) == 1
+  assert calls[0][0] == "edge_count"
+
+
+def test_tasks_param_defaults_to_every_task(monkeypatch):
+  sizes = [5, 9, 3, 12]
+  _stub_pool(monkeypatch, sizes)
+  records = build_prompts.build_stratified(
+      count=2, conditions=["none"], styles=["zero_shot"], split="x",
+      cache="unused", k_min=2, k_max=3, pool_size=len(sizes),
+  )
+  assert {r["task"] for r in records} == set(build_prompts.scoring.TASKS)
+
+
 def test_raises_when_shipped_answer_disagrees_with_the_parsed_graph(monkeypatch):
   bad_row = {
       "question": _fake_question(_graph_of_size(5, seed=0)),
