@@ -364,6 +364,47 @@ def test_within_graph_icc_is_none_when_every_cluster_is_a_singleton():
   assert cs._within_graph_icc([1.0, 0.0], [0.0, 1.0], [("m", "0"), ("m", "1")]) is None
 
 
+def test_ci_is_suppressed_rather_than_reported_as_zero_width():
+  """The six `[0.000, 0.000]` rows in the superseded report: cells where no
+  pair disagreed at all, so every bootstrap resample returned the same
+  zeros. That prints as a confident null and is nothing of the kind -- the
+  percentile bootstrap simply had nothing to resample.
+  """
+  control = [1.0] * 180
+  treatment = [1.0] * 180
+  result = significance.cluster_bootstrap_ci_clustered(
+      control, treatment, list(range(180)), n_boot=200, seed=1
+  )
+  assert result["n_discordant"] == 0
+  assert result["ci_low"] is None and result["ci_high"] is None
+  assert result["point_estimate"] == 0.0
+
+
+def test_ci_is_suppressed_on_the_two_discordant_pairs_regime():
+  """`gemma4-12b`'s main-sweep cells disagreed on 2 pairs out of 180 and
+  still printed ordinary-looking intervals. Resampling 2 nonzero values
+  describes the resampling, not the population."""
+  control = [1.0] * 180
+  treatment = [0.0, 0.0] + [1.0] * 178
+  result = significance.cluster_bootstrap_ci_clustered(
+      control, treatment, list(range(180)), n_boot=200, seed=1
+  )
+  assert result["n_discordant"] == 2
+  assert result["ci_low"] is None
+
+
+def test_ci_is_still_reported_when_enough_pairs_disagree():
+  """The suppression must not swallow ordinary cells."""
+  control = [1.0] * 100 + [0.0] * 100
+  treatment = [0.0] * 40 + [1.0] * 60 + [1.0] * 40 + [0.0] * 60
+  result = significance.cluster_bootstrap_ci_clustered(
+      control, treatment, list(range(200)), n_boot=500, seed=1
+  )
+  assert result["n_discordant"] >= 10
+  assert result["ci_low"] is not None and result["ci_high"] is not None
+  assert result["ci_low"] < result["ci_high"]
+
+
 def _global_bh_records(p_value: float, n_perm: int, m: int = 100) -> list:
   """`m` eligible whole-table records whose smallest p-value is `p_value`,
   the rest well away from any threshold."""

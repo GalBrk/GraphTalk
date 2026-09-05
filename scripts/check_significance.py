@@ -329,24 +329,34 @@ def _hypothesis_type(
   return "exploratory"
 
 
-def _graph_index(instance_id: str) -> str:
-  """The graph number out of an `"<task>/<index>"` `instance_id`.
+# The cluster unit, shared with `graphtalk.mixed_models`' GEE grouping and
+# with every validator that reconstructs either -- one definition, in the
+# package, so the two can't drift into different granularities again. See
+# `analysis.graph_index` and `_paired_values`.
+_graph_index = analysis.graph_index
 
-  The same index under different tasks is the *same graph* -- same nodes,
-  same edges, byte-identical encoding in `prompts.jsonl` -- asked a
-  different question. So this, not the whole `instance_id`, is the unit
-  rows can be correlated within; see `_paired_values`. Raises rather than
-  guessing on an id that doesn't carry a task prefix, since silently
-  treating the whole string as an index would reintroduce exactly the
-  one-member-per-cluster no-op this function exists to prevent.
+
+def main_sweep_scope(frame: pd.DataFrame) -> pd.DataFrame:
+  """The rows this script's main-sweep report is computed over: every
+  non-thinking-arm row, non-terminating ones **included**.
+
+  Public, and imported by the validators, on purpose. When Phase 2 stopped
+  dropping non-terminating rows -- `graphtalk.analysis.build_frame` now
+  forces their `exact`/`primary` to 0.0, so they are ordinary scored rows
+  and excluding them would double-count the correction -- two call sites
+  were updated and four were not. `validate_recommend_count.py`,
+  `benchmark_mde.py`, `validate_stratified_sampling.py` and
+  `validate_hierarchical_model.py` each kept their own
+  `failure_type != "non_terminating"` filter while their docstrings claimed
+  to mirror this scoping, so every "we validated this" claim was measured
+  on a different set of rows than the thing it validated. It was not
+  cosmetic: at the correct scope `validate_stratified_sampling.py` goes
+  from 7 of 12 cells to 11 of 12 and its mean discordant-rate gap widens
+  from 0.0185/0.0217 to 0.0226/0.0516.
+
+  One function, exported, so there is nothing left to keep in sync by hand.
   """
-  task, sep, index = instance_id.partition("/")
-  if not sep or not index:
-    raise ValueError(
-        f"instance_id {instance_id!r} has no '<task>/<index>' shape -- "
-        f"cannot derive the graph index the cluster id needs"
-    )
-  return index
+  return frame[~frame["is_think"]]
 
 
 def _within_graph_icc(control, treatment, cluster_ids) -> float | None:
@@ -539,6 +549,20 @@ def _task_delta_range(control, treatment, tasks):
   return min(task_means), max(task_means)
 
 
+def _format_ci(ci_low, ci_high, n_discordant) -> str:
+  """One CI cell for the printed table, or an explicit "not estimable"
+  marker when `cluster_bootstrap_ci_clustered` suppressed the interval.
+
+  Says *why* rather than printing a blank: a reader who sees `[0.000,
+  0.000]` -- what the superseded report printed on six rows -- reads a
+  confident null, when the truth is that no pair disagreed and the
+  percentile bootstrap had nothing to resample.
+  """
+  if ci_low is None or ci_high is None:
+    return f"n/a ({n_discordant} discordant)"
+  return f"[{ci_low:+.3f}, {ci_high:+.3f}]"
+
+
 def _near_threshold(p_value: float, group_rows: list, reject: list, args) -> bool:
   """Whether this p-value sits close enough to its own BH threshold that
   Monte Carlo noise, not the data, decides which side of it the row lands.
@@ -682,7 +706,7 @@ def _report(
          high_non_termination_rate, n_missing, task_delta_min, task_delta_max,
          within_graph_icc, control, treatment, cluster_ids,
          is_derived), sig in zip(group_rows, reject):
-      ci = f"[{boot['ci_low']:+.3f}, {boot['ci_high']:+.3f}]"
+      ci = _format_ci(boot["ci_low"], boot["ci_high"], boot["n_discordant"])
       near_threshold = _near_threshold(
           perm["p_value"], group_rows, reject, args
       )
@@ -698,7 +722,13 @@ def _report(
       mde_delta = mde_realized = mde_power_target = None
       mde_delta_negative = mde_realized_negative = None
       if mde_eligible and not sig:
-        ci_width = boot["ci_high"] - boot["ci_low"]
+        # `initial_hi` is only a starting point for the MDE search's
+        # geometric expansion, so a suppressed CI falls back to the
+        # search's own floor rather than blocking the simulation.
+        ci_width = (
+            boot["ci_high"] - boot["ci_low"]
+            if boot["ci_low"] is not None else 0.0
+        )
         mde_seed = f"{args.seed}:{arm}:{label}:{bound}:{condition}:mde"
         mde = significance.minimum_detectable_effect_clustered(
             control, treatment, cluster_ids, initial_hi=max(0.05, ci_width),
@@ -955,8 +985,11 @@ def _report_mae(
       # error, higher = worse); mae_delta = control - treatment so positive
       # still means "the condition helped", matching `exact`'s convention.
       mae_delta = -perm["observed_diff"]
-      ci_low, ci_high = -boot["ci_high"], -boot["ci_low"]
-      ci = f"[{ci_low:+.3f}, {ci_high:+.3f}]"
+      # Sign flip, `None`-safe: a suppressed interval stays suppressed
+      # rather than becoming `-None`.
+      ci_low = -boot["ci_high"] if boot["ci_high"] is not None else None
+      ci_high = -boot["ci_low"] if boot["ci_low"] is not None else None
+      ci = _format_ci(ci_low, ci_high, boot["n_discordant"])
       near_threshold = _near_threshold(
           perm["p_value"], group_rows, reject, args
       )

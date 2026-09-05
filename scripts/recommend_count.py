@@ -130,7 +130,10 @@ def _mde_for_family_significant_cell(
   ci = significance.cluster_bootstrap_ci_clustered(
       control, treatment, cluster_ids, n_boot=1000, seed=seed,
   )
-  ci_width = ci["ci_high"] - ci["ci_low"]
+  # `None` when too few pairs disagree for a percentile bootstrap; the MDE
+  # search only uses this as a starting point for its geometric expansion,
+  # so falling back to its own floor is harmless.
+  ci_width = ci["ci_high"] - ci["ci_low"] if ci["ci_low"] is not None else 0.0
   direction = "positive" if delta > 0 else "negative"
   result = significance.minimum_detectable_effect_clustered(
       control, treatment, cluster_ids, initial_hi=max(0.05, ci_width),

@@ -79,8 +79,12 @@ def _missing_instances(frame: pd.DataFrame, sig: pd.DataFrame,
   so this can never disagree with what `n_instances_missing` actually
   counted.
   """
-  main_sweep_raw = frame[~frame["is_think"]]
-  main_sweep = main_sweep_raw[main_sweep_raw["failure_type"] != "non_terminating"]
+  main_sweep_raw = cs.main_sweep_scope(frame)
+  # Same rows: the pipeline no longer drops non-terminating ones (Phase 2
+  # forces them to score as wrong and keeps them), so there is no second,
+  # narrower scope left for this to compare against. Kept as two names
+  # because the callers below read differently, not because they differ.
+  main_sweep = main_sweep_raw
   targets = sig[(sig["bound"] == "excluded") & (sig["n_instances_missing"] > 0)
                 & (sig["group"] != "pooled across all models")]
   rows = []

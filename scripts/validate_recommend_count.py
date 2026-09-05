@@ -120,9 +120,9 @@ def main() -> None:
         "arm": "main_sweep", "group": row["model"], "condition": row["condition"],
         "bound": "excluded",
     }
+    scoped = cs.main_sweep_scope(frame)
     control, treatment, cluster_ids = cs._paired_values(
-        frame[(~frame["is_think"]) & (frame["failure_type"] != "non_terminating")
-              & (frame["model_family"] == row["model"])],
+        scoped[scoped["model_family"] == row["model"]],
         row["condition"], "exact",
     )
     n_target = round(row["n_clusters_needed"])

@@ -179,7 +179,8 @@ def _resample_clusters(clusters: list, rng: random.Random):
 
 
 def cluster_bootstrap_ci_clustered(
-    control, treatment, cluster_ids, n_boot: int = 10_000, seed: int = 0, alpha: float = 0.05
+    control, treatment, cluster_ids, n_boot: int = 10_000, seed: int = 0,
+    alpha: float = 0.05, min_discordant: int = 10,
 ) -> dict:
   """Resamples whole clusters (e.g. one model's six per-task rows on one
   graph) with replacement, carrying every pair that shares a cluster along
@@ -188,6 +189,23 @@ def cluster_bootstrap_ci_clustered(
   which understates variance when pairs sharing a cluster are correlated
   (see `paired_permutation_test_clustered`). Reduces to
   `cluster_bootstrap_ci` when every `cluster_ids` value is unique.
+
+  **Returns `None` bounds when too few pairs disagree.** A percentile
+  bootstrap needs enough distinct nonzero differences to resample; below
+  `min_discordant` there aren't enough, and what comes back describes the
+  resampling rather than the population. The degenerate end of that is
+  visible in the superseded report: six rows published a 95% CI of
+  `[0.000, 0.000]` -- every one a cell where no pair disagreed at all, so
+  every resample returned the same zeros -- and cells as thin as 2
+  disagreements in 180 pairs printed intervals that read as ordinary. The
+  measured one-sided coverage in that regime is well under the nominal 95%,
+  and the miss is on the harm side, which is exactly the side a reader uses
+  such an interval as a safety bound.
+
+  `None` rather than a zero-width interval because "no interval is
+  estimable here" and "the effect is provably 0.000 either way" are
+  completely different claims, and only the first is true. `n_discordant`
+  is always reported so a caller can see why.
   """
   control, treatment = list(control), list(treatment)
   cluster_ids = list(cluster_ids)
@@ -198,7 +216,8 @@ def cluster_bootstrap_ci_clustered(
     )
   n = len(control)
   if n == 0:
-    return {"point_estimate": 0.0, "ci_low": 0.0, "ci_high": 0.0, "n_clusters": 0}
+    return {"point_estimate": 0.0, "ci_low": None, "ci_high": None,
+            "n_clusters": 0, "n_discordant": 0}
   diffs = [t - c for c, t in zip(control, treatment)]
   by_cluster: dict = {}
   for cluster_id, diff in zip(cluster_ids, diffs):
@@ -206,6 +225,12 @@ def cluster_bootstrap_ci_clustered(
   clusters = list(by_cluster.values())
   m = len(clusters)
   point = sum(diffs) / n
+  n_discordant = sum(1 for d in diffs if d != 0)
+  if n_discordant < min_discordant:
+    # Not enough distinct nonzero differences for a percentile bootstrap to
+    # describe anything but its own resampling -- see the docstring.
+    return {"point_estimate": point, "ci_low": None, "ci_high": None,
+            "n_clusters": m, "n_discordant": n_discordant}
   rng = random.Random(seed)
   boot_means = []
   for _ in range(n_boot):
@@ -214,7 +239,8 @@ def cluster_bootstrap_ci_clustered(
   boot_means.sort()
   lo = boot_means[int((alpha / 2) * n_boot)]
   hi = boot_means[min(n_boot - 1, int((1 - alpha / 2) * n_boot))]
-  return {"point_estimate": point, "ci_low": lo, "ci_high": hi, "n_clusters": m}
+  return {"point_estimate": point, "ci_low": lo, "ci_high": hi,
+          "n_clusters": m, "n_discordant": n_discordant}
 
 
 def _flip_rates(control, delta: float, disagreement: float) -> tuple:

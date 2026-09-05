@@ -66,9 +66,17 @@ def _load_node_counts(prompts_path: str) -> pd.DataFrame:
 
 
 def _main_sweep_rows(frame: pd.DataFrame) -> pd.DataFrame:
-  """Same scope as `check_significance.py`'s `excluded`-bound main-sweep
-  report: non-`-think` rows, non-terminating failures dropped."""
-  return frame[(~frame["is_think"]) & (frame["failure_type"] != "non_terminating")]
+  """Same scope as `check_significance.py`'s main-sweep report, taken from
+  that script rather than restated.
+
+  It used to restate it as "non-`-think` rows, non-terminating failures
+  dropped", which stopped being true when Phase 2 started forcing
+  non-terminating rows to score as wrong and keeping them. At the correct
+  scope this script's own headline changes materially -- 7 of 12 cells
+  becomes 11 of 12, and the mean discordant-rate gap widens from
+  0.0185/0.0217 to 0.0226/0.0516 -- so the published version was
+  understating the effect it was built to detect."""
+  return cs.main_sweep_scope(frame)
 
 
 def _near_ceiling_models(frame: pd.DataFrame, threshold: float) -> list:
