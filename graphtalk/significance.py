@@ -217,6 +217,44 @@ def cluster_bootstrap_ci_clustered(
   return {"point_estimate": point, "ci_low": lo, "ci_high": hi, "n_clusters": m}
 
 
+def _flip_rates(control, delta: float, disagreement: float) -> tuple:
+  """The pair of per-row flip probabilities that inject a net shift of
+  `delta` into `control` while keeping the simulated disagreement rate at
+  `disagreement`.
+
+  Writing `q` for the share of `control` rows that are 0, `up` for
+  `P(treatment = 1 | control = 0)` and `down` for
+  `P(treatment = 0 | control = 1)`, the two things being asked for are:
+
+      net shift          q * up - (1 - q) * down = delta
+      disagreement rate  q * up + (1 - q) * down = disagreement
+
+  which solve to `q * up = (disagreement + delta) / 2` and
+  `(1 - q) * down = (disagreement - delta) / 2`. Solving both at once is
+  what makes `delta = 0` a genuine null -- equal expected movement in each
+  direction, rather than the no-movement-at-all a monotone injector
+  produces -- while still letting `delta` set the net effect the search is
+  calibrating against.
+
+  `disagreement` is raised to `|delta|` when it is smaller: a net shift can
+  never exceed the total movement available, and at that boundary one
+  direction's rate is legitimately 0 (the monotone case, correct here
+  rather than assumed everywhere). Rates are clamped into [0, 1] for the
+  degenerate cells -- every control row identical, so `q` is 0 or 1 and one
+  of the two equations has no rows to act on.
+  """
+  n = len(control)
+  if n == 0:
+    return 0.0, 0.0
+  q = sum(1 for c in control if c < 0.5) / n
+  total = max(disagreement, abs(delta))
+  up_mass = (total + delta) / 2
+  down_mass = (total - delta) / 2
+  up = up_mass / q if q > 0 else 0.0
+  down = down_mass / (1 - q) if q < 1 else 0.0
+  return min(1.0, max(0.0, up)), min(1.0, max(0.0, down))
+
+
 def _search_one_direction(
     power_and_realized, initial_hi: float, power_target: float, n_steps: int, sign: int,
 ) -> dict:
@@ -285,29 +323,51 @@ def minimum_detectable_effect_clustered(
   formula -- for a candidate `delta`, each of `n_replicates` trials
   bootstrap-resamples whole clusters from this row's own real
   `(control, treatment)` data (`_resample_clusters`, the same resampling
-  unit `cluster_bootstrap_ci_clustered` uses), injects the shift by
-  treating `clip(control* + delta, 0, 1)` as a *probability* and drawing a
-  fresh Bernoulli outcome for `treatment*` from it -- not a deterministic
-  `treatment* = clip(...)`, which would move every pair by exactly `delta`
-  with no exceptions and make the permutation test read "every diff shares
-  one sign" as maximally extreme regardless of how small `delta` was,
-  collapsing the search toward implausibly tiny deltas (caught this way via
-  a smoke test before it shipped). The fresh draw is what makes a smaller
-  `delta` genuinely harder to detect than a larger one, which is the whole
-  point of an MDE. `delta=0` reproduces a true null (the draw's probability
-  is just `control*` itself). Reruns `paired_permutation_test_clustered` on
-  the injected data, clustering on the resampled draw index (two resampled
-  copies of the same original cluster are two hypothetical instances, not
-  one). `power(delta)` is the fraction of trials with `p <= alpha`.
+  unit `cluster_bootstrap_ci_clustered` uses), injects the shift as a pair
+  of per-row flip *probabilities* (`_flip_rates`) and draws a fresh
+  Bernoulli outcome for `treatment*` from them.
 
-  Clipping is deliberate, not a limitation to work around: a near-ceiling
-  or near-floor control (see `scripts/check_significance.py`'s
-  `near_ceiling`) has little room to move, so even a large `delta`
-  produces a small *realized* shift once clipping binds -- correctly
-  reflecting reduced detectability there rather than hiding it. Returns
-  both `delta` (the swept parameter at convergence) and `realized_diff`
-  (the replicates' actual mean `treatment* - control*` at that `delta`),
-  since the two can differ and the gap between them is itself informative.
+  Two things about that injection, both load-bearing. It is a probability
+  rather than a deterministic `treatment* = control* + delta`, which would
+  move every pair by exactly `delta` with no exceptions and make the
+  permutation test read "every diff shares one sign" as maximally extreme
+  regardless of how small `delta` was, collapsing the search toward
+  implausibly tiny deltas (caught via a smoke test before it shipped). And
+  it is **two-sided**: pairs move both ways, at this row's own observed
+  disagreement rate, with `delta` setting only the net. The earlier
+  `clip(control* + delta, 0, 1)` was monotone -- a correct control row
+  could never come back wrong at `delta >= 0`, a wrong one never come back
+  right at `delta < 0` -- so it simulated a kind of effect real data never
+  produces (one pooled cell here moves 10 pairs up and 21 down) and one
+  much easier to detect than a two-signed mix of the same mean. Every MDE
+  it reported was correspondingly too small, and every power estimate built
+  on it too high. `delta=0` is a true null under either scheme, but only
+  this one gives it realistic per-pair churn rather than no movement at
+  all.
+
+  Reruns `paired_permutation_test_clustered` on the injected data,
+  clustering on the resampled draw index (two resampled copies of the same
+  original cluster are two hypothetical instances, not one). `power(delta)`
+  is the fraction of trials with `p <= alpha`.
+
+  The rate clamp in `_flip_rates` is deliberate, not a limitation to work
+  around: a near-ceiling or near-floor control (see
+  `scripts/check_significance.py`'s `near_ceiling`) has few rows on the
+  side a shift would have to move, so the required flip rate saturates at
+  1.0 and even a large `delta` produces a small *realized* shift --
+  correctly reflecting reduced detectability there rather than hiding it.
+  Returns both `delta` (the swept parameter at convergence) and
+  `realized_diff` (the replicates' actual mean `treatment* - control*` at
+  that `delta`), since the two can differ by an order of magnitude at the
+  ceiling and the gap between them is itself informative.
+
+  **`delta` and `realized_diff` are not interchangeable, and a caller
+  comparing an MDE against an observed accuracy difference wants
+  `realized_diff`.** `delta` is the swept parameter; `realized_diff` is
+  what it actually produced on this row's data, which is the same scale as
+  `check_significance.py`'s `delta` column. Dividing one by the other
+  inflates a sample-size extrapolation by `(1 / headroom)^2` -- 50-160x on
+  a near-ceiling cell (see `scripts/recommend_count.py`).
 
   Search (`_search_one_direction`, run once per requested direction):
   expands `hi` geometrically from `max(0.05, initial_hi)` -- callers should
@@ -351,6 +411,14 @@ def minimum_detectable_effect_clustered(
     by_cluster.setdefault(cid, []).append((c, t))
   clusters = list(by_cluster.values())
   rng = random.Random(seed)
+  # How often this cell's real pairs disagree at all, in either direction --
+  # the churn `_flip_rates` reproduces so a simulated effect is as hard to
+  # detect as a real one of the same size. Measured from this row's own
+  # data, not assumed: a near-ceiling cell that disagrees on 2 pairs in 180
+  # and a cell that disagrees on 30 are very different detection problems.
+  observed_disagreement = (
+      sum(1 for c, t in zip(control, treatment) if c != t) / len(control)
+  )
 
   def _power_and_realized(delta: float) -> tuple:
     hits = 0
@@ -369,8 +437,27 @@ def minimum_detectable_effect_clustered(
       # fixture with a strong true effect converged to delta=0.001, clearly
       # wrong). Real per-pair noise is what makes a smaller `delta` harder
       # to detect than a larger one, which is the entire point of an MDE.
-      p_star = [min(1.0, c + delta) if delta >= 0 else max(0.0, c + delta)
-                for c in c_star]
+      #
+      # The flip rates are two-sided, and that is the point. The obvious
+      # `p = clip(c + delta)` is monotone in `c`: at `delta >= 0` a correct
+      # control row gets `p = 1` and can never come back wrong, at
+      # `delta < 0` a wrong one gets `p = 0` and can never come back right.
+      # Every simulated pair then moves with `delta` or not at all, while
+      # real pairs move both ways (one pooled cell here disagrees 10 up
+      # against 21 down). One-signed differences are far easier for a
+      # permutation test to detect than a two-signed mix with the same
+      # mean, so power came out badly overstated and the MDE correspondingly
+      # too small -- and the Bernoulli draw above, whose comment claims to
+      # have made this believable, fixes only the magnitude problem, never
+      # the sign one.
+      #
+      # `_flip_rates` solves for the pair of rates that give a *net* shift
+      # of `delta` while disagreeing as often as this cell really does, so
+      # `delta = 0` is a true null (equal expected movement each way, not
+      # zero movement) and a nonzero `delta` is a net shift riding on
+      # realistic two-way churn.
+      up, down = _flip_rates(c_star, delta, observed_disagreement)
+      p_star = [up if c < 0.5 else 1.0 - down for c in c_star]
       t_star = [1.0 if rng.random() < p else 0.0 for p in p_star]
       result = paired_permutation_test_clustered(
           c_star, t_star, draw_ids, n_perm=n_perm, seed=rng.randrange(2**31)

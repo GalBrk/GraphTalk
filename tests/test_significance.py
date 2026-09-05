@@ -1006,15 +1006,116 @@ def test_mde_large_effect_converges_to_a_small_delta():
   assert mde["realized_diff_negative"] >= mde["delta_negative"] - 1e-9
 
 
+def test_flip_rates_hold_the_null_exactly_at_delta_zero():
+  """`delta = 0` has to mean "no net effect", not "no movement". The
+  expected difference is `q * up - (1 - q) * down`; the two rates are
+  solved for jointly so that comes out at exactly 0 for *any* control base
+  rate, not only a balanced one.
+  """
+  for base_rate in (0.1, 0.5, 0.9):
+    control = [1.0] * int(100 * base_rate) + [0.0] * (100 - int(100 * base_rate))
+    q = sum(1 for c in control if c < 0.5) / len(control)
+    up, down = significance._flip_rates(control, delta=0.0, disagreement=0.2)
+    assert q * up - (1 - q) * down == pytest.approx(0.0, abs=1e-12)
+    # ...and it is genuine two-way churn, not both rates pinned at zero.
+    assert up > 0 and down > 0
+
+
+def test_flip_rates_reproduce_the_cells_own_disagreement_rate():
+  """The simulated pairs must disagree about as often as the real ones, or
+  the synthetic effect is easier to detect than a real one of the same
+  size -- which is exactly how power came to be overstated."""
+  control = [1.0] * 60 + [0.0] * 40
+  q = 0.4
+  up, down = significance._flip_rates(control, delta=0.05, disagreement=0.25)
+  assert q * up + (1 - q) * down == pytest.approx(0.25)
+  assert q * up - (1 - q) * down == pytest.approx(0.05)
+
+
+def test_flip_rates_degenerate_to_one_sided_when_delta_exceeds_the_churn():
+  """A net shift can't exceed the total movement available, so at that
+  boundary one direction is legitimately 0 -- the monotone case, correct
+  here rather than assumed everywhere."""
+  control = [1.0] * 50 + [0.0] * 50
+  up, down = significance._flip_rates(control, delta=0.4, disagreement=0.05)
+  assert down == pytest.approx(0.0)
+  assert up > 0
+
+
+def test_mde_injection_moves_pairs_in_both_directions():
+  """The defect this replaced: `clip(control + delta)` could only ever turn
+  wrong answers right (at `delta >= 0`) or right ones wrong (at
+  `delta < 0`), never both. Real data does both -- one pooled cell in this
+  project moves 10 pairs up and 21 down -- and a one-signed synthetic
+  effect is far easier for a permutation test to detect than a two-signed
+  mix with the same mean.
+  """
+  rng = random.Random(11)
+  control = [1.0 if rng.random() < 0.7 else 0.0 for _ in range(200)]
+  up, down = significance._flip_rates(control, delta=0.05, disagreement=0.3)
+  probabilities = [up if c < 0.5 else 1.0 - down for c in control]
+  treatment = [1.0 if rng.random() < p else 0.0 for p in probabilities]
+  gains = sum(1 for c, t in zip(control, treatment) if t > c)
+  losses = sum(1 for c, t in zip(control, treatment) if t < c)
+  assert gains > 0 and losses > 0
+
+
+def test_mde_is_larger_than_the_monotone_injector_reported():
+  """The consequence for every published MDE: a two-sided injection is
+  harder to detect, so the smallest reliably-detectable *effect* is larger
+  than the superseded one-sided simulation claimed. Reproduces the old
+  injector inline rather than keeping it in the module.
+
+  Compared on `realized_diff`, not `delta`, and the difference between
+  those two is the whole point. The old injector's nominal `delta` only
+  ever reached the `1 - control_mean` share of rows that could move, so its
+  realized shift was a fraction of its nominal one; the new injector's
+  nominal `delta` *is* the net shift by construction. Comparing the two
+  schemes' nominal deltas would therefore make the old one look
+  conservative when it is the opposite -- the same parameter-versus-
+  realized confusion that inflated `recommend_count.py`'s extrapolation by
+  ~80x. `realized_diff` is the scale both schemes share, and the scale an
+  observed accuracy difference lives on.
+  """
+  n = 80
+  rng = random.Random(5)
+  control = [1.0 if rng.random() < 0.7 else 0.0 for _ in range(n)]
+  treatment = [1.0 if rng.random() < 0.7 else 0.0 for _ in range(n)]
+  cluster_ids = list(range(n))
+  kwargs = dict(initial_hi=0.1, n_replicates=100, n_perm=200, seed=5,
+                direction="positive")
+
+  two_sided = significance.minimum_detectable_effect_clustered(
+      control, treatment, cluster_ids, **kwargs
+  )
+
+  original_flip_rates = significance._flip_rates
+  try:
+    # The old behaviour, expressed in the new plumbing: everything moves
+    # toward `delta`, nothing moves back.
+    significance._flip_rates = lambda c, delta, disagreement: (
+        (max(0.0, delta), 0.0) if delta >= 0 else (0.0, max(0.0, -delta))
+    )
+    one_sided = significance.minimum_detectable_effect_clustered(
+        control, treatment, cluster_ids, **kwargs
+    )
+  finally:
+    significance._flip_rates = original_flip_rates
+
+  assert two_sided["delta"] is not None and one_sided["delta"] is not None
+  # ~2x on this fixture; the audit measured 2-4x across the real cells.
+  assert two_sided["realized_diff"] > 1.5 * one_sided["realized_diff"]
+
+
 def test_mde_near_ceiling_base_rate_needs_a_larger_delta():
   """MDE depends on the row's own noise structure (cluster count, control's
   base rate) -- not on the observed treatment effect, and not on whether
   the *observed* effect happens to be large or small (see the plan's note
   on why "tiny observed effect -> large MDE" was dropped as a test claim;
-  it isn't true). What *is* true: a near-ceiling control has little room
-  for a Bernoulli draw to move (`clip(1 + delta) = 1`, no signal possible
-  from those pairs at all), so reaching the same power needs a larger
-  nominal delta than a mid-range control at the same cluster count.
+  it isn't true). What *is* true: a near-ceiling control has few rows on
+  the side a shift has to move, so `_flip_rates`' required rate saturates
+  at 1.0 and reaching the same power needs a larger nominal delta than a
+  mid-range control at the same cluster count.
   """
   n = 60
   rng_mid = random.Random(3)
