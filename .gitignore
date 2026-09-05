@@ -28,3 +28,19 @@ out/
 # they look like a prompt set the sweep used in full, which they never are.
 /prompts.rerun.jsonl
 /prompts.smoke.jsonl
+
+# Same reasoning, two more of them.
+#
+# `batch_validation_prompts.jsonl` is regenerable exactly, by the script that
+# consumes it (`scripts/validate_batch_generation.py --build-prompts`), and it
+# is a diagnostic input rather than a record of any tracked response.
+#
+# `prompts_got.count500.jsonl` is the full seven-condition build at --count 500
+# (21,000 prompts, 39 MB). The replication only ever ran the none/degree subset,
+# which IS tracked -- `prompts_got.count500.degree.jsonl` -- because a response
+# is only interpretable against the exact prompt that produced it. Keeping the
+# unused superset out avoids 39 MB that no tracked row is scored against, and it
+# rebuilds deterministically from `scripts/build_prompts.py --count 500
+# --node-naming got`.
+/batch_validation_prompts.jsonl
+/prompts_got.count500.jsonl
