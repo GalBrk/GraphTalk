@@ -207,6 +207,16 @@ the four, despite the name.
 
 ## Next
 
+> **See also `docs/primer-effects-and-power.md` (2026-09-05).** It re-reads this
+> data through the shortcut bar and locates the power failure precisely: five of
+> six tasks are saturated, `edge_count` is the only one with headroom, and it is
+> also the cell whose `degree` bar is 1.00 -- so the arm with power is the
+> contaminated one, while `edge_count` x {`components`, `rwse`, `clustering`}
+> (bars 0.02-0.15) sits at n=30. It proposes that as the experiment to run, and
+> documents `qwen3-0.6b`'s off-by-one `node_count` artifact plus the GoT
+> desubstitution trap that corrupts any fresh `connected_nodes` analysis.
+
+
 1. Read the per-task output of `score_sweep.py`; the pooled table above hides
    which tasks are at ceiling and which have headroom.
 2. Decide between pooled analysis and a larger `--count` on the basis of effect
