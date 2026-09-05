@@ -358,13 +358,38 @@ them and add links to the chain rather than assuming three is enough.
   `scripts/run_sweep.py --batch-size N` (forwarded here as
   `GRAPHTALK_BATCH_SIZE=N sbatch cluster/sweep.sbatch <model>`), handling
   both the padding-side hazard above and the per-row-length recovery a
-  batch's ragged finish times require (see the function's docstring). This
-  was written and reasoned through on a dev machine with no `torch`
-  install and no GPU, so it is **unvalidated** -- run the
-  `analysis/budget-*.jsonl` reproduction check above for *both* model
-  families before trusting `--batch-size > 1` for a real sweep. Default
-  stays `--batch-size 1` (today's exact single-stream path), so nothing
-  about an ordinary invocation changes until this flag is opted into.
+  batch's ragged finish times require (see the function's docstring).
+
+  **Now validated on a GPU, and the answer is: do not use it.** Run with
+  `cluster/validate_batching.sbatch` (2026-09-04, L40S, `--batch-size 4`,
+  the 24 budget-reference prompts, both families):
+
+  | | gemma4-e4b | qwen3-8b |
+  |---|---|---|
+  | identical decoded text | 12/24 | 13/24 |
+  | identical extracted answer | -- | 21/24 |
+  | speedup over single-stream | -- | **1.44x** (0.15 -> 0.22 gen/s) |
+
+  The **3-5x above was optimistic**: the measured gain is 1.44x. And it is
+  not free. On `qwen3-8b` three of 24 answers changed, one of them flipping
+  a *correct* `cycle_check` response to a wrong one -- a ~4% perturbation of
+  the score, against a `degree`-vs-`none` effect size of only 6.5 points.
+  Paying 4% of your measurement to save 31% of your wall clock is a bad
+  trade, and the GoT `--count 500` replication was run single-stream for
+  exactly this reason.
+
+  To be fair to the implementation, this is **not** the padding bug feared
+  above: ten of eleven text mismatches agree on a long prefix (57-942
+  chars) before diverging, which is the floating-point non-associativity of
+  batched vs. unbatched matmuls flipping a near-tie token -- wrong padding
+  would have produced garbage from the first token everywhere. The code
+  looks correct; batching is simply not worth its cost *here*, at these
+  budgets and this effect size. It may be worth revisiting for a run where
+  throughput matters more than a few points of per-row fidelity.
+
+  Default stays `--batch-size 1` (today's exact single-stream path), so
+  nothing about an ordinary invocation changes until this flag is opted
+  into.
 - **Ask for a faster card.** The h100s are **not** reachable from `killable` —
   n-102 and t-100 live in `gpu-h100-killable`, so the `h100` term in the
   `--constraint` can never match while `--partition` is `killable`. Override the
