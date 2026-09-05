@@ -79,6 +79,40 @@ def test_mismatched_lengths_raise():
     significance.paired_permutation_test([1, 0], [1, 0, 1])
 
 
+# --- unpaired_permutation_test ----------------------------------------------
+
+
+def test_unpaired_identical_distributions_give_p_near_one():
+  group_a = [1, 2, 3, 4, 5, 6, 7, 8]
+  group_b = [1, 2, 3, 4, 5, 6, 7, 8]
+  result = significance.unpaired_permutation_test(group_a, group_b, n_perm=2_000, seed=1)
+  assert result["observed_diff"] == 0.0
+  assert result["p_value"] == 1.0
+
+
+def test_unpaired_clearly_separated_groups_give_a_tiny_p_value():
+  group_a = [0.0] * 20
+  group_b = [1.0] * 20
+  result = significance.unpaired_permutation_test(group_a, group_b, n_perm=20_000, seed=1)
+  assert result["p_value"] < 0.001
+
+
+def test_unpaired_empty_group_returns_p_one():
+  result = significance.unpaired_permutation_test([], [1, 2, 3])
+  assert result["p_value"] == 1.0
+  assert result["observed_diff"] == 0.0
+
+
+def test_unpaired_works_on_boolean_proportions():
+  # group_b has a much higher rate of 1s -- a difference of proportions is
+  # exactly a difference of means on 0/1 data.
+  group_a = [0, 0, 0, 0, 1]
+  group_b = [1, 1, 1, 1, 0]
+  result = significance.unpaired_permutation_test(group_a, group_b, n_perm=5_000, seed=2)
+  assert result["observed_diff"] == pytest.approx(0.6)
+  assert result["p_value"] < 0.3
+
+
 # --- cross-validation against the project's already-trusted exact test -----
 
 
