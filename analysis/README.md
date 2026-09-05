@@ -535,25 +535,76 @@ restricting to `zero_shot`-only data (see the retraction note in
 The tables above are `integer` node-naming only, matching this section's
 long-standing scope. The GOT (Game-of-Thrones node-naming) sweep has its
 own, separately-corrected `significance_report.got.csv` -- not reproduced
-as full tables here, to avoid this section doubling in length, but the
-headline result: `qwen3-8b`/`degree` (⚠️, delta +0.078, p=0.0018) reaches
-significance within its own model's five-condition family, but **does
-not** survive the whole-table correction (`bh_significant_global=False`
--- corrected here; an earlier version of this section overstated this as
-✅). Pooled `degree` is significant within its own family too (⚠️,
-p=0.0001), but as a "pooled across all models" row it is structurally
-excluded from `bh_significant_global`'s family altogether (built from the
-same underlying pairs as its sibling per-model rows, so not an
-independent test -- see "A second pass" above), not a row that was tested
-and failed. Both corroborated by an independent GEE fit
-(`qwen3-8b`/`degree` p=0.0007) --
-traced to the `edge_count` task specifically (+35.7pp on that task alone,
-0pp on `edge_existence`/`node_degree`), consistent with the `degree`
-primer being close to a worked shortcut for summing degrees. This is
-**not** yet pre-registered as confirmatory (see `--confirmatory-config` in
-Phase 1.4 above) -- read it as a real, GEE-corroborated, per-family signal
-worth a targeted follow-up sweep (Track 2), not a finding that has cleared
-this project's strongest test. `docs/sweep-findings.md`'s separate
+as full tables here, to avoid this section doubling in length.
+
+**Update: `qwen3-8b`/`degree` has since replicated and is now globally
+significant.** The version of this section below described the original
+`--count 30` finding (family-significant, GEE-corroborated, but not
+globally significant) and named it a candidate worth a pre-registered
+follow-up. That follow-up happened:
+`analysis/confirmatory_got_degree.json` pre-registered the cell, a fresh
+`--count 500` GoT sweep was generated (single-stream -- see "The batching
+baseline" below, batching was measured and rejected as too costly at this
+effect size), and `analysis/significance_report.count500.got.csv` is the
+result:
+
+|  | `--count 30` (original) | `--count 500` (replication) |
+|---|---|---|
+| clusters | 180 | 3,000 |
+| delta | +0.078 | +0.065 |
+| 95% CI | [+0.033, +0.122] | [+0.053, +0.076] |
+| p (permutation) | 0.0018 | 0.0001 |
+| `bh_significant_global` | False | **True** |
+
+Accuracy is 94.4% with `degree` against 87.7% without. The effect shrank
+from +7.8 to +6.5 points -- the expected winner's-curse correction for a
+cell selected because it looked good in the first sample -- but the CI
+tightened roughly 4x and stays well clear of zero. `--metric mae`
+corroborates independently on `node_degree` (+0.086, p=0.014, also
+`bh_significant_global=True`); `edge_count` MAE is directionally
+consistent but doesn't clear its own bar (p=0.050).
+
+**The verdict does not depend on the pre-registration mattering more than
+it should.** Re-run without `--confirmatory-config` (so every eligible
+row shares one undifferentiated ~100-test family instead of a family of
+one), `qwen3-8b`/`degree` is still globally significant -- at p=0.0001 it
+clears even that family's strictest rank-1 threshold. This is the check
+that rules out circularity: pre-registering a cell selected from the same
+data it's tested against would trivially "pass" by shrinking its own
+family to one, and the result holding up under the harsher, undifferentiated
+test is what makes it not that.
+
+**Scope, and its limits.** This supports "the `degree` primer helps
+`qwen3-8b`" specifically -- not "`degree` is the best primer" (the other
+four conditions still rest on 180 clusters each and are underpowered, not
+disconfirmed) and not "`degree` helps LLMs generally" (`gemma4-e4b`'s
++0.011 on this condition is indistinguishable from zero at any feasible
+sample size, per `recommend_count.py`). Only `qwen3-8b` was scaled up:
+`recommend_count.py` puts every other positive-effect cell's
+required count beyond the 500-graph published-split cap (`qwen3-8b`/
+`clustering` needs 3,245, `rwse` needs 23,520, `gemma4-e4b`/`degree`
+needs 81,120) -- the two cells that *do* fit under the cap both have
+negative deltas. Only `none`/`degree` were generated at `--count 500`
+(not all seven conditions): confirmed directly against the existing
+`--count 30` data that adding the other five doesn't move the
+`degree`-vs-`none` comparison at all, so the other five weren't worth the
+GPU time here.
+
+---
+
+*Original finding, kept for the historical record:* `qwen3-8b`/`degree`
+(⚠️, delta +0.078, p=0.0018) reached significance within its own model's
+five-condition family, but did not survive the whole-table correction
+(`bh_significant_global=False`). Pooled `degree` was significant within
+its own family too (⚠️, p=0.0001), but as a "pooled across all models" row
+was structurally excluded from `bh_significant_global`'s family altogether
+(built from the same underlying pairs as its sibling per-model rows, so
+not an independent test -- see "A second pass" above), not a row that was
+tested and failed. Both were corroborated by an independent GEE fit
+(`qwen3-8b`/`degree` p=0.0007) -- traced to the `edge_count` task
+specifically (+35.7pp on that task alone, 0pp on `edge_existence`/
+`node_degree`), consistent with the `degree` primer being close to a
+worked shortcut for summing degrees. `docs/sweep-findings.md`'s separate
 `naming_effect.py` comparison (renaming has a precise, ~nil effect on
 *overall* accuracy pooled across all seven conditions) is not contradicted
 by this -- that comparison averages away a `degree`-specific effect at a
