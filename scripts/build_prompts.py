@@ -52,9 +52,9 @@ def load_rows(config: str, count: int, split: str, cache: str) -> list[dict]:
 
 
 def build(count: int, conditions, styles, split: str, cache: str,
-          k_min: int, k_max: int) -> list[dict]:
+          k_min: int, k_max: int, tasks=scoring.TASKS) -> list[dict]:
   records = []
-  for task in scoring.TASKS:
+  for task in tasks:
     rows = load_rows(task, count, split, cache)
     for index, row in enumerate(rows):
       graph = graphqa.parse_graph(row["question"])
@@ -95,7 +95,7 @@ def build(count: int, conditions, styles, split: str, cache: str,
 
 
 def build_diverse(count: int, conditions, styles, k_min: int, k_max: int,
-                   seed: int = 1234) -> list[dict]:
+                   seed: int = 1234, tasks=scoring.TASKS) -> list[dict]:
   """Like `build`, but sources graphs from a balanced multi-algorithm pool
   (`diverse_corpus`) instead of the published (ER-only) zero_shot_test split.
 
@@ -115,7 +115,7 @@ def build_diverse(count: int, conditions, styles, k_min: int, k_max: int,
   from graphtalk import diverse_corpus
   pool = diverse_corpus.build_pool(count, seed=seed)
   records = []
-  for task in scoring.TASKS:
+  for task in tasks:
     rng = random.Random(seed)
     seen = collections.Counter()
     for algorithm, graph in pool:
@@ -142,7 +142,8 @@ def build_diverse(count: int, conditions, styles, k_min: int, k_max: int,
 
 
 def build_stratified(count: int, conditions, styles, split: str, cache: str,
-                      k_min: int, k_max: int, pool_size: int = 500) -> list[dict]:
+                      k_min: int, k_max: int, pool_size: int = 500,
+                      tasks=scoring.TASKS) -> list[dict]:
   """Like `build`, but selects the `count` *largest* graphs (by node
   count) out of a `pool_size`-row candidate pool per task, instead of
   simply the first `count` rows in split order.
@@ -177,7 +178,7 @@ def build_stratified(count: int, conditions, styles, split: str, cache: str,
   downstream frame or analysis.
   """
   records = []
-  for task in scoring.TASKS:
+  for task in tasks:
     candidates = load_rows(task, pool_size, split, cache)
     sized = []
     for index, row in enumerate(candidates):
@@ -214,7 +215,8 @@ def build_stratified(count: int, conditions, styles, split: str, cache: str,
 
 
 def build_named(count: int, conditions, styles, split: str, cache: str,
-                 k_min: int, k_max: int, node_naming_scheme: str) -> list[dict]:
+                 k_min: int, k_max: int, node_naming_scheme: str,
+                 tasks=scoring.TASKS) -> list[dict]:
   """Like `build`, but every prompt uses `node_naming_scheme`'s node names.
 
   Reuses every existing building block unchanged (`load_rows`,
@@ -223,7 +225,7 @@ def build_named(count: int, conditions, styles, split: str, cache: str,
   `node_naming` record field differ from `build`.
   """
   records = []
-  for task in scoring.TASKS:
+  for task in tasks:
     rows = load_rows(task, count, split, cache)
     for index, row in enumerate(rows):
       graph = graphqa.parse_graph(row["question"])
@@ -292,6 +294,16 @@ def main() -> None:
                            "per task to rank by graph size before taking the "
                            "--count largest (default 500, the published split's "
                            "per-task cap)")
+  parser.add_argument("--tasks", nargs="+", default=list(scoring.TASKS),
+                      choices=scoring.TASKS,
+                      help="which of scoring.TASKS to build prompts for "
+                           "(default: all 6, today's unchanged behavior). A "
+                           "targeted follow-up sized for one task (e.g. a "
+                           "pre-registered edge_count-only cell) should pass "
+                           "--tasks edge_count so the collected --count is "
+                           "spent entirely on the task the cell needs, not "
+                           "split 6 ways across tasks the follow-up doesn't "
+                           "test.")
   args = parser.parse_args()
 
   if args.graph_source in ("diverse", "stratified") and args.node_naming != "integer":
@@ -301,17 +313,18 @@ def main() -> None:
     )
   if args.graph_source == "diverse":
     records = build_diverse(args.count, args.conditions, args.styles,
-                            args.k_min, args.k_max)
+                            args.k_min, args.k_max, tasks=args.tasks)
   elif args.graph_source == "stratified":
     records = build_stratified(args.count, args.conditions, args.styles,
                                args.split, args.cache, args.k_min, args.k_max,
-                               pool_size=args.pool_size)
+                               pool_size=args.pool_size, tasks=args.tasks)
   elif args.node_naming == "integer":
     records = build(args.count, args.conditions, args.styles, args.split,
-                    args.cache, args.k_min, args.k_max)
+                    args.cache, args.k_min, args.k_max, tasks=args.tasks)
   else:
     records = build_named(args.count, args.conditions, args.styles, args.split,
-                          args.cache, args.k_min, args.k_max, args.node_naming)
+                          args.cache, args.k_min, args.k_max, args.node_naming,
+                          tasks=args.tasks)
   with open(args.out, "w") as handle:
     for record in records:
       handle.write(json.dumps(record) + "\n")

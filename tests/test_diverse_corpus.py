@@ -137,3 +137,12 @@ def test_build_diverse_smoke():
 
   # 7 graphs (1 per algorithm) x 6 tasks x 1 condition x 1 style.
   assert len(records) == 7 * len(scoring.TASKS)
+
+
+def test_build_diverse_tasks_param_restricts_which_tasks_are_built():
+  records = build_prompts.build_diverse(
+      7, conditions=["none"], styles=["zero_shot"], k_min=2, k_max=3,
+      tasks=["node_count"],
+  )
+  assert records
+  assert {r["task"] for r in records} == {"node_count"}
