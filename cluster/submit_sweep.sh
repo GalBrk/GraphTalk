@@ -35,6 +35,24 @@
 
 set -euo pipefail
 
+# Which interpreter runs the stage-1 build below. The repo's own docs call
+# `.venv/bin/python` (a uv venv, how this is set up on a laptop), but the TAU CS
+# cluster has no .venv at all -- `cluster/README.md`'s one-time setup builds a
+# conda env on the lab netapp instead, because home is a 6 GB quota. Falling
+# back rather than hardcoding either one keeps the same script working in both
+# places; GRAPHTALK_PYTHON overrides it explicitly.
+if [[ -n "${GRAPHTALK_PYTHON:-}" ]]; then
+  PYTHON="$GRAPHTALK_PYTHON"
+elif [[ -x .venv/bin/python ]]; then
+  PYTHON=".venv/bin/python"
+elif [[ -x /home/dcor/galbarak2/conda_envs/graphtalk/bin/python ]]; then
+  PYTHON="/home/dcor/galbarak2/conda_envs/graphtalk/bin/python"
+else
+  echo "FATAL: no interpreter found (.venv/bin/python, the cluster conda env)." >&2
+  echo "Set GRAPHTALK_PYTHON to the python that has this package installed." >&2
+  exit 1
+fi
+
 NODE_NAMING="integer"
 COUNT=30
 DRY_RUN=""
@@ -77,7 +95,7 @@ case "$NODE_NAMING" in
     if [[ ! -f "$PROMPTS_FILE" ]]; then
       echo "building $PROMPTS_FILE (login node, --node-naming got, --count $COUNT)"
       if [[ -z "$DRY_RUN" ]]; then
-        PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count "$COUNT" \
+        PYTHONPATH=. "$PYTHON" scripts/build_prompts.py --count "$COUNT" \
             --node-naming got --out "$PROMPTS_FILE"
       fi
     else

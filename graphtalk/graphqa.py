@@ -129,16 +129,43 @@ def normalize(answer: str) -> str:
   return answer.strip().rstrip(".").strip()
 
 
+# The rows API rejects `length` above 100 with a bare HTTP 422 and no
+# explanation of which parameter was at fault. Every call in this repo asked for
+# 30 or fewer until Track 2.1 recommended scaling a cell to the full 500-row
+# published split, so the ceiling went unnoticed: `--count 500` failed at the
+# first request having built nothing.
+_MAX_ROWS_PER_REQUEST = 100
+
+
 def fetch_rows(config: str, split: str, offset: int, length: int) -> list[dict]:
-  query = urllib.parse.urlencode(
-      {
-          "dataset": DATASET,
-          "config": config,
-          "split": split,
-          "offset": offset,
-          "length": length,
-      }
-  )
-  with urllib.request.urlopen(f"{ROWS_API}?{query}") as response:
-    payload = json.load(response)
-  return [r["row"] for r in payload["rows"]]
+  """Fetches up to `length` rows starting at `offset`, paginating as needed.
+
+  Pagination is here rather than in the caller because the 100-row cap is a
+  property of the API, not of any particular sweep: `scripts/build_prompts.py`
+  asks for "the first `count` rows of this task" and should not have to know
+  how many requests that takes.
+
+  Stops early when a page comes back short, which is the API's own signal that
+  the split is exhausted -- the published `zero_shot_test` splits hold exactly
+  500 rows each, so asking for more than that returns those 500 rather than
+  raising.
+  """
+  rows: list[dict] = []
+  while len(rows) < length:
+    page_length = min(_MAX_ROWS_PER_REQUEST, length - len(rows))
+    query = urllib.parse.urlencode(
+        {
+            "dataset": DATASET,
+            "config": config,
+            "split": split,
+            "offset": offset + len(rows),
+            "length": page_length,
+        }
+    )
+    with urllib.request.urlopen(f"{ROWS_API}?{query}") as response:
+      payload = json.load(response)
+    page = [r["row"] for r in payload["rows"]]
+    rows.extend(page)
+    if len(page) < page_length:
+      break
+  return rows
