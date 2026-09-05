@@ -184,12 +184,35 @@ diagnostic runs — budget for it before submitting anything small.
 `killable` spans two driver generations, and the env's torch is a **cu130** build
 that needs **580 or newer**:
 
-| node | driver | usable |
-|---|---|---|
-| n-602 | 595.84 | yes |
-| n-805 | 580.173.02 | yes |
-| t-806 | 580.105.08 | yes |
-| **n-802, n-803, n-804** | **535.183.01** (CUDA 12.2) | **no** |
+| node | card | driver | usable |
+|---|---|---|---|
+| n-601, n-602 | a6000 | 595.84 (n-602) | yes |
+| n-805 | l40s | 580.173.02 | yes |
+| t-806 | l40s | 580.105.08 | yes |
+| n-502, n-503 | a5000 | 580+ | yes |
+| **n-802, n-803, n-804** | l40s | **535.183.01** (CUDA 12.2) | **no** |
+| **n-501** | a5000 | **535.x** (CUDA 12.2) | **no** |
+
+**`n-501` is on this list and is easy to miss** -- it is an a5000 node, so it is
+not caught by thinking of the bad nodes as "the l40s ones". It cost three
+separate job failures on 2026-09-05 before it was identified. The default
+`--constraint=a6000|l40s|h100` spans both driver generations, so **every
+submission is a dice roll**; the driver guard in `sweep.sbatch` turns that into a
+fast, visible failure (~90 s, non-zero exit) rather than a silent CPU fallback,
+but it does not prevent it. Two ways to make placement deterministic:
+
+```bash
+# pin to nodes known good for the cu130 env
+sbatch --constraint=a6000 ... cluster/sweep.sbatch <model>
+
+# or use the cu126 build, which runs on BOTH driver generations
+sbatch --export=ALL,GRAPHTALK_ENV=graphtalk-cu126 ... cluster/sweep.sbatch <model>
+```
+
+Pinning to `a6000` keeps one card type and one CUDA build across an arm, which
+matters when the arm is a headline result; `graphtalk-cu126` places faster
+because it can use every node. Note `a6000` is only n-601 and n-602 (16 GPUs,
+shared cluster-wide), so it can queue.
 
 On an old node `device_map="auto"` finds no usable CUDA device and puts the model
 on the **CPU** — with no error and no warning, at roughly a fortieth of the
@@ -276,6 +299,45 @@ almost exactly the time that reading all 27.5 GB from scratch at the contended r
 predicts. Whatever the reason -- NFS client caching, or eviction under the other
 jobs on the node -- budget a restart as if nothing were cached, and pick the node on
 current load rather than on history.
+
+## `--array` sets the shard COUNT from the number of tasks, not the highest index
+
+`sweep.sbatch` derives sharding from Slurm's array variables:
+
+```sh
+SHARD="${SLURM_ARRAY_TASK_ID:-0}"
+NSHARDS="${SLURM_ARRAY_TASK_COUNT:-1}"
+```
+
+`SLURM_ARRAY_TASK_COUNT` is **how many tasks the array has**, not the largest id.
+So resubmitting three failed shards of a five-way split with `--array=1,2,4`
+gives `NSHARDS=3`, and each task then strides `records[i::3]` instead of
+`records[i::5]`. The output is named `shard1of3.jsonl`, generates the **wrong
+subset**, and **overlaps rows the surviving `*of5` shards already own** -- so a
+later pooled scoring double-counts them. (The `shard4of3` task does fail loudly,
+because `run_sweep.py` rejects `--shard 4 --num-shards 3`, but 1 and 2 run
+happily and produce plausible-looking wrong data.)
+
+This happened on 2026-09-05: 28 rows were generated wrongly-strided, 12 of them
+duplicating rows owned by `shard0of5`/`shard3of5`.
+
+To resubmit a subset of shards, pass the count explicitly rather than relying on
+an array:
+
+```bash
+for s in 1 2 4; do
+  sbatch --job-name=ec8b-s${s} --constraint=a6000 \
+    --export="ALL,SLURM_ARRAY_TASK_ID=${s},SLURM_ARRAY_TASK_COUNT=5,GRAPHTALK_PROMPTS=...,GRAPHTALK_RUN_TAG=..." \
+    cluster/sweep.sbatch qwen3-8b
+done
+```
+
+**Also prefer an ODD shard count.** The prompt file alternates conditions within
+each task block, so with 2 conditions an even `--array` count preserves stride
+parity: every even shard generates only `none` and every odd shard only the
+treatment. Nothing is lost -- all rows are still produced -- but partial progress
+is unpaired, so any mid-run comparison is across different instance sets and
+meaningless. An odd count mixes both conditions into every shard.
 
 ## Memory is per-model, and it decides whether you are scheduled at all
 

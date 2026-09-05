@@ -6,10 +6,13 @@ live in `graphtalk/hf_backend.py`, which the cluster job imports and nothing els
 does.
 
 Two families at two sizes each, per the proposal: a within-family capacity
-comparison and a cross-family check. All queried greedily -- the proposal fixes
-temperature at 0, which in `transformers` means `do_sample=False` rather than
-`temperature=0.0`, since a literal zero temperature is a division by zero in the
-sampling path.
+comparison and a cross-family check. Plus `qwen3-0.6b`, added afterwards and
+outside the proposal's grid, to put a point below the ceiling the first sweep ran
+into -- it extends the Qwen ladder to a third size rather than opening a third
+family, so the within-family comparison stays a comparison. All queried greedily
+-- the proposal fixes temperature at 0, which in `transformers` means
+`do_sample=False` rather than `temperature=0.0`, since a literal zero temperature
+is a division by zero in the sampling path.
 """
 
 import dataclasses
@@ -82,6 +85,77 @@ MODELS = {
                   "AutoModelForCausalLM", 48,
                   {"enable_thinking": False}),
 
+        # The headroom probe. Every model above sits at 83-100% pooled exact
+        # match, and `docs/sweep-findings.md` shows the consequence: all 144
+        # McNemar cells have fewer than 10 discordant pairs, and for
+        # `gemma4-12b` that is a ceiling, not a sample size -- there is nothing
+        # left for a primer to flip. That document's "Target the headroom" names
+        # harder instances as the fix; a weaker model is the other lever on the
+        # same problem, and much the cheaper one, since it reuses the existing
+        # prompt file rather than requiring a new corpus.
+        #
+        # Qwen3 rather than the smallest Gemma available. The choice matters for
+        # two reasons the size alone does not capture:
+        #   - It extends a *within-family* capacity ladder, 14B -> 8B -> 0.6B,
+        #     which is the comparison the proposal's design is built around. A
+        #     small model from another family (or another Gemma generation) would
+        #     be a fifth unpaired point instead.
+        #   - It has a native thinking mode, so the `-think` arm below exists for
+        #     it on the same terms as for every other spec. A model without one
+        #     could only ever fill half the design's rows.
+        #
+        # ~1.2 GB of bf16 weights, so `min_vram_gb` is far under the smallest
+        # card in sweep.sbatch's constraint set; it is recorded for consistency
+        # with the specs above, not because any card in `killable` could fail it.
+        #
+        # What this spec cannot tell you on its own: whether the model is weak at
+        # *graph reasoning* or merely weak at *emitting a parseable answer*.
+        # `scoring.extract_answer` counts an unreadable response as `None`,
+        # separately from a wrong one -- read the parse rate before reading the
+        # accuracy, because at this size the two failure modes are easy to
+        # confuse and only one of them is about primers.
+        ModelSpec("qwen3-0.6b", "Qwen/Qwen3-0.6B", "qwen3", "0.6B",
+                  "AutoModelForCausalLM", 4,
+                  {"enable_thinking": False}),
+
+        # The middle rung. `qwen3-0.6b`'s probe left two of six tasks unusable
+        # for opposite reasons: `edge_count` floored at 0.08 in the plain arm,
+        # and `node_count` was dominated by an off-by-one that is a labelling
+        # error rather than a graph-reasoning one (the model reports the highest
+        # node label, N-1, instead of |V|). That artifact is size-dependent --
+        # 0% on graphs under 10 nodes, 93% on 16+ -- so it reads as a counting
+        # capacity limit rather than anything about primers, and it does not
+        # appear at all in the 8B or 14B. 1.7B is the next rung up the same
+        # ladder and the cheapest test of whether clearing that limit restores
+        # `node_count` as an interpretable cell while keeping the headroom that
+        # made the 0.6B worth running.
+        ModelSpec("qwen3-1.7b", "Qwen/Qwen3-1.7B", "qwen3", "1.7B",
+                  "AutoModelForCausalLM", 8,
+                  {"enable_thinking": False}),
+
+        # A newer generation, and deliberately a *pair* candidate rather than a
+        # fifth unpaired point: Qwen3.5 (Feb 2026) is a different family from
+        # Qwen3, so one size of it buys no within-family comparison. This spec
+        # exists to answer one question before any of that is worth building
+        # out -- does a generation-newer small model keep the headroom, or does
+        # it hand back the ceiling that made this whole exercise necessary?
+        # qwen3-8b already scores 0.997 on node_count and edge_existence, so
+        # that risk is real and 2B is the conservative size to test it at.
+        #
+        # `AutoModelForImageTextToText`, not the causal class: Qwen3.5
+        # checkpoints declare `Qwen3_5ForConditionalGeneration` and are
+        # multimodal even at 2B, exactly the situation the Gemma 4 specs above
+        # document. Verified supported by the env's transformers 5.15.0.
+        #
+        # Key is `qwen35-2b`, not `qwen3.5-2b`. The key becomes a filename
+        # component (`runs/<key>.jsonl`) and this repo delimits run tags and
+        # shard suffixes with dots (`.probe100.`, `.shard0of6.`). `qwen3-0.6b`
+        # already carries one dot harmlessly, but a second in the family
+        # position is where that convention would start to be ambiguous.
+        ModelSpec("qwen35-2b", "Qwen/Qwen3.5-2B", "qwen35", "2B",
+                  "AutoModelForImageTextToText", 12,
+                  {"enable_thinking": False}),
+
         # The thinking arm. Same checkpoints, same prompt file, same instances --
         # the only difference is that the model is allowed its native reasoning
         # channel, so this is comparable row-for-row against the specs above.
@@ -103,6 +177,28 @@ MODELS = {
                   {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
         ModelSpec("qwen3-14b-think", "Qwen/Qwen3-14B", "qwen3", "14B",
                   "AutoModelForCausalLM", 48,
+                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
+
+        # The probe's thinking twin. Budget deliberately left at the shared
+        # THINK_MAX_NEW_TOKENS rather than tuned down for a small model: the
+        # arms are compared row for row, and `budget`'s docstring is explicit
+        # that a per-model budget change makes new rows incomparable with the
+        # ones already on disk.
+        #
+        # Expect this arm to truncate far more than the larger ones do. Small
+        # models repeat rather than stop, and truncation has impersonated a
+        # finding in this project three separate times (see "Truncation
+        # impersonates a finding" in docs/sweep-findings.md) -- a capped response
+        # still parses, so it scores as a confident wrong answer rather than as
+        # missing data. Filter on `hit_cap` before comparing anything here.
+        ModelSpec("qwen3-0.6b-think", "Qwen/Qwen3-0.6B", "qwen3", "0.6B",
+                  "AutoModelForCausalLM", 4,
+                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
+        ModelSpec("qwen3-1.7b-think", "Qwen/Qwen3-1.7B", "qwen3", "1.7B",
+                  "AutoModelForCausalLM", 8,
+                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
+        ModelSpec("qwen35-2b-think", "Qwen/Qwen3.5-2B", "qwen35", "2B",
+                  "AutoModelForImageTextToText", 12,
                   {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
     )
 }
