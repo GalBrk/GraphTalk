@@ -53,7 +53,7 @@ sbatch cluster/sweep.sbatch gemma4-12b
 
 # 3. score, back on the laptop
 PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500 --json shortcuts.json
-PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.json
+PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v '\.got\.') --shortcuts shortcuts.json
 ```
 
 Step 2 is written as one job per model for readability. On the TAU cluster a

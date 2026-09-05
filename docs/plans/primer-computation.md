@@ -218,7 +218,7 @@ TensorFlow 2.20 / tf-keras / tensorflow-gnn combination that is easy to disturb.
   > **That counter was wrong, and this requirement is the one the original wording
   > failed.** "No *new* numeral" is not the same as "no claim". `Node N has <n-1>
   > other nodes` sits under the same `has` verb the `degree` condition uses, and
-  > models read it as a degree statement: `analysis/failure_sample.csv` catches 8 of
+  > models read it as a degree statement: `analysis/superseded/failure_sample.csv` catches 8 of
   > 9 sampled `filler` rows deriving a complete graph K_n from it. The bullet above
   > predicted the consequence precisely — a drop in accuracy that cannot be
   > distinguished from a length effect — and that drop was then reported as a
@@ -478,7 +478,7 @@ tracked sweep in `runs/*.jsonl` was actually generated with -- but it was replac
 real sweep responses showed models sometimes misreading it as a connectivity claim (a
 filler-primed graph read as a clique, since `n-1` is exactly the degree every node has in
 a complete graph, and the phrase sat right after the same `has` verb `degree` uses). The
-evidence is in `analysis/failure_sample.csv`, where 8 of the 9 sampled `filler` rows show
+evidence is in `analysis/superseded/failure_sample.csv`, where 8 of the 9 sampled `filler` rows show
 the misreading in the model's own words -- `gemma4-e4b-think`: *"If D_i = 12 for all 13
 nodes, the graph must be a complete graph K_13"*; `gemma4-12b-think`: *"Is it possible
 that 'Node 0 has 8 other nodes' means it's connected to all 8 other nodes?"*. What

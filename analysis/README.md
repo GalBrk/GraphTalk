@@ -11,13 +11,18 @@ should not have to spend again to check the claim.
 | `budget-qwen3-8b.jsonl` | the same 24 prompts on Qwen3-8B with `enable_thinking=False` |
 | `budget-qwen3-8b-THINKING.jsonl` | three of those rows with thinking **on**, kept as the before-picture: 1179 mean tokens on a `node_count` question the same model answers in 105 without |
 | `truncated_keys.json` | historical record of the **271** thinking-arm rows that were hand-labelled non-terminating. No longer consulted: every tracked row now carries `hit_cap`. Kept because it is the provenance of a claim, and because two of its rows turn out to have terminated. |
-| `sweep_frame.csv` | one row per scored response over the whole tracked sweep, 10,080 rows. |
-| `failure_sample.csv` | the stratified manual-inspection sample, with full response text. **Stale — do not cite; see below.** |
-| `significance_report.csv`/`.txt` | `scripts/check_significance.py --metric both` (the default)'s pooled permutation/bootstrap/BH-corrected results, one row per (arm, group, metric, condition) -- `exact`, `mae`, and the thinking arm's `non_terminating` all in one file, sharing **one** multiplicity-correction budget. See "Phase 1.1: multiplicity & scope fixes" below. |
-| `significance_report_mae.csv` | `check_significance.py --metric mae`'s own, **separately**-corrected reading of the same `mae` rows -- its `bh_significant_global` answers "does this survive correction among just the 72 `mae` tests", a different (weaker-family, easier-to-clear) question than `significance_report.csv`'s "does this survive correction among all 192 `exact`+`mae`+`non_terminating` tests". The two can and do disagree on the same cell (see "Phase 1.1" below) -- read whichever question you're actually asking. Costs no GPU time to regenerate; reuses `sweep_frame.csv`. |
-| `significance_report_exact_by_style.csv` | accuracy significance re-scoped to one style/arm at a time -- the main sweep's own accuracy plus the thinking arm's own accuracy. Now that `zero_shot` is the only prompt style, its "by style" scoping is a historical name; kept because it also carries the thinking-arm breakdown. **Stale — predates the `all`-exclusion/unified-correction fix below; do not cite until regenerated (planned for Phase 1.4's checked-in scoped-comparison script).** |
-| `significance_report_mae_by_style.csv` | the `mae` metric re-scoped to the main sweep and the thinking arm. **Stale — same caveat as above.** |
-| `significance_report_exact_zeroshot_and_thinking_mde.csv` | simulated minimum-detectable-effect for every non-significant main-sweep and thinking-arm accuracy cell. **Stale — same caveat as above.** |
+| `sweep_frame.csv`/`.got.csv` | one row per scored response over the whole tracked sweep, 10,080 rows. Unaffected by the defects below — they are all downstream of this file. |
+| `confirmatory_got_degree.json` | `--confirmatory-config` for a planned follow-up. |
+| `non_termination_sample.csv` | inspection sample of non-terminating responses. |
+
+**Every significance and cross-check artifact has moved to
+[`analysis/superseded/`](superseded/)** — the two `significance_report`
+CSVs, `.txt`, `_mae.csv`, the three `*_by_style`/`_mde` CSVs, both
+`glmm_report`s, and `failure_sample.csv`. Four defects in the code that
+wrote them; that directory's README lists them. **Numbers quoted below came
+from those files** — notably, pooled `rwse` no longer reaches significance
+and the whole-table-significant count is 0, not 1. Scripts still default to
+writing into `analysis/`, so a regenerated report lands here, not there.
 
 ## The two CSVs, and what is in them now
 

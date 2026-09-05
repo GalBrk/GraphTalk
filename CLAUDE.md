@@ -40,10 +40,12 @@ uv run --no-sync pytest -q
 ```
 
 Always use `--no-sync` — a plain `uv run` re-syncs to the default dependency set
-and uninstalls the optional `pipeline` extras. 345 tests total, plus 23 more in
-`tests/test_node_naming.py` (368). On the cluster, `pytest -q` must report
-exactly that many passed; a different number means the env is wrong, not the
-code.
+and uninstalls the optional `pipeline` extras. `tests/` collects **544** (27 of
+them in `tests/test_node_naming.py`), plus the vendored
+`talk_like_a_graph/*_test.py` suites, which need the `pipeline` extra. The old
+"345 / 368" figures in this file were several rounds of test-writing out of
+date. Treat a *drop* from the current count as an environment problem; the
+count itself rises whenever tests are added.
 
 Run a single test file or test:
 
@@ -74,7 +76,7 @@ sbatch cluster/sweep.sbatch gemma4-12b
 
 # 3. score, back on the laptop
 PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500 --json shortcuts.json
-PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.json
+PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v '\.got\.') --shortcuts shortcuts.json
 ```
 
 Check statistical significance beyond `score_sweep.py`'s per-cell McNemar (that test is
@@ -82,7 +84,7 @@ underpowered at 30 pairs/cell — see `docs/sweep-findings.md`). Needs the `anal
 (`uv pip install -e ".[dev,analysis]"`) and the joined sweep table built first:
 
 ```bash
-PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py --responses runs/*.jsonl \
+PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py --responses $(ls runs/*.jsonl | grep -v '\.got\.') \
     --shortcuts shortcuts.json --truncated-keys analysis/truncated_keys.json
 PYTHONPATH=. .venv/bin/python scripts/check_significance.py --frame analysis/sweep_frame.csv
 ```

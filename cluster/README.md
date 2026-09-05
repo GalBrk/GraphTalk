@@ -81,7 +81,7 @@ python scripts/build_prompts.py --count 30      # writes 1260 prompts
 sbatch --exclude=n-801 --mem=32G cluster/sweep.sbatch qwen3-8b
 
 # stage 3, on the login node
-python scripts/score_sweep.py --responses runs/*.jsonl
+python scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v '\.got\.')
 ```
 
 Smoke-test first. Passing a second argument runs that many generations and

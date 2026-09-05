@@ -29,6 +29,19 @@ difficulty and is shown here only for orientation — read the per-task table fr
 > `3545662`. One of the three patterns below did not survive -- it turned out to be the
 > length control misbehaving rather than a property of primers; see `filler`.
 
+> **Stale in 14 of 16 cells** — carried forward unchanged when the 30 Aug
+> extraction fixes rescored 500+ rows. Correct values from
+> `analysis/sweep_frame.csv` (max error 6.7pp, `qwen3-14b`/`filler`):
+>
+> | model | `none` | `degree` | `all` | `filler` |
+> |---|---|---|---|---|
+> | gemma4-e4b | 96.1% | 97.2% | 96.1% | 96.7% |
+> | gemma4-12b | 98.9% | **100.0%** | 99.4% | 97.2% |
+> | qwen3-8b | 90.0% | 92.8% | 91.1% | 85.0% |
+> | qwen3-14b | 88.9% | 93.3% | 90.0% | 88.9% |
+>
+> The direction below still holds; the sizes do not.
+
 | model | `none` | `degree` | `all` | `filler` |
 |---|---|---|---|---|
 | gemma4-e4b | 95.6% | 96.1% | 95.6% | 96.1% |
@@ -54,7 +67,7 @@ Two patterns hold across every model:
   the control exists to isolate." The old wording was cleared of that charge three
   separate times, on the argument that `Node N has <n-1> other nodes` introduces no
   numeral the `none` arm lacks. That argument was wrong.
-  `analysis/failure_sample.csv` shows models reading the numeral as a degree claim
+  `analysis/superseded/failure_sample.csv` shows models reading the numeral as a degree claim
   and deriving a complete graph K_n from it in 8 of 9 sampled rows — the placebo the
   design warned against, produced by the safeguard that was supposed to prevent it.
 
@@ -65,6 +78,12 @@ Two patterns hold across every model:
   below `none`) and is worth checking; the large uniform effect does not. See
   §"Non-termination responds to the primer", where the same reversal shows up on
   an independent measure.
+
+  > **The `+0.6` has the wrong sign: recomputed, `filler` − `none` is
+  > −1.53pp** (−1.67 / +0.56 / 0.00 / −5.00 by model). Re-scoped from "eight
+  > arms" to "four models" without recomputing. This one matters — "`filler`
+  > is inert" is what makes the length control valid. The `qwen3-8b` residual
+  > is 5.0pp, not 7.7.
 
 Chain-of-thought in this project is measured by the thinking arm against the
 plain arms, both at `zero_shot` — see below.
@@ -282,7 +301,7 @@ to see clearly, `filler` is 15.0% against `none` at 24.4% and `clustering` at 26
 
 The mechanism in that original explanation was wrong because its premise was wrong.
 `Node N has <n-1> other nodes in this graph` is not padding — it is a false
-statement about the graph, and `analysis/failure_sample.csv` catches models spending
+statement about the graph, and `analysis/superseded/failure_sample.csv` catches models spending
 their budget trying to reconcile it (*"If D_i = 12 for all 13 nodes, the graph must
 be a complete graph K_13"*). What raised non-termination was the contradiction, not
 the length. Remove the contradiction and the condition becomes the cheapest of the
@@ -459,7 +478,7 @@ Full writeup in `docs/DATA.md`; reproduce with
 
 **Round two.** Both boundaries called out above turned out to be worth
 closing, plus two more real shapes surfaced by reading
-`analysis/failure_sample.csv` directly: `"None"` glued onto a sentence with
+`analysis/superseded/failure_sample.csv` directly: `"None"` glued onto a sentence with
 no separator (`"...the list is empty.None"`) and the token wrapped in
 markdown emphasis or a trailing parenthetical (`"**A: None**"`, `"A: [] (or
 None, depending on expected format for an empty list)"`). Checked for false

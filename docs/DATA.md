@@ -253,7 +253,7 @@ tradeoffs, not oversights, at the time.
 
 ### Round two, recorded 2026-08-30
 
-Both "known gaps" above turned out to be worth closing. `analysis/failure_sample.csv`
+Both "known gaps" above turned out to be worth closing. `analysis/superseded/failure_sample.csv`
 (this file now exists and was read directly, unlike the never-present
 `false_examples.csv` earlier sessions were asked about) surfaced the `[]`
 case again plus two more real shapes the original fix missed entirely:
@@ -395,7 +395,7 @@ node 7 is 2." read as `['7', '2']`, returning `7` instead of the gold `2`.
 
 ### The prediction, staked before the re-score
 
-A sample of 23 `wrong`/`unparsed` rows (`analysis/failure_sample.csv`,
+A sample of 23 `wrong`/`unparsed` rows (`analysis/superseded/failure_sample.csv`,
 excluding `non_terminating`) found this bug in all 11 sampled `node_degree`
 rows and both sampled `node_count` rows — 0 in `edge_count` (5 rows, all
 genuinely wrong model arithmetic) or `cycle_check` (1 row, genuine reasoning

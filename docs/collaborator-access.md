@@ -36,7 +36,7 @@ source /home/dcor/galbarak2/anaconda3/etc/profile.d/conda.sh
 conda activate /home/dcor/galbarak2/conda_envs/graphtalk-cu126
 
 cd $REPO
-python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.json
+python scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v '\.got\.') --shortcuts shortcuts.json
 ```
 
 `graphtalk` is a cu130 build and needs driver 580+, so it only runs on n-602,
