@@ -143,10 +143,23 @@ def build_diverse(count: int, conditions, styles, k_min: int, k_max: int,
 
 def build_stratified(count: int, conditions, styles, split: str, cache: str,
                       k_min: int, k_max: int, pool_size: int = 500,
-                      tasks=scoring.TASKS) -> list[dict]:
+                      tasks=scoring.TASKS,
+                      node_naming_scheme: str = "integer") -> list[dict]:
   """Like `build`, but selects the `count` *largest* graphs (by node
   count) out of a `pool_size`-row candidate pool per task, instead of
   simply the first `count` rows in split order.
+
+  `node_naming_scheme` (Phase 4b, `docs/plans/run_improved_tests.md`):
+  `"integer"` (default, unchanged) or a `graphtalk.node_naming.NAMINGS`
+  value, mirroring `build_named`. Safe to add mechanically rather than by
+  guesswork: `node_naming.build_name_map` assigns names by list position
+  keyed only on `graph.number_of_nodes()` (`{i: GOT_NAMES[i] for i in
+  range(n)}` -- verified by reading `build_name_map`'s own source, not
+  assumed from its docstring), with no dependency on which rows were
+  selected or in what order -- so a graph selected here by size ranking
+  gets exactly the same name assignment it would have gotten via `build`/
+  `build_named`'s first-N selection. Only the selection step differs; naming
+  is identical either way.
 
   Track 2.2: near-ceiling models (`gemma4-12b`/`gemma4-e4b` in the main
   sweep, per `analysis/README.md`'s "Current significance results")
@@ -196,21 +209,35 @@ def build_stratified(count: int, conditions, styles, split: str, cache: str,
       task_description = row["task_description"]
       if task == "edge_existence":
         task_description = graphqa.reword_edge_existence(task_description)
+      name_map = (
+          node_naming.build_name_map(graph, node_naming_scheme)
+          if node_naming_scheme != "integer" else None
+      )
       for condition in conditions:
         for style in styles:
-          records.append({
+          if name_map is None:
+            prompt = prompts.build_prompt(
+                graph, condition, task_description,
+                style=style, k_min=k_min, k_max=k_max,
+            )
+          else:
+            prompt = node_naming.build_named_prompt(
+                graph, condition, task_description, name_map,
+                style=style, k_min=k_min, k_max=k_max,
+            )
+          record = {
               "instance_id": f"{task}/stratified/{index}",
               "task": task,
               "condition": condition,
               "style": style,
-              "prompt": prompts.build_prompt(
-                  graph, condition, task_description,
-                  style=style, k_min=k_min, k_max=k_max,
-              ),
+              "prompt": prompt,
               "gold": gold,
               "nodes": graph.number_of_nodes(),
               "edges": graph.number_of_edges(),
-          })
+          }
+          if node_naming_scheme != "integer":
+            record["node_naming"] = node_naming_scheme
+          records.append(record)
   return records
 
 
@@ -287,8 +314,10 @@ def main() -> None:
                            "skew toward larger graphs' finding suggests larger "
                            "graphs yield more discordant pairs per graph "
                            "collected; see scripts/validate_stratified_sampling.py "
-                           "before spending GPU time on this. diverse/stratified "
-                           "are only supported with --node-naming integer.")
+                           "before spending GPU time on this. diverse is only "
+                           "supported with --node-naming integer; stratified "
+                           "supports every --node-naming scheme (Phase 4b, "
+                           "docs/plans/run_improved_tests.md).")
   parser.add_argument("--pool-size", type=int, default=500,
                       help="--graph-source stratified only: candidate pool size "
                            "per task to rank by graph size before taking the "
@@ -306,10 +335,9 @@ def main() -> None:
                            "test.")
   args = parser.parse_args()
 
-  if args.graph_source in ("diverse", "stratified") and args.node_naming != "integer":
+  if args.graph_source == "diverse" and args.node_naming != "integer":
     raise NotImplementedError(
-        f"--graph-source {args.graph_source} only supports --node-naming "
-        f"integer for now"
+        f"--graph-source diverse only supports --node-naming integer for now"
     )
   if args.graph_source == "diverse":
     records = build_diverse(args.count, args.conditions, args.styles,
@@ -317,7 +345,8 @@ def main() -> None:
   elif args.graph_source == "stratified":
     records = build_stratified(args.count, args.conditions, args.styles,
                                args.split, args.cache, args.k_min, args.k_max,
-                               pool_size=args.pool_size, tasks=args.tasks)
+                               pool_size=args.pool_size, tasks=args.tasks,
+                               node_naming_scheme=args.node_naming)
   elif args.node_naming == "integer":
     records = build(args.count, args.conditions, args.styles, args.split,
                     args.cache, args.k_min, args.k_max, tasks=args.tasks)

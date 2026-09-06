@@ -649,6 +649,25 @@ GOT, not a GOT-specific artifact of Game-of-Thrones names specifically.
 content-free primer *hurting* accuracy) the pooled-across-task view never
 surfaced on its own.
 
+**Relabeled claim (`docs/plans/run_improved_tests.md` Phase 5, after its
+own shortcut audit): none of these three test "the primer helps graph
+reasoning."** `analysis/primer_task_shortcut_audit.md` traces all three
+to an exact, code-verified shortcut -- `degree`/`edge_count` is
+sum-of-stated-degrees/2, and `filler`/`node_count` is counting the
+primer's own one-sentence-per-node rendering, exactly the same mechanism
+`degree`/`node_count` and `clustering`/`rwse`/`node_count` share. The
+correct claim these three cells support is **"the model executes a
+fully-handed arithmetic/counting shortcut more (or less) reliably under
+this primer"** -- a real, legitimate, still-interesting question (and one
+that connects to the difficulty-scaling hypothesis in
+`docs/plans/scale-vs-topology-investigation.md`: does execution
+reliability on a handed shortcut degrade with graph size the same way
+manual counting does?), but a different claim from "the primer improved
+reasoning about the graph," and this is now the **lower-priority** track
+-- see Phase C below for why: the higher-priority, actual-reasoning
+screen (`shortcut_flag == "none"` cells) found no candidate worth
+following up on yet at the current sample size.
+
 Three pre-registered configs commit these cells now, before any new data
 exists to select them with hindsight -- one file per cell rather than one
 shared file, because `--confirmatory-config` entries key on `(arm, model,
@@ -671,6 +690,55 @@ confirmatory, not just the one being tested. Same discipline as
 `analysis/confirmatory_got_degree.json`'s already-completed replication
 above. Sizing and generating the follow-up data these configs will score
 is Track 2 (below) / Phase C, not yet done.
+
+### Policy: per-task granularity, and two separate naming-scheme families
+
+A policy decision made as part of `docs/plans/run_improved_tests.md`
+(Phase 3), motivated directly by the `qwen3-14b`/`degree`/`edge_count`
+discovery above -- a real, corroborating-across-both-schemes effect the
+pooled-across-6-tasks view alone would never have surfaced:
+
+- **Per-task is the primary granularity for the `exact` metric going
+  forward; pooled-across-tasks is a secondary summary, not the
+  significance decision.** `_report`'s pooled row stays (it's still the
+  right view for "does this condition help this model at all, on
+  average"), and `task_delta_min`/`max` on it stays a useful heterogeneity
+  hint, but a claim that a primer helps or hurts on a *specific* task
+  should rest on `_report_exact_per_task`'s row for that task, not on the
+  pooled row alone -- the pooled test can both hide a real task-specific
+  effect (this session's whole motivating case) and, in principle,
+  overstate one (a single strong task dragging a pooled average that
+  reads as "the condition helps" when five of six tasks are flat).
+- **The confirmatory family is exactly the pre-registered cells above** --
+  today `got`/`qwen3-8b`/`degree`/`edge_count` (already confirmed) plus
+  the three cells in "Phase A1 candidates" -- **corrected separately from
+  everything else**, which stays exploratory (hypothesis-generating,
+  reported but not treated as confirmed) until it is itself pre-registered
+  and replicated the same way.
+- **GOT and integer naming stay two separate multiplicity families, never
+  pooled into one BH pass.** `task_scoped_screen_comparison.md`
+  (Phase 2, above) is read *alongside* each scheme's own correction as
+  corroborating evidence, not merged into a combined family that would
+  silently double the effective sample size behind one p-value pair of
+  schemes never actually shared.
+- **A significant per-task cell is not automatically evidence the primer
+  helps graph reasoning.** `analysis/primer_task_shortcut_audit.md`
+  (added when this plan's own Phase 1 was extended to require it) traces
+  every `(condition, task)` pair to whether the primer text mechanically
+  determines the answer (`shortcut_flag`: `shortcut`/`partial`/`none`).
+  Every candidate this document has found so far is `shortcut`-flagged --
+  real evidence about arithmetic/counting-shortcut execution reliability,
+  not reasoning. A claim framed as "the primer improves reasoning" needs a
+  `shortcut_flag == "none"` cell specifically; see Phase C's reprioritized
+  screen, which came back null at the current sample size.
+
+This directly supersedes Phase A2 of the *other* active plan in this
+repo's history (`git log`'s `4bb2063`/`93ec8a4` commits), which floated
+combining `integer` and `got` into one shared BH family as a next step --
+this policy decision says explicitly not to do that, for the reason
+above. Corroboration across schemes is valuable exactly because the two
+families stay independent; pooling them would blur that signal rather
+than strengthen it.
 
 ### Retracted: "What holds up without `zero_cot`"
 
@@ -821,7 +889,27 @@ rather than requesting a non-published split size. Validate
 `--batch-size` first (above); pre-register with
 `analysis/confirmatory_got_degree.json` before generating.
 
-## Phase C: three follow-ups sized and ready to submit
+## Phase C: three arithmetic-execution follow-ups sized and ready to submit (lower priority)
+
+**Reprioritized by `docs/plans/run_improved_tests.md`'s shortcut audit.**
+The three cells below all test arithmetic/counting-shortcut execution
+reliability, not graph reasoning (see the relabel note in "Phase A1
+candidates" above) -- kept, not discarded, because that is still a real
+question, but no longer the flagship track. The higher-priority track --
+screening `analysis/task_scoped_screen.got.csv`/`.csv`'s `shortcut_flag
+== "none"` cells for an actual reasoning candidate -- was run and came
+back **null**: at the current `--count 30`, not one `none`-flagged cell
+in either scheme clears even the loose `p <= 0.10` screen. The closest is
+`gemma4-e4b`/`components`/`node_degree` (GOT, p=0.126, delta -0.133) and
+its integer-scheme analogue `gemma4-e4b`/`components`/`node_count`
+(p=0.136, delta -0.133) -- both `gemma4-e4b`, already flagged elsewhere in
+this document as a structurally weak-effect model, and both short of even
+the screening bar, not a real candidate. **No reasoning-focused follow-up
+is prepared as a result** -- forcing a pre-registration onto a p=0.126
+cell to have something to show would be exactly the "chase significance"
+anti-pattern `docs/plans/run_improved_tests.md`'s own preamble warns
+against. This is an honest null result at n=30, not a gap in the
+analysis.
 
 Sizing for the 3 cells pre-registered above, computed the same way as the
 already-completed `qwen3-8b`/`degree` (GOT) replication above: bootstrap-
