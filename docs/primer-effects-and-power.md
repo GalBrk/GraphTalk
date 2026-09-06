@@ -45,6 +45,12 @@ that no cell cleared every control. At power, both statements are wrong.
 4. **Five of six tasks remain saturated** for the larger models, and every large
    `degree` gain remains shortcut-explained. Those findings are unchanged.
 
+5. **Saturation is an artifact of the corpus's 19-node cap, not of the tasks.**
+   Regenerated at 80 nodes, `node_degree` falls to 0.143 (1.7B plain) and 0.479
+   (8B plain) -- but `node_count` stays at 1.000. What breaks is aggregation
+   over scattered mentions, which graph size multiplies; see "Does size break
+   them?"
+
 The honest status of the proposal's question is no longer "the experiment has
 not been run". It has been run. The answer is that primers are not one
 intervention: some carry usable structure, some are inert, and at least one is
@@ -305,19 +311,22 @@ row than `qwen3-8b`. Not yet submitted: the value of adding an arm depends on
 whether the clean conditions produce a measurable effect at all, which
 `ec500` will answer first.
 
-## In flight: does size break them?
+## Does size break them? Yes -- but only on one task
 
-Nothing in the tracked corpus answers this -- the published split and the
+Nothing in the tracked corpus could answer this: the published split and the
 vendored generator both cap node counts at 19
 (`graph_generators._NUMBER_OF_NODES_RANGE`). `scripts/build_size_sweep.py`
 generates its own ER graphs at chosen sizes keeping the corpus's U(0, 1)
 sparsity, so a size class differs from the tracked corpus in size and nothing
-else. Running at sizes **20 / 40 / 80** x 50 graphs x 4 tasks x `none`, on
-`qwen3-1.7b` and `qwen3-8b`, both arms each (tag `size`).
+else.
+
+**Design.** Sizes 20 / 40 / 80 x 50 graphs x 4 tasks x `none`, on `qwen3-1.7b`
+and `qwen3-8b`, both arms each (`prompts.sizesweep.jsonl`, tag `size`, 600 rows
+per arm, all four complete).
 
 **Why it stops at 80.** Under U(0, 1) sparsity edges grow as O(n^2) and the
-`incident` encoding lists all of them. Measured prompt tokens (both models have
-a 40,960-token context):
+`incident` encoding lists every one. Measured prompt tokens (both models have a
+40,960-token context):
 
 | n | p10 | median | p90 | max |
 |---|---|---|---|---|
@@ -327,13 +336,74 @@ a 40,960-token context):
 | 160 | 40,445 | 57,217 | 87,413 | 95,852 |
 
 n=160 is not a budgeting problem, it is impossible: even the 10th-percentile
-graph exceeds the context. Going bigger requires a fixed average degree instead
+graph exceeds the context. Going bigger needs a fixed average degree instead
 (edges linear in n, ~13k tokens at n=320) -- a different density regime, so a
 different experiment rather than a longer version of this one.
 
 `edge_count` and `cycle_check` are excluded: the first would measure truncation
 (hundreds of edges to enumerate against a 2,048-token budget), the second
 degenerates (every graph this dense has a cycle).
+
+### Pooled accuracy
+
+| arm | n=20 | n=40 | n=80 | capped |
+|---|---|---|---|---|
+| 1.7B plain | 0.874 | 0.679 | 0.631 | 1/600 |
+| 1.7B think | 0.994 | 0.878 | 0.731 | 21/600 |
+| 8B plain | 0.985 | 0.985 | 0.847 | 2/600 |
+| 8B think | 0.979 | 0.983 | 0.926 | 38/600 |
+
+Degradation is monotonic in all four arms, and capacity buys graceful decline
+rather than immunity: 8B think loses 5 pp from n=20 to n=80, 1.7B plain loses
+24 pp.
+
+### The pooled number is misleading -- it is one task
+
+| task | 1.7B plain | 1.7B think | 8B plain | 8B think |
+|---|---|---|---|---|
+| node_count | 0.820 / 0.600 / 0.860 | 1.000 / 0.978 / **1.000** | 0.980 / 1.000 / 0.980 | 1.000 / 1.000 / **1.000** |
+| **node_degree** | 0.860 / 0.440 / **0.143** | 0.980 / 0.580 / **0.205** | 1.000 / 0.940 / **0.479** | 0.977 / 0.977 / **0.727** |
+| connected_nodes | 0.937 / 0.975 / 0.870 | 0.998 / 0.965 / 0.834 | 0.980 / 1.000 / 0.935 | 0.928 / 0.953 / 0.976 |
+| edge_existence | 0.880 / 0.700 / 0.640 | 1.000 / 1.000 / 0.837 | 0.980 / 1.000 / 0.980 | 1.000 / 1.000 / 0.980 |
+
+(cells are n=20 / n=40 / n=80)
+
+**`node_count` does not degrade at all** -- 1.000 at every size for both think
+arms. Counting 80 nodes is trivial because the node list is contiguous in the
+prompt. This also shows the off-by-one artifact does not reappear at scale for
+these models.
+
+**`node_degree` collapses**, to 0.143 on the 1.7B plain arm -- worse than
+1-in-5. The error profile confirms genuine miscounting rather than a parse
+failure or a refusal (exact answers / median absolute error over non-exact):
+
+| arm | n=20 | n=40 | n=80 |
+|---|---|---|---|
+| 1.7B plain | 43/50, m=1 | 22/50, m=2 | 7/49, **m=8** |
+| 1.7B think | 49/50, m=1 | 29/50, m=1 | 9/44, **m=6** |
+| 8B plain | 50/50, m=0 | 47/50, m=1 | 23/48, **m=4** |
+| 8B think | 42/43, m=1 | 43/44, m=1 | 32/44, m=1 |
+
+Errors grow from off-by-one to a median of 6-8 (max observed 79). A
+representative 1.7B-think failure: gold 72, answered 66, after 3,282 tokens of
+reasoning.
+
+### What actually predicts degradation
+
+`node_degree` is the only one of the four tasks whose work scales with **edges**
+rather than nodes: answering it means counting every occurrence of one node
+across ~1,958 edge mentions scattered through a 20k-token prompt. The other
+three read a contiguous region (`node_count`), do one local lookup
+(`connected_nodes`), or run a single membership test (`edge_existence`).
+
+So the finding is not "models degrade on large graphs". It is **"models degrade
+on tasks that require aggregating many scattered mentions, and graph size is
+what multiplies the mentions."** Size is the independent variable; dispersed
+aggregation is the mechanism.
+
+Note `8B think` is the exception that supports this: it holds a median error of
+1 at every size and only drops to 0.727, i.e. the reasoning channel is being
+spent on exactly the bookkeeping the task needs.
 
 ## Operational notes
 
