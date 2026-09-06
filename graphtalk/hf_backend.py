@@ -59,7 +59,8 @@ def load(spec: models.ModelSpec):
 
 
 def generate(tokenizer, model, prompt: str, max_new_tokens: int,
-             chat_kwargs: dict | None = None) -> Completion:
+             chat_kwargs: dict | None = None,
+             max_context_tokens: int | None = None) -> Completion:
   """One greedy completion, with the prompt stripped from the return value.
 
   `do_sample=False` is the proposal's temperature 0. Slicing the generated ids
@@ -68,6 +69,13 @@ def generate(tokenizer, model, prompt: str, max_new_tokens: int,
 
   `chat_kwargs` comes from the model's spec and reaches the template unchanged;
   see `ModelSpec.chat_kwargs` for why Qwen3 must be asked not to think.
+
+  `max_context_tokens` (from `ModelSpec.max_context_tokens`) is checked against
+  the tokenized prompt length before generation starts -- an oversized prompt
+  is a config/build problem, not a modeled phenomenon, so it raises rather
+  than silently truncating or letting `model.generate` fail with an opaque
+  shape error. `None` (the default until a spec's context length is measured
+  and filled in) makes this a no-op, same as today.
   """
   messages = [{"role": "user", "content": prompt}]
   inputs = tokenizer.apply_chat_template(
@@ -80,6 +88,11 @@ def generate(tokenizer, model, prompt: str, max_new_tokens: int,
   ).to(model.device)
 
   prompt_len = inputs["input_ids"].shape[-1]
+  if max_context_tokens and prompt_len + max_new_tokens > max_context_tokens:
+    raise ValueError(
+        f"prompt ({prompt_len} tokens) + max_new_tokens ({max_new_tokens}) "
+        f"exceeds max_context_tokens ({max_context_tokens})"
+    )
   with torch.inference_mode():
     out = model.generate(
         **inputs, max_new_tokens=max_new_tokens, do_sample=False
@@ -94,7 +107,8 @@ def generate(tokenizer, model, prompt: str, max_new_tokens: int,
 
 
 def generate_batch(tokenizer, model, prompts: list[str], max_new_tokens: int,
-                    chat_kwargs: dict | None = None) -> list[Completion]:
+                    chat_kwargs: dict | None = None,
+                    max_context_tokens: int | None = None) -> list[Completion]:
   """Like `generate`, but one forward pass for the whole `prompts` list
   instead of one call per prompt -- Track 2.3, the infrastructure 2.1/2.2's
   larger recommended `--count`s need to be affordable at all (single-stream
@@ -164,6 +178,11 @@ def generate_batch(tokenizer, model, prompts: list[str], max_new_tokens: int,
     ).to(model.device)
 
     prompt_len = inputs["input_ids"].shape[-1]
+    if max_context_tokens and prompt_len + max_new_tokens > max_context_tokens:
+      raise ValueError(
+          f"batch's longest prompt ({prompt_len} tokens) + max_new_tokens "
+          f"({max_new_tokens}) exceeds max_context_tokens ({max_context_tokens})"
+      )
     with torch.inference_mode():
       out = model.generate(
           **inputs, max_new_tokens=max_new_tokens, do_sample=False,

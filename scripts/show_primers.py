@@ -65,7 +65,11 @@ def show(graph, label: str, k_min: int, k_max: int, target_chars: int | None):
   return lengths, correlation
 
 
-def corpus_report(count: int, seed: int, k_min: int, k_max: int) -> None:
+def corpus_report(
+    count: int, seed: int, k_min: int, k_max: int,
+    node_size_ranges: dict | None = None,
+    er_min_sparsity: float = 0.0, er_max_sparsity: float = 1.0,
+) -> None:
   """Prints the corpus-level statistics that are the actual acceptance criterion.
 
   The per-graph correlations printed by `show` are information only: per-graph r
@@ -79,11 +83,15 @@ def corpus_report(count: int, seed: int, k_min: int, k_max: int) -> None:
   graphs = [
       graphqa.canonical(graph)
       for graph in graph_generators.generate_graphs(
-          count, "er", False, random_seed=seed
+          count, "er", False, random_seed=seed,
+          node_size_ranges=node_size_ranges,
+          er_min_sparsity=er_min_sparsity, er_max_sparsity=er_max_sparsity,
       )
   ]
   print(
-      f"corpus of {count} graphs from generate_graphs(er, seed={seed});"
+      f"corpus of {count} graphs from generate_graphs(er, seed={seed}, "
+      f"node_size_ranges={'xlarge' if node_size_ranges else 'default'}, "
+      f"er_sparsity=[{er_min_sparsity}, {er_max_sparsity}]);"
       " aggregation: mean of per-graph r"
   )
   for k in range(k_min, k_max + 1):
@@ -144,6 +152,15 @@ def main() -> None:
   parser.add_argument("--k-min", type=int, default=2)
   parser.add_argument("--k-max", type=int, default=3)
   parser.add_argument(
+      "--xlarge", action="store_true",
+      help=(
+          "use a 20-39 node size bucket instead of generate_graphs's default"
+          " 5-19 node range, for --generated/--corpus dry runs only"
+      ),
+  )
+  parser.add_argument("--er-min-sparsity", type=float, default=0.0)
+  parser.add_argument("--er-max-sparsity", type=float, default=1.0)
+  parser.add_argument(
       "--target-chars",
       type=int,
       default=None,
@@ -151,8 +168,15 @@ def main() -> None:
   )
   args = parser.parse_args()
 
+  node_size_ranges = {"xlarge": np.arange(20, 40)} if args.xlarge else None
+
   if args.corpus:
-    corpus_report(args.corpus, args.random_seed, args.k_min, args.k_max)
+    corpus_report(
+        args.corpus, args.random_seed, args.k_min, args.k_max,
+        node_size_ranges=node_size_ranges,
+        er_min_sparsity=args.er_min_sparsity,
+        er_max_sparsity=args.er_max_sparsity,
+    )
     return
 
   if args.generated:
@@ -160,13 +184,19 @@ def main() -> None:
         (f"generated {i}", graphqa.canonical(graph))
         for i, graph in enumerate(
             graph_generators.generate_graphs(
-                args.generated, "er", False, random_seed=args.random_seed
+                args.generated, "er", False, random_seed=args.random_seed,
+                node_size_ranges=node_size_ranges,
+                er_min_sparsity=args.er_min_sparsity,
+                er_max_sparsity=args.er_max_sparsity,
             )
         )
     ]
     print(
         f"{args.generated} graphs from generate_graphs(er, seed="
-        f"{args.random_seed}); no dataset rows involved"
+        f"{args.random_seed}, node_size_ranges="
+        f"{'xlarge' if node_size_ranges else 'default'}, er_sparsity="
+        f"[{args.er_min_sparsity}, {args.er_max_sparsity}]); no dataset rows"
+        " involved"
     )
   else:
     rows = graphqa.fetch_rows(args.config, args.split, args.index, args.count)

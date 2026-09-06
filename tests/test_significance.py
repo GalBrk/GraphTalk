@@ -1243,3 +1243,126 @@ def test_apply_global_bh_pools_exact_and_mae_into_one_family():
   # actually pooled into one correction, not run as two separate passes.
   assert all(r["bh_significant_global"] is True for r in mae_records)
   assert all(r["bh_significant_global"] is False for r in exact_records)
+
+
+# --- _report_exact_per_task --------------------------------------------------
+
+
+def _task_frame(model, condition_rows, task, n=30):
+  """`condition_rows`: {condition: [exact values, len n]}. Builds one
+  paired-frame slice for a single task, matching what `main()`'s per-task
+  loop hands `_report_exact_per_task` (already filtered to one task)."""
+  cols = {"model": [], "instance_id": [], "style": [], "node_naming": [],
+          "condition": [], "task": [], "exact": [], "failure_type": [],
+          "looped_on_correct_answer": []}
+  for condition, values in condition_rows.items():
+    for i, value in enumerate(values):
+      cols["model"].append(model)
+      cols["instance_id"].append(f"{task}/{i}")
+      cols["style"].append("zero_shot")
+      cols["node_naming"].append("integer")
+      cols["condition"].append(condition)
+      cols["task"].append(task)
+      cols["exact"].append(value)
+      cols["failure_type"].append("correct" if value == 1 else "wrong")
+      cols["looped_on_correct_answer"].append(None)
+  return pd.DataFrame(cols)
+
+
+def test_report_exact_per_task_detects_effect_pooled_test_misses():
+  """Regression-pin for the exact scan-driven motivation for this function:
+  a real effect concentrated in one task (edge_count: none=0, degree=1,
+  every pair) is invisible to `_report`'s pooled test once diluted across
+  5 other flat tasks, but `_report_exact_per_task` -- scoped to edge_count
+  alone -- must catch it directly."""
+  n = 30
+  # A realistic, noisy edge_count effect (~+0.37, matching the real scan's
+  # `qwen3-8b`/`degree`/`edge_count` finding) rather than a deterministic
+  # +1.0 -- a fully deterministic, one-directional signal is trivially
+  # significant even after heavy dilution under a sign-flip permutation
+  # test (there are no negative diffs anywhere to make the observed split
+  # look unremarkable), which would make this fixture prove nothing about
+  # dilution specifically.
+  rng = random.Random(2)
+  none_ec = [0] * (n // 2) + [1] * (n // 2)
+  rng.shuffle(none_ec)
+  degree_ec = [v if not (v == 0 and rng.random() < 0.75) else 1 for v in none_ec]
+  edge_count = _task_frame(
+      "qwen3-8b", {"none": none_ec, "degree": degree_ec}, "edge_count", n
+  )
+  # Flat tasks: genuinely no effect (`none`/`degree` drawn *independently*
+  # per instance, like real noisy accuracy data) -- this is what dilutes
+  # the pooled test's power the way real flat tasks do, unlike a
+  # deterministic null which adds no diluting variance at all.
+  flat_tasks = []
+  for task in ("node_count", "cycle_check", "edge_existence",
+               "connected_nodes", "node_degree"):
+    none_vals = [rng.choice([0, 1]) for _ in range(n)]
+    degree_vals = [rng.choice([0, 1]) for _ in range(n)]
+    flat_tasks.append(_task_frame(
+        "qwen3-8b", {"none": none_vals, "degree": degree_vals}, task, n
+    ))
+  pooled = pd.concat([edge_count, *flat_tasks], ignore_index=True)
+
+  args = _default_args(n_perm=500)
+  pooled_records = []
+  cs._report(pooled, pooled, "exact", "qwen3-8b", args,
+             "main_sweep", pooled_records, bound="excluded")
+  assert pooled_records[0]["bh_significant"] is False
+
+  per_task_records = []
+  cs._report_exact_per_task(
+      edge_count, "qwen3-8b", "edge_count", args, "main_sweep",
+      per_task_records,
+  )
+  by_condition = {r["condition"]: r for r in per_task_records}
+  assert by_condition["degree"]["delta"] == pytest.approx(0.3667, abs=1e-3)
+  assert by_condition["degree"]["bh_significant"] is True
+
+
+def test_report_exact_per_task_tags_records_with_metric_and_task():
+  frame = _task_frame(
+      "qwen3-8b", {"none": [0] * 30, "degree": [1] * 30}, "edge_count"
+  )
+  records = []
+  cs._report_exact_per_task(
+      frame, "qwen3-8b", "edge_count", _default_args(), "main_sweep", records
+  )
+  assert all(r["metric"] == "exact" for r in records)
+  assert all(r["task"] == "edge_count" for r in records)
+  assert all(r["arm"] == "main_sweep" for r in records)
+
+
+def test_report_exact_per_task_excludes_all_from_independent_bh_family():
+  """Same derived-condition split `_report`/`_report_mae` already apply:
+  `all` must land in its own BH family, not be pooled with the
+  independent conditions, in the per-task test too."""
+  n = 30
+  conditions = ["none", "degree", "clustering", "rwse", "components",
+                "filler", "all"]
+  rows = {c: ([0] * (n // 2) + [1] * (n // 2)) for c in conditions}
+  frame = _task_frame("qwen3-8b", rows, "edge_count", n)
+  records = []
+  cs._report_exact_per_task(
+      frame, "qwen3-8b", "edge_count", _default_args(), "main_sweep", records
+  )
+  by_condition = {r["condition"]: r for r in records}
+  assert by_condition["all"]["is_derived_condition"] is True
+  independent_families = {
+      by_condition[c]["bh_family"]
+      for c in ("degree", "clustering", "rwse", "components", "filler")
+  }
+  assert len(independent_families) == 1
+  assert by_condition["all"]["bh_family"].endswith("/derived")
+  assert by_condition["all"]["bh_family"] != next(iter(independent_families))
+
+
+def test_report_exact_per_task_no_paired_rows_does_not_crash():
+  frame = _task_frame(
+      "qwen3-8b", {"none": [0] * 30}, "edge_count"
+  )
+  records = []
+  cs._report_exact_per_task(
+      frame, "qwen3-8b", "edge_count", _default_args(), "main_sweep", records
+  )
+  assert records == []

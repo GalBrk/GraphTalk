@@ -90,6 +90,9 @@ def gold_answer(graph: nx.Graph, config: str, targets: tuple[int, ...] = ()) -> 
   if config == "edge_existence":
     a, b = targets[:2]
     return "Yes" if graph.has_edge(a, b) else "No"
+  if config == "reachability":
+    a, b = targets[:2]
+    return "Yes" if nx.has_path(graph, a, b) else "No"
   raise ValueError(f"no answer check defined for config: {config}")
 
 
