@@ -1,0 +1,5 @@
+{
+  "confirmatory": [
+    {"model": "qwen3-8b", "condition": "degree"}
+  ]
+}
