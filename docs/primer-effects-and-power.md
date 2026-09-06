@@ -19,29 +19,36 @@ a conclusion about the *design* rather than about primers.
 
 ## Summary
 
-1. **Five of six tasks are saturated.** Mean `none` accuracy across
-   `qwen3-8b`/`qwen3-14b`/`gemma4-e4b`/`gemma4-12b`: `node_degree` 1.000,
-   `connected_nodes` 1.000, `edge_existence` 1.000, `node_count` 0.992,
-   `cycle_check` 0.975. Against Fatemi et al.'s 18.8% for PaLM 2 on
-   `node_count`, the published setup no longer discriminates.
+Updated 2026-09-06, after running the powered experiments. The earlier version
+of this document said the uncontaminated cells were "positive but unpowered" and
+that no cell cleared every control. At power, both statements are wrong.
 
-2. **`edge_count` is the only task with headroom** -- 0.670 mean, and only
-   0.400-0.433 for `qwen3-8b`/`qwen3-14b`.
+1. **Three cells now clear every control** -- powered, significant, above the
+   relevant baseline, and not reproducible by the shortcut solver:
 
-3. **`edge_count` is also where every large primer gain lives, and its `degree`
-   bar is 1.00.** sum(degrees)/2 *is* the edge count, so a regex over the primer
-   text scores 100% without seeing the graph. The four biggest effects in the
-   project (+0.55, +0.45, +0.23, +0.20) are all there, and not one beats the
-   regex solver.
+   | model | task | primer | delta | disc | p |
+   |---|---|---|---|---|---|
+   | qwen3-8b | edge_count | **rwse** | **-13.7 pp** | 108 | 0.0000 |
+   | qwen3-8b | edge_count | **clustering** | **+5.0 pp** | 69 | 0.0076 |
+   | qwen3-0.6b-think | cycle_check | **clustering** | **+4.3 pp** | 55 | 0.0065 |
 
-4. **The one task with headroom does have clean conditions, and they were never
-   powered.** `edge_count` x {`components` 0.02, `rwse` 0.02, `clustering` 0.15}
-   are uncontaminated, show positive effects (+0.03 to +0.13), and sit at n=30
-   with 1-7 discordant pairs.
+2. **"Do primers help?" has no single answer -- it depends on the primer.** On
+   one task, one model, at n=500: `clustering` helps by 5 points, `components`
+   does nothing (+1.3, p=0.54), and `rwse` *hurts by 13.7 points*. The largest
+   clean effect in the project is negative.
 
-The honest status of the proposal's question is not "primers do not help" --
-that would be an unpowered null -- but **"the experiment that could answer it
-has not been run."** Point 4 says exactly which experiment.
+3. **`clustering` is the only primer that helps twice**, on two different tasks
+   and two different models (`edge_count`/8B and `cycle_check`/0.6B-think). It
+   is the first pattern here that repeats across cells rather than appearing
+   once.
+
+4. **Five of six tasks remain saturated** for the larger models, and every large
+   `degree` gain remains shortcut-explained. Those findings are unchanged.
+
+The honest status of the proposal's question is no longer "the experiment has
+not been run". It has been run. The answer is that primers are not one
+intervention: some carry usable structure, some are inert, and at least one is
+actively misleading.
 
 ## The shortcut bar decides which cells are informative
 
@@ -97,22 +104,111 @@ Every top cell is `edge_count`. Effects are positive and clear their bars.
 **Every one is at n=30 with 1-7 discordant pairs.** Power and clean cells are in
 disjoint places: `degree` was scaled to n=500, the clean conditions never were.
 
-## The recommended experiment
+## The experiment, and what it found
 
-**`edge_count` x {`components`, `clustering`, `rwse`} vs `none`, at n=500, on
-`qwen3-8b` and `qwen3-14b`.**
+**`edge_count` x {`components`, `clustering`, `rwse`} vs `none`, n=500,
+`qwen3-8b`** (`prompts.edgecount500.clean.jsonl`, tag `ec500`). 1,984/2,000 rows
+-- one shard timed out 16 rows short after losing ~3 h to checkpoint warm-up
+contention -- 56 capped (2.8%), **0 unparsed**, conditions balanced at n=477-489.
 
-Everything lines up on this cell and nothing else does:
+| condition | score | delta (pp) | paired | disc | p | bar | > bar |
+|---|---|---|---|---|---|---|---|
+| none | 0.520 | -- | 477 | | | 0.02 | -- |
+| components | 0.536 | +1.3 | 463 | 66 | 0.539 | 0.02 | YES |
+| **clustering** | **0.578** | **+5.0** | 460 | 69 | **0.0076** | 0.15 | YES |
+| **rwse** | **0.380** | **-13.7** | 468 | 108 | **0.0000** | 0.02 | YES |
 
-- the only task with headroom (0.400-0.433 baseline for these two models);
-- bars of 0.02-0.15, so a gain cannot be shortcut-explained;
-- observed effects already positive (+0.03 to +0.13) at n=30;
-- discordance is high there (6-9 pairs at n=30, i.e. 20-30%), so n=500 projects
-  to ~100-150 discordant pairs per cell -- comfortably powered, unlike anything
-  in the current sweep.
+Discordance ran 14-23%, so n=500 delivered 66-108 discordant pairs per cell
+against the 1-7 that every earlier cell had. This is the first cell in the
+project with enough power to distinguish an effect from nothing.
 
-`degree` should be dropped from the headline. Keep it as a documented positive
-control for shortcut exploitation, which it demonstrates unusually well.
+**`rwse` hurting by 13.7 points is the largest clean effect measured anywhere in
+this project.** Its bar is 0.02, so it cannot be dismissed as shortcut
+interference -- a random-walk structural encoding genuinely degrades the model's
+edge counting. Any framing of primers as "extra information, at worst neutral"
+is refuted by this cell.
+
+`components` behaving as a null (+1.3, p=0.54) is the right control result:
+component count carries little about edge count, and the measurement says so.
+
+### The `cycle_check` experiment
+
+**`cycle_check` x {`components`, `clustering`, `rwse`} vs `none`, n=500,
+`qwen3-0.6b` both arms** (`prompts.cyclecheck500.clean.jsonl`, tag `cc500`),
+2,000/2,000 rows each.
+
+Chosen because `cycle_check` is the only task where the *shortcut information a
+primer adds* -- `bar(cond) - bar(none)`, a sharper criterion than the absolute
+bar used earlier in this document -- is exactly zero for two conditions:
+
+| task | components | clustering | rwse | degree |
+|---|---|---|---|---|
+| cycle_check | +0.17 | **+0.00** | **+0.00** | +0.11 |
+
+`components` is therefore a built-in *within-task positive control*: it hands
+over real shortcut content while `clustering`/`rwse` hand over none.
+
+**PLAIN (`qwen3-0.6b`)** -- majority-class floor is 0.832:
+
+| cond | score | delta (pp) | disc | p | vs floor |
+|---|---|---|---|---|---|
+| none | 0.792 | -- | | | -0.040 |
+| components | 0.832 | +4.1 | 28 | 0.0002 | +0.000 |
+| clustering | 0.811 | +2.1 | 48 | 0.193 | -0.021 |
+| rwse | 0.826 | +3.0 | 37 | 0.020 | -0.006 |
+
+Every condition lands at or below the floor. The plain 0.6B never escapes
+majority-guessing on this task; the "gains" only lift it back to it.
+
+**THINK (`qwen3-0.6b-think`):**
+
+| cond | score | delta (pp) | disc | p | vs floor |
+|---|---|---|---|---|---|
+| none | 0.843 | -- | | | +0.011 |
+| components | 0.864 | +1.5 | 15 | 0.119 | +0.032 |
+| **clustering** | **0.885** | **+4.3** | 55 | **0.0065** | **+0.053** |
+| rwse | 0.848 | +0.6 | 17 | 0.629 | +0.016 |
+
+Survives Bonferroni across all six comparisons (0.0065 x 6 = 0.039), and the
+shortcut-rich `components` control does *not* move -- so this is not generic
+primer-presence and not shortcut exploitation.
+
+**The mechanism is legible in the class split** (84 acyclic / 412 cyclic):
+
+| cond | acyclic ("No") | cyclic ("Yes") |
+|---|---|---|
+| none | 0.083 | 0.998 |
+| components | 0.179 | 0.998 |
+| **clustering** | **0.506** | 0.963 |
+| rwse | 0.131 | 0.995 |
+
+Without a primer the model is doing pure majority-guessing: 99.8% on cyclic,
+8.3% on acyclic. `clustering` takes acyclic detection **8.3% -> 50.6%**, which
+is the entire effect.
+
+The model is reading "every clustering coefficient is 0" as triangle-free and
+inferring acyclic. **That is not the theorem `shortcuts.py` implements.** Its
+`clustering_triangle` rule runs the sound direction -- clustering > 0 *proves* a
+cycle -- which is worth nothing here because "yes" is already the majority
+guess. The model uses the converse, which is a **heuristic, not a valid
+inference**: a graph can be triangle-free and still hold a 4-cycle.
+
+It visibly pays that price: cyclic accuracy drops 0.998 -> 0.963, i.e. it now
+answers "no cycle" on ~3.5% of cyclic graphs -- exactly the triangle-free ones
+with longer cycles. That error signature is what confirms the mechanism rather
+than merely correlating with it.
+
+### What was not run
+
+`qwen3-14b` on `ec500` was cancelled at 206/2,000 rows. Its shard 0 spent ~10 of
+its 12 h in the page-cache warm-up (see Operational notes) and would have needed
+a full resubmission. **So `edge_count` has a single model behind it**, and the
+`clustering`/`rwse` results are unreplicated. `qwen3-1.7b` -- which has the most
+`edge_count` headroom in the suite at 0.237 -- is the cheapest replication and
+was deliberately deferred until the 8B result existed.
+
+`degree` should be dropped from the headline regardless. Keep it as a documented
+positive control for shortcut exploitation, which it demonstrates unusually well.
 
 ## Retracted from the first draft of this document
 
@@ -149,9 +245,12 @@ artifact below, **-0.025**.
 (**+0.078**), driven by `edge_count` 0.324 -> 0.873.
 
 **The same model, same prompts, same instances: the primer hurts by 7.9 points
-without the reasoning channel and helps by 7.8 with it.** No larger model can
-show this -- all four are at ceiling in both arms. That contrast is the main
-reason to keep a sub-2B model in the suite.
+without the reasoning channel and helps by 7.8 with it.**
+
+**Retracted 2026-09-06 -- this does not replicate.** `qwen3-1.7b` runs +9.6 pp
+plain and +1.3 pp think: same sign in both arms. The 0.6B's *negative* plain
+number was the off-by-one artifact below, not a property of small models, so the
+"sign flip" was an artifact comparison. Do not repeat the claim.
 
 ### The off-by-one artifact (do not report as a primer effect)
 
@@ -206,6 +305,36 @@ row than `qwen3-8b`. Not yet submitted: the value of adding an arm depends on
 whether the clean conditions produce a measurable effect at all, which
 `ec500` will answer first.
 
+## In flight: does size break them?
+
+Nothing in the tracked corpus answers this -- the published split and the
+vendored generator both cap node counts at 19
+(`graph_generators._NUMBER_OF_NODES_RANGE`). `scripts/build_size_sweep.py`
+generates its own ER graphs at chosen sizes keeping the corpus's U(0, 1)
+sparsity, so a size class differs from the tracked corpus in size and nothing
+else. Running at sizes **20 / 40 / 80** x 50 graphs x 4 tasks x `none`, on
+`qwen3-1.7b` and `qwen3-8b`, both arms each (tag `size`).
+
+**Why it stops at 80.** Under U(0, 1) sparsity edges grow as O(n^2) and the
+`incident` encoding lists all of them. Measured prompt tokens (both models have
+a 40,960-token context):
+
+| n | p10 | median | p90 | max |
+|---|---|---|---|---|
+| 20 | 723 | 948 | 1,242 | 1,403 |
+| 40 | 2,480 | 3,367 | 4,932 | 5,538 |
+| 80 | 9,503 | 13,379 | 19,763 | 22,093 |
+| 160 | 40,445 | 57,217 | 87,413 | 95,852 |
+
+n=160 is not a budgeting problem, it is impossible: even the 10th-percentile
+graph exceeds the context. Going bigger requires a fixed average degree instead
+(edges linear in n, ~13k tokens at n=320) -- a different density regime, so a
+different experiment rather than a longer version of this one.
+
+`edge_count` and `cycle_check` are excluded: the first would measure truncation
+(hundreds of edges to enumerate against a 2,048-token budget), the second
+degenerates (every graph this dense has a cycle).
+
 ## Operational notes
 
 - **`--mem=64G` in `sweep.sbatch` is sized for Qwen3-14B's 29.6 GB checkpoint.**
@@ -239,8 +368,12 @@ whether the clean conditions produce a measurable effect at all, which
 - p-values are per (model, task) pooled over the instances shown, not the
   proposal's 36-cell grid. Discordance *rates* compare across documents; cell
   counts do not.
-- `qwen3-1.7b` and `qwen35-2b` are complete (1,200 rows each).
-  `qwen3-1.7b-think` was still generating when this was written.
+- All five `probe100` arms are complete at 1,200 rows: `qwen3-0.6b`,
+  `qwen3-0.6b-think`, `qwen3-1.7b`, `qwen3-1.7b-think`, `qwen35-2b`.
+  `qwen3-1.7b-think` pooled +1.3 pp (none 0.965 / degree 0.978) with every cell
+  0.92-0.99 and 1-7 discordant pairs -- reasoning removes the headroom at 1.7B,
+  so its think arm measures nothing. Off-by-one on `node_count` is 5%/3% plain
+  and 1%/1% think, against the 0.6B's 10%/45%.
   **`qwen35-2b-think` was cancelled at 73/1200 rows** -- it could only have
   confirmed a `degree`-condition result that is shortcut-explained anyway, and
   the plain-vs-think contrast it would have tested is covered by
