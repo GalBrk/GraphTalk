@@ -207,14 +207,17 @@ the four, despite the name.
 
 ## Next
 
-> **See also `docs/primer-effects-and-power.md` (2026-09-05).** It re-reads this
-> data through the shortcut bar and locates the power failure precisely: five of
-> six tasks are saturated, `edge_count` is the only one with headroom, and it is
-> also the cell whose `degree` bar is 1.00 -- so the arm with power is the
-> contaminated one, while `edge_count` x {`components`, `rwse`, `clustering`}
-> (bars 0.02-0.15) sits at n=30. It proposes that as the experiment to run, and
-> documents `qwen3-0.6b`'s off-by-one `node_count` artifact plus the GoT
-> desubstitution trap that corrupts any fresh `connected_nodes` analysis.
+> **See also `docs/primer-effects-and-power.md` (updated 2026-09-06).** The
+> powered follow-ups have now run. Three cells clear every control: `edge_count`
+> + `rwse` on `qwen3-8b` (**-13.7 pp**, 108 discordant, p<0.0001 -- the largest
+> clean effect in the project, and negative), `edge_count` + `clustering`
+> (+5.0 pp, p=0.0076), and `cycle_check` + `clustering` on `qwen3-0.6b-think`
+> (+4.3 pp, p=0.0065, driven by acyclic detection going 8% -> 51%). The lesson
+> is that primers are not one intervention -- `clustering` helps on two tasks,
+> `components` is inert, `rwse` does real damage. That document also records the
+> `qwen3-0.6b` off-by-one `node_count` artifact, the retraction of the
+> plain-vs-think "sign flip", and the GoT desubstitution trap that corrupts any
+> fresh `connected_nodes` analysis.
 
 
 1. Read the per-task output of `score_sweep.py`; the pooled table above hides
