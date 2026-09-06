@@ -405,6 +405,64 @@ Note `8B think` is the exception that supports this: it holds a median error of
 1 at every size and only drops to 0.727, i.e. the reasoning channel is being
 spent on exactly the bookkeeping the task needs.
 
+## Where this stands, and what to do next
+
+State as of 2026-09-06. Branch `small-model-suite-and-primer-power`, pushed to
+`git@github.com:GalBrk/GraphTalk.git` (the remote moved from `ArnavShahor/`;
+other clones still need `git remote set-url`).
+
+### Data on disk, all complete
+
+| tag | arms | rows/arm | what |
+|---|---|---|---|
+| `probe100` | qwen3-0.6b, -think, qwen3-1.7b, -think, qwen35-2b | 1,200 | 6 tasks x 100 graphs x {none, degree} |
+| `cc500` | qwen3-0.6b, qwen3-0.6b-think | 2,000 | cycle_check x 500 x {none, components, clustering, rwse} |
+| `ec500` | qwen3-8b | 1,984 | edge_count, same 4 conditions (16 rows short: one shard timed out) |
+| `size` | qwen3-1.7b, -think, qwen3-8b, -think | 600 | 20/40/80-node graphs x 4 tasks x none |
+
+### In flight
+
+**Job 858244 `ec17-clean`** -- `qwen3-1.7b` on `prompts.edgecount500.clean.jsonl`,
+3 shards, a5000, `--exclude=n-501`, 10 h limit, tag `ec500`, writing
+`runs/qwen3-1.7b.ec500.shard*of3.jsonl`.
+
+This is the **replication of the only unreplicated headline results**. Score it
+against the 8B numbers in "The experiment, and what it found". What matters is
+direction and rank order, not effect size -- the 1.7B baseline on `edge_count`
+is 0.237 against the 8B's 0.433, so identical magnitudes would be surprising:
+
+- Does `clustering` help?  (8B: +5.0 pp, p=0.0076)
+- Is `components` inert?   (8B: +1.3 pp, p=0.54)
+- **Does `rwse` hurt?**    (8B: -13.7 pp, p<0.0001)
+
+`rwse` is the one that matters. It is the largest clean effect in the project
+and the most consequential claim, because it contradicts the intuition that a
+primer is at worst neutral. If it replicates, the claim is solid. If it does
+not, it is a `qwen3-8b` property and must be written up as such.
+
+### Deliberately not run
+
+- **`qwen3-14b` on `ec500`** -- cancelled at 206/2,000 after its shard 0 spent
+  ~10 of 12 h in the page-cache warm-up. Partial rows are in
+  `runs/archive/cancelled-*`. `qwen3-1.7b` replaces it as the replication.
+- **`ec8b`'s missing 16 rows** -- shard 0 timed out. `run_sweep.py` resumes by
+  key, so resubmitting that one shard would collect only the gap. Not done:
+  1,984/2,000 with balanced conditions changes nothing.
+- **`qwen35-2b-think` `probe100`** -- cancelled at 73/1,200; it could only have
+  confirmed a `degree` result that is shortcut-explained anyway.
+- **Size sweep beyond n=80** -- impossible under U(0, 1) sparsity; needs a
+  fixed-degree density regime, i.e. a different experiment.
+- **`cc500` on `qwen3-1.7b`** -- the `cycle_check` finding is also single-model.
+  Its plain `cycle_check` baseline is 0.888 against a 0.832 floor, so there is
+  less headroom than the 0.6B had, but it is the natural second data point.
+
+### If you only read one thing
+
+Primers are not one intervention. `clustering` helped on two tasks and two
+models; `components` is inert; `rwse` does real damage. Read every result
+against `bar(cond) - bar(none)` from `shortcuts.json`, not against zero, and
+filter `hit_cap` rows before comparing anything.
+
 ## Operational notes
 
 - **`--mem=64G` in `sweep.sbatch` is sized for Qwen3-14B's 29.6 GB checkpoint.**
