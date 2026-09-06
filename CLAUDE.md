@@ -36,14 +36,25 @@ exports it already).
 Run the full test suite:
 
 ```bash
-uv run --no-sync pytest -q
+uv run --no-sync pytest -q --ignore=tests/test_hierarchical_model.py \
+                           --ignore=tests/test_mixed_models.py
 ```
 
 Always use `--no-sync` — a plain `uv run` re-syncs to the default dependency set
-and uninstalls the optional `pipeline` extras. 345 tests total, plus 23 more in
-`tests/test_node_naming.py` (368). On the cluster, `pytest -q` must report
-exactly that many passed; a different number means the env is wrong, not the
-code.
+and uninstalls the optional `pipeline` extras. That command must report exactly
+**549 passed**; a different number means the env is wrong, not the code.
+
+The two ignored files import `statsmodels`, which is **not** installed in either
+`conda_envs/graphtalk` or `conda_envs/graphtalk-cu126` — the only envs this
+project runs in. (It does exist at 0.12.0 in the base `anaconda3` install and at
+0.15.0 in the unrelated `ember` env, so "is statsmodels on this machine" is the
+wrong question to ask.) Without it pytest aborts during *collection* with a
+`ModuleNotFoundError` and reports **zero** passes rather than two failures, so a
+plain `pytest -q` looks catastrophically broken when nothing is wrong. Those
+files hold 24 further test functions that only run where `statsmodels` is
+present; installing it into the graphtalk env would fold them back into the
+default command, but do not do that while a sweep is running — `sweep.sbatch`
+activates that same env.
 
 Run a single test file or test:
 
@@ -198,8 +209,12 @@ break them:
 
 ### Testing conventions
 
-- 345 tests: vendored generator/encoder/metric tests, primer statistics/renderer/
-  golden-string tests, shortcut-solver tests, prompt-assembly/scoring tests.
+- 549 tests: vendored generator/encoder/metric tests, primer statistics/renderer/
+  golden-string tests, shortcut-solver tests, prompt-assembly/scoring tests,
+  node-naming, analysis, and the size/density sweep builders. A further 24 test
+  functions live in the two `statsmodels`-dependent files above and do not run
+  in this env — see "Commands" for why they must be `--ignore`d rather than
+  left to fail.
 - Theorem rule precision is asserted at exactly 1.0 over both an Erdős–Rényi
   corpus and an adversarial corpus (trees, forests, cycles, complete bipartite
   graphs) — the ER generator alone never produces a tree, so a rule that's
