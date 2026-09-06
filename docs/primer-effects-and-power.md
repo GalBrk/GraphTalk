@@ -426,6 +426,11 @@ other clones still need `git remote set-url`).
 3 shards, a5000, `--exclude=n-501`, 10 h limit, tag `ec500`, writing
 `runs/qwen3-1.7b.ec500.shard*of3.jsonl`.
 
+**Job 858671 `dens40-q17b`** -- `qwen3-1.7b` on `prompts.density40.jsonl`, 3
+shards, a5000, `--exclude=n-501`, 10 h limit, tag `density40`, writing
+`runs/qwen3-1.7b.density40.shard*of3.jsonl`. See "Density at a fixed size"
+below for what it tests and what to check.
+
 This is the **replication of the only unreplicated headline results**. Score it
 against the 8B numbers in "The experiment, and what it found". What matters is
 direction and rank order, not effect size -- the 1.7B baseline on `edge_count`
@@ -440,8 +445,87 @@ and the most consequential claim, because it contradicts the intuition that a
 primer is at worst neutral. If it replicates, the claim is solid. If it does
 not, it is a `qwen3-8b` property and must be written up as such.
 
+### Density at a fixed size
+
+**What it tests.** `docs/difficulty-scaling.md` and the driver analysis in
+`docs/plans/scale-vs-topology-investigation.md` claim the `degree` primer's
+benefit on `edge_count` "grows monotonically and substantially with graph size,
+degree-sequence variance, and density". That claim is observational, measured
+over 5-19 node graphs where all three co-vary, and the same document names a
+Simpson's-paradox confound in its own naive version. This run is the controlled
+form of it: **size held fixed at n=40, density pinned per level**, so density
+moves alone.
+
+**Design.** n=40 x 6 density levels x 100 graphs x {`node_degree`,
+`connected_nodes`} x {`none`, `degree`} = 2,400 prompts, `qwen3-1.7b`.
+
+| p | mean degree | edges (med) | prompt chars (med / max) | `node_degree` majority baseline |
+|---|---|---|---|---|
+| 0.05 | 2.0 | 39 | 2,099 / 2,704 | 0.300 |
+| 0.10 | 3.9 | 79 | 2,589 / 3,050 | 0.210 |
+| 0.20 | 7.8 | 155 | 3,252 / 3,703 | 0.170 |
+| 0.35 | 13.6 | 273 | 4,111 / 4,662 | 0.170 |
+| 0.50 | 19.5 | 390 | 5,000 / 5,542 | 0.180 |
+| 0.75 | 29.2 | 585 | 6,542 / 6,962 | 0.160 |
+
+Every cell keeps real headroom (majority baseline 0.16-0.30), which is the
+check that stops a level from being another `reachability`.
+
+**Why the bounds are where they are.**
+
+- **p = 1.00 is excluded** -- that is the complete graph. Every node has degree
+  39, so `node_degree`'s majority baseline is **1.000** and answering "39"
+  blind scores perfectly. Worth noting the tracked corpus's own `U(0, 1)`
+  policy includes this degenerate endpoint as a rare draw.
+- **p = 0.05 is the floor.** Below the connectivity threshold (~0.09 at n=40)
+  about 16% of `connected_nodes` gold sets are empty. `scoring.set_f1` handles
+  that deliberately and correctly (both-empty scores 1.0, since "No nodes" is
+  the right answer for an isolated node), but an empty answer is near-free
+  accuracy, so going sparser donates points rather than measuring anything.
+- **Two tasks, not six.** `edge_count` is out for the same reason the size
+  sweep excluded it: 585 edges at p=0.75 against a 2,048-token budget measures
+  truncation, not ability. `cycle_check` degenerates -- every graph past the
+  sparsest level has a cycle. `node_count` is already flat at 1.000 across
+  every size measured, and density does not change the node list.
+- **ER-only, built here rather than via `--graph-source diverse`.**
+  `er_min_sparsity`/`er_max_sparsity` reach only the `er` algorithm; the other
+  six in `diverse_corpus.ALGORITHMS` have no sparsity parameter at all
+  (`complete`/`star`/`path` are at the density extremes by construction). At
+  the `--count 30` that `difficulty-scaling.md` recommends, the knob would
+  touch 5 graphs out of 30. `build_size_sweep.py` generates ER directly, so
+  100% of the corpus receives the manipulation.
+- **Levels are pinned, not sampled.** `--densities` sets
+  `er_min == er_max`, and `random.uniform(p, p) == p`, so each level is an
+  exact density rather than another `U`-draw. This is what makes density an
+  experimental variable instead of corpus noise.
+
+**What to check when it lands.** Filter `hit_cap` rows first, then read
+`degree` minus `none` **per density level**, against
+`bar(degree) - bar(none)` from `shortcuts.json` and not against zero. The
+claim under test predicts a monotone increase in that gap from p=0.05 to
+p=0.75. A flat profile means the driver analysis was reading a size/density
+confound rather than a density effect; a *decreasing* profile would mean the
+primer helps most where counting is easiest, which would be a genuinely new
+result and worth a second model before believing it.
+
 ### Deliberately not run
 
+- **`--xlarge` (20-39 nodes) from `docs/difficulty-scaling.md`** -- subsumed.
+  The size sweep above already covers 20/40/80 at 50 graphs per class, so the
+  bucket sits strictly inside measured ground at lower resolution.
+- **`reachability`** -- degenerate on this corpus. Five of the seven generator
+  families are connected by construction, `sbm` almost always is, and `er` is
+  once density is raised; under `difficulty-scaling.md`'s own recommended
+  command the gold answer is "Yes" **210 times out of 210**, so answering "Yes"
+  blind scores 1.000. It also has no shortcut bar -- `shortcuts.py` keeps its
+  own task list and was not extended -- so an effect there would be
+  uninterpretable by this project's own standard even if the golds were
+  balanced. Reviving it needs disconnected graphs in the pool (a forest family,
+  or SBM with near-zero inter-community probability) plus a solver entry.
+- **The input-overflow guard** -- `ModelSpec.max_context_tokens` is `None` for
+  every model, so the check `hf_backend.py` performs is a no-op. Not a blocker
+  here: the densest prompt in this run is 6,962 characters against a
+  40,960-token context.
 - **`qwen3-14b` on `ec500`** -- cancelled at 206/2,000 after its shard 0 spent
   ~10 of 12 h in the page-cache warm-up. Partial rows are in
   `runs/archive/cancelled-*`. `qwen3-1.7b` replaces it as the replication.
