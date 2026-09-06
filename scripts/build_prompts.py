@@ -19,11 +19,22 @@ import json
 import os
 import random
 
+import numpy as np
+
 from graphtalk import graphqa
+from graphtalk import models
 from graphtalk import node_naming
 from graphtalk import primers
 from graphtalk import prompts
 from graphtalk import scoring
+
+# Rough chars-per-token ratio for English text, used only for the optional
+# pre-GPU overflow warning below -- not a real tokenizer count. `models.py`
+# (and everything build_prompts.py imports) is deliberately free of `torch`/
+# `transformers`, which only `graphtalk/hf_backend.py` may import, so an exact
+# count isn't available here; the real, exact check happens once the prompt
+# actually reaches hf_backend.generate.
+_APPROX_CHARS_PER_TOKEN = 4
 
 # The published split ships one particular query draw per row, and that draw is
 # what a model gets scored against. Re-sampling queries here would score the model
@@ -95,7 +106,10 @@ def build(count: int, conditions, styles, split: str, cache: str,
 
 
 def build_diverse(count: int, conditions, styles, k_min: int, k_max: int,
-                   seed: int = 1234, tasks=scoring.TASKS) -> list[dict]:
+                   seed: int = 1234, tasks=scoring.TASKS,
+                   node_size_ranges=None,
+                   er_min_sparsity: float = 0.0,
+                   er_max_sparsity: float = 1.0) -> list[dict]:
   """Like `build`, but sources graphs from a balanced multi-algorithm pool
   (`diverse_corpus`) instead of the published (ER-only) zero_shot_test split.
 
@@ -104,16 +118,22 @@ def build_diverse(count: int, conditions, styles, k_min: int, k_max: int,
   the pool is what lets a later analysis compare per-algorithm success rate
   against a consistent graph set across tasks.
 
+  `node_size_ranges`/`er_min_sparsity`/`er_max_sparsity` pass straight through
+  to `diverse_corpus.build_pool` (same defaults, so omitting them reproduces
+  today's behavior exactly) -- see `main`'s `--xlarge`/`--er-min-sparsity`/
+  `--er-max-sparsity` flags.
+
   `graphtalk.diverse_corpus` is imported here, not at module level, so
-  that everything else in this script stays usable even when that module
-  is missing (as of this writing, `graphtalk/diverse_corpus.py` doesn't
-  exist in this checkout at all -- only `tests/test_diverse_corpus.py`
-  was ever committed, a pre-existing gap unrelated to `--graph-source
-  diverse` specifically; see CLAUDE.md/session notes). Only a caller who
-  actually asks for `--graph-source diverse` pays for that gap.
+  that everything else in this script stays importable even in a checkout
+  where that module (or the vendored `talk_like_a_graph` package it needs)
+  is unavailable for some reason. Only a caller who actually asks for
+  `--graph-source diverse` pays for that dependency.
   """
   from graphtalk import diverse_corpus
-  pool = diverse_corpus.build_pool(count, seed=seed)
+  pool = diverse_corpus.build_pool(
+      count, seed=seed, node_size_ranges=node_size_ranges,
+      er_min_sparsity=er_min_sparsity, er_max_sparsity=er_max_sparsity,
+  )
   records = []
   for task in tasks:
     rng = random.Random(seed)
@@ -324,7 +344,7 @@ def main() -> None:
                            "--count largest (default 500, the published split's "
                            "per-task cap)")
   parser.add_argument("--tasks", nargs="+", default=list(scoring.TASKS),
-                      choices=scoring.TASKS,
+                      choices=scoring.ALL_TASKS,
                       help="which of scoring.TASKS to build prompts for "
                            "(default: all 6, today's unchanged behavior). A "
                            "targeted follow-up sized for one task (e.g. a "
@@ -332,16 +352,56 @@ def main() -> None:
                            "--tasks edge_count so the collected --count is "
                            "spent entirely on the task the cell needs, not "
                            "split 6 ways across tasks the follow-up doesn't "
-                           "test.")
+                           "test. 'reachability' is also accepted, but only "
+                           "with --graph-source diverse -- the published HF "
+                           "dataset has no reachability config to fetch.")
+  parser.add_argument("--model", default=None, choices=list(models.MODELS),
+                      help="if given, warn (not fail) when any built "
+                           "prompt's approximate token count -- chars/"
+                           f"{_APPROX_CHARS_PER_TOKEN}, not a real tokenizer "
+                           "count -- would exceed this model's "
+                           "max_context_tokens minus its max_new_tokens "
+                           "budget. The exact, authoritative check happens "
+                           "in graphtalk/hf_backend.py at generation time; "
+                           "this is only an early, approximate warning.")
+  parser.add_argument("--xlarge", action="store_true",
+                      help="--graph-source diverse only: add a 20-39 node "
+                           "size bucket alongside the generator's default "
+                           "5-19 node range, for a harder eval.")
+  parser.add_argument("--er-min-sparsity", type=float, default=0.0,
+                      help="--graph-source diverse only: minimum ER edge "
+                           "probability (only affects the 'er' algorithm "
+                           "in the pool).")
+  parser.add_argument("--er-max-sparsity", type=float, default=1.0,
+                      help="--graph-source diverse only: maximum ER edge "
+                           "probability (only affects the 'er' algorithm "
+                           "in the pool).")
   args = parser.parse_args()
 
   if args.graph_source == "diverse" and args.node_naming != "integer":
     raise NotImplementedError(
         f"--graph-source diverse only supports --node-naming integer for now"
     )
+  if "reachability" in args.tasks and args.graph_source != "diverse":
+    raise ValueError(
+        "--tasks reachability requires --graph-source diverse -- the "
+        "published HF dataset has no reachability config to fetch"
+    )
+  if (args.xlarge or args.er_min_sparsity or args.er_max_sparsity != 1.0
+      ) and args.graph_source != "diverse":
+    raise ValueError(
+        "--xlarge/--er-min-sparsity/--er-max-sparsity require "
+        "--graph-source diverse"
+    )
   if args.graph_source == "diverse":
+    node_size_ranges = (
+        {"xlarge": np.arange(20, 40)} if args.xlarge else None
+    )
     records = build_diverse(args.count, args.conditions, args.styles,
-                            args.k_min, args.k_max, tasks=args.tasks)
+                            args.k_min, args.k_max, tasks=args.tasks,
+                            node_size_ranges=node_size_ranges,
+                            er_min_sparsity=args.er_min_sparsity,
+                            er_max_sparsity=args.er_max_sparsity)
   elif args.graph_source == "stratified":
     records = build_stratified(args.count, args.conditions, args.styles,
                                args.split, args.cache, args.k_min, args.k_max,
@@ -367,6 +427,25 @@ def main() -> None:
   lengths = [len(r["prompt"]) for r in records]
   print(f"  prompt chars: min {min(lengths)}, mean {sum(lengths)//len(lengths)}, "
         f"max {max(lengths)}")
+
+  if args.model:
+    spec = models.MODELS[args.model]
+    if spec.max_context_tokens:
+      style = args.styles[0] if args.styles else "zero_shot"
+      reserve = models.budget(spec, style)
+      limit = spec.max_context_tokens - reserve
+      approx_tokens = [n // _APPROX_CHARS_PER_TOKEN for n in lengths]
+      overflow = [n for n in approx_tokens if n > limit]
+      if overflow:
+        print(f"  WARNING: {len(overflow)}/{len(records)} prompts approx-"
+              f"exceed {args.model}'s context budget ({limit} tokens after "
+              f"reserving {reserve} for generation); this is a chars/"
+              f"{_APPROX_CHARS_PER_TOKEN} approximation, not an exact "
+              f"tokenizer count -- the exact check happens on the real "
+              f"tokenizer in hf_backend.generate")
+    else:
+      print(f"  {args.model} has no max_context_tokens recorded yet -- "
+            f"skipping the approximate overflow warning")
 
 
 if __name__ == "__main__":

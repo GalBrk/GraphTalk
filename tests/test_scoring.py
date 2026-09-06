@@ -1,11 +1,13 @@
-"""Tests for `graphtalk.scoring.extract_answer_first`.
+"""Tests for `graphtalk/scoring.py`.
 
-No test file existed for `graphtalk/scoring.py` before this session; this one
-stays scoped to `extract_answer_first`, added alongside the non-termination
-"looped on the correct answer" diagnostic in `graphtalk/analysis.py`'s
-`build_frame` (see `scripts/check_significance.py`'s `n_looped_on_correct_answer`
-column). It does not attempt to cover `extract_answer` itself, which has no
-existing regression suite to extend here.
+No test file existed for `graphtalk/scoring.py` before this session; it
+started out scoped to `extract_answer_first`, added alongside the
+non-termination "looped on the correct answer" diagnostic in
+`graphtalk/analysis.py`'s `build_frame` (see `scripts/check_significance.py`'s
+`n_looped_on_correct_answer` column), and did not attempt to cover
+`extract_answer`/`score_one` themselves. The `TASKS`/`ALL_TASKS` section below
+adds narrow coverage of those two for the `reachability` task specifically,
+without attempting a general regression suite for either.
 """
 
 import pytest
@@ -78,3 +80,39 @@ def test_extract_answer_first_on_empty_text_returns_none():
 def test_extract_answer_first_raises_on_unknown_task():
   with pytest.raises(ValueError, match="unknown task"):
     scoring.extract_answer_first("Answer: 3.", "not_a_real_task")
+
+
+# --- TASKS/ALL_TASKS split (reachability is opt-in, not published) ----------
+#
+# `reachability` has no published-dataset config, so it must stay out of
+# `TASKS` (the default `--tasks`/`build_diverse` value that drives
+# `graphqa.fetch_rows`) while still being accepted by the scorer via
+# `ALL_TASKS`. See `graphtalk/diverse_corpus.py::make_row` and
+# `scripts/build_prompts.py --tasks`.
+
+
+def test_tasks_tuple_unchanged_by_reachability_addition():
+  assert scoring.TASKS == (
+      "node_count", "edge_count", "node_degree",
+      "connected_nodes", "edge_existence", "cycle_check",
+  )
+  assert "reachability" not in scoring.TASKS
+  assert "reachability" in scoring.ALL_TASKS
+
+
+def test_reachability_accepted_by_extract_answer():
+  assert scoring.extract_answer("Answer: Yes.", "reachability") == "Yes"
+  assert scoring.extract_answer("Answer: No.", "reachability") == "No"
+
+
+def test_reachability_accepted_by_score_one():
+  result = scoring.score_one("Yes", "Yes", "reachability")
+  assert result["primary"] == 1.0
+  assert result["exact"] == 1.0
+  result = scoring.score_one("Yes", "No", "reachability")
+  assert result["primary"] == 0.0
+
+
+def test_extract_answer_still_raises_on_unknown_task():
+  with pytest.raises(ValueError, match="unknown task"):
+    scoring.extract_answer("Answer: 3.", "not_a_real_task")

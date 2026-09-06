@@ -11,6 +11,8 @@ than re-derived.
 
 import random
 
+import numpy as np
+
 from graphtalk import diverse_corpus
 from graphtalk import graphqa
 from graphtalk import scoring
@@ -53,6 +55,45 @@ def test_small_count_still_splits_without_error():
   # Fewer graphs than algorithms: some algorithms legitimately get zero.
   pool = diverse_corpus.build_pool(3)
   assert len(pool) == 3
+
+
+def test_node_size_ranges_override_reaches_generate_graphs():
+  xlarge_ranges = {"xlarge": np.arange(20, 40)}
+  pool = diverse_corpus.build_pool(14, node_size_ranges=xlarge_ranges)
+  for _, graph in pool:
+    assert 20 <= graph.number_of_nodes() < 40
+
+
+def test_default_pool_unaffected_by_node_size_ranges_param():
+  # No node_size_ranges passed: must match today's recorded behavior exactly.
+  default = diverse_corpus.build_pool(30, seed=42)
+  explicit_none = diverse_corpus.build_pool(30, seed=42, node_size_ranges=None)
+  assert [(alg, sorted(g.edges())) for alg, g in default] == (
+      [(alg, sorted(g.edges())) for alg, g in explicit_none]
+  )
+
+
+def test_er_sparsity_override_reaches_generate_graphs():
+  dense_pool = diverse_corpus.build_pool(
+      7, er_min_sparsity=0.8, er_max_sparsity=1.0
+  )
+  er_graphs = [g for alg, g in dense_pool if alg == "er"]
+  assert er_graphs
+  for graph in er_graphs:
+    n = graph.number_of_nodes()
+    max_edges = n * (n - 1) / 2
+    if max_edges:
+      assert graph.number_of_edges() >= 0.5 * max_edges
+
+
+def test_default_pool_unaffected_by_er_sparsity_param():
+  default = diverse_corpus.build_pool(30, seed=42)
+  explicit = diverse_corpus.build_pool(
+      30, seed=42, er_min_sparsity=0.0, er_max_sparsity=1.0
+  )
+  assert [(alg, sorted(g.edges())) for alg, g in default] == (
+      [(alg, sorted(g.edges())) for alg, g in explicit]
+  )
 
 
 # --- make_row -----------------------------------------------------------
@@ -112,6 +153,20 @@ def test_edge_existence_samples_two_distinct_nodes():
   )
 
 
+def test_reachability_samples_two_distinct_nodes():
+  graph = _one_graph()
+  rng = random.Random(0)
+  row = diverse_corpus.make_row(graph, "reachability", rng)
+  source, target = row["targets"]
+  assert source != target
+  assert row["task_description"] == (
+      f"Q: Is there a path from node {source} to node {target}?\nA: "
+  )
+  assert row["gold"] == graphqa.gold_answer(
+      graph, "reachability", (source, target)
+  )
+
+
 def test_unknown_task_raises():
   graph = _one_graph()
   try:
@@ -146,3 +201,29 @@ def test_build_diverse_tasks_param_restricts_which_tasks_are_built():
   )
   assert records
   assert {r["task"] for r in records} == {"node_count"}
+
+
+def test_build_diverse_xlarge_and_sparsity_params_reach_the_pool():
+  records = build_prompts.build_diverse(
+      7, conditions=["none"], styles=["zero_shot"], k_min=2, k_max=3,
+      tasks=["node_count"],
+      node_size_ranges={"xlarge": np.arange(20, 40)},
+      er_min_sparsity=0.8, er_max_sparsity=1.0,
+  )
+  assert records
+  for record in records:
+    assert 20 <= record["nodes"] < 40
+
+
+def test_build_diverse_supports_reachability_explicitly():
+  # reachability is opt-in only (not in scoring.TASKS's default), reachable
+  # by passing it explicitly -- see scoring.ALL_TASKS / build_prompts.py's
+  # --tasks choices.
+  records = build_prompts.build_diverse(
+      7, conditions=["none"], styles=["zero_shot"], k_min=2, k_max=3,
+      tasks=["reachability"],
+  )
+  assert records
+  assert {r["task"] for r in records} == {"reachability"}
+  for record in records:
+    assert record["gold"] in ("Yes", "No")
