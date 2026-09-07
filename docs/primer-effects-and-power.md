@@ -484,7 +484,13 @@ other clones still need `git remote set-url`).
 | `density40` | qwen3-1.7b | 2,400 | n=40 x 6 pinned ER densities x {node_degree, connected_nodes} x {none, degree}; job 858671 |
 | `size` | qwen3-1.7b, -think, qwen3-8b, -think | 600 | 20/40/80-node graphs x 4 tasks x none |
 
-### Nothing is in flight
+### In flight
+
+**Job 866467 `degdens40-q17b`** -- `qwen3-1.7b`, `node_degree` x {`none`,
+`components`, `clustering`} at n=40 across densities {0.10, 0.20, 0.35, 0.50},
+400 graphs per level, 5 shards, tag `degdens40`, writing
+`runs/qwen3-1.7b.degdens40.shard*of5.jsonl`. Design and sizing are in "Density
+at a fixed size" below.
 
 Jobs 858244 (`ec17-clean`) and 858671 (`dens40-q17b`) both completed on
 2026-09-07 and are written up above and below respectively.
@@ -656,12 +662,66 @@ nearly every task (1.00 on `node_count`, `edge_count` and `node_degree`; 0.79 on
 0.02 -- which is the `ec500` design, and why that cell is this project's
 flagship.
 
-**The density sweep worth running is `ec500`'s conditions across density
-levels**, not the `degree` primer on any task. Truncation is the only real
-obstacle, and it is smaller than assumed: outputs here peaked at 777 tokens
-against a 2,048-token budget. Weight the levels toward the dense end this time,
-and keep at least two inside the tracked corpus's range so the result can be
-compared with the driver analysis rather than talking past it.
+**Truncation rules `edge_count` out at these sizes, and the 777-token figure
+quoted in an earlier revision of this section was measured on the wrong tasks.**
+It came from `node_degree`/`connected_nodes`, which answer with an integer or a
+short list. `edge_count` makes the model *enumerate*, so its output grows with
+the graph. Fitted on this project's own `ec500` rows (`gold` is the edge count,
+so the relationship is directly measurable):
+
+| edges | median output tokens | hit_cap |
+|---|---|---|
+| <25 | 453 | 2.5% |
+| 25-49 | 788 | 7.3% |
+| 50-79 | 1,040 | 6.2% |
+| 80-119 | 1,143 | 10.2% |
+| 120-170 | 989 | 13.0% |
+
+`output_tokens ~= 624 + 5.4 * edges`, which puts n=40 at p=0.35 (273 edges) at
+~2,107 tokens and n=80 under U(0, 1) (~1,900 edges) at ~10,900 -- against a
+2,048-token budget. The size sweep's original exclusion of `edge_count` was
+correct, and it does not become affordable by picking a different density: it
+needs `--max-new-tokens` raised to ~8,000, which the 40,960-token context allows
+but which multiplies generation time.
+
+**`node_degree` is the cell that actually clears every filter, and it needed no
+budget change.** Three facts, all already in this document, converge on it:
+
+- **Headroom.** Saturation is an artifact of the 19-node cap, not the task
+  (Summary item 5). At n=40 `qwen3-1.7b` scores 0.440 on `node_degree`, against
+  0.975 on `connected_nodes` -- the cell this run wrongly chose for its clean arm.
+- **Bar.** The `node_degree` row of the bar table reads 0.08 for both
+  `components` and `clustering`, identical to `none`. A bar delta of zero. Only
+  `degree` (1.00) and `rwse` (0.62) are contaminated, and `degree` is exactly
+  what this run paired it with.
+- **Cost.** Its answer is one integer, so output ran 78-279 tokens median and
+  777 max here, with 1 capped row in 2,400. It scales to any density or size
+  this project cares about.
+
+**Submitted as job 866467 `degdens40-q17b`**: `node_degree` x {`none`,
+`components`, `clustering`} at n=40, densities {0.10, 0.20, 0.35, 0.50}, 400
+graphs per level, 4,800 rows, tag `degdens40`.
+
+Sized from measured discordance rather than a guess. `none` vs `degree`
+discordance in this run was 7/7/13/36/30/16% across the six levels, so the
+middle densities carry the most information per graph. Exact-McNemar power at a
+conservative discordance of 0.30: 400 graphs gives **0.80 power at an 8 pp
+effect and 0.95 at 10 pp**, which covers `ec500`-scale effects (+5.0, -13.7).
+A 5 pp effect remains underpowered at this size (~0.39) and should not be
+claimed from this run.
+
+Two levels (0.10, 0.20) sit inside the tracked corpus's edge range and two
+(0.35, 0.50) beyond it, so the result can be compared against the driver
+analysis instead of talking past it -- the mistake the previous run made.
+p=0.05 and p=0.75 are dropped: at 0.980 and 0.120 accuracy they are ceiling and
+floor, and their discordance (7%, 16%) buys little.
+
+**Five shards, not three.** Records cycle through conditions innermost, so a
+shard count sharing a factor with the condition count hands each shard a single
+condition: at 3 shards, shard 0 receives all 1,600 `none` rows and nothing else.
+Checked before submitting. This is the parity trap in Operational notes,
+generalised from two conditions to three -- the rule is that the shard count
+must be **coprime with the number of conditions**, not merely odd.
 
 ### Deliberately not run
 
@@ -723,9 +783,15 @@ Two rules, both learned the hard way:
   `sweep.sbatch`'s comments name only n-802/803/804. Three shards died there in
   94 s (the driver guard working). Use `GRAPHTALK_ENV=graphtalk-cu126` or
   `--exclude=n-501`.
-- **Use an ODD `--array` shard count.** With 2 conditions the stride preserves
-  parity, so an even count sends `none` to even shards and `degree` to odd ones;
-  partial progress is then unpaired and mid-run comparisons are meaningless.
+- **The `--array` shard count must be coprime with the number of conditions.**
+  Records cycle through conditions innermost, so a shard count sharing a factor
+  with the condition count gives each shard a single condition. With 2
+  conditions an even count sends `none` to even shards and `degree` to odd ones;
+  with **3** conditions a 3-shard array gives shard 0 every `none` row and
+  nothing else (checked while preparing job 866467, which uses 5). "Use an odd
+  count" was the 2-condition special case of this, and it is wrong at 3 -- 3 is
+  odd. Partial progress is then unpaired and mid-run comparisons are
+  meaningless.
 - **`--array=1,2,4` does NOT mean "shards 1, 2 and 4 of 5".**
   `SLURM_ARRAY_TASK_COUNT` is the number of tasks (3), so `sweep.sbatch` computes
   `NSHARDS=3` and each task strides `records[i::3]`. Resubmitting failed shards
