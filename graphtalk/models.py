@@ -45,6 +45,12 @@ class ModelSpec:
   mode needs far more room than the same model without it, and a truncated
   `<think>` block loses the answer entirely -- the conclusion comes after the
   reasoning, so the cost of being wrong here is the whole row.
+
+  `max_context_tokens` is the checkpoint's published context window (input +
+  output combined), used only to catch an oversized prompt before generation
+  (`graphtalk/hf_backend.py`) rather than to change anything about how a
+  prompt is built. `None` until measured/filled in per model, which makes the
+  check a no-op rather than a guess.
   """
 
   key: str
@@ -55,6 +61,7 @@ class ModelSpec:
   min_vram_gb: int
   chat_kwargs: dict = dataclasses.field(default_factory=dict)
   max_new_tokens: dict | None = None
+  max_context_tokens: int | None = None
 
 
 # Budget for the thinking arm. Placeholder until measured -- see

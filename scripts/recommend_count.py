@@ -83,21 +83,40 @@ _MDE_N_STEPS = 5
 
 def _mde_for_family_significant_cell(
     frame: pd.DataFrame, model: str, condition: str, delta: float,
-    seed: int = 1234,
+    seed: int = 1234, task: str | None = None,
 ) -> float | None:
-  """On-demand MDE for one (model, condition) cell that
-  `check_significance.py` never simulated one for, because the cell was
-  already significant within its own per-family correction (see the
-  module docstring). Mirrors `_report`'s own MDE call as closely as
+  """On-demand MDE for one (model, condition[, task]) cell that
+  `check_significance.py` never simulated one for. Two distinct reasons a
+  cell ends up here rather than reading a pre-computed `mde_delta` off the
+  report (see the module docstring for the first; `--task`, Phase 4a of
+  `docs/plans/run_improved_tests.md`, for the second):
+
+  1. The cell was already significant within its own per-family
+     correction (`bh_significant=True`) -- `check_significance.py`'s own
+     MDE trigger is `not {per-family significance}`, computed before
+     `bh_significant_global` even exists, so it never ran for these rows.
+  2. `task` is given: `_report_exact_per_task`'s per-task rows never carry
+     an MDE at all, significant or not (that function deliberately keeps
+     MDE pooled-only -- see its own docstring), so a task-scoped
+     recommendation always needs a fresh simulation, not just the
+     family-significant subset.
+
+  Mirrors `_report`/`_report_exact_per_task`'s own MDE call as closely as
   possible: same main-sweep scope (`~is_think`, non-terminating rows
   included -- `graphtalk.analysis.build_frame` already forces them to
   score as wrong, so nothing is excluded here either), same
   bootstrap-CI-width-seeded `initial_hi`, same direction convention
-  (search the side matching the observed `delta`'s own sign). Returns
-  `None` if the cell has no paired rows at all (shouldn't happen for a
-  cell the report already scored, but checked rather than assumed).
+  (search the side matching the observed `delta`'s own sign). `task`,
+  when given, scopes `cell_frame` to that one task before pairing --
+  the same scoping `_report_exact_per_task` applies to its own permutation
+  test, so the MDE and the effect it's sized against are computed on the
+  same data. Returns `None` if the cell has no paired rows at all
+  (shouldn't happen for a cell the report already scored, but checked
+  rather than assumed).
   """
   cell_frame = frame[(frame["model_family"] == model) & (~frame["is_think"])]
+  if task is not None:
+    cell_frame = cell_frame[cell_frame["task"] == task]
   control, treatment, cluster_ids = cs._paired_values(cell_frame, condition, "exact")
   if not control:
     return None
@@ -116,7 +135,7 @@ def _mde_for_family_significant_cell(
 
 def recommend(
     report: pd.DataFrame, current_count: int = _CURRENT_COUNT,
-    frame: pd.DataFrame | None = None,
+    frame: pd.DataFrame | None = None, task: str | None = None,
 ) -> pd.DataFrame:
   """One row per non-*globally*-significant main-sweep `exact` cell
   (`bound == "excluded"`, not derived, not the pooled-across-models row --
@@ -130,12 +149,31 @@ def recommend(
   significant gets a real, freshly-simulated MDE via
   `_mde_for_family_significant_cell` instead of being skipped outright --
   see the module docstring.
+
+  `task` (optional, Phase 4a of `docs/plans/run_improved_tests.md`):
+  scopes to `report`'s per-task rows for that task (`_report_exact_per_task`
+  in `check_significance.py`, populated only when that script was run with
+  `--metric exact`/`both`) instead of the pooled-across-6-tasks rows this
+  function reads by default. **Requires `frame`** -- per-task rows never
+  carry a pre-computed MDE (unlike pooled rows, which sometimes do), so a
+  `task`-scoped recommendation always needs `_mde_for_family_significant_cell`'s
+  on-demand simulation, scoped to that task, regardless of `bh_significant`.
+  Raises if `frame` is missing, rather than silently skipping every row
+  with a confusing "MDE did not converge" reason that isn't actually true.
   """
+  if task is not None and frame is None:
+    raise ValueError(
+        "--task requires --frame: per-task rows never carry a "
+        "pre-computed MDE (see this function's docstring), so a "
+        "task-scoped recommendation always needs a fresh simulation"
+    )
   scoped = report[
       (report["arm"] == "main_sweep") & (report["metric"] == "exact")
       & (report["bound"] == "excluded") & (~report["is_derived_condition"])
       & (report["group"] != "pooled across all models")
   ]
+  if task is not None:
+    scoped = scoped[scoped["task"] == task]
   rows = []
   for _, r in scoped.iterrows():
     # Every row gets the same keys regardless of branch -- a DataFrame
@@ -161,7 +199,16 @@ def recommend(
     if r["delta"] == 0:
       rows.append({**base, "skip_reason": "observed delta is exactly zero"})
       continue
-    if r["bh_significant"]:
+    if task is not None:
+      # Per-task rows never carry a pre-computed MDE at all (see this
+      # function's and _mde_for_family_significant_cell's docstrings) --
+      # always simulate one on demand, task-scoped, regardless of
+      # bh_significant. `task is not None` already implies `frame is not
+      # None` (checked above), so this is always reachable here.
+      mde = _mde_for_family_significant_cell(
+          frame, r["group"], r["condition"], r["delta"], task=task,
+      )
+    elif r["bh_significant"]:
       # Family-significant, not globally significant: check_significance.py
       # never simulated an MDE for this row (see the module docstring) --
       # compute one now, on demand, if a frame was given to compute it from.
@@ -200,12 +247,19 @@ def main() -> None:
                             "globally-significant cells get a real,  "
                             "on-demand MDE instead of being skipped; see "
                             "the module docstring")
+  parser.add_argument("--task", default=None,
+                       help="scope to --report's per-task rows for this "
+                            "task (needs check_significance.py to have "
+                            "been run with --metric exact/both first) "
+                            "instead of the pooled-across-6-tasks rows "
+                            "read by default. Requires --frame.")
   parser.add_argument("--out", default=None)
   args = parser.parse_args()
 
   report = pd.read_csv(args.report)
   frame = pd.read_csv(args.frame) if args.frame else None
-  result = recommend(report, current_count=args.current_count, frame=frame)
+  result = recommend(report, current_count=args.current_count, frame=frame,
+                      task=args.task)
 
   finite = result[result["recommended_count"].notna()].sort_values("recommended_count")
   skipped = result[result["recommended_count"].isna()]

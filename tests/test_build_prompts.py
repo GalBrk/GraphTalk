@@ -205,6 +205,63 @@ def test_selected_graphs_carry_correct_gold_answers(monkeypatch):
     assert record["gold"] == str(record["nodes"])
 
 
+def test_tasks_param_restricts_which_tasks_are_built(monkeypatch):
+  """Phase C: a targeted follow-up sized for one pre-registered cell (e.g.
+  `edge_count` for `qwen3-14b`/`degree`) must not spend any of its --count
+  budget building prompts for the other 5 tasks it isn't testing."""
+  sizes = [5, 9, 3, 12]
+  _pool, calls = _stub_pool(monkeypatch, sizes)
+  records = build_prompts.build_stratified(
+      count=2, conditions=["none"], styles=["zero_shot"], split="x",
+      cache="unused", k_min=2, k_max=3, pool_size=len(sizes),
+      tasks=["edge_count"],
+  )
+  assert {r["task"] for r in records} == {"edge_count"}
+  assert len(calls) == 1
+  assert calls[0][0] == "edge_count"
+
+
+def test_tasks_param_defaults_to_every_task(monkeypatch):
+  sizes = [5, 9, 3, 12]
+  _stub_pool(monkeypatch, sizes)
+  records = build_prompts.build_stratified(
+      count=2, conditions=["none"], styles=["zero_shot"], split="x",
+      cache="unused", k_min=2, k_max=3, pool_size=len(sizes),
+  )
+  assert {r["task"] for r in records} == set(build_prompts.scoring.TASKS)
+
+
+def test_stratified_default_naming_is_integer_and_omits_the_field(monkeypatch):
+  sizes = [5, 9, 3]
+  _stub_pool(monkeypatch, sizes)
+  records = build_prompts.build_stratified(
+      count=2, conditions=["none"], styles=["zero_shot"], split="x",
+      cache="unused", k_min=2, k_max=3, pool_size=len(sizes),
+  )
+  assert all("node_naming" not in r for r in records)
+
+
+def test_stratified_supports_got_naming(monkeypatch):
+  """Phase 4b (`docs/plans/run_improved_tests.md`): GOT name assignment
+  is purely positional by node count (verified directly in
+  `build_prompts.build_stratified`'s own docstring), so a graph selected
+  by size ranking here must get the exact same name map `build_named`
+  would have given the same graph -- checked here by confirming a known
+  GOT name (`node_naming.GOT_NAMES[0]`) actually appears in the rendered
+  prompt, not just that the call doesn't raise."""
+  from graphtalk import node_naming
+  sizes = [5, 9, 3]
+  _stub_pool(monkeypatch, sizes)
+  records = build_prompts.build_stratified(
+      count=2, conditions=["none"], styles=["zero_shot"], split="x",
+      cache="unused", k_min=2, k_max=3, pool_size=len(sizes),
+      node_naming_scheme="got",
+  )
+  assert records
+  assert all(r["node_naming"] == "got" for r in records)
+  assert any(node_naming.GOT_NAMES[0] in r["prompt"] for r in records)
+
+
 def test_raises_when_shipped_answer_disagrees_with_the_parsed_graph(monkeypatch):
   bad_row = {
       "question": _fake_question(_graph_of_size(5, seed=0)),
