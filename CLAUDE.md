@@ -21,6 +21,20 @@ uv venv --python 3.11 && uv pip install -e ".[dev]"
 Python is pinned to `>=3.11,<3.12` (`pyproject.toml`) because `seqio` and
 `tensorflow-gnn` don't resolve cleanly on 3.12+.
 
+**On this machine there is no `.venv`, and the setup above was never run here.**
+Every doc and script docstring in this repo spells commands as
+`PYTHONPATH=. .venv/bin/python ...`; that is correct for a fresh clone that
+follows the step above, and it is not what exists on the lab machines. Use the
+conda env directly instead:
+
+```bash
+/home/dcor/galbarak2/conda_envs/graphtalk/bin/python
+```
+
+`cluster/README.md` documents how that env was built. The `.venv` paths are left
+in place because they are right for anyone who does run `uv venv`; just do not
+expect them to work here without creating one first.
+
 Optional TensorFlow pipeline (only `graph_tasks_utils.py` needs it, ~2 GB):
 
 ```bash

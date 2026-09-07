@@ -192,6 +192,15 @@ a laptop with no `torch`/no `g++` toolchain installed
 are environment gaps, not regressions from this work). On the cluster,
 where `torch` and a real compiler are present, expect the full clean count.
 
+**Superseded after the merge into `small-model-suite-and-primer-power`
+(2026-09-07).** The 606/607 figures above were measured on `main` alone, on a
+laptop where `statsmodels` is installed. The merged branch reports **593
+passed** on the cluster conda env with `tests/test_hierarchical_model.py` and
+`tests/test_mixed_models.py` `--ignore`d, because neither `conda_envs/graphtalk`
+nor `conda_envs/graphtalk-cu126` has `statsmodels` or `pymc`. The numbers are
+not comparable and neither is wrong; see `CLAUDE.md` for the count that applies
+to a run on this cluster.
+
 ## Running on the SLURM cluster
 
 Nothing about `cluster/sweep.sbatch`, `scripts/run_sweep.py`, or stage 2/3

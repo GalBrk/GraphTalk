@@ -6,7 +6,7 @@ the models and the environments as well, without re-downloading 111 GB.
 ## Off-cluster: clone
 
 ```bash
-git clone git@github.com:ArnavShahor/GraphTalk.git
+git clone git@github.com:GalBrk/GraphTalk.git
 ```
 
 **[DATA.md](DATA.md) documents every file's schema and how they join.** Everything needed to score and analyse is tracked: `runs/*.jsonl` (the raw model
