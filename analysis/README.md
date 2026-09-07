@@ -535,29 +535,210 @@ restricting to `zero_shot`-only data (see the retraction note in
 The tables above are `integer` node-naming only, matching this section's
 long-standing scope. The GOT (Game-of-Thrones node-naming) sweep has its
 own, separately-corrected `significance_report.got.csv` -- not reproduced
-as full tables here, to avoid this section doubling in length, but the
-headline result: `qwen3-8b`/`degree` (⚠️, delta +0.078, p=0.0018) reaches
-significance within its own model's five-condition family, but **does
-not** survive the whole-table correction (`bh_significant_global=False`
--- corrected here; an earlier version of this section overstated this as
-✅). Pooled `degree` is significant within its own family too (⚠️,
-p=0.0001), but as a "pooled across all models" row it is structurally
-excluded from `bh_significant_global`'s family altogether (built from the
-same underlying pairs as its sibling per-model rows, so not an
-independent test -- see "A second pass" above), not a row that was tested
-and failed. Both corroborated by an independent GEE fit
-(`qwen3-8b`/`degree` p=0.0007) --
-traced to the `edge_count` task specifically (+35.7pp on that task alone,
-0pp on `edge_existence`/`node_degree`), consistent with the `degree`
-primer being close to a worked shortcut for summing degrees. This is
-**not** yet pre-registered as confirmatory (see `--confirmatory-config` in
-Phase 1.4 above) -- read it as a real, GEE-corroborated, per-family signal
-worth a targeted follow-up sweep (Track 2), not a finding that has cleared
-this project's strongest test. `docs/sweep-findings.md`'s separate
+as full tables here, to avoid this section doubling in length.
+
+**Update: `qwen3-8b`/`degree` has since replicated and is now globally
+significant.** The version of this section below described the original
+`--count 30` finding (family-significant, GEE-corroborated, but not
+globally significant) and named it a candidate worth a pre-registered
+follow-up. That follow-up happened:
+`analysis/confirmatory_got_degree.json` pre-registered the cell, a fresh
+`--count 500` GoT sweep was generated (single-stream -- see "The batching
+baseline" below, batching was measured and rejected as too costly at this
+effect size), and `analysis/significance_report.count500.got.csv` is the
+result:
+
+|  | `--count 30` (original) | `--count 500` (replication) |
+|---|---|---|
+| clusters | 180 | 3,000 |
+| delta | +0.078 | +0.065 |
+| 95% CI | [+0.033, +0.122] | [+0.053, +0.076] |
+| p (permutation) | 0.0018 | 0.0001 |
+| `bh_significant_global` | False | **True** |
+
+Accuracy is 94.4% with `degree` against 87.7% without. The effect shrank
+from +7.8 to +6.5 points -- the expected winner's-curse correction for a
+cell selected because it looked good in the first sample -- but the CI
+tightened roughly 4x and stays well clear of zero. `--metric mae`
+corroborates independently on `node_degree` (+0.086, p=0.014, also
+`bh_significant_global=True`); `edge_count` MAE is directionally
+consistent but doesn't clear its own bar (p=0.050).
+
+**The verdict does not depend on the pre-registration mattering more than
+it should.** Re-run without `--confirmatory-config` (so every eligible
+row shares one undifferentiated ~100-test family instead of a family of
+one), `qwen3-8b`/`degree` is still globally significant -- at p=0.0001 it
+clears even that family's strictest rank-1 threshold. This is the check
+that rules out circularity: pre-registering a cell selected from the same
+data it's tested against would trivially "pass" by shrinking its own
+family to one, and the result holding up under the harsher, undifferentiated
+test is what makes it not that.
+
+**Scope, and its limits.** This supports "the `degree` primer helps
+`qwen3-8b`" specifically -- not "`degree` is the best primer" (the other
+four conditions still rest on 180 clusters each and are underpowered, not
+disconfirmed) and not "`degree` helps LLMs generally" (`gemma4-e4b`'s
++0.011 on this condition is indistinguishable from zero at any feasible
+sample size, per `recommend_count.py`). Only `qwen3-8b` was scaled up:
+`recommend_count.py` puts every other positive-effect cell's
+required count beyond the 500-graph published-split cap (`qwen3-8b`/
+`clustering` needs 3,245, `rwse` needs 23,520, `gemma4-e4b`/`degree`
+needs 81,120) -- the two cells that *do* fit under the cap both have
+negative deltas. Only `none`/`degree` were generated at `--count 500`
+(not all seven conditions): confirmed directly against the existing
+`--count 30` data that adding the other five doesn't move the
+`degree`-vs-`none` comparison at all, so the other five weren't worth the
+GPU time here.
+
+**Is this power, or a different effect at scale?** Investigated in full in
+`docs/plans/scale-vs-topology-investigation.md`: pure power (old-30 and
+new-470 slices have overlapping-CI, similar-magnitude deltas; 0/14
+structural features differ significantly between the two slices after BH
+correction), plus two side findings -- 5/180 shared-instance pairs flip
+between the two runs from decoding nondeterminism (not topology), and the
+effect is overwhelmingly driven by the `edge_count` task specifically,
+growing monotonically with graph size/density within that task (a naive
+pooled-across-task structural stratification looked informative but was a
+Simpson's-paradox artifact of task composition, not a real effect).
+
+---
+
+*Original finding, kept for the historical record:* `qwen3-8b`/`degree`
+(⚠️, delta +0.078, p=0.0018) reached significance within its own model's
+five-condition family, but did not survive the whole-table correction
+(`bh_significant_global=False`). Pooled `degree` was significant within
+its own family too (⚠️, p=0.0001), but as a "pooled across all models" row
+was structurally excluded from `bh_significant_global`'s family altogether
+(built from the same underlying pairs as its sibling per-model rows, so
+not an independent test -- see "A second pass" above), not a row that was
+tested and failed. Both were corroborated by an independent GEE fit
+(`qwen3-8b`/`degree` p=0.0007) -- traced to the `edge_count` task
+specifically (+35.7pp on that task alone, 0pp on `edge_existence`/
+`node_degree`), consistent with the `degree` primer being close to a
+worked shortcut for summing degrees. `docs/sweep-findings.md`'s separate
 `naming_effect.py` comparison (renaming has a precise, ~nil effect on
 *overall* accuracy pooled across all seven conditions) is not contradicted
 by this -- that comparison averages away a `degree`-specific effect at a
 coarser aggregation level.
+
+### Phase A1 candidates: three cells pre-registered ahead of new data
+
+`scripts/check_significance.py`'s per-task `exact` testing (`--metric
+exact`'s per-model, per-task loop, added alongside the module's other
+Phase-A methodology work) turns what used to be a one-off manual scan of
+240 (scheme, model, condition, task) cells into a permanent, automated
+part of every run. Run against the existing tracked `--count 30` data for
+both schemes (no new GPU time), it reproduces every cell that scan found,
+plus confirms none of them clear `bh_significant_global` yet -- exactly
+the state a genuinely new, underpowered-at-n=30 candidate should be in,
+not evidence against them:
+
+| scheme | model | condition | task | n | delta | p | `bh_significant` (own family) |
+|---|---|---|---|---|---|---|---|
+| got | qwen3-8b | degree | edge_count | 30 | +0.367 | 0.0030 | already confirmed -- see above |
+| got | qwen3-14b | degree | edge_count | 30 | +0.300 | 0.0250 | yes |
+| integer | qwen3-8b | degree | edge_count | 30 | +0.233 | 0.0380 | no |
+| integer | qwen3-8b | filler | node_count | 30 | -0.233 | 0.0130 | no |
+
+The integer-scheme `qwen3-8b`/`degree`/`edge_count` row is the important
+one: the same primer, same model, same task, showing the same
+positive-direction effect in the *other* node-naming scheme independently
+-- real cross-scheme corroboration of the mechanism already confirmed in
+GOT, not a GOT-specific artifact of Game-of-Thrones names specifically.
+`qwen3-8b`/`filler`/`node_count` is a new, separate candidate (a
+content-free primer *hurting* accuracy) the pooled-across-task view never
+surfaced on its own.
+
+**Relabeled claim (`docs/plans/run_improved_tests.md` Phase 5, after its
+own shortcut audit): none of these three test "the primer helps graph
+reasoning."** `analysis/primer_task_shortcut_audit.md` traces all three
+to an exact, code-verified shortcut -- `degree`/`edge_count` is
+sum-of-stated-degrees/2, and `filler`/`node_count` is counting the
+primer's own one-sentence-per-node rendering, exactly the same mechanism
+`degree`/`node_count` and `clustering`/`rwse`/`node_count` share. The
+correct claim these three cells support is **"the model executes a
+fully-handed arithmetic/counting shortcut more (or less) reliably under
+this primer"** -- a real, legitimate, still-interesting question (and one
+that connects to the difficulty-scaling hypothesis in
+`docs/plans/scale-vs-topology-investigation.md`: does execution
+reliability on a handed shortcut degrade with graph size the same way
+manual counting does?), but a different claim from "the primer improved
+reasoning about the graph," and this is now the **lower-priority** track
+-- see Phase C below for why: the higher-priority, actual-reasoning
+screen (`shortcut_flag == "none"` cells) found no candidate worth
+following up on yet at the current sample size.
+
+Three pre-registered configs commit these cells now, before any new data
+exists to select them with hindsight -- one file per cell rather than one
+shared file, because `--confirmatory-config` entries key on `(arm, model,
+condition, metric)` only, not on node-naming scheme: a single file
+listing `qwen3-8b`/`degree` would also silently mark GOT's *already
+independently confirmed* `qwen3-8b`/`degree` cell as freshly
+"confirmatory" if it were ever run against the GOT frame, conflating two
+different pieces of evidence under one label.
+
+- `analysis/confirmatory_got_qwen3-14b_degree.json`
+- `analysis/confirmatory_integer_qwen3-8b_degree.json`
+- `analysis/confirmatory_integer_qwen3-8b_filler.json`
+
+Each is meant to be run with `--filter "task == '<task>'"` scoping the
+whole analysis to the one task the cell is actually about (`edge_count`
+for the two `degree` cells, `node_count` for `filler`) -- `hypothesis_type`
+itself has no task field, so without `--filter` a pre-registered
+(model, condition) pair would mark all 6 of that pair's per-task rows
+confirmatory, not just the one being tested. Same discipline as
+`analysis/confirmatory_got_degree.json`'s already-completed replication
+above. Sizing and generating the follow-up data these configs will score
+is Track 2 (below) / Phase C, not yet done.
+
+### Policy: per-task granularity, and two separate naming-scheme families
+
+A policy decision made as part of `docs/plans/run_improved_tests.md`
+(Phase 3), motivated directly by the `qwen3-14b`/`degree`/`edge_count`
+discovery above -- a real, corroborating-across-both-schemes effect the
+pooled-across-6-tasks view alone would never have surfaced:
+
+- **Per-task is the primary granularity for the `exact` metric going
+  forward; pooled-across-tasks is a secondary summary, not the
+  significance decision.** `_report`'s pooled row stays (it's still the
+  right view for "does this condition help this model at all, on
+  average"), and `task_delta_min`/`max` on it stays a useful heterogeneity
+  hint, but a claim that a primer helps or hurts on a *specific* task
+  should rest on `_report_exact_per_task`'s row for that task, not on the
+  pooled row alone -- the pooled test can both hide a real task-specific
+  effect (this session's whole motivating case) and, in principle,
+  overstate one (a single strong task dragging a pooled average that
+  reads as "the condition helps" when five of six tasks are flat).
+- **The confirmatory family is exactly the pre-registered cells above** --
+  today `got`/`qwen3-8b`/`degree`/`edge_count` (already confirmed) plus
+  the three cells in "Phase A1 candidates" -- **corrected separately from
+  everything else**, which stays exploratory (hypothesis-generating,
+  reported but not treated as confirmed) until it is itself pre-registered
+  and replicated the same way.
+- **GOT and integer naming stay two separate multiplicity families, never
+  pooled into one BH pass.** `task_scoped_screen_comparison.md`
+  (Phase 2, above) is read *alongside* each scheme's own correction as
+  corroborating evidence, not merged into a combined family that would
+  silently double the effective sample size behind one p-value pair of
+  schemes never actually shared.
+- **A significant per-task cell is not automatically evidence the primer
+  helps graph reasoning.** `analysis/primer_task_shortcut_audit.md`
+  (added when this plan's own Phase 1 was extended to require it) traces
+  every `(condition, task)` pair to whether the primer text mechanically
+  determines the answer (`shortcut_flag`: `shortcut`/`partial`/`none`).
+  Every candidate this document has found so far is `shortcut`-flagged --
+  real evidence about arithmetic/counting-shortcut execution reliability,
+  not reasoning. A claim framed as "the primer improves reasoning" needs a
+  `shortcut_flag == "none"` cell specifically; see Phase C's reprioritized
+  screen, which came back null at the current sample size.
+
+This directly supersedes Phase A2 of the *other* active plan in this
+repo's history (`git log`'s `4bb2063`/`93ec8a4` commits), which floated
+combining `integer` and `got` into one shared BH family as a next step --
+this policy decision says explicitly not to do that, for the reason
+above. Corroboration across schemes is valuable exactly because the two
+families stay independent; pooling them would blur that signal rather
+than strengthen it.
 
 ### Retracted: "What holds up without `zero_cot`"
 
@@ -707,6 +888,127 @@ For the `qwen3-8b`/`degree` replication specifically (515 recommended, see
 rather than requesting a non-published split size. Validate
 `--batch-size` first (above); pre-register with
 `analysis/confirmatory_got_degree.json` before generating.
+
+## Phase C: three arithmetic-execution follow-ups sized and ready to submit (lower priority)
+
+**Reprioritized by `docs/plans/run_improved_tests.md`'s shortcut audit.**
+The three cells below all test arithmetic/counting-shortcut execution
+reliability, not graph reasoning (see the relabel note in "Phase A1
+candidates" above) -- kept, not discarded, because that is still a real
+question, but no longer the flagship track. The higher-priority track --
+screening `analysis/task_scoped_screen.got.csv`/`.csv`'s `shortcut_flag
+== "none"` cells for an actual reasoning candidate -- was run and came
+back **null**: at the current `--count 30`, not one `none`-flagged cell
+in either scheme clears even the loose `p <= 0.10` screen. The closest is
+`gemma4-e4b`/`components`/`node_degree` (GOT, p=0.126, delta -0.133) and
+its integer-scheme analogue `gemma4-e4b`/`components`/`node_count`
+(p=0.136, delta -0.133) -- both `gemma4-e4b`, already flagged elsewhere in
+this document as a structurally weak-effect model, and both short of even
+the screening bar, not a real candidate. **No reasoning-focused follow-up
+is prepared as a result** -- forcing a pre-registration onto a p=0.126
+cell to have something to show would be exactly the "chase significance"
+anti-pattern `docs/plans/run_improved_tests.md`'s own preamble warns
+against. This is an honest null result at n=30, not a gap in the
+analysis.
+
+Sizing for the 3 cells pre-registered above, computed the same way as the
+already-completed `qwen3-8b`/`degree` (GOT) replication above: bootstrap-
+resample the existing `--count 30` task-scoped pairs
+(`scripts/validate_recommend_count.py`'s `simulate_power_at_n`, the same
+primitive that already validates `recommend_count.py`'s own numbers),
+inject a candidate true effect, and find the smallest `--count` reaching
+~80% simulated power. Two effect-size estimates are shown for each cell,
+not one -- the raw observed delta and the 95% bootstrap CI's near-zero
+bound:
+
+| cell | observed delta (n=30) | 95% CI | **conservative `--count`** (80% power @ CI bound) | optimistic `--count` (80% power @ observed delta) |
+|---|---|---|---|---|
+| got/`qwen3-14b`/`degree`/`edge_count` | +0.300 | [+0.100, +0.500] | **150** (80.5% @ +0.100) | 50 (88% @ +0.300) |
+| integer/`qwen3-8b`/`degree`/`edge_count` | +0.233 | [+0.067, +0.400] | **200** (80.7% @ +0.067) | 50 (65% @ +0.233) |
+| integer/`qwen3-8b`/`filler`/`node_count` | -0.233 | [-0.400, -0.100] | **75** (86.8% @ -0.100) | 30-50 (73-99% @ -0.233) |
+
+The `qwen3-8b`/`degree` (GOT) replication's own +7.8pp-observed ->
++6.5pp-true shrinkage is direct, measured proof that sizing off the raw
+observed delta on a cell selected because it looked good is optimistic --
+so **conservative is the recommended column**, not a hedge. All three are
+small enough that even the conservative count stays far under the
+500-graph published-split cap, and -- because `--tasks` (Phase A3) scopes
+each build to the one task its cell needs -- generation cost is one
+task's worth of rows, not all 6.
+
+**Not run**: generating this data needs a HF row fetch beyond what's
+cached locally (60 rows/task max today) and GPU time on the TAU CS
+cluster, neither available here. Exact commands, ready to hand off:
+
+**1. got/`qwen3-14b`/`degree`/`edge_count` (`--count 150`)**
+
+```bash
+# login node (network, no GPU)
+PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 150 \
+    --conditions none degree --tasks edge_count --node-naming got \
+    --out prompts_got.phaseC_qwen14b_degree_edgecount.jsonl
+
+# compute node (GPU) -- sweep.sbatch reads these two env vars directly,
+# the same mechanism cluster/submit_sweep.sh uses internally for --count
+GRAPHTALK_PROMPTS=prompts_got.phaseC_qwen14b_degree_edgecount.jsonl \
+GRAPHTALK_RUN_TAG=phaseC_qwen14b_degree_edgecount \
+    sbatch cluster/sweep.sbatch qwen3-14b
+```
+
+**2. integer/`qwen3-8b`/`degree`/`edge_count` (`--count 200`)**
+
+```bash
+PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 200 \
+    --conditions none degree --tasks edge_count \
+    --out prompts.phaseC_qwen8b_degree_edgecount.jsonl
+
+GRAPHTALK_PROMPTS=prompts.phaseC_qwen8b_degree_edgecount.jsonl \
+GRAPHTALK_RUN_TAG=phaseC_qwen8b_degree_edgecount \
+    sbatch cluster/sweep.sbatch qwen3-8b
+```
+
+**3. integer/`qwen3-8b`/`filler`/`node_count` (`--count 75`)**
+
+```bash
+PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 75 \
+    --conditions none filler --tasks node_count \
+    --out prompts.phaseC_qwen8b_filler_nodecount.jsonl
+
+GRAPHTALK_PROMPTS=prompts.phaseC_qwen8b_filler_nodecount.jsonl \
+GRAPHTALK_RUN_TAG=phaseC_qwen8b_filler_nodecount \
+    sbatch cluster/sweep.sbatch qwen3-8b
+```
+
+Cells 2 and 3 both run `qwen3-8b` -- they're kept as two separate builds/
+jobs rather than one merged prompt file so each stays minimal (no
+`edge_count`/`filler` or `node_count`/`degree` combinations neither cell
+asked for); merge them by hand (`cat` the two prompt files, submit once)
+if saving one model-load's worth of cluster overhead matters more than
+that separation.
+
+**After each job completes** (`runs/<model>.<run_tag>.jsonl`), same
+three-step check used for the GOT replication -- `--filter` scopes the
+whole run to the one task the cell was sized for, and `--confirmatory-
+config` is the matching file from the section above:
+
+```bash
+PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py \
+    --responses runs/qwen3-14b.phaseC_qwen14b_degree_edgecount.jsonl \
+    --shortcuts shortcuts.json \
+    --out analysis/sweep_frame.phaseC_qwen14b_degree_edgecount.csv
+
+PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
+    --frame analysis/sweep_frame.phaseC_qwen14b_degree_edgecount.csv \
+    --metric exact --filter "task == 'edge_count'" \
+    --confirmatory-config analysis/confirmatory_got_qwen3-14b_degree.json
+```
+
+(swap the frame/filter/config for cells 2 and 3), then run Phase D's
+circularity and consistency checks (re-run without `--confirmatory-
+config`; `check_old_vs_new_subsample.py`-style old-vs-new comparison
+against the tracked `--count 30` slice) before treating any result as
+confirmed -- exactly the discipline the GOT replication above already
+went through.
 
 ## Not kept
 

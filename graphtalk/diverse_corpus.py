@@ -28,7 +28,13 @@ from graphtalk import graphqa
 ALGORITHMS = ("er", "ba", "sbm", "sfn", "complete", "star", "path")
 
 
-def build_pool(count: int, seed: int = 1234) -> list[tuple[str, nx.Graph]]:
+def build_pool(
+    count: int,
+    seed: int = 1234,
+    node_size_ranges: dict | None = None,
+    er_min_sparsity: float = 0.0,
+    er_max_sparsity: float = 1.0,
+) -> list[tuple[str, nx.Graph]]:
   """`count` canonical graphs, spread as evenly as possible across
   `ALGORITHMS` (a `count` not a multiple of 7 puts the remainder on the
   first few algorithms in `ALGORITHMS` order, and a `count` smaller than 7
@@ -42,6 +48,13 @@ def build_pool(count: int, seed: int = 1234) -> list[tuple[str, nx.Graph]]:
   only requires `build_pool(count, seed)` itself to be a pure function of
   its inputs, not that sub-calls be independently seeded in any special
   way.
+
+  `node_size_ranges` and `er_min_sparsity`/`er_max_sparsity` pass straight
+  through to `graph_generators.generate_graphs` (same defaults, so omitting
+  them reproduces today's behavior exactly). `er_min_sparsity`/
+  `er_max_sparsity` only affect the `"er"` algorithm -- the vendored
+  generator consumes them nowhere else, so the other six algorithms in the
+  pool are unaffected by them.
 
   Canonicalized the same way `shortcuts.generate_corpus` canonicalizes its
   own generated graphs, for the same reason: the vendored encoder's output
@@ -62,6 +75,9 @@ def build_pool(count: int, seed: int = 1234) -> list[tuple[str, nx.Graph]]:
       continue
     graphs = graph_generators.generate_graphs(
         n, algorithm, directed=False, random_seed=seed + index,
+        node_size_ranges=node_size_ranges,
+        er_min_sparsity=er_min_sparsity,
+        er_max_sparsity=er_max_sparsity,
     )
     for graph in graphs:
       pool.append((algorithm, graphqa.canonical(graph)))
@@ -101,6 +117,12 @@ def make_row(graph: nx.Graph, task: str, rng: random.Random) -> dict:
     source, target = rng.sample(nodes, 2)
     task_description = (
         f"Q: Does an edge exist between Node {source} and Node {target}?\nA: "
+    )
+    targets = (source, target)
+  elif task == "reachability":
+    source, target = rng.sample(nodes, 2)
+    task_description = (
+        f"Q: Is there a path from node {source} to node {target}?\nA: "
     )
     targets = (source, target)
   else:

@@ -19,7 +19,7 @@ def _report_row(**overrides) -> dict:
       "is_derived_condition": False, "group": "model_a", "condition": "degree",
       "n_clusters": 30, "delta": 0.1, "mde_delta": None,
       "mde_delta_negative": None, "bh_significant": False,
-      "bh_significant_global": False,
+      "bh_significant_global": False, "task": None,
   }
   base.update(overrides)
   return base
@@ -111,3 +111,71 @@ def test_mde_for_family_significant_cell_returns_none_for_no_paired_rows():
   frame = _synthetic_frame(control_rate=0.5, treatment_rate=0.8, n=5, seed=3)
   # A condition that doesn't exist in this frame at all -- no pairs.
   assert rc._mde_for_family_significant_cell(frame, "model_a", "rwse", delta=0.1) is None
+
+
+# --- Phase 4a: --task ---------------------------------------------------
+
+
+def _synthetic_task_frame(control_rate, treatment_rate, n, seed, task):
+  """Like `_synthetic_frame`, but tags every row with `task` -- what a
+  per-task-scoped `_mde_for_family_significant_cell(..., task=...)` call
+  needs to find in the frame."""
+  frame = _synthetic_frame(control_rate, treatment_rate, n, seed)
+  frame["task"] = task
+  frame["instance_id"] = f"{task}/" + frame["instance_id"].str.split("/").str[1]
+  return frame
+
+
+def test_task_requires_frame():
+  report = pd.DataFrame([_report_row(task="edge_count")])
+  with pytest.raises(ValueError, match="requires --frame"):
+    rc.recommend(report, task="edge_count")
+
+
+def test_task_scopes_to_matching_report_rows_only():
+  report = pd.DataFrame([
+      _report_row(group="model_a", condition="degree", task="edge_count",
+                  delta=0.1),
+      _report_row(group="model_a", condition="degree", task="node_count",
+                  delta=0.1),
+  ])
+  frame = _synthetic_task_frame(0.5, 0.8, n=30, seed=7, task="edge_count")
+  result = rc.recommend(report, frame=frame, task="edge_count")
+  assert len(result) == 1
+
+
+def test_task_scoped_mde_ignores_pre_computed_mde_delta():
+  """A per-task row with a (bogus, shouldn't-exist-in-practice)
+  `mde_delta` already filled in must still get a fresh, task-scoped
+  simulation -- `_report_exact_per_task` never populates this field for
+  real, so trusting it here would silently be wrong the one time it
+  wasn't blank."""
+  frame = _synthetic_task_frame(0.5, 0.8, n=30, seed=7, task="edge_count")
+  observed_delta = (
+      frame.loc[frame["condition"] == "degree", "exact"].mean()
+      - frame.loc[frame["condition"] == "none", "exact"].mean()
+  )
+  report = pd.DataFrame([_report_row(
+      group="model_a", condition="degree", task="edge_count",
+      delta=observed_delta, mde_delta=999.0,  # bogus sentinel
+      bh_significant=False, bh_significant_global=False,
+  )])
+  result = rc.recommend(report, frame=frame, task="edge_count")
+  row = result.iloc[0]
+  assert row["skip_reason"] is None
+  assert row["mde_used"] != 999.0
+
+
+def test_no_task_behavior_is_unaffected_by_the_task_column_existing():
+  """Regression check (Phase 4a's own verification requirement): adding
+  `task` support must not change a single existing (task=None) call's
+  result, even when the report happens to carry a `task` column (e.g. a
+  mixed pooled+per-task report)."""
+  report = pd.DataFrame([_report_row(
+      delta=0.1, mde_delta=0.2, bh_significant=False,
+      bh_significant_global=False, task=None,
+  )])
+  result = rc.recommend(report)
+  row = result.iloc[0]
+  assert row["skip_reason"] is None
+  assert row["mde_used"] == pytest.approx(0.2)

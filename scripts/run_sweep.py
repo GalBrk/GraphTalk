@@ -149,11 +149,12 @@ def main() -> None:
         # default rather than being replaced by an unvalidated one.
         completions = [hf_backend.generate(
             tokenizer, model, batch[0]["prompt"], budget, spec.chat_kwargs,
+            spec.max_context_tokens,
         )]
       else:
         completions = hf_backend.generate_batch(
             tokenizer, model, [r["prompt"] for r in batch], budget,
-            spec.chat_kwargs,
+            spec.chat_kwargs, spec.max_context_tokens,
         )
       for record, completion in zip(batch, completions):
         # `n_new_tokens`/`hit_cap` are new as of the prompt-rewording re-run; rows

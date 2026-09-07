@@ -32,10 +32,19 @@ TASKS = (
     "connected_nodes", "edge_existence", "cycle_check",
 )
 
+# Tasks scoring understands but that don't exist in the published HF dataset
+# (no matching config to fetch via graphqa.fetch_rows) -- kept out of TASKS so
+# scripts/build_prompts.py's default `--tasks` and build_diverse's Python-level
+# default (both `scoring.TASKS`) never try to fetch a nonexistent published
+# config. Opt in explicitly via `--tasks reachability` (--graph-source diverse
+# only; there is no published "reachability" split to source from).
+_EXTRA_TASKS = ("reachability",)
+ALL_TASKS = TASKS + _EXTRA_TASKS
+
 # Tasks whose answer is a single integer.
 _INTEGER_TASKS = ("node_count", "edge_count", "node_degree")
 # Tasks whose answer is Yes or No.
-_BOOLEAN_TASKS = ("edge_existence", "cycle_check")
+_BOOLEAN_TASKS = ("edge_existence", "cycle_check", "reachability")
 
 _INTEGER = re.compile(r"-?\d+")
 # "the answer is 12", "Answer: 12", "final answer: 12" -- checked before falling
@@ -340,8 +349,8 @@ def extract_answer(text: str, task: str) -> str | None:
   unparseable responses is an extraction bug or a truncated generation, not a
   model that got things wrong, and collapsing the two hides that.
   """
-  if task not in TASKS:
-    raise ValueError(f"unknown task: {task}; known: {list(TASKS)}")
+  if task not in ALL_TASKS:
+    raise ValueError(f"unknown task: {task}; known: {list(ALL_TASKS)}")
   if not text or not text.strip():
     return None
   if task in _INTEGER_TASKS:
@@ -440,8 +449,8 @@ def extract_answer_first(text: str, task: str) -> str | None:
   answer and then looped (this equals `extract_answer`'s result) versus was
   still drifting between different values when generation was cut off.
   """
-  if task not in TASKS:
-    raise ValueError(f"unknown task: {task}; known: {list(TASKS)}")
+  if task not in ALL_TASKS:
+    raise ValueError(f"unknown task: {task}; known: {list(ALL_TASKS)}")
   if not text or not text.strip():
     return None
   if task in _INTEGER_TASKS:
@@ -500,8 +509,8 @@ def score_one(predicted: str | None, gold: str, task: str) -> dict:
   that `connected_nodes` can also be compared against the shortcut table, which is
   an exact-match figure.
   """
-  if task not in TASKS:
-    raise ValueError(f"unknown task: {task}; known: {list(TASKS)}")
+  if task not in ALL_TASKS:
+    raise ValueError(f"unknown task: {task}; known: {list(ALL_TASKS)}")
   result = {"parsed": predicted is not None, "exact": 0.0, "primary": 0.0,
             "absolute_error": None}
   if predicted is None:
