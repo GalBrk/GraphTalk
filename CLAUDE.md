@@ -56,7 +56,7 @@ uv run --no-sync pytest -q --ignore=tests/test_hierarchical_model.py \
 
 Always use `--no-sync` — a plain `uv run` re-syncs to the default dependency set
 and uninstalls the optional `pipeline` extras. That command must report exactly
-**593 passed**; a different number means the env is wrong, not the code.
+**603 passed**; a different number means the env is wrong, not the code.
 
 The two ignored files import `statsmodels`, which is **not** installed in either
 `conda_envs/graphtalk` or `conda_envs/graphtalk-cu126` — the only envs this
@@ -101,6 +101,19 @@ sbatch cluster/sweep.sbatch gemma4-12b
 PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500 --json shortcuts.json
 PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.json
 ```
+
+Runs from `build_size_sweep.py --densities` are scored by density level instead,
+since `score_sweep.py` groups by (task, style) and would average the levels
+together:
+
+```bash
+PYTHONPATH=. python scripts/score_density_sweep.py \
+    --responses "runs/qwen3-1.7b.degdens40.shard*of5.jsonl"
+```
+
+It drops `hit_cap` rows rather than scoring them zero, prints the count dropped
+per cell, and separates the pooled test from the per-level family so a pooled
+p-value cannot drag a per-level one under the threshold.
 
 Check statistical significance beyond `score_sweep.py`'s per-cell McNemar (that test is
 underpowered at 30 pairs/cell — see `docs/sweep-findings.md`). Needs the `analysis` extra
@@ -182,7 +195,11 @@ python scripts/measure_real_rows.py                           # re-measures corp
     loading and greedy generation. Imported only by `scripts/run_sweep.py`.
 - `scripts/` — the three pipeline stages (`build_prompts.py`, `run_sweep.py`,
   `score_sweep.py`) plus `shortcut_table.py`, `draw_graph.py`,
-  `show_primers.py`, `measure_real_rows.py`.
+  `show_primers.py`, `measure_real_rows.py`. `build_size_sweep.py` and
+  `score_density_sweep.py` are the size/density pair: the first generates
+  graphs at chosen sizes and pinned ER densities, the second scores them
+  grouped by density level rather than by (task, style), which is the grouping
+  `score_sweep.py` collapses.
 - `cluster/` — `sweep.sbatch` and `README.md`, the authority on how the sweep
   actually runs on the TAU CS cluster (partitions, memory sizing, driver
   incompatibilities, chained-job submission for jobs that exceed the 24h
@@ -223,9 +240,10 @@ break them:
 
 ### Testing conventions
 
-- 593 tests: vendored generator/encoder/metric tests, primer statistics/renderer/
+- 603 tests: vendored generator/encoder/metric tests, primer statistics/renderer/
   golden-string tests, shortcut-solver tests, prompt-assembly/scoring tests,
-  node-naming, analysis, and the size/density sweep builders. A further 24 test
+  node-naming, analysis, the size/density sweep builders, and the density-sweep
+  scorer. A further 24 test
   functions live in the two `statsmodels`-dependent files above and do not run
   in this env — see "Commands" for why they must be `--ignore`d rather than
   left to fail.

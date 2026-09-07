@@ -19,11 +19,12 @@ a conclusion about the *design* rather than about primers.
 
 ## Summary
 
-Updated 2026-09-07, after running the powered experiments and the `ec500` replication. The earlier version
+Updated 2026-09-07, after running the powered experiments, the `ec500`
+replication and the fixed-size density sweep. The earlier version
 of this document said the uncontaminated cells were "positive but unpowered" and
 that no cell cleared every control. At power, both statements are wrong.
 
-1. **Three cells now clear every control** -- powered, significant, above the
+1. **Four cells now clear every control** -- powered, significant, above the
    relevant baseline, and not reproducible by the shortcut solver:
 
    | model | task | primer | delta | disc | p |
@@ -31,18 +32,29 @@ that no cell cleared every control. At power, both statements are wrong.
    | qwen3-8b | edge_count | **rwse** | **-13.7 pp** | 108 | 0.0000 |
    | qwen3-8b | edge_count | **clustering** | **+5.0 pp** | 69 | 0.0076 |
    | qwen3-0.6b-think | cycle_check | **clustering** | **+4.3 pp** | 55 | 0.0065 |
+   | qwen3-1.7b | node_degree n=40 | **clustering** | **+3.8 pp** | 369 | 0.0017 |
+
+   The fourth row is job 866467, the fixed-size density sweep, pooled over
+   1,600 within-graph paired triples at densities 0.10-0.50. Its bar is 0.08,
+   identical to `none`.
 
 2. **"Do primers help?" has no single answer -- it depends on the primer.** On
    one task, one model, at n=500: `clustering` helps by 5 points, `components`
    does nothing (+1.3, p=0.54), and `rwse` *hurts by 13.7 points*. The largest
    clean effect in the project is negative.
 
-3. **`clustering` is the only primer that helps twice**, on two different tasks
-   and two different models (`edge_count`/8B and `cycle_check`/0.6B-think). It
-   is the first pattern here that repeats across cells rather than appearing
-   once. **It did not survive replication on a third**: `qwen3-1.7b` on the
-   same `ec500` cell scores -1.3 pp (p=0.64). See "The `qwen3-1.7b`
-   replication".
+3. **`clustering` is the only primer that helps more than once** -- now on
+   three different tasks and three different models (`edge_count`/8B,
+   `cycle_check`/0.6B-think, and `node_degree` at n=40/1.7B). It is the only
+   pattern here that repeats across cells rather than appearing once. **It did
+   not survive replication on a fourth**: `qwen3-1.7b` on the same `ec500` cell
+   scores -1.3 pp (p=0.64). See "The `qwen3-1.7b` replication".
+
+3a. **`components` is now a null three times over** -- +1.3 pp (p=0.54) on
+   `ec500`, and +0.1 pp (p=0.95) pooled across the density sweep. Two primers
+   of comparable length on identical graphs, one of which helps and one of
+   which does not, is the cleanest evidence in this document that the effect is
+   about the *content* of the primer and not about adding text.
 
 3b. **The replication qualifies items 1 and 2 and should be read with them.**
    `rwse`'s harm reproduces in *direction* on `qwen3-1.7b` but at -4.0 pp
@@ -53,7 +65,12 @@ that no cell cleared every control. At power, both statements are wrong.
 4. **Five of six tasks remain saturated** for the larger models, and every large
    `degree` gain remains shortcut-explained. Those findings are unchanged.
 
-5. **Saturation is an artifact of the corpus's 19-node cap, not of the tasks.**
+5. **Density is a working difficulty knob at fixed size, and the size finding
+   is really an edge-count finding.** Holding n=40 and moving ER density alone,
+   `node_degree` falls 0.922 -> 0.295 across p=0.10 -> 0.50 while the blind
+   baseline barely moves (0.230 -> 0.147). See "Density at a fixed size".
+
+6. **Saturation is an artifact of the corpus's 19-node cap, not of the tasks.**
    Regenerated at 80 nodes, `node_degree` falls to 0.143 (1.7B plain) and 0.479
    (8B plain) -- but `node_count` stays at 1.000. What breaks is aggregation
    over scattered mentions, which graph size multiplies; see "Does size break
@@ -474,7 +491,7 @@ State as of 2026-09-07. Branch `small-model-suite-and-primer-power`, pushed to
 other clones still need `git remote set-url`).
 
 **`origin/main` was merged into this branch on 2026-09-07** (no conflicts; 593
-tests pass). Two consequences worth knowing before reading the tables below:
+tests passed at the merge, 603 now). Two consequences worth knowing before reading the tables below:
 
 - The tree now also holds main's arms -- `gemma4-e4b`, `gemma4-12b`,
   `qwen3-14b` and their `-think` variants -- alongside this branch's small
@@ -501,13 +518,14 @@ tests pass). Two consequences worth knowing before reading the tables below:
 | `density40` | qwen3-1.7b | 2,400 | n=40 x 6 pinned ER densities x {node_degree, connected_nodes} x {none, degree}; job 858671 |
 | `size` | qwen3-1.7b, -think, qwen3-8b, -think | 600 | 20/40/80-node graphs x 4 tasks x none |
 
-### In flight
+**Job 866467 `degdens40-q17b` completed 2026-09-07** -- `qwen3-1.7b`,
+`node_degree` x {`none`, `components`, `clustering`} at n=40 across densities
+{0.10, 0.20, 0.35, 0.50}, 400 graphs per level, 4,800 rows, 0 capped, in
+`runs/qwen3-1.7b.degdens40.shard*of5.jsonl`. Written up in "Density at a fixed
+size" below; it is the source of the one clean, significant primer effect this
+project has.
 
-**Job 866467 `degdens40-q17b`** -- `qwen3-1.7b`, `node_degree` x {`none`,
-`components`, `clustering`} at n=40 across densities {0.10, 0.20, 0.35, 0.50},
-400 graphs per level, 5 shards, tag `degdens40`, writing
-`runs/qwen3-1.7b.degdens40.shard*of5.jsonl`. Design and sizing are in "Density
-at a fixed size" below.
+### In flight
 
 **Job 866492 `degdenshi-q17b`** -- the high-density continuation, densities
 {0.65, 0.75, 0.85}, 400 graphs per level, 5 shards, tag `degdens40hi`, writing
@@ -824,6 +842,90 @@ Checked before submitting. This is the parity trap in Operational notes,
 generalised from two conditions to three -- the rule is that the shard count
 must be **coprime with the number of conditions**, not merely odd.
 
+
+**Result (job 866467, 4,800/4,800 rows, 0 capped, 0 unparsable).**
+
+Pairing verified rather than assumed: 1,600 distinct `instance_id`s, each
+present under all three conditions, with identical graph, identical queried
+node and identical `gold` in every triple. So every comparison below is a
+within-graph paired one.
+
+| p | edges | `none` | `components` | `clustering` | blind bar | `none` over bar |
+|---|---|---|---|---|---|---|
+| 0.10 | 78 | 0.922 | 0.938 | 0.925 | 0.230 | +0.693 |
+| 0.20 | 153 | 0.765 | 0.782 | 0.797 | 0.163 | +0.603 |
+| 0.35 | 269 | 0.393 | 0.415 | 0.468 | 0.150 | +0.243 |
+| 0.50 | 390 | 0.295 | 0.245 | 0.338 | 0.147 | +0.147 |
+
+Blind bar is this run's own 400 graphs per level: the score of always answering
+the modal degree, which is what a solver that never reads the graph can get.
+It is nearly flat (0.23 -> 0.15) while accuracy falls by two thirds, so the
+collapse is real and not an artifact of the answer distribution shifting.
+
+**Density is a working difficulty knob at fixed n.** `none` runs 0.922 ->
+0.295 with size held at 40 and nothing but edge count moving. Mean absolute
+error moves with it -- 0.09 -> 0.32 -> 1.02 -> 1.88 -- so the model degrades by
+drifting further from the true degree, not by switching to a different failure
+mode. This is the controlled version of the claim `difficulty-scaling.md` makes
+observationally, and at fixed size it holds.
+
+**Paired primer effects, exact McNemar on discordant pairs:**
+
+| p | `clustering` - `none` | | `components` - `none` | |
+|---|---|---|---|---|
+| | delta | p | delta | p |
+| 0.10 | +0.003 | 1.000 | +0.015 | 0.286 |
+| 0.20 | +0.033 | 0.182 | +0.018 | 0.349 |
+| 0.35 | **+0.075** | 0.009 | +0.022 | 0.374 |
+| 0.50 | +0.043 | 0.155 | **-0.050** | 0.042 |
+| **pooled (n=1,600)** | **+0.038** | **0.0017** | +0.001 | 0.948 |
+
+**The pooled `clustering` result is the finding.** +3.8 pp across 1,600 paired
+graphs, p=0.0017, on a cell whose shortcut bar is 0.08 for both primers --
+identical to `none`, so no part of it is shortcut-explainable. This is the
+first primer effect in this project that is both clean and significant.
+
+**`components` is a clean null**, +0.001 pooled at p=0.95. Two primers, same
+prompt budget, same graphs: one helps and one does not. That contrast is worth
+more than either number alone, because it rules out "any extra text helps".
+
+**Read the per-level rows as descriptive only.** Eight tests were run; at
+Bonferroni the threshold is 0.00625 and *neither* the +0.075 at p=0.35 nor the
+-0.050 at p=0.50 survives. The per-level design was powered for 8 pp at 400
+graphs (0.80 power at 30% discordance), and observed discordance was 9 / 20 /
+31 / 32% -- so the sparsest level had less information than budgeted and only
+the two densest levels reached the assumed figure. The honest summary is one
+significant pooled effect, with a suggestive concentration in the mid-density
+band where headroom is largest.
+
+That concentration is at least coherent: the `clustering` gap is +0.003 /
++0.033 / +0.075 / +0.043, peaking exactly where accuracy passes through 0.4 and
+variance is maximal. A primer cannot help at p=0.10 because `none` already
+scores 0.92, and helps less at p=0.50 because the model is near its floor. It
+is the same inverted-U the `degree` control traced in job 858671 above, at a
+much smaller amplitude -- which is what a genuine reasoning aid should look
+like next to a stated answer.
+
+Reproduced from the committed rows with:
+
+```bash
+PYTHONPATH=. python scripts/score_density_sweep.py \
+    --responses "runs/qwen3-1.7b.degdens40.shard*of5.jsonl"
+```
+
+`scripts/score_sweep.py` will *not* give these numbers -- it groups by (task,
+style) and averages the four density levels into one cell, which is exactly the
+variable this run manipulates. `tests/test_score_density_sweep.py` pins the two
+decisions that would otherwise fail silently: `hit_cap` rows are dropped rather
+than scored zero, and dropping a row drops its pair so the McNemar arms cannot
+drift out of alignment.
+
+**What this does not show.** It is one task, one model, one graph family (ER),
+and one size. `node_degree` at n=40 is a retrieval-and-count problem; nothing
+here says `clustering` helps on a task that needs multi-hop structure. The
+`degree` positive control is absent at these four levels -- it was added only to
+the high-density and thinking runs -- so there is no measured ceiling to read
+the +0.038 against on this half of the sweep.
 ### Deliberately not run
 
 - **`--xlarge` (20-39 nodes) from `docs/difficulty-scaling.md`** -- subsumed.
@@ -858,18 +960,28 @@ must be **coprime with the number of conditions**, not merely odd.
 
 ### If you only read one thing
 
-Primers are not one intervention. `components` is inert on both models that
-have tested it. `rwse` does real damage on `qwen3-8b` (-13.7 pp) and directional
-but non-significant damage on `qwen3-1.7b` (-4.0 pp). `clustering` helped on two
-cells and then **failed to replicate on a third** -- and it sits below its own
-shortcut bar in every cell measured, so it was never as clean as it looked.
+Primers are not one intervention. `components` is inert everywhere it has been
+tested -- +1.3 pp on `ec500` (p=0.54) and +0.1 pp pooled across the density
+sweep (p=0.95). `rwse` does real damage on `qwen3-8b` (-13.7 pp) and
+directional but non-significant damage on `qwen3-1.7b` (-4.0 pp). `clustering`
+has helped on three cells now and **failed to replicate on a fourth**.
+
+**The density sweep is the cleanest of the three, and it is the one to quote.**
+On `ec500` the `clustering` gain (+5.0 pp) is smaller than its own bar delta --
+`bar(clustering) - bar(none)` on `edge_count` is 0.148 - 0.018 = +13.0 pp -- so
+a shortcut solver could produce the whole effect and more. On `node_degree` the
+two bars are **identical at 0.082**, a bar delta of exactly zero, so none of the
++3.8 pp there is shortcut-explainable. It is also the largest paired sample in
+the project (1,600 triples against `ec500`'s few hundred).
 
 Two rules, both learned the hard way:
 
 1. **Read every result against `bar(cond) - bar(none)` from `shortcuts.json`,
    not against zero**, and check whether the primer simply contains the answer
    before running anything -- the `density40` run lost half its design to
-   exactly that (`degree` primer + `node_degree` task).
+   exactly that (`degree` primer + `node_degree` task). A bar of 0.15 is not
+   automatically disqualifying -- what matters is `bar(cond) - bar(none)`, and
+   the strongest cell in this document has a bar delta of zero.
 2. **Filter `hit_cap` rows before comparing anything**, but say so, because it
    is not neutral: on `ec500`/1.7B it is the difference between `rwse` at
    -4.0 pp (p=0.11) and -5.0 pp (p=0.025). Report the non-termination rate
