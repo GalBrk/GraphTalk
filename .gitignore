@@ -64,3 +64,4 @@ out/
 # copy.
 /prompts.degdensity40.jsonl
 /prompts.degdensity40hi.jsonl
+/prompts.degdensity40think.jsonl

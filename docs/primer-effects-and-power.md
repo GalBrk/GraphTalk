@@ -513,6 +513,45 @@ at a fixed size" below.
 {0.65, 0.75, 0.85}, 400 graphs per level, 5 shards, tag `degdens40hi`, writing
 `runs/qwen3-1.7b.degdens40hi.shard*of5.jsonl`.
 
+**Job 866578 `degdenst-q17bT`** -- the thinking arm. `qwen3-1.7b-think` over all
+seven densities {0.10 ... 0.85} x {`none`, `components`, `clustering`, `degree`}
+x 400 graphs = 11,200 rows, 7 shards, 24 h, tag `degdensthink`, writing
+`runs/qwen3-1.7b-think.degdensthink.shard*of7.jsonl`.
+
+**It is exactly paired with the two plain jobs, not merely parallel to them.**
+`build_size_sweep.py` seeds each graph from `(density value, size, index)`, so a
+`--count 400` build reproduces the same 400 graphs per level that the plain runs
+used. Verified rather than assumed: **9,600 of its 11,200 prompts are
+byte-identical** to `prompts.degdensity40.jsonl` and `prompts.degdensity40hi.jsonl`.
+The 1,600 that are new are the `degree` control at the four low densities, which
+`degdens40` did not carry. So think-vs-plain is a paired comparison on identical
+graphs, questions and primer text -- the only difference is
+`enable_thinking: True` and an 8,192-token budget instead of 2,048.
+
+`qwen3-1.7b-think` is the *same checkpoint* as `qwen3-1.7b`
+(`Qwen/Qwen3-1.7B`), so this isolates reasoning mode rather than model capacity.
+
+**The 8,192 budget was checked, not assumed adequate.** On the existing size
+sweep at n=40 this arm's `node_degree` rows ran median 1,285 / p90 3,134 / max
+4,348 tokens with **0% hit_cap**, so the cap has headroom at this graph size.
+The densest level here (p=0.85, ~663 edges) is denser than that sweep's U(0, 1)
+average, so check `hit_cap` at the top end before reading those cells; the
+budget is overridable per run with `run_sweep.py --max-new-tokens`, and
+`sweep.sbatch` was deliberately *not* edited to expose it while other jobs were
+live and could requeue into a changed script.
+
+Seven shards, because the shard count must be coprime with the **four**
+conditions -- at 4 shards, shard 0 takes all 2,800 `none` rows.
+
+Rebuild its prompt file with:
+
+```bash
+PYTHONPATH=. python scripts/build_size_sweep.py --sizes 40 \
+    --densities 0.10 0.20 0.35 0.50 0.65 0.75 0.85 --tasks node_degree \
+    --conditions none components clustering degree \
+    --count 400 --out prompts.degdensity40think.jsonl
+```
+
 It adds a fourth condition, `degree`, **as a positive control rather than a
 treatment**. `degree` states the answer verbatim, so it is the ceiling on what
 any primer could achieve at that density. This is what makes a null
