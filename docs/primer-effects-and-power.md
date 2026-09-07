@@ -554,8 +554,22 @@ That cell therefore has a shortcut ceiling of 1.0 by construction and cannot
 speak to whether a primer aids reasoning. It is exactly the "(condition, task)
 pairs that let the primer answer the task directly" confound that
 `docs/plans/run_improved_tests.md` Phase 1 was written to catch, and it was
-walked into anyway. `connected_nodes` is unaffected -- the `degree` primer gives
-the neighbour *count*, not the identities -- and is the only clean cell here.
+walked into anyway -- and worse, it was *readable off the bar table in this very
+document*, which lists `node_degree`/`degree` at **1.00**. It did not need to be
+discovered empirically afterwards.
+
+`connected_nodes` is uncontaminated -- the `degree` primer gives the neighbour
+*count*, not the identities -- but it was a poor choice for a different reason:
+it had no headroom. The size sweep above already measured `qwen3-1.7b` on
+`connected_nodes` at 0.937 / 0.975 / **0.870** for n=20/40/80, so at n=40 this
+model was known to be at 0.975 before the job was submitted.
+
+Both tasks were therefore disqualified in advance by numbers already in this
+file. They were picked by elimination from the size sweep's exclusions
+(`edge_count` for truncation, `cycle_check` for degeneracy, `node_count` for
+being flat) rather than by the criterion this document states two sections
+earlier: cross the shortcut bars against headroom, and "only one row survives:
+`edge_count`".
 
 **The clean cell: `connected_nodes` (set F1).**
 
@@ -568,13 +582,43 @@ the neighbour *count*, not the identities -- and is the only clean cell here.
 | 0.50 | 0.960 | 0.969 | +0.009 |
 | 0.75 | 0.947 | 0.945 | -0.002 |
 
-Flat. **No monotone rise with density**, so the driver analysis's central claim
-does not reproduce under a design where density moves alone. But this is a
-*weak* null, not a refutation: `none` sits at 0.95-1.0, so the cell is near
-ceiling and has almost no room to show a gain -- the same saturation problem
-`difficulty-scaling.md` set out to escape, reappearing on a task chosen to dodge
-truncation. The one real signal is the **-0.090 at the sparsest level**: on
-sparse graphs the `degree` primer *hurts*, the same direction as `rwse`.
+Read across all six levels this looks flat, and an earlier version of this
+section called it a non-reproduction of the driver analysis's claim. **That was
+wrong, and the reason is a range mismatch.**
+
+The driver analysis binned `nx.density` into terciles over the tracked corpus,
+which is 5-19 nodes. Density is a *ratio*, so the same density means very
+different absolute edge counts at n=12 and n=40 -- and absolute edges is what
+our own size-sweep finding says drives difficulty (aggregation over scattered
+mentions). Measured against that corpus:
+
+| this run's level | edges | share of the tracked corpus at or below it |
+|---|---|---|
+| p=0.05 | 38 | 64% |
+| p=0.10 | 77 | 85% |
+| p=0.20 | 156 | **99.5%** |
+| p=0.75 | 583 | 100% (3.4x its maximum of 170) |
+
+The claim being tested therefore lives almost entirely inside this run's two
+sparsest levels. Restricted to that overlap the gap **rises** monotonically --
+`connected_nodes` -0.090 -> -0.004 -> +0.009, and `node_degree` -0.030 ->
++0.030 -> +0.110 -- and only flattens beyond where the original corpus ends.
+
+So the correct statement is: **this run does not refute the density claim, and
+within the claim's own range it is directionally consistent with it.** The
+caveats stay: the rise is tiny in absolute terms, `none` sits at 0.95-1.0 so
+the cell is near ceiling, `node_degree` is shortcut-explained, and three points
+is not a trend. Underpowered either way, but not a null.
+
+Also note the design flaw this exposes: three of the six levels sit in the
+tracked corpus's *low* density tercile and only one in its *high* tercile,
+which is where the reported effect was strongest. The level spacing was chosen
+because sparse graphs are cheap and non-degenerate, which was the wrong
+criterion for testing this particular claim.
+
+The one clean signal that survives all of this is the **-0.090 at the sparsest
+level**: on sparse graphs the `degree` primer *hurts*, the same direction as
+`rwse`.
 
 **The shortcut-explained cell, read for what it does measure.** `node_degree`
 cannot test the primer question, but it does measure retrieval of a stated fact
@@ -598,13 +642,26 @@ for the primer to add. Note this is *not* the same claim as "size breaks them"
 from the size sweep, which held density at U(0, 1) and varied n; here n is
 fixed at 40 and only the edge count moves.
 
-**What would actually settle the density question.** A task where the primer
-aids *computation* without containing the answer. `edge_count` with the `degree`
-primer is precisely that -- degrees sum to twice the edge count -- and is what
-the original driver analysis was about. It was excluded here for truncation,
-but that judgement was made against a 2,048-token budget and the observed
-outputs peaked at 777 tokens, so a larger budget or a smaller n would make it
-viable. That is the run to do next, not another sweep of this design.
+**What would actually settle the density question -- corrected.** An earlier
+version of this section proposed `edge_count` with the `degree` primer, on the
+reasoning that degrees sum to twice the edge count so the primer aids
+computation without stating the answer. That reasoning is exactly why it does
+not work: the same identity makes its bar **1.00** in the table above. It would
+have been shortcut-explained in the same way `node_degree` was.
+
+Read the bar table properly and the `degree` primer is shortcut-explainable on
+nearly every task (1.00 on `node_count`, `edge_count` and `node_degree`; 0.79 on
+`edge_existence`; 0.95 on `cycle_check`). The informative conditions are
+`components`, `clustering` and `rwse` on `edge_count`, at bars 0.02 / 0.15 /
+0.02 -- which is the `ec500` design, and why that cell is this project's
+flagship.
+
+**The density sweep worth running is `ec500`'s conditions across density
+levels**, not the `degree` primer on any task. Truncation is the only real
+obstacle, and it is smaller than assumed: outputs here peaked at 777 tokens
+against a 2,048-token budget. Weight the levels toward the dense end this time,
+and keep at least two inside the tracked corpus's range so the result can be
+compared with the driver analysis rather than talking past it.
 
 ### Deliberately not run
 
