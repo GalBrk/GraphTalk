@@ -1,5 +1,13 @@
 # Primer computation
 
+> **Status: executed.** This is the plan as written, kept as the record of why
+> the design is what it is -- not a description of the current tree. Its
+> present-tense statements were true when it was written and several are now
+> stale by design: `parse_graph` has since moved to `graphtalk/graphqa.py`, and
+> `pyproject.toml` now maps both `talk_like_a_graph` and `graphtalk`, so the
+> editable-install caveat in "Constraints" no longer applies. For current
+> behaviour read `graphtalk/primers.py` and `CLAUDE.md`.
+
 ## Context
 
 The project's independent variable is a "primer": a short preamble of factual sentences

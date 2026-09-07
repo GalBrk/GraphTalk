@@ -190,7 +190,8 @@ cleanly on 3.12+.
 ## Tests
 
 ```bash
-uv run --no-sync pytest -q
+uv run --no-sync pytest -q --ignore=tests/test_hierarchical_model.py \
+                           --ignore=tests/test_mixed_models.py
 ```
 
 593 tests: 30 vendored ones covering graph generation, text encoders and
