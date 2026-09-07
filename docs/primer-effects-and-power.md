@@ -40,7 +40,15 @@ that no cell cleared every control. At power, both statements are wrong.
 3. **`clustering` is the only primer that helps twice**, on two different tasks
    and two different models (`edge_count`/8B and `cycle_check`/0.6B-think). It
    is the first pattern here that repeats across cells rather than appearing
-   once.
+   once. **It did not survive replication on a third**: `qwen3-1.7b` on the
+   same `ec500` cell scores -1.3 pp (p=0.64). See "The `qwen3-1.7b`
+   replication".
+
+3b. **The replication qualifies items 1 and 2 and should be read with them.**
+   `rwse`'s harm reproduces in *direction* on `qwen3-1.7b` but at -4.0 pp
+   (p=0.11) rather than -13.7, and `clustering`'s help does not reproduce at
+   all. Neither headline is model-general on the evidence available; both are
+   strongest on `qwen3-8b`.
 
 4. **Five of six tasks remain saturated** for the larger models, and every large
    `degree` gain remains shortcut-explained. Those findings are unchanged.
@@ -136,6 +144,60 @@ is refuted by this cell.
 
 `components` behaving as a null (+1.3, p=0.54) is the right control result:
 component count carries little about edge count, and the measurement says so.
+
+### The `qwen3-1.7b` replication
+
+**Same cell, same prompts, smaller model** (`prompts.edgecount500.clean.jsonl`,
+tag `ec500`, job 858244, 2,000/2,000 rows, **0 unparsed**). Truncated rows are
+dropped, not scored as failures -- the house rule, and a deliberate choice here
+rather than a default; see the note below on why it is load-bearing for `rwse`.
+
+| condition | score | delta (pp) | paired | disc | p | bar | replicates? |
+|---|---|---|---|---|---|---|---|
+| none | 0.240 | -- | 487 | | | 0.02 | -- |
+| components | 0.224 | -2.1 | 469 | 108 | 0.382 | 0.02 | yes, still inert |
+| clustering | 0.235 | -1.3 | 473 | 120 | 0.643 | 0.15 | **no** |
+| **rwse** | **0.211** | **-4.0** | 426 | 101 | 0.111 | 0.02 | direction only |
+
+The baseline lands where it was predicted to (0.240 against the 0.237 this model
+scored on `edge_count` in the small-model suite), so the run is sound and the
+differences below are about the primers, not the setup.
+
+**`clustering` does not replicate.** +5.0 pp (p=0.0076) on the 8B becomes
+-1.3 pp (p=0.64) here. Read against its bar this is worse than it looks: a
+primer-only solver *gains 13 points* from the clustering primer
+(`bar` 0.15 vs 0.02), and this model gained nothing. Both models are in fact
+below that bar -- the 8B's celebrated +5.0 pp is itself less than a trivial rule
+extracts from the same text -- so "clustering helps" was never as clean as item
+1 of the Summary implies.
+
+**`components` replicates as a null**, which is the control behaving correctly
+for a second time.
+
+**`rwse` hurts here too, but at roughly a third the magnitude and without
+significance** (-4.0 pp, p=0.11). Under the doc's own pre-registered framing --
+"if it replicates the claim is solid; if not it is a `qwen3-8b` property" -- the
+answer is neither. The sign is reproducible; the 13.7-point magnitude is not.
+
+**The truncation asymmetry is a finding in its own right, and it is where most
+of `rwse`'s harm now lives.** Capped rows by condition:
+
+| condition | capped |
+|---|---|
+| none | 13/500 (2.6%) |
+| clustering | 15/500 (3.0%) |
+| components | 19/500 (3.8%) |
+| **rwse** | **63/500 (12.6%)** |
+
+`rwse` makes this model fail to terminate roughly five times as often as no
+primer at all. That is a real effect of the condition, not a nuisance -- which
+makes dropping those rows a substantive decision rather than hygiene. Scoring
+them as failures instead moves `rwse` to -5.0 pp at p=0.025, i.e. from
+non-significant to significant. **This document reports the filtered number**,
+on the grounds that the accuracy metric should measure edge counting rather than
+`max_new_tokens`; the non-termination rate is reported separately, above, rather
+than folded into it. Anyone re-analysing this cell should know the conclusion
+turns on that choice and state which one they used.
 
 ### The `cycle_check` experiment
 
@@ -418,32 +480,14 @@ other clones still need `git remote set-url`).
 | `probe100` | qwen3-0.6b, -think, qwen3-1.7b, -think, qwen35-2b | 1,200 | 6 tasks x 100 graphs x {none, degree} |
 | `cc500` | qwen3-0.6b, qwen3-0.6b-think | 2,000 | cycle_check x 500 x {none, components, clustering, rwse} |
 | `ec500` | qwen3-8b | 1,984 | edge_count, same 4 conditions (16 rows short: one shard timed out) |
+| `ec500` | qwen3-1.7b | 2,000 | the replication of the above; job 858244, complete 2026-09-07 |
+| `density40` | qwen3-1.7b | 2,400 | n=40 x 6 pinned ER densities x {node_degree, connected_nodes} x {none, degree}; job 858671 |
 | `size` | qwen3-1.7b, -think, qwen3-8b, -think | 600 | 20/40/80-node graphs x 4 tasks x none |
 
-### In flight
+### Nothing is in flight
 
-**Job 858244 `ec17-clean`** -- `qwen3-1.7b` on `prompts.edgecount500.clean.jsonl`,
-3 shards, a5000, `--exclude=n-501`, 10 h limit, tag `ec500`, writing
-`runs/qwen3-1.7b.ec500.shard*of3.jsonl`.
-
-**Job 858671 `dens40-q17b`** -- `qwen3-1.7b` on `prompts.density40.jsonl`, 3
-shards, a5000, `--exclude=n-501`, 10 h limit, tag `density40`, writing
-`runs/qwen3-1.7b.density40.shard*of3.jsonl`. See "Density at a fixed size"
-below for what it tests and what to check.
-
-This is the **replication of the only unreplicated headline results**. Score it
-against the 8B numbers in "The experiment, and what it found". What matters is
-direction and rank order, not effect size -- the 1.7B baseline on `edge_count`
-is 0.237 against the 8B's 0.433, so identical magnitudes would be surprising:
-
-- Does `clustering` help?  (8B: +5.0 pp, p=0.0076)
-- Is `components` inert?   (8B: +1.3 pp, p=0.54)
-- **Does `rwse` hurt?**    (8B: -13.7 pp, p<0.0001)
-
-`rwse` is the one that matters. It is the largest clean effect in the project
-and the most consequential claim, because it contradicts the intuition that a
-primer is at worst neutral. If it replicates, the claim is solid. If it does
-not, it is a `qwen3-8b` property and must be written up as such.
+Jobs 858244 (`ec17-clean`) and 858671 (`dens40-q17b`) both completed on
+2026-09-07 and are written up above and below respectively.
 
 ### Density at a fixed size
 
@@ -499,14 +543,68 @@ check that stops a level from being another `reachability`.
   exact density rather than another `U`-draw. This is what makes density an
   experimental variable instead of corpus noise.
 
-**What to check when it lands.** Filter `hit_cap` rows first, then read
-`degree` minus `none` **per density level**, against
-`bar(degree) - bar(none)` from `shortcuts.json` and not against zero. The
-claim under test predicts a monotone increase in that gap from p=0.05 to
-p=0.75. A flat profile means the driver analysis was reading a size/density
-confound rather than a density effect; a *decreasing* profile would mean the
-primer helps most where counting is easiest, which would be a genuinely new
-result and worth a second model before believing it.
+**Result (job 858671, 2,400/2,400 rows, 1 capped, 100% parsed).**
+
+**First, a design error, because it changes how half of this reads.**
+`node_degree` was the wrong task to pair with the `degree` primer. That primer
+renders one sentence per node -- literally `"Node X has degree Y."` -- so for
+`node_degree` it **states the answer verbatim**. Checked, not assumed:
+600/600 `degree`-condition rows contain `"Node <queried> has degree <gold>."`.
+That cell therefore has a shortcut ceiling of 1.0 by construction and cannot
+speak to whether a primer aids reasoning. It is exactly the "(condition, task)
+pairs that let the primer answer the task directly" confound that
+`docs/plans/run_improved_tests.md` Phase 1 was written to catch, and it was
+walked into anyway. `connected_nodes` is unaffected -- the `degree` primer gives
+the neighbour *count*, not the identities -- and is the only clean cell here.
+
+**The clean cell: `connected_nodes` (set F1).**
+
+| p | none | degree | gap |
+|---|---|---|---|
+| 0.05 | 0.999 | 0.909 | **-0.090** |
+| 0.10 | 0.979 | 0.975 | -0.004 |
+| 0.20 | 0.984 | 0.992 | +0.009 |
+| 0.35 | 0.969 | 0.978 | +0.009 |
+| 0.50 | 0.960 | 0.969 | +0.009 |
+| 0.75 | 0.947 | 0.945 | -0.002 |
+
+Flat. **No monotone rise with density**, so the driver analysis's central claim
+does not reproduce under a design where density moves alone. But this is a
+*weak* null, not a refutation: `none` sits at 0.95-1.0, so the cell is near
+ceiling and has almost no room to show a gain -- the same saturation problem
+`difficulty-scaling.md` set out to escape, reappearing on a task chosen to dodge
+truncation. The one real signal is the **-0.090 at the sparsest level**: on
+sparse graphs the `degree` primer *hurts*, the same direction as `rwse`.
+
+**The shortcut-explained cell, read for what it does measure.** `node_degree`
+cannot test the primer question, but it does measure retrieval of a stated fact
+as the prompt grows:
+
+| p | none | degree (answer present verbatim) |
+|---|---|---|
+| 0.05 | 0.980 | 0.950 |
+| 0.10 | 0.910 | 0.940 |
+| 0.20 | 0.810 | 0.920 |
+| 0.35 | 0.430 | 0.630 |
+| 0.50 | 0.310 | 0.310 |
+| 0.75 | 0.120 | 0.140 |
+
+At p=0.75 the prompt contains the sentence `"Node 12 has degree 30."` and the
+model is still wrong 86% of the time; having the answer written down is worth
++0.02. The gap is an inverted U -- peaking at +0.200 (p=0.35) and gone by
+p=0.50 -- which is a floor effect, not a density effect: past a certain prompt
+length the model cannot retrieve a stated fact at all, so there is nothing left
+for the primer to add. Note this is *not* the same claim as "size breaks them"
+from the size sweep, which held density at U(0, 1) and varied n; here n is
+fixed at 40 and only the edge count moves.
+
+**What would actually settle the density question.** A task where the primer
+aids *computation* without containing the answer. `edge_count` with the `degree`
+primer is precisely that -- degrees sum to twice the edge count -- and is what
+the original driver analysis was about. It was excluded here for truncation,
+but that judgement was made against a 2,048-token budget and the observed
+outputs peaked at 777 tokens, so a larger budget or a smaller n would make it
+viable. That is the run to do next, not another sweep of this design.
 
 ### Deliberately not run
 
@@ -542,10 +640,22 @@ result and worth a second model before believing it.
 
 ### If you only read one thing
 
-Primers are not one intervention. `clustering` helped on two tasks and two
-models; `components` is inert; `rwse` does real damage. Read every result
-against `bar(cond) - bar(none)` from `shortcuts.json`, not against zero, and
-filter `hit_cap` rows before comparing anything.
+Primers are not one intervention. `components` is inert on both models that
+have tested it. `rwse` does real damage on `qwen3-8b` (-13.7 pp) and directional
+but non-significant damage on `qwen3-1.7b` (-4.0 pp). `clustering` helped on two
+cells and then **failed to replicate on a third** -- and it sits below its own
+shortcut bar in every cell measured, so it was never as clean as it looked.
+
+Two rules, both learned the hard way:
+
+1. **Read every result against `bar(cond) - bar(none)` from `shortcuts.json`,
+   not against zero**, and check whether the primer simply contains the answer
+   before running anything -- the `density40` run lost half its design to
+   exactly that (`degree` primer + `node_degree` task).
+2. **Filter `hit_cap` rows before comparing anything**, but say so, because it
+   is not neutral: on `ec500`/1.7B it is the difference between `rwse` at
+   -4.0 pp (p=0.11) and -5.0 pp (p=0.025). Report the non-termination rate
+   alongside accuracy rather than letting it hide inside it.
 
 ## Operational notes
 
