@@ -492,6 +492,51 @@ other clones still need `git remote set-url`).
 `runs/qwen3-1.7b.degdens40.shard*of5.jsonl`. Design and sizing are in "Density
 at a fixed size" below.
 
+**Job 866492 `degdenshi-q17b`** -- the high-density continuation, densities
+{0.65, 0.75, 0.85}, 400 graphs per level, 5 shards, tag `degdens40hi`, writing
+`runs/qwen3-1.7b.degdens40hi.shard*of5.jsonl`.
+
+It adds a fourth condition, `degree`, **as a positive control rather than a
+treatment**. `degree` states the answer verbatim, so it is the ceiling on what
+any primer could achieve at that density. This is what makes a null
+interpretable: the `density40` run found `degree` worth +0.00 at p=0.50 and
++0.02 at p=0.75, which predicts that `components`/`clustering` will do nothing
+up here either -- not because the primers are useless, but because the model has
+collapsed and *no* information helps. Without the control, that null would be
+indistinguishable from "primers do not help at high density", which is a very
+different claim. Read the `degree` column first.
+
+Stops at 0.85 because `node_degree` degenerates as the graph approaches
+complete. Measured at n=40, the modal-degree majority baseline climbs 0.127
+(p=0.65) -> 0.157 (0.75) -> 0.193 (0.85) -> 0.223 (0.90) -> 0.273 (0.95), with
+distinct degrees falling from 18 to 8. p=1.00 is the complete graph, where every
+node has degree 39 and the baseline is 1.000.
+
+**Rebuilding these prompt sets.** Neither file is tracked -- both are ~18 MB,
+twice the largest tracked prompt file, because a 40-node `incident` encoding
+lists every one of several hundred edges. They rebuild byte for byte:
+
+```bash
+PYTHONPATH=. python scripts/build_size_sweep.py --sizes 40 \
+    --densities 0.10 0.20 0.35 0.50 --tasks node_degree \
+    --conditions none components clustering \
+    --count 400 --out prompts.degdensity40.jsonl
+
+PYTHONPATH=. python scripts/build_size_sweep.py --sizes 40 \
+    --densities 0.65 0.75 0.85 --tasks node_degree \
+    --conditions none components clustering degree \
+    --count 400 --out prompts.degdensity40hi.jsonl
+```
+
+Determinism is pinned by `tests/test_build_size_sweep.py`: a level's graphs
+depend on its density *value*, not its position in `--densities`, so rebuilding
+a subset reproduces exactly the rows it produced here.
+
+Both were submitted with 5 shards. **Not 4, and not 3** -- see the coprime rule
+in Operational notes; at 4 shards the second file gives shard 0 all 1,200 `none`
+rows and nothing else, which was checked against the built file before
+submitting.
+
 Jobs 858244 (`ec17-clean`) and 858671 (`dens40-q17b`) both completed on
 2026-09-07 and are written up above and below respectively.
 
