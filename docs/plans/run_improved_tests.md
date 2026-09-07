@@ -26,7 +26,7 @@ correctly, not from more data. Keep that discipline through every phase
 below.
 
 **Every new script needs tests**, matching this project's existing
-convention (`tests/test_significance.py`, `tests/test_check_significance.py`,
+convention (`tests/test_significance.py`, `tests/test_recommend_count.py`,
 etc.). After each phase, run `pytest -q` and report the pass count and any
 failures/regressions before moving to the next phase (compare against the
 project's known baseline: 572 passed, 2 pre-existing unrelated

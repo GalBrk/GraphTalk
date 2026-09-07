@@ -193,16 +193,21 @@ cleanly on 3.12+.
 uv run --no-sync pytest -q
 ```
 
-418 tests: 27 vendored ones covering graph generation, text encoders and
+593 tests: 30 vendored ones covering graph generation, text encoders and
 metrics, 138 covering the primer statistics, the renderer, and the committed
-golden primer strings, 143 covering the shortcut solvers, 72 covering prompt
-assembly and answer scoring, 27 covering node naming and the GoT round trip,
-and 11 covering the sweep frame, the failure taxonomy, the wording split, and
-how a row's non-termination flag was obtained.
+golden primer strings, 143 covering the shortcut solvers, 85 covering prompt
+assembly and answer scoring, 86 covering the significance machinery and
+sample-size recommendation, 38 covering the corpus and prompt builders, 33
+covering the sweep frame and failure taxonomy, 27 covering node naming and the
+GoT round trip, and 13 covering topology extraction and the task-scoped screen.
 
-The last of those need `pandas`, which is not in the base install: without
-`pip install -e ".[analysis]"` the suite fails at *collection* rather than
-skipping, so the whole run aborts and none of the other 407 report.
+Two more files -- `tests/test_hierarchical_model.py` and
+`tests/test_mixed_models.py` -- import `statsmodels`/`pymc` at module scope. The
+count above is with both `--ignore`d, which is how they have to be run wherever
+those libraries are absent: a missing one fails at *collection* rather than
+skipping, so the whole run aborts and reports **zero** passes rather than a
+couple of failures. The same is true of `pandas` for `tests/test_analysis.py`,
+which `pip install -e ".[analysis]"` provides.
 
 Two of those deserve mention because they are what the rest rests on. The
 **round trip** renders a primer, parses it back, and requires the recovered
