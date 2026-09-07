@@ -61,6 +61,17 @@ These become interesting the moment the task set widens. GraphQA also ships
 those. If the project extends beyond the six basic tasks, revisit this section rather
 than this file's conclusion.
 
+**That trigger has now partly fired, and the answer was not what this section
+anticipated.** `reachability` was implemented (`scoring.ALL_TASKS`, and
+`docs/difficulty-scaling.md`), but it turned out to be degenerate on this
+corpus rather than a new axis for distance-based features: five of the seven
+generator families are connected by construction, so the gold answer is "Yes"
+for essentially every graph -- 210/210 under the recommended settings. A
+distance or centrality feature cannot earn its place against a task whose
+majority baseline is 1.000. Revisit this section for real if `shortest_path` or
+`triangle_counting` is ever added, or if `reachability` is fixed by putting
+disconnected graphs in the pool.
+
 ## Rejected: redundant with what is already there
 
 These fail test 3 — they are recoverable from features the primer already carries.

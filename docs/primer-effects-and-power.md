@@ -19,7 +19,7 @@ a conclusion about the *design* rather than about primers.
 
 ## Summary
 
-Updated 2026-09-06, after running the powered experiments. The earlier version
+Updated 2026-09-07, after running the powered experiments and the `ec500` replication. The earlier version
 of this document said the uncontaminated cells were "positive but unpowered" and
 that no cell cleared every control. At power, both statements are wrong.
 
@@ -469,9 +469,26 @@ spent on exactly the bookkeeping the task needs.
 
 ## Where this stands, and what to do next
 
-State as of 2026-09-06. Branch `small-model-suite-and-primer-power`, pushed to
+State as of 2026-09-07. Branch `small-model-suite-and-primer-power`, pushed to
 `git@github.com:GalBrk/GraphTalk.git` (the remote moved from `ArnavShahor/`;
 other clones still need `git remote set-url`).
+
+**`origin/main` was merged into this branch on 2026-09-07** (no conflicts; 593
+tests pass). Two consequences worth knowing before reading the tables below:
+
+- The tree now also holds main's arms -- `gemma4-e4b`, `gemma4-12b`,
+  `qwen3-14b` and their `-think` variants -- alongside this branch's small
+  models. The "Data on disk" table below lists only this branch's experiments,
+  so it under-reports what is actually available; `runs/README.md` covers the
+  rest.
+- That combination is what makes a **paired 0.6B-to-14B model ladder** possible
+  for the first time: main's 150 `(instance_id, task)` pairs are a complete
+  subset of this branch's `probe100` set, in both `none` and `degree`, so the
+  two can be compared on identical graphs and questions rather than merely
+  side by side. Nothing here has done that analysis yet -- it needs no GPU.
+- Main also brings `docs/difficulty-scaling.md`, `scoring.ALL_TASKS` (a seventh
+  task, `reachability`, unused by any tracked row) and the `task_scoped_screen`
+  machinery.
 
 ### Data on disk, all complete
 

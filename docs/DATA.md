@@ -52,7 +52,7 @@ pooling if its input carries more than one scheme — see
 | field | type | meaning |
 |---|---|---|
 | `instance_id` | str | pairing key, `"<task>/<index>"` |
-| `task` | str | one of the six tasks below |
+| `task` | str | one of the six tasks below. `graphtalk.scoring.ALL_TASKS` also defines a seventh, `reachability`, added for the synthetic `--graph-source diverse` path; **no tracked row carries it**, and `scoring.TASKS` (the six) is still what drives the published-dataset fetch |
 | `condition` | str | one of the seven primer conditions below |
 | `style` | str | `zero_shot` |
 | `prompt` | str | the exact text handed to the model, primer included |
