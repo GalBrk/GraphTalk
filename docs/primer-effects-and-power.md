@@ -65,10 +65,15 @@ that no cell cleared every control. At power, both statements are wrong.
 4. **Five of six tasks remain saturated** for the larger models, and every large
    `degree` gain remains shortcut-explained. Those findings are unchanged.
 
-5. **Density is a working difficulty knob at fixed size, and the size finding
-   is really an edge-count finding.** Holding n=40 and moving ER density alone,
-   `node_degree` falls 0.922 -> 0.295 across p=0.10 -> 0.50 while the blind
-   baseline barely moves (0.230 -> 0.147). See "Density at a fixed size".
+5. **Density is a working difficulty knob at fixed size, and it has three
+   regimes.** Holding n=40 and moving ER density alone, `node_degree` falls
+   0.922 -> 0.295 across p=0.10 -> 0.50 while the blind baseline barely moves
+   (0.230 -> 0.147). Above p~0.65 the model drops **below** the blind bar
+   (0.052 against 0.172 at p=0.85) and collapses onto answering 39, the
+   complete-graph degree, in 61% of rows. The `degree` positive control -- the
+   answer written verbatim in the prompt -- is worth +0.7 pp (p=0.59) up there,
+   which is what proves the high-density cells are uninformative rather than
+   primer-negative. See "Density at a fixed size".
 
 6. **Saturation is an artifact of the corpus's 19-node cap, not of the tasks.**
    Regenerated at 80 nodes, `node_degree` falls to 0.143 (1.7B plain) and 0.479
@@ -518,6 +523,12 @@ tests passed at the merge, 603 now). Two consequences worth knowing before readi
 | `density40` | qwen3-1.7b | 2,400 | n=40 x 6 pinned ER densities x {node_degree, connected_nodes} x {none, degree}; job 858671 |
 | `size` | qwen3-1.7b, -think, qwen3-8b, -think | 600 | 20/40/80-node graphs x 4 tasks x none |
 
+**Job 866492 `degdenshi-q17b` completed 2026-09-08** -- the high-density
+continuation, densities {0.65, 0.75, 0.85} x {`none`, `components`,
+`clustering`, `degree`} x 400 graphs, 4,800 rows, 0 capped, in
+`runs/qwen3-1.7b.degdens40hi.shard*of5.jsonl`. Its `degree` positive control is
+what makes its null interpretable -- see "Density at a fixed size".
+
 **Job 866467 `degdens40-q17b` completed 2026-09-07** -- `qwen3-1.7b`,
 `node_degree` x {`none`, `components`, `clustering`} at n=40 across densities
 {0.10, 0.20, 0.35, 0.50}, 400 graphs per level, 4,800 rows, 0 capped, in
@@ -526,10 +537,6 @@ size" below; it is the source of the one clean, significant primer effect this
 project has.
 
 ### In flight
-
-**Job 866492 `degdenshi-q17b`** -- the high-density continuation, densities
-{0.65, 0.75, 0.85}, 400 graphs per level, 5 shards, tag `degdens40hi`, writing
-`runs/qwen3-1.7b.degdens40hi.shard*of5.jsonl`.
 
 **Job 866578 `degdenst-q17bT`** -- the thinking arm. `qwen3-1.7b-think` over all
 seven densities {0.10 ... 0.85} x {`none`, `components`, `clustering`, `degree`}
@@ -926,6 +933,75 @@ here says `clustering` helps on a task that needs multi-hop structure. The
 `degree` positive control is absent at these four levels -- it was added only to
 the high-density and thinking runs -- so there is no measured ceiling to read
 the +0.038 against on this half of the sweep.
+
+**Result (job 866492, the high-density continuation: 4,800/4,800 rows, 0
+capped, 0 unparsable).** Densities {0.65, 0.75, 0.85} x {`none`, `components`,
+`clustering`, `degree`} x 400 graphs, same model, task, size and seed scheme,
+so it extends the curve above rather than sitting beside it.
+
+| p | `none` | `components` | `clustering` | `degree` | blind bar |
+|---|---|---|---|---|---|
+| 0.65 | 0.140 | 0.122 | 0.120 | 0.122 | 0.133 |
+| 0.75 | 0.090 | 0.065 | 0.095 | 0.122 | 0.165 |
+| 0.85 | 0.052 | 0.062 | 0.048 | 0.058 | 0.172 |
+
+Paired against `none`, pooled over 1,200 triples per condition: `clustering`
+-0.7 pp (p=0.57), `components` -1.1 pp (p=0.31), **`degree` +0.7 pp (p=0.59)**.
+Nothing survives, at any level or pooled.
+
+**Read the `degree` column first, and the null stops being a null about
+primers.** `degree` states the answer verbatim -- verified on this exact prompt
+file, 1,200/1,200 `degree`-condition prompts contain the literal sentence
+`"Node <queried> has degree <gold>."` -- and it is worth **+0.7 pp, p=0.59**.
+When copying an answer out of the prompt buys nothing, no primer can buy
+anything either. The correct statement is not "primers stop helping at high
+density" but **"the model stops working at high density, and the run cannot
+speak to primers there."** This is precisely the reading the control was added
+to make possible, and without it these three rows would have been reported as
+three more nulls.
+
+**The model is below the blind bar at two of the three levels.** 0.090 against
+0.165 at p=0.75, and 0.052 against 0.172 at p=0.85. Always answering the modal
+degree beats it by more than three to one. That is a stronger statement than
+"low accuracy": the model is not merely failing to compute, it is being actively
+misled by the graph text.
+
+**What it is being misled into is the complete graph.** The predictions are
+systematically too high in all twelve cells -- bias +2.6 to +4.7 -- and the
+excess is not scattered:
+
+| p | mean gold | mean predicted | answers exactly 39 |
+|---|---|---|---|
+| 0.65 | 25.6 | 29.2 | 24% |
+| 0.75 | 29.3 | 33.7 | 46% |
+| 0.85 | 33.1 | 35.9 | **61%** |
+
+39 is the maximum possible degree at n=40. At p=0.85 the model answers "this
+node is connected to every other node" in 61% of rows (70% in the `degree`
+condition, where it is *worse* than the control), against a true rate near zero.
+It has collapsed onto a density prior rather than reading the graph.
+
+A sampled failure shows the mechanism, and it is not retrieval:
+
+> Node 29 is connected to the following nodes: 0, 1, 2, 4, 5, 6, 7, 10, 11, 12,
+> 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26, 27, 28, 30, 31, 32, 33,
+> 34, 35, 36, 37, 38, 39. Counting these, we find there are **39** connections.
+
+The enumeration is correct and has 35 entries; the count of it is wrong; and
+the prompt's own sentence `"Node 29 has degree 32."` is never consulted. The
+model commits to enumerate-and-count and then miscounts a long list, which is
+why having the answer written down does not rescue it. Nothing here is a
+truncation artifact: output ran median 262-278 tokens against a 2,048 budget,
+max 732, with **0 capped rows** at every level.
+
+**So the density curve has three regimes, not two.** Below p~0.2 the task is
+easy and there is no room for a primer; around p=0.35 accuracy passes through
+0.4, `degree`'s inverted-U peaks, and `clustering` shows its +7.5 pp; from
+p~0.65 up the model is below the guessing baseline and the cell is
+uninformative by the same standard that disqualified `reachability`. **Future
+density work at n=40 should stop at 0.50.** The three levels here are worth
+keeping as the boundary measurement -- they are what proves the boundary
+exists -- but they are not places to test a hypothesis.
 ### Deliberately not run
 
 - **`--xlarge` (20-39 nodes) from `docs/difficulty-scaling.md`** -- subsumed.
