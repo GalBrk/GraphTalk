@@ -496,7 +496,7 @@ State as of 2026-09-07. Branch `small-model-suite-and-primer-power`, pushed to
 other clones still need `git remote set-url`).
 
 **`origin/main` was merged into this branch on 2026-09-07** (no conflicts; 593
-tests passed at the merge, 603 now). Two consequences worth knowing before reading the tables below:
+tests passed at the merge, 608 now). Two consequences worth knowing before reading the tables below:
 
 - The tree now also holds main's arms -- `gemma4-e4b`, `gemma4-12b`,
   `qwen3-14b` and their `-think` variants -- alongside this branch's small
@@ -1021,11 +1021,27 @@ permuted across graphs, 20,000 draws:
 Two readings, and the second is why the range matters.
 
 Over the **usable range**, `clustering` moves in the predicted direction but not
-significantly, while `components` moves **significantly in the opposite
-direction** -- surviving Benjamini-Hochberg across the two trend tests. It helps
-slightly on sparse graphs (+0.015) and hurts on dense ones (-0.050). So the one
-significant density relationship in this experiment runs *backwards* to the
-claim.
+significantly, while `components` moves in the **opposite** direction at
+p=0.02. It helps slightly on sparse graphs (+0.015) and hurts on dense ones
+(-0.050). So the only density relationship here that approaches significance
+runs *backwards* to the claim.
+
+**Do not lean on that p=0.02, and an earlier revision of this section did.** It
+claimed the `components` slope survives Benjamini-Hochberg. Whether it does
+depends entirely on which family you correct within, and the family was never
+pre-specified:
+
+| family | size | BH threshold at rank 1 | survives? |
+|---|---|---|---|
+| the two usable-range fits only | 2 | 0.025 | yes |
+| every trend fit reported in the table | 5 | 0.010 | **no** |
+
+Four fits are tabulated and a fifth (`degree`, high densities only) is
+produced by the same command, so correcting within the two that came out best
+is family-shopping. It is also right at the edge of permutation noise: three
+runs of the same test at 20,000 draws gave p = 0.017, 0.021 and 0.022, which
+straddles the two-test threshold. The defensible claim is **a suggestive
+negative slope, uncorrected p~0.02**, not a corrected finding.
 
 Over **all seven levels** both slopes collapse to a null, which is an artifact,
 not a result: the top three levels are floor (see the three-regime finding
@@ -1038,7 +1054,21 @@ meaningless.
 **Net.** The claim that primer benefit grows with density gets no support from
 the first properly controlled test of it. Primers *diverge* as graphs get
 denser -- `clustering` drifting up, `components` down -- rather than converging
-on "more helpful".
+on "more helpful". Neither slope is significant after honest correction, so
+this is a direction to test, not a result to cite.
+
+Reproduce the table with:
+
+```bash
+PYTHONPATH=. python scripts/score_density_sweep.py \
+    --responses "runs/qwen3-1.7b.degdens40.shard*of5.jsonl" \
+                "runs/qwen3-1.7b.degdens40hi.shard*of5.jsonl" \
+    --trend-max 0.50
+```
+
+`--trend-max` is what produces the restricted fit; without it only the
+all-levels rows appear. The slopes above were verified by an independent
+reimplementation before the script was written, and match to three decimals.
 
 ### Deliberately not run
 

@@ -34,6 +34,8 @@ import argparse
 import collections
 import glob
 import json
+import random
+import statistics
 
 from graphtalk import scoring
 from graphtalk import significance
@@ -126,7 +128,60 @@ def paired_arms(paired, density, condition, control=CONTROL):
   return control_hits, treatment_hits
 
 
-def report(summary, control=CONTROL) -> None:
+def _slope(xs, ys) -> float:
+  """OLS slope of `ys` on `xs`, which for a two-point-or-more design is the
+  per-unit-density change in the paired difference."""
+  mean_x, mean_y = statistics.mean(xs), statistics.mean(ys)
+  numerator = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, ys))
+  denominator = sum((x - mean_x) ** 2 for x in xs)
+  return numerator / denominator if denominator else float("nan")
+
+
+def trend_test(paired, condition, levels=None, control=CONTROL,
+               draws=20000, seed=0) -> dict:
+  """Does the primer's benefit change with density? Permutation test on a slope.
+
+  Per-cell McNemar answers "is any single level significant", which is not the
+  hypothesis `docs/difficulty-scaling.md` states: it claims the benefit *grows*
+  with density, and that is a statement about a slope. Fitting it directly also
+  uses every graph at once instead of splitting them into four underpowered
+  cells.
+
+  The null is that density carries no information about the paired difference,
+  so density labels are permuted across graphs. Under permutation `mean(x)`,
+  `var(x)` and `mean(y)` are all invariant, so the slope is a monotone function
+  of `sum(x*y)` and only that sum has to be recomputed per draw -- which is what
+  makes 20,000 draws cheap enough to run by default.
+  """
+  xs, ys = [], []
+  for (density, _), by_condition in paired.items():
+    if levels is not None and density not in levels:
+      continue
+    if control in by_condition and condition in by_condition:
+      xs.append(density)
+      ys.append(by_condition[condition] - by_condition[control])
+  if len(set(xs)) < 2:
+    return {"slope": float("nan"), "p_value": 1.0, "n": len(xs)}
+
+  observed = _slope(xs, ys)
+  n = len(xs)
+  centre = n * statistics.mean(xs) * statistics.mean(ys)
+  target = abs(sum(x * y for x, y in zip(xs, ys)) - centre)
+  rng = random.Random(seed)
+  shuffled = list(xs)
+  at_least_as_extreme = 0
+  for _ in range(draws):
+    rng.shuffle(shuffled)
+    if abs(sum(x * y for x, y in zip(shuffled, ys)) - centre) >= target:
+      at_least_as_extreme += 1
+  # +1 to both parts: the observed arrangement is itself a valid permutation, so
+  # a p-value of exactly 0 is not attainable and should not be reported.
+  return {"slope": observed,
+          "p_value": (at_least_as_extreme + 1) / (draws + 1),
+          "n": n}
+
+
+def report(summary, control=CONTROL, trend_max=None, draws=20000) -> None:
   cells, paired, golds = summary["cells"], summary["paired"], summary["golds"]
   densities = sorted({d for d, _ in cells}, key=lambda d: (d is None, d))
   conditions = sorted({c for _, c in cells})
@@ -200,17 +255,52 @@ def report(summary, control=CONTROL) -> None:
   if per_level:
     print("  (* = survives Benjamini-Hochberg at q=0.05 within its own family)")
 
+  if len(densities) >= 2:
+    print(f"\ntrend in the paired difference vs density "
+          f"({draws:,} label permutations):")
+    ranges = [("all levels", None)]
+    if trend_max is not None:
+      ranges.append((f"p <= {trend_max:g}",
+                     {d for d in densities if d <= trend_max}))
+    trends = []
+    for name, levels in ranges:
+      for condition in conditions:
+        if condition == control:
+          continue
+        test = trend_test(paired, condition, levels, control, draws)
+        # A condition absent from this range (`degree` was only run at the high
+        # densities) has no slope. Printing it as nan would be noise; letting it
+        # into the BH family would be worse, since a placeholder p=1.0 inflates
+        # the family size and weakens every real test in it.
+        if test["n"]:
+          trends.append((name, condition, test))
+    keep = significance.benjamini_hochberg([t["p_value"] for *_, t in trends])
+    for (name, condition, test), survives in zip(trends, keep):
+      print(f"  {name:<12} {condition:>11}: slope {test['slope']:+.3f} "
+            f"per unit density  p={test['p_value']:.3f}  n={test['n']:>5}"
+            f"{'  *' if survives else ''}")
+    print("  (slope is the change in `primer - control` per unit of density;"
+          " * = survives BH at q=0.05)")
+
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--responses", nargs="+", required=True,
                       help="response jsonl paths or globs")
   parser.add_argument("--control", default=CONTROL)
+  parser.add_argument("--trend-max", type=float, default=None,
+                      help="also fit the density trend restricted to levels at "
+                           "or below this density. Use it to exclude levels "
+                           "where the model is at floor: averaging a dead "
+                           "instrument into a live one drags any slope to zero.")
+  parser.add_argument("--draws", type=int, default=20000,
+                      help="label permutations for the trend test")
   args = parser.parse_args()
 
   records = load(args.responses)
   print(f"{len(records)} rows loaded\n")
-  report(summarize(records), control=args.control)
+  report(summarize(records), control=args.control,
+         trend_max=args.trend_max, draws=args.draws)
 
 
 if __name__ == "__main__":

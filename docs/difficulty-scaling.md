@@ -195,7 +195,7 @@ where `torch` and a real compiler are present, expect the full clean count.
 **Superseded after the merge into `small-model-suite-and-primer-power`
 (2026-09-07).** The 606/607 figures above were measured on `main` alone, on a
 laptop where `statsmodels` is installed. The merged branch reported **593
-passed** at the merge and **603** now (the density-sweep scorer added ten)
+passed** at the merge and **608** now (the density-sweep scorer and its trend test added fifteen)
 on the cluster conda env with `tests/test_hierarchical_model.py` and
 `tests/test_mixed_models.py` `--ignore`d, because neither `conda_envs/graphtalk`
 nor `conda_envs/graphtalk-cu126` has `statsmodels` or `pymc`. The numbers are
