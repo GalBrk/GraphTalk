@@ -53,6 +53,11 @@ from graphtalk import scoring
 # are not size-scaling questions.
 TASKS = ("node_count", "node_degree", "connected_nodes", "edge_existence")
 
+# The seed every arm scored so far was generated with. A run at any other seed
+# draws a different corpus, so its rows must not collide with these by key --
+# see the `seed_suffix` note in `build`.
+DEFAULT_SEED = 20260906
+
 
 def build(sizes, count, conditions, seed, style="zero_shot", densities=None,
           tasks=TASKS):
@@ -67,6 +72,27 @@ def build(sizes, count, conditions, seed, style="zero_shot", densities=None,
   """
   records = []
   density_levels = list(densities) if densities else [None]
+  # A different seed means different graphs behind the same (density, size,
+  # index), and `instance_id` does not otherwise mention the seed -- so a
+  # replication at a fresh seed would produce byte-identical keys for an
+  # entirely different corpus. run_sweep.py resumes by key, and every analysis
+  # here pairs by key, so pooling the two files would silently compare a graph
+  # against a different graph. Only non-default seeds are tagged, which keeps
+  # every already-scored arm reproducible from this script byte for byte.
+  seed_suffix = "" if seed == DEFAULT_SEED else f"/s{seed}"
+  # The seed enters the draw additively alongside `index`, so two seeds closer
+  # together than `count` generate *overlapping corpora*: at seed+3, graph
+  # `index` is the original's graph `index + 3`. A replication built that way
+  # reuses almost every graph while looking independent, and the instance_id
+  # tag above would not reveal it. Refuse rather than warn -- the failure is
+  # invisible in the output.
+  if seed != DEFAULT_SEED and abs(seed - DEFAULT_SEED) < count:
+    raise ValueError(
+        f"seed {seed} is only {abs(seed - DEFAULT_SEED)} from the default "
+        f"{DEFAULT_SEED}, closer than --count {count}, so the two corpora "
+        f"would share graphs (graph i here is graph i+{seed - DEFAULT_SEED} "
+        f"there). Move the seed at least {count} away."
+    )
   for density in density_levels:
     for size in sizes:
       for index in range(count):
@@ -97,7 +123,7 @@ def build(sizes, count, conditions, seed, style="zero_shot", densities=None,
             # size class does: two cells that differ only in sparsity must not
             # collide into one key, or run_sweep.py would treat the second as
             # already generated and skip it in silence.
-            suffix = "" if density is None else f"/p{density:g}"
+            suffix = ("" if density is None else f"/p{density:g}") + seed_suffix
             record = {
                 # Tagged with the size class so no downstream frame can pool a
                 # size sweep row with a tracked-corpus row of the same index.
@@ -132,7 +158,10 @@ def main() -> None:
                            "(density, size). Omit for the original behaviour.")
   parser.add_argument("--tasks", nargs="+", default=list(TASKS),
                       help=f"default: {' '.join(TASKS)}")
-  parser.add_argument("--seed", type=int, default=20260906)
+  parser.add_argument("--seed", type=int, default=DEFAULT_SEED,
+                      help=f"default {DEFAULT_SEED}; any other value tags the "
+                           "instance_id with /s<seed> so a replication corpus "
+                           "can never collide with the scored one")
   parser.add_argument("--out", default="prompts.sizesweep.jsonl")
   args = parser.parse_args()
 
