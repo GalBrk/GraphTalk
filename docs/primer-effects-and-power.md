@@ -496,7 +496,8 @@ State as of 2026-09-07. Branch `small-model-suite-and-primer-power`, pushed to
 other clones still need `git remote set-url`).
 
 **`origin/main` was merged into this branch on 2026-09-07** (no conflicts; 593
-tests passed at the merge, 608 now). Two consequences worth knowing before reading the tables below:
+tests passed at the merge, 608 now). Two consequences worth knowing before
+reading the tables below:
 
 - The tree now also holds main's arms -- `gemma4-e4b`, `gemma4-12b`,
   `qwen3-14b` and their `-think` variants -- alongside this branch's small
