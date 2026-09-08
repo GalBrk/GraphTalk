@@ -556,9 +556,45 @@ project has.
 
 ### In flight
 
-**Nothing.** As of 2026-09-08 every job this document describes has completed
-and is written up. Jobs 858244 (`ec17-clean`) and 858671 (`dens40-q17b`)
-finished 2026-09-07; 866467, 866492 and 866578 finished 2026-09-08.
+Three jobs submitted 2026-09-09, all `qwen3-1.7b` family, `node_degree`, n=40,
+same profile as the scored density runs (`--constraint=a5000 --exclude=n-501
+--mem=24G`).
+
+**Jobs 870405 `fillplain-q17b` and 870407 `fillthink-q17bT`** -- the `filler`
+control, 7 densities x 400 graphs x {`filler`}, 2,800 rows per arm, tags
+`degdensfill` / `degdensfillT`. Built at the **default seed**, so the graphs are
+byte-identical to the scored runs and `filler` pairs against their `none` and
+`clustering` rows by `instance_id`.
+
+This is the control for the sharpest open question in this document: why
+`clustering` *hurts* the thinking arm on dense graphs (-8.8 pp at p=0.75). Two
+explanations fit that number equally well -- the clustering statistics mislead a
+model that would otherwise reason correctly, or 1,800 extra characters of any
+kind distract it. `filler` separates them. It is length-matched (6,081 chars
+against `clustering`'s 5,881 at n=40 p=0.5, i.e. slightly *longer*) and its
+shortcut bar is **0.082, identical to `none` and `clustering`**, so it carries
+no structure and no shortcut. If `filler` also hurts at high density, the harm
+is prompt length and the primer content is irrelevant -- which would reinterpret
+the finding rather than support it.
+
+**Job 870408 `replic-q17b`** -- an independent replication of the headline, 4
+levels (p <= 0.50) x 400 **fresh** graphs x {`none`, `clustering`}, 3,200 rows,
+tag `degdensrep`, 5 shards (coprime with 2 conditions). The +3.8 pp result rests
+on a single draw of 1,600 graphs and has never been re-drawn.
+
+**Its seed needed care, and the obvious choice would have been wrong.** Seeds
+enter the draw as `seed + 1000000*density + 1000*size + index`, additively with
+`index` -- so seed+3 yields *the original corpus re-indexed by three*, sharing
+397 of every 400 graphs while looking independent. Measured before building:
+edge sequences at seed+3 were the default's, offset by three positions.
+`build_size_sweep.py` now refuses any seed closer to the default than `--count`,
+with the arithmetic in the error message, and tags non-default seeds into the
+`instance_id` (`.../p0.1/s20760906/0`) so the two corpora can never be pooled by
+key. This run uses an offset of 500,000; verified 0 `instance_id` collisions
+against `prompts.degdensity40.jsonl`.
+
+Jobs 858244 (`ec17-clean`) and 858671 (`dens40-q17b`) finished 2026-09-07;
+866467, 866492 and 866578 finished 2026-09-08.
 
 ### Density at a fixed size
 

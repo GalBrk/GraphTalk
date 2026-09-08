@@ -90,3 +90,55 @@ def test_distinct_levels_draw_distinct_graphs():
 def test_tasks_override_restricts_the_task_set():
   records = _records(tasks=("node_degree", "connected_nodes"))
   assert {r["task"] for r in records} == {"node_degree", "connected_nodes"}
+
+
+def test_non_default_seed_is_tagged_into_the_instance_id():
+  """A replication corpus must not collide with the scored one.
+
+  `instance_id` is (task, size, density, index) -- none of which mentions the
+  seed -- so without this tag a fresh-seed run produces byte-identical keys for
+  entirely different graphs, and any analysis pairing by key would compare a
+  graph against a different graph.
+  """
+  base = _records(densities=[0.5], seed=build_size_sweep.DEFAULT_SEED)
+  replication = _records(densities=[0.5],
+                         seed=build_size_sweep.DEFAULT_SEED + 500000)
+  base_ids = {r["instance_id"] for r in base}
+  replication_ids = {r["instance_id"] for r in replication}
+  assert not (base_ids & replication_ids)
+  # Checked as a path segment, not a substring: "/size20" also contains "/s".
+  assert all("s20760906" in r["instance_id"].split("/") for r in replication)
+
+
+def test_default_seed_leaves_the_instance_id_untagged():
+  """The already-scored arms must stay reproducible byte for byte."""
+  records = _records(densities=[0.5], seed=build_size_sweep.DEFAULT_SEED)
+  assert all(not any(part.startswith("s2026") for part in
+                     r["instance_id"].split("/")) for r in records)
+
+
+def test_a_seed_changes_the_graphs_not_just_the_key():
+  """The tag must accompany a real corpus change, not decorate the same draw."""
+  base = _records(densities=[0.5], seed=build_size_sweep.DEFAULT_SEED)
+  replication = _records(densities=[0.5],
+                         seed=build_size_sweep.DEFAULT_SEED + 500000)
+  assert [r["edges"] for r in base] != [r["edges"] for r in replication]
+
+
+def test_a_near_seed_is_refused_because_the_corpora_would_overlap():
+  """seed+k re-indexes the same graphs by k; that must not build silently."""
+  with pytest.raises(ValueError, match="share graphs"):
+    _records(densities=[0.5], count=10, seed=build_size_sweep.DEFAULT_SEED + 3)
+
+
+def test_a_distant_seed_shares_no_graph_with_the_default_corpus():
+  base = _records(sizes=[40], count=30, densities=[0.35],
+                  tasks=("node_degree",), seed=build_size_sweep.DEFAULT_SEED)
+  far = _records(sizes=[40], count=30, densities=[0.35],
+                 tasks=("node_degree",),
+                 seed=build_size_sweep.DEFAULT_SEED + 500000)
+  fingerprint = lambda rows: {(r["edges"], r["gold"]) for r in rows}
+  overlap = fingerprint(base) & fingerprint(far)
+  # A few collisions are expected by chance on (edges, gold) alone; a shifted
+  # corpus would collide on nearly all 30.
+  assert len(overlap) < 10, f"{len(overlap)}/30 fingerprints shared"

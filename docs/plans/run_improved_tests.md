@@ -36,12 +36,12 @@ below.
 convention (`tests/test_significance.py`, `tests/test_recommend_count.py`,
 etc.). After each phase, run `pytest -q` and report the pass count and any
 failures/regressions before moving to the next phase (compare against the
-project's known baseline: **608 passed** on the merged
+project's known baseline: **613 passed** on the merged
 `small-model-suite-and-primer-power` branch, with
 `tests/test_hierarchical_model.py` and `tests/test_mixed_models.py` `--ignore`d
 because neither graphtalk conda env has `statsmodels`/`pymc`. The 572 figure
 this line used to quote predates both that merge and those ignores; compare
-against 608, or a passing run will look like a regression).
+against 613, or a passing run will look like a regression).
 
 **Effect-size discipline for any new sample-size calculation**: use a
 conservative estimate (the bootstrap CI's lower bound, or an explicitly

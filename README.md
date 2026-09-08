@@ -194,11 +194,11 @@ uv run --no-sync pytest -q --ignore=tests/test_hierarchical_model.py \
                            --ignore=tests/test_mixed_models.py
 ```
 
-608 tests: 30 vendored ones covering graph generation, text encoders and
+613 tests: 30 vendored ones covering graph generation, text encoders and
 metrics, 138 covering the primer statistics, the renderer, and the committed
 golden primer strings, 143 covering the shortcut solvers, 85 covering prompt
 assembly and answer scoring, 86 covering the significance machinery and
-sample-size recommendation, 38 covering the corpus and prompt builders, 33
+sample-size recommendation, 43 covering the corpus and prompt builders, 33
 covering the sweep frame and failure taxonomy, 27 covering node naming and the
 GoT round trip, 13 covering topology extraction and the task-scoped screen, and
 15 covering the density-sweep scorer and its trend test.
