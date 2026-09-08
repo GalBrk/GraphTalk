@@ -1002,6 +1002,44 @@ uninformative by the same standard that disqualified `reachability`. **Future
 density work at n=40 should stop at 0.50.** The three levels here are worth
 keeping as the boundary measurement -- they are what proves the boundary
 exists -- but they are not places to test a hypothesis.
+
+### The trend test, which is the question that was actually asked
+
+Per-cell significance was never the hypothesis. The driver analysis claims the
+primer's benefit *grows with density*, which is a statement about a slope, and
+testing it cell by cell both loses power and answers a different question. Fitted
+on the per-graph paired difference (primer minus `none`), with density labels
+permuted across graphs, 20,000 draws:
+
+| primer | range | slope per unit density | p |
+|---|---|---|---|
+| clustering | p <= 0.50 | +0.113 | 0.150 |
+| **components** | p <= 0.50 | **-0.148** | **0.017** |
+| clustering | all 7 levels | -0.049 | 0.118 |
+| components | all 7 levels | -0.043 | 0.110 |
+
+Two readings, and the second is why the range matters.
+
+Over the **usable range**, `clustering` moves in the predicted direction but not
+significantly, while `components` moves **significantly in the opposite
+direction** -- surviving Benjamini-Hochberg across the two trend tests. It helps
+slightly on sparse graphs (+0.015) and hurts on dense ones (-0.050). So the one
+significant density relationship in this experiment runs *backwards* to the
+claim.
+
+Over **all seven levels** both slopes collapse to a null, which is an artifact,
+not a result: the top three levels are floor (see the three-regime finding
+above), and averaging a dead instrument into a live one drags any slope toward
+zero. This is the quantitative form of "future density work at n=40 should stop
+at 0.50" -- included so that a later reader who fits a trend over the full
+sweep, sees nothing, and concludes "no effect" can find out here why that fit is
+meaningless.
+
+**Net.** The claim that primer benefit grows with density gets no support from
+the first properly controlled test of it. Primers *diverge* as graphs get
+denser -- `clustering` drifting up, `components` down -- rather than converging
+on "more helpful".
+
 ### Deliberately not run
 
 - **`--xlarge` (20-39 nodes) from `docs/difficulty-scaling.md`** -- subsumed.
