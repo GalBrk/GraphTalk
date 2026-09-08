@@ -43,15 +43,15 @@ that no cell cleared every control. At power, both statements are wrong.
    does nothing (+1.3, p=0.54), and `rwse` *hurts by 13.7 points*. The largest
    clean effect in the project is negative.
 
-3. **`clustering` is the only primer that helps more than once, and it has now
-   failed to reproduce twice.** It helps on `edge_count`/8B, `cycle_check`/
-   0.6B-think, and `node_degree` at n=40/1.7B. It does not reproduce on
-   `qwen3-1.7b`/`ec500` (-1.3 pp, p=0.64), and -- on the *same graphs* as its
-   best result -- it does not survive turning reasoning mode on: **-1.1 pp
-   (p=0.24) for `qwen3-1.7b-think`**, with a significantly negative density
-   trend. The fair summary is that it helps a non-reasoning model on
-   mid-difficulty graphs, and that this is a narrower claim than it first
-   looked. See "The thinking arm".
+3. **`clustering` is the only primer that helps more than once, and where it
+   helps is now well characterised.** It helps on `edge_count`/8B,
+   `cycle_check`/0.6B-think, and `node_degree` at n=40/1.7B -- and it survives
+   reasoning mode on that last cell, +2.3 pp (p=0.036) against +3.8 pp plain,
+   over the density range where either model has headroom. **On dense graphs it
+   reverses**, costing the thinking model 8.8 pp at p=0.75; the plain model is
+   already below the blind bar there, so it has nothing left to lose. It does
+   not reproduce on `qwen3-1.7b`/`ec500` (-1.3 pp, p=0.64). See "The thinking
+   arm".
 
 3a. **`components` is now a null three times over** -- +1.3 pp (p=0.54) on
    `ec500`, and +0.1 pp (p=0.95) pooled across the density sweep. Two primers
@@ -1065,10 +1065,27 @@ from +0.342 to +0.295 -- smaller, same conclusion:
 | 0.65 | +0.293 | +0.217 |
 | 0.85 | +0.342 | +0.295 |
 
-**3. `clustering` does not reproduce, and this qualifies the branch's headline.**
-The plain arm's +3.8 pp (p=0.0017) is the cleanest primer effect in this
-project. Under thinking mode, on the same graphs, it is **-1.1 pp (p=0.24)** --
-and its density trend is significantly *negative*:
+**3. `clustering` reproduces where it is testable, and reverses sign where it
+is not.** An earlier revision of this section said flatly that it "does not
+reproduce", on the strength of the all-levels pooled number. That was wrong,
+and wrong in an avoidable way: it pooled across the floor regime this same
+document spends two sections arguing is uninformative.
+
+| range | plain | think |
+|---|---|---|
+| **p <= 0.50** (the usable range) | **+0.038** (p=0.0017) | **+0.023** (p=0.036) |
+| all seven levels | +0.019 (p=0.022) | -0.011 (p=0.24) |
+
+Restricted to the range where either model has headroom, `clustering` helps
+*both* arms, at comparable magnitude. What flips the pooled thinking number is
+the three dense levels, where it turns actively harmful: **-8.8 pp at p=0.75**
+(p=0.0035) and -6.1 pp at p=0.85, both surviving BH within the per-level family.
+
+That sign flip is only visible in this arm, and the asymmetry is the point. The
+plain model is below the blind bar at p >= 0.65, so its dense cells cannot show
+a primer effect of either sign -- there is nothing left to damage. The thinking
+model is at 2.9x the bar there, so it has something to lose, and `clustering`
+takes it. The density trend confirms it:
 
 | primer | range | slope per unit density | p |
 |---|---|---|---|
@@ -1076,16 +1093,45 @@ and its density trend is significantly *negative*:
 | components | all 7 | **-0.082** | 0.005 |
 | degree | all 7 | **+0.420** | <0.001 |
 
-At p=0.75 `clustering` actively hurts, -8.8 pp, surviving BH within the
-per-level family. So the honest statement about `clustering` is now: **it helps
-a plain 1.7B on mid-density graphs, and that help does not survive the model
-being able to reason.** Read alongside the `ec500` non-replication, `clustering`
-has now failed to reproduce in two of four settings.
+So the accurate statement is: **`clustering` helps a 1.7B on graphs that are not
+saturated, with or without reasoning mode, and hurts a reasoning model on dense
+ones.** It remains a non-replication on `ec500`/1.7B (-1.3 pp, p=0.64) -- one
+failure across the settings tried, not two.
 
 The `degree` slope going the other way (+0.420 per unit density, p<0.0001) is
 the coherent counterpart: the denser the graph, the more a stated answer is
 worth, because the counting is the difficulty. A primer that supplies structure
 rather than the answer buys progressively less as the arithmetic gets harder.
+
+**Every primer effect in both arms, in one place.** Paired against `none` on the
+same graph, `hit_cap` dropped. This is the table to read before quoting any
+single number above.
+
+| p | `components` plain | think | `clustering` plain | think | `degree` plain | think |
+|---|---|---|---|---|---|---|
+| 0.10 | +0.015 | +0.000 | +0.003 | +0.018 | -- | +0.031 |
+| 0.20 | +0.018 | +0.025 | +0.033 | **+0.048** | -- | +0.064 |
+| 0.35 | +0.022 | +0.033 | **+0.075** | +0.033 | -- | **+0.196** |
+| 0.50 | -0.050 | -0.005 | +0.043 | -0.007 | -- | **+0.228** |
+| 0.65 | -0.018 | +0.003 | -0.020 | -0.020 | -0.018 | **+0.293** |
+| 0.75 | -0.025 | **-0.059** | +0.005 | **-0.088** | +0.033 | **+0.306** |
+| 0.85 | +0.010 | -0.034 | -0.005 | **-0.061** | +0.005 | **+0.342** |
+| **pooled p<=0.50** | +0.001 | +0.013 | **+0.038** | **+0.023** | -- | **+0.129** |
+| **pooled all 7** | -0.004 | -0.005 | +0.019 | -0.011 | +0.007 | **+0.205** |
+
+Three primers, three different stories:
+
+- **`components` does nothing to anyone**, in either arm, at any density. Its
+  pooled effect is -0.004 plain and -0.005 think. The scattered per-level cells
+  under p=0.05 point in both directions and none survives correction.
+- **`clustering` is worth a few points where there is headroom and is harmful
+  on dense graphs to a model that can reason.** Its usable-range effect is the
+  only primer result in this project with a zero bar delta behind it.
+- **`degree` is worth an order of magnitude more than either -- but only to the
+  thinking arm.** +0.205 against +0.007. It is the positive control, so it is
+  not a finding about primers; it is the measurement that tells you the plain
+  model's high-density failure is a refusal to use information rather than an
+  inability to see it.
 
 **4. One oddity, flagged rather than explained.** Thinking-arm accuracy is not
 monotone in density: it dips to 0.442 at p=0.75 then *rises* to 0.494 at p=0.85,
@@ -1145,7 +1191,8 @@ Primers are not one intervention. `components` is inert everywhere it has been
 tested -- +1.3 pp on `ec500` (p=0.54) and +0.1 pp pooled across the density
 sweep (p=0.95). `rwse` does real damage on `qwen3-8b` (-13.7 pp) and
 directional but non-significant damage on `qwen3-1.7b` (-4.0 pp). `clustering`
-helps on three cells and has now failed to reproduce on two more.
+helps on three cells, survives reasoning mode on the one where that was
+testable, and has failed to reproduce once (`ec500`/1.7B).
 
 **Of the primer effects, quote the density sweep.** On `ec500` the `clustering`
 gain (+5.0 pp) is smaller than its own bar delta -- `bar(clustering) -
@@ -1159,9 +1206,10 @@ same graphs, turning reasoning mode on is worth **+29.2 pp pooled and +50.0 pp
 at the densest level** -- an order of magnitude more than any primer, from the
 same checkpoint. The primer question is real and worth the controls it took to
 answer, but the honest ranking is: reasoning mode >> task difficulty >> primer
-choice. And `clustering`'s +3.8 pp does not survive reasoning mode being on
-(-1.1 pp, p=0.24), so it is a fact about a non-reasoning 1.7B, not about
-primers in general.
+choice. `clustering`'s +3.8 pp does survive reasoning mode over the usable
+density range (+2.3 pp, p=0.036); what does not survive is reading it as a
+uniform benefit, since on dense graphs the same primer costs a reasoning model
+8.8 pp.
 
 Two rules, both learned the hard way:
 
