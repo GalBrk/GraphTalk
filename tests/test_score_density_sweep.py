@@ -99,3 +99,63 @@ def test_levels_do_not_pool_unless_asked():
   paired = score_density_sweep.summarize(rows)["paired"]
   assert len(score_density_sweep.paired_arms(paired, 0.2, "clustering")[0]) == 3
   assert len(score_density_sweep.paired_arms(paired, None, "clustering")[0]) == 6
+
+
+def _paired(points):
+  """{(density, id): {cond: score}} from (density, index, none, primer) tuples."""
+  out = {}
+  for density, index, control, primer in points:
+    out[(density, f"node_degree/size40/p{density:g}/{index}")] = {
+        "none": control, "clustering": primer}
+  return out
+
+
+def test_trend_recovers_a_constructed_positive_slope():
+  """Benefit rising with density must come back as a positive, significant slope."""
+  points = []
+  for density, benefit in ((0.1, 0), (0.2, 0), (0.35, 1), (0.5, 1)):
+    for index in range(50):
+      points.append((density, index, 0.0, float(benefit)))
+  result = score_density_sweep.trend_test(_paired(points), "clustering",
+                                          draws=2000, seed=0)
+  assert result["slope"] > 0
+  assert result["p_value"] < 0.01
+  assert result["n"] == 200
+
+
+def test_trend_is_null_when_benefit_does_not_move_with_density():
+  points = []
+  for density in (0.1, 0.2, 0.35, 0.5):
+    for index in range(50):
+      points.append((density, index, 0.0, float(index % 2)))
+  result = score_density_sweep.trend_test(_paired(points), "clustering",
+                                          draws=2000, seed=0)
+  assert result["slope"] == pytest.approx(0.0, abs=1e-9)
+  assert result["p_value"] > 0.5
+
+
+def test_trend_p_value_is_never_zero():
+  """The observed arrangement is itself a permutation, so p=0 is unattainable."""
+  points = [(density, index, 0.0, density)
+            for density in (0.1, 0.5) for index in range(40)]
+  result = score_density_sweep.trend_test(_paired(points), "clustering",
+                                          draws=200, seed=0)
+  assert result["p_value"] > 0
+
+
+def test_trend_reports_no_rows_for_a_condition_absent_from_the_range():
+  """`degree` ran only at the high densities; restricted to the low ones it has
+  no rows, and must report n=0 rather than a slope over nothing."""
+  points = [(0.1, index, 0.0, 1.0) for index in range(10)]
+  result = score_density_sweep.trend_test(_paired(points), "degree", draws=100)
+  assert result["n"] == 0
+
+
+def test_trend_respects_the_level_filter():
+  points = [(density, index, 0.0, 1.0)
+            for density in (0.1, 0.5, 0.85) for index in range(20)]
+  paired = _paired(points)
+  assert score_density_sweep.trend_test(
+      paired, "clustering", levels={0.1, 0.5}, draws=100)["n"] == 40
+  assert score_density_sweep.trend_test(
+      paired, "clustering", draws=100)["n"] == 60
