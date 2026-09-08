@@ -43,12 +43,15 @@ that no cell cleared every control. At power, both statements are wrong.
    does nothing (+1.3, p=0.54), and `rwse` *hurts by 13.7 points*. The largest
    clean effect in the project is negative.
 
-3. **`clustering` is the only primer that helps more than once** -- now on
-   three different tasks and three different models (`edge_count`/8B,
-   `cycle_check`/0.6B-think, and `node_degree` at n=40/1.7B). It is the only
-   pattern here that repeats across cells rather than appearing once. **It did
-   not survive replication on a fourth**: `qwen3-1.7b` on the same `ec500` cell
-   scores -1.3 pp (p=0.64). See "The `qwen3-1.7b` replication".
+3. **`clustering` is the only primer that helps more than once, and it has now
+   failed to reproduce twice.** It helps on `edge_count`/8B, `cycle_check`/
+   0.6B-think, and `node_degree` at n=40/1.7B. It does not reproduce on
+   `qwen3-1.7b`/`ec500` (-1.3 pp, p=0.64), and -- on the *same graphs* as its
+   best result -- it does not survive turning reasoning mode on: **-1.1 pp
+   (p=0.24) for `qwen3-1.7b-think`**, with a significantly negative density
+   trend. The fair summary is that it helps a non-reasoning model on
+   mid-difficulty graphs, and that this is a narrower claim than it first
+   looked. See "The thinking arm".
 
 3a. **`components` is now a null three times over** -- +1.3 pp (p=0.54) on
    `ec500`, and +0.1 pp (p=0.95) pooled across the density sweep. Two primers
@@ -75,7 +78,15 @@ that no cell cleared every control. At power, both statements are wrong.
    which is what proves the high-density cells are uninformative rather than
    primer-negative. See "Density at a fixed size".
 
-6. **Saturation is an artifact of the corpus's 19-node cap, not of the tasks.**
+6. **Reasoning mode, not primers, is what actually fixes the hard cells.**
+   `qwen3-1.7b-think` beats the identical plain checkpoint on identical prompts
+   at every density, by a margin that grows from +2.9 pp to **+50.0 pp** as
+   graphs get denser (pooled +29.2 pp over 9,439 pairs). It also restores the
+   `degree` control from +0.7 pp to **+20.5 pp**, which shows the plain model's
+   high-density failure was never an inability to read a long prompt -- the
+   answer was legible and it would not use it.
+
+7. **Saturation is an artifact of the corpus's 19-node cap, not of the tasks.**
    Regenerated at 80 nodes, `node_degree` falls to 0.143 (1.7B plain) and 0.479
    (8B plain) -- but `node_count` stays at 1.000. What breaks is aggregation
    over scattered mentions, which graph size multiplies; see "Does size break
@@ -524,6 +535,12 @@ reading the tables below:
 | `density40` | qwen3-1.7b | 2,400 | n=40 x 6 pinned ER densities x {node_degree, connected_nodes} x {none, degree}; job 858671 |
 | `size` | qwen3-1.7b, -think, qwen3-8b, -think | 600 | 20/40/80-node graphs x 4 tasks x none |
 
+**Job 866578 `degdenst-q17bT` completed 2026-09-08** -- the thinking arm,
+`qwen3-1.7b-think` over all seven densities x four conditions x 400 graphs,
+11,200 rows, in `runs/qwen3-1.7b-think.degdensthink.shard*of7.jsonl`. It is
+paired to the two plain runs on 9,600 identical prompts and changes how both
+read -- see "The thinking arm" below.
+
 **Job 866492 `degdenshi-q17b` completed 2026-09-08** -- the high-density
 continuation, densities {0.65, 0.75, 0.85} x {`none`, `components`,
 `clustering`, `degree`} x 400 graphs, 4,800 rows, 0 capped, in
@@ -539,88 +556,9 @@ project has.
 
 ### In flight
 
-**Job 866578 `degdenst-q17bT`** -- the thinking arm. `qwen3-1.7b-think` over all
-seven densities {0.10 ... 0.85} x {`none`, `components`, `clustering`, `degree`}
-x 400 graphs = 11,200 rows, 7 shards, 24 h, tag `degdensthink`, writing
-`runs/qwen3-1.7b-think.degdensthink.shard*of7.jsonl`.
-
-**It is exactly paired with the two plain jobs, not merely parallel to them.**
-`build_size_sweep.py` seeds each graph from `(density value, size, index)`, so a
-`--count 400` build reproduces the same 400 graphs per level that the plain runs
-used. Verified rather than assumed: **9,600 of its 11,200 prompts are
-byte-identical** to `prompts.degdensity40.jsonl` and `prompts.degdensity40hi.jsonl`.
-The 1,600 that are new are the `degree` control at the four low densities, which
-`degdens40` did not carry. So think-vs-plain is a paired comparison on identical
-graphs, questions and primer text -- the only difference is
-`enable_thinking: True` and an 8,192-token budget instead of 2,048.
-
-`qwen3-1.7b-think` is the *same checkpoint* as `qwen3-1.7b`
-(`Qwen/Qwen3-1.7B`), so this isolates reasoning mode rather than model capacity.
-
-**The 8,192 budget was checked, not assumed adequate.** On the existing size
-sweep at n=40 this arm's `node_degree` rows ran median 1,285 / p90 3,134 / max
-4,348 tokens with **0% hit_cap**, so the cap has headroom at this graph size.
-The densest level here (p=0.85, ~663 edges) is denser than that sweep's U(0, 1)
-average, so check `hit_cap` at the top end before reading those cells; the
-budget is overridable per run with `run_sweep.py --max-new-tokens`, and
-`sweep.sbatch` was deliberately *not* edited to expose it while other jobs were
-live and could requeue into a changed script.
-
-Seven shards, because the shard count must be coprime with the **four**
-conditions -- at 4 shards, shard 0 takes all 2,800 `none` rows.
-
-Rebuild its prompt file with:
-
-```bash
-PYTHONPATH=. python scripts/build_size_sweep.py --sizes 40 \
-    --densities 0.10 0.20 0.35 0.50 0.65 0.75 0.85 --tasks node_degree \
-    --conditions none components clustering degree \
-    --count 400 --out prompts.degdensity40think.jsonl
-```
-
-It adds a fourth condition, `degree`, **as a positive control rather than a
-treatment**. `degree` states the answer verbatim, so it is the ceiling on what
-any primer could achieve at that density. This is what makes a null
-interpretable: the `density40` run found `degree` worth +0.00 at p=0.50 and
-+0.02 at p=0.75, which predicts that `components`/`clustering` will do nothing
-up here either -- not because the primers are useless, but because the model has
-collapsed and *no* information helps. Without the control, that null would be
-indistinguishable from "primers do not help at high density", which is a very
-different claim. Read the `degree` column first.
-
-Stops at 0.85 because `node_degree` degenerates as the graph approaches
-complete. Measured at n=40, the modal-degree majority baseline climbs 0.127
-(p=0.65) -> 0.157 (0.75) -> 0.193 (0.85) -> 0.223 (0.90) -> 0.273 (0.95), with
-distinct degrees falling from 18 to 8. p=1.00 is the complete graph, where every
-node has degree 39 and the baseline is 1.000.
-
-**Rebuilding these prompt sets.** Neither file is tracked -- both are ~18 MB,
-twice the largest tracked prompt file, because a 40-node `incident` encoding
-lists every one of several hundred edges. They rebuild byte for byte:
-
-```bash
-PYTHONPATH=. python scripts/build_size_sweep.py --sizes 40 \
-    --densities 0.10 0.20 0.35 0.50 --tasks node_degree \
-    --conditions none components clustering \
-    --count 400 --out prompts.degdensity40.jsonl
-
-PYTHONPATH=. python scripts/build_size_sweep.py --sizes 40 \
-    --densities 0.65 0.75 0.85 --tasks node_degree \
-    --conditions none components clustering degree \
-    --count 400 --out prompts.degdensity40hi.jsonl
-```
-
-Determinism is pinned by `tests/test_build_size_sweep.py`: a level's graphs
-depend on its density *value*, not its position in `--densities`, so rebuilding
-a subset reproduces exactly the rows it produced here.
-
-Both were submitted with 5 shards. **Not 4, and not 3** -- see the coprime rule
-in Operational notes; at 4 shards the second file gives shard 0 all 1,200 `none`
-rows and nothing else, which was checked against the built file before
-submitting.
-
-Jobs 858244 (`ec17-clean`) and 858671 (`dens40-q17b`) both completed on
-2026-09-07 and are written up above and below respectively.
+**Nothing.** As of 2026-09-08 every job this document describes has completed
+and is written up. Jobs 858244 (`ec17-clean`) and 858671 (`dens40-q17b`)
+finished 2026-09-07; 866467, 866492 and 866578 finished 2026-09-08.
 
 ### Density at a fixed size
 
@@ -1071,6 +1009,104 @@ PYTHONPATH=. python scripts/score_density_sweep.py \
 all-levels rows appear. The slopes above were verified by an independent
 reimplementation before the script was written, and match to three decimals.
 
+
+### The thinking arm, which changes the reading of both runs above
+
+**Result (job 866578, 11,200/11,200 rows, 0 unparsable).** `qwen3-1.7b-think`
+over all seven densities x {`none`, `components`, `clustering`, `degree`} x 400
+graphs. Same checkpoint as `qwen3-1.7b`, `enable_thinking: True`, 8,192-token
+budget instead of 2,048 -- so this isolates reasoning mode, not model capacity.
+
+Pairing verified, not assumed: **9,600 (instance_id, condition) cells are shared
+with the two plain runs and 0 of them disagree on `gold`.**
+
+| p | `none` | `components` | `clustering` | `degree` | blind bar | plain `none` |
+|---|---|---|---|---|---|---|
+| 0.10 | 0.952 | 0.954 | 0.967 | 0.982 | 0.231 | 0.922 |
+| 0.20 | 0.877 | 0.899 | 0.925 | 0.947 | 0.162 | 0.765 |
+| 0.35 | 0.632 | 0.665 | 0.667 | 0.830 | 0.151 | 0.393 |
+| 0.50 | 0.585 | 0.580 | 0.578 | 0.816 | 0.147 | 0.295 |
+| 0.65 | 0.439 | 0.440 | 0.417 | 0.742 | 0.132 | 0.140 |
+| 0.75 | 0.442 | 0.387 | 0.355 | 0.742 | 0.165 | 0.090 |
+| 0.85 | 0.494 | 0.465 | 0.431 | 0.846 | 0.173 | 0.052 |
+
+**1. Reasoning mode escapes the high-density collapse entirely.** The plain
+model fell below the blind bar from p=0.65 up; this one is at **2.9x the bar**
+at p=0.85 (0.494 against 0.173). Paired on identical prompts, think minus plain
+is positive at every level and the gap *grows* with density:
+
+| p | 0.10 | 0.20 | 0.35 | 0.50 | 0.65 | 0.75 | 0.85 |
+|---|---|---|---|---|---|---|---|
+| think - plain | +0.029 | +0.120 | +0.229 | +0.288 | +0.377 | +0.382 | **+0.500** |
+
+All seven p < 0.002, pooled +0.292 over 9,439 pairs. Whatever breaks the plain
+model at high density, thinking mode fixes.
+
+**2. The `degree` control works here, and that re-reads job 866492's null.** In
+the plain arm at p>=0.65, a primer stating the answer verbatim was worth +0.7 pp
+(p=0.59) -- the basis for concluding the model had stopped working. In the
+thinking arm the same primer on the same prompts is worth **+20.5 pp pooled
+(p<0.0001)**, rising to **+34.2 pp at p=0.85**.
+
+So the plain model's failure was **not** that the answer had become unreadable
+in a long prompt. The information was there and was usable; the plain model
+would not use it. It committed to enumerate-and-count and miscounted, exactly as
+the sampled failure showed. Reasoning mode is what lets the model consult a
+stated fact instead of recomputing it.
+
+Robust to the truncation policy, which matters because `degree` has the longest
+prompts and therefore the most capped rows (30-47 per cell at high density).
+Scoring capped rows as zero instead of dropping them shrinks the p=0.85 effect
+from +0.342 to +0.295 -- smaller, same conclusion:
+
+| p | capped dropped | capped scored 0 |
+|---|---|---|
+| 0.50 | +0.228 | +0.193 |
+| 0.65 | +0.293 | +0.217 |
+| 0.85 | +0.342 | +0.295 |
+
+**3. `clustering` does not reproduce, and this qualifies the branch's headline.**
+The plain arm's +3.8 pp (p=0.0017) is the cleanest primer effect in this
+project. Under thinking mode, on the same graphs, it is **-1.1 pp (p=0.24)** --
+and its density trend is significantly *negative*:
+
+| primer | range | slope per unit density | p |
+|---|---|---|---|
+| clustering | all 7 | **-0.155** | <0.001 |
+| components | all 7 | **-0.082** | 0.005 |
+| degree | all 7 | **+0.420** | <0.001 |
+
+At p=0.75 `clustering` actively hurts, -8.8 pp, surviving BH within the
+per-level family. So the honest statement about `clustering` is now: **it helps
+a plain 1.7B on mid-density graphs, and that help does not survive the model
+being able to reason.** Read alongside the `ec500` non-replication, `clustering`
+has now failed to reproduce in two of four settings.
+
+The `degree` slope going the other way (+0.420 per unit density, p<0.0001) is
+the coherent counterpart: the denser the graph, the more a stated answer is
+worth, because the counting is the difficulty. A primer that supplies structure
+rather than the answer buys progressively less as the arithmetic gets harder.
+
+**4. One oddity, flagged rather than explained.** Thinking-arm accuracy is not
+monotone in density: it dips to 0.442 at p=0.75 then *rises* to 0.494 at p=0.85,
+and mean |error| falls with it (1.048 -> 0.815). The blind bar rises over the
+same span (0.165 -> 0.173) as degrees concentrate near n-1, so part of this is
+the task getting easier to guess. Not investigated further; it does not affect
+any claim above, all of which are within-level paired comparisons.
+
+**Cost.** The reasoning trace grows with density -- median 1,196 tokens at
+p=0.10 to 2,030 at p=0.65 -- and truncation with it, 1.2% to 3.1% in the primer
+conditions and up to 12% in `degree` at p=0.65. Against the plain arm's median
+of ~73 tokens, thinking mode costs roughly 20-40x the generation for the gains
+in the table above.
+
+Score it with:
+
+```bash
+PYTHONPATH=. python scripts/score_density_sweep.py \
+    --responses "runs/qwen3-1.7b-think.degdensthink.shard*of7.jsonl" \
+    --trend-max 0.50
+```
 ### Deliberately not run
 
 - **`--xlarge` (20-39 nodes) from `docs/difficulty-scaling.md`** -- subsumed.
@@ -1109,15 +1145,23 @@ Primers are not one intervention. `components` is inert everywhere it has been
 tested -- +1.3 pp on `ec500` (p=0.54) and +0.1 pp pooled across the density
 sweep (p=0.95). `rwse` does real damage on `qwen3-8b` (-13.7 pp) and
 directional but non-significant damage on `qwen3-1.7b` (-4.0 pp). `clustering`
-has helped on three cells now and **failed to replicate on a fourth**.
+helps on three cells and has now failed to reproduce on two more.
 
-**The density sweep is the cleanest of the three, and it is the one to quote.**
-On `ec500` the `clustering` gain (+5.0 pp) is smaller than its own bar delta --
-`bar(clustering) - bar(none)` on `edge_count` is 0.148 - 0.018 = +13.0 pp -- so
-a shortcut solver could produce the whole effect and more. On `node_degree` the
-two bars are **identical at 0.082**, a bar delta of exactly zero, so none of the
-+3.8 pp there is shortcut-explainable. It is also the largest paired sample in
-the project (1,600 triples against `ec500`'s few hundred).
+**Of the primer effects, quote the density sweep.** On `ec500` the `clustering`
+gain (+5.0 pp) is smaller than its own bar delta -- `bar(clustering) -
+bar(none)` on `edge_count` is 0.148 - 0.018 = +13.0 pp -- so a shortcut solver
+could produce the whole effect and more. On `node_degree` the two bars are
+**identical at 0.082**, a bar delta of exactly zero, so none of the +3.8 pp
+there is shortcut-explainable, and it rests on 1,600 paired triples.
+
+**But do not quote it as the biggest thing here, because it is not.** On the
+same graphs, turning reasoning mode on is worth **+29.2 pp pooled and +50.0 pp
+at the densest level** -- an order of magnitude more than any primer, from the
+same checkpoint. The primer question is real and worth the controls it took to
+answer, but the honest ranking is: reasoning mode >> task difficulty >> primer
+choice. And `clustering`'s +3.8 pp does not survive reasoning mode being on
+(-1.1 pp, p=0.24), so it is a fact about a non-reasoning 1.7B, not about
+primers in general.
 
 Two rules, both learned the hard way:
 
