@@ -91,6 +91,16 @@ that no cell cleared every control. At power, both statements are wrong.
    density" claim is now contradicted rather than merely unsupported. This
    supersedes the causal reading of item 5 everywhere it appears.
 
+5c. **The reading limit is measured, and it is the largest effect here.** Job
+   871909 removes graphs entirely: a list of `"Node X has degree Y."` sentences,
+   asked for one back. Accuracy is 1.000 to ~1,500 tokens and 0.502 at 12,986.
+   At 6,305 tokens the model reads the ends at ~0.89 and the **middle at 0.195**
+   (p=0.00002). A primer sits at the start, which survives longest; the graph
+   encoding runs through the middle, which fails first. Pure retrieval at 3,105
+   tokens (0.848) still beats the graph ceiling at comparable length (0.610), so
+   graph structure costs ~24 points *on top of* reading. See "The reading limit,
+   measured without a graph".
+
 5b. **A primer cannot be worth more than the model's ability to read it.** Job
    871263 measures the ceiling at the four levels where the +3.8 pp headline
    was taken: `clustering` captures ~a third of it (8% / 35% / 34% / 63%). The
@@ -1458,6 +1468,86 @@ cannot reliably use explicitly stated information once the prompt is long, which
 is the same failure the high-density collapse showed (enumerate 35 neighbours,
 answer 39) and the same one `filler` prices from the other side. A primer cannot
 be worth more than the model's ability to read it.
+
+## The reading limit, measured without a graph
+
+Three findings in this document point at one mechanism rather than three: the
+`degree` ceiling (+6.8 pp at p=0.50 with the answer written verbatim), the
+high-density collapse (enumerate 35 neighbours, answer 39, never consulting the
+`"Node 29 has degree 32."` sentence in the prompt), and the `filler` penalty
+(-11.7 pp for 1,831 characters of nothing). All three are consistent with *this
+model loses a stated fact as the prompt grows*.
+
+That hypothesis is about reading, not about graphs, so **job 871909 tests it
+with no graph anywhere in the design**. Every prompt is a list of
+`"Node X has degree Y."` sentences -- `render_primer`'s exact `degree` wording --
+and asks for one of them back. Nothing to compute, parse, or reason about. The
+answer is stated. 3,600 rows, 200 per (length x position) cell, 0 truncated,
+0 unparsed. Guessing scores 0.125 (small band) or 0.062 (large).
+
+| statements | tokens | pos 0.1 | pos 0.5 | pos 0.9 | all | middle - ends | p |
+|---|---|---|---|---|---|---|---|
+| 10 | 94 | 1.000 | 1.000 | 1.000 | **1.000** | +0.000 | 1.00 |
+| 40 | 364 | 1.000 | 1.000 | 1.000 | **1.000** | +0.000 | 1.00 |
+| 160 | 1,505 | 0.985 | 0.990 | 0.980 | 0.985 | +0.007 | 0.73 |
+| 320 | 3,105 | 0.925 | 0.800 | 0.820 | 0.848 | -0.073 | 0.022 |
+| **640** | **6,305** | 0.975 | **0.195** | 0.795 | 0.655 | **-0.690** | **0.00002** |
+| 1,280 | 12,986 | 0.585 | 0.470 | 0.450 | 0.502 | -0.047 | 0.30 |
+
+**The limit is real and it is not gradual.** Retrieval is perfect to ~1,500
+tokens and then falls to 0.502 -- for a fact the prompt states outright.
+
+**The failure is positional, and there are three regimes.** Below ~1,500 tokens
+everything is readable. At 6,305 tokens the model retrieves from the start or
+end ~89% of the time and from the **middle 19.5%** of the time -- a 69-point
+swing at one context length, and the largest single effect measured anywhere in
+this project. By 12,986 tokens the position effect is *gone* (p=0.30), not
+because the middle recovered but because the ends collapsed too: there is no
+readable region left to contrast against.
+
+**Why this reorganises the primer question.** A primer is text at the *start* of
+the prompt -- the position that survives longest. The graph encoding it must be
+combined with runs through the middle, which is the region that becomes
+unreadable first. At the lengths these experiments operate in, "does the primer
+help" and "can the model still read the graph" are not separable questions, and
+the second one dominates.
+
+**Reading does not explain everything, and the numbers say by how much.** Pure
+retrieval at 3,105 tokens scores 0.848; the graph task's `degree` ceiling at
+comparable length (p=0.35, ~3.5k tokens) is 0.610. Graph structure costs a
+further ~24 points on top of the reading limit. Both terms are real and the
+reading term is the larger one.
+
+**Answer magnitude has a small reading component and a large counting one.**
+Pooled, small answers (1-9) beat large ones (20-39) 0.848 to 0.815, p=0.0088 --
+significant but only 3.3 points, and concentrated at 320 statements (0.910 vs
+0.787). Job 871262's magnitude effect is far bigger: at matched edge counts,
+0.624 at mean degree 8 against 0.225 at 16, a 40-point gap. So magnitude is
+mostly about *counting to a larger number*, not about reading a larger number,
+and the two experiments together separate them. An earlier reading of the
+partial data called the retrieval component absent; at full power it is present
+but small.
+
+**Rebuilding.** `prompts.retrieval.jsonl` is 34 MB and gitignored:
+
+```bash
+PYTHONPATH=. python scripts/build_retrieval_probe.py \
+    --statements 10 40 160 320 640 1280 --positions 0.1 0.5 0.9 \
+    --magnitudes small large --count 100 --out prompts.retrieval.jsonl
+```
+
+### What this makes worth running next
+
+- **Locate the threshold.** It sits between 1,505 and 3,105 tokens, and between
+  3,105 and 6,305 the middle falls out. Two or three intermediate lengths would
+  place both boundaries, which matters because every future prompt-set design
+  should sit below them or knowingly above.
+- **Does it move with the model?** The whole project's model-generality problem
+  reduces to this if the limit is what drives the graph results. `qwen3-8b`
+  on the identical probe is the cheapest possible test.
+- **Position is actionable, not just diagnostic.** If the middle is what fails,
+  putting the queried node's neighbourhood at the *end* of the encoding is a
+  free intervention that no primer content change could match.
 
 ### Still missing on density, after 871262/871263
 
