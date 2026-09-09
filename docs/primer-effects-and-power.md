@@ -43,15 +43,16 @@ that no cell cleared every control. At power, both statements are wrong.
    does nothing (+1.3, p=0.54), and `rwse` *hurts by 13.7 points*. The largest
    clean effect in the project is negative.
 
-3. **`clustering` is the only primer that helps more than once, and where it
-   helps is now well characterised.** It helps on `edge_count`/8B,
-   `cycle_check`/0.6B-think, and `node_degree` at n=40/1.7B -- and it survives
-   reasoning mode on that last cell, +2.3 pp (p=0.036) against +3.8 pp plain,
-   over the density range where either model has headroom. **On dense graphs it
-   reverses**, costing the thinking model 8.8 pp at p=0.75; the plain model is
-   already below the blind bar there, so it has nothing left to lose. It does
-   not reproduce on `qwen3-1.7b`/`ec500` (-1.3 pp, p=0.64). See "The thinking
-   arm".
+3. **`clustering` is the only primer that helps more than once, it replicates,
+   and against a length-matched control it helps everywhere it was thought to
+   hurt.** It helps on `edge_count`/8B, `cycle_check`/0.6B-think, and
+   `node_degree` at n=40/1.7B -- and that last result **re-drew on 400 fresh
+   graphs per level: +4.3 pp (p=0.0006) against the original +3.8 pp**. An
+   earlier revision of this summary said it "reverses" on dense graphs, costing
+   the thinking arm 8.8 pp. That was a length artifact: measured against
+   `filler`, which matches its length to 3.3%, it *helps* by 5.8 pp there. It
+   does not reproduce on `qwen3-1.7b`/`ec500` (-1.3 pp, p=0.64). See "The
+   `filler` control".
 
 3a. **`components` is now a null three times over** -- +1.3 pp (p=0.54) on
    `ec500`, and +0.1 pp (p=0.95) pooled across the density sweep. Two primers
@@ -78,7 +79,14 @@ that no cell cleared every control. At power, both statements are wrong.
    which is what proves the high-density cells are uninformative rather than
    primer-negative. See "Density at a fixed size".
 
-6. **Reasoning mode, not primers, is what actually fixes the hard cells.**
+6. **Prompt length is a confound in every primer number here, and it is the
+   same size as the effects.** A length-matched primer with no structure and no
+   shortcut (`filler`, bar 0.082) costs the thinking arm **6.3 pp pooled and
+   11.7 pp on dense graphs** purely for its 1,831 characters. Every effect
+   measured against `none` is therefore content minus length, and at high
+   density the length term is the larger of the two. See "The `filler` control".
+
+7. **Reasoning mode, not primers, is what actually fixes the hard cells.**
    `qwen3-1.7b-think` beats the identical plain checkpoint on identical prompts
    at every density, by a margin that grows from +2.9 pp to **+50.0 pp** as
    graphs get denser (pooled +29.2 pp over 9,439 pairs). It also restores the
@@ -86,7 +94,7 @@ that no cell cleared every control. At power, both statements are wrong.
    high-density failure was never an inability to read a long prompt -- the
    answer was legible and it would not use it.
 
-7. **Saturation is an artifact of the corpus's 19-node cap, not of the tasks.**
+8. **Saturation is an artifact of the corpus's 19-node cap, not of the tasks.**
    Regenerated at 80 nodes, `node_degree` falls to 0.143 (1.7B plain) and 0.479
    (8B plain) -- but `node_count` stays at 1.000. What breaks is aggregation
    over scattered mentions, which graph size multiplies; see "Does size break
@@ -556,12 +564,11 @@ project has.
 
 ### In flight
 
-Three jobs submitted 2026-09-09, all `qwen3-1.7b` family, `node_degree`, n=40,
-same profile as the scored density runs (`--constraint=a5000 --exclude=n-501
---mem=24G`).
+**Nothing.** Jobs 870405, 870407 and 870408 completed 2026-09-09 and are
+written up in "The `filler` control" below. Their design is recorded here.
 
 **Jobs 870405 `fillplain-q17b` and 870407 `fillthink-q17bT`** -- the `filler`
-control, 7 densities x 400 graphs x {`filler`}, 2,800 rows per arm, tags
+control, 2,800 rows per arm, complete, 7 densities x 400 graphs x {`filler`}, 2,800 rows per arm, tags
 `degdensfill` / `degdensfillT`. Built at the **default seed**, so the graphs are
 byte-identical to the scored runs and `filler` pairs against their `none` and
 `clustering` rows by `instance_id`.
@@ -577,7 +584,7 @@ no structure and no shortcut. If `filler` also hurts at high density, the harm
 is prompt length and the primer content is irrelevant -- which would reinterpret
 the finding rather than support it.
 
-**Job 870408 `replic-q17b`** -- an independent replication of the headline, 4
+**Job 870408 `replic-q17b`** -- complete. An independent replication, 4
 levels (p <= 0.50) x 400 **fresh** graphs x {`none`, `clustering`}, 3,200 rows,
 tag `degdensrep`, 5 shards (coprime with 2 conditions). The +3.8 pp result rests
 on a single draw of 1,600 graphs and has never been re-drawn.
@@ -1117,11 +1124,12 @@ Restricted to the range where either model has headroom, `clustering` helps
 the three dense levels, where it turns actively harmful: **-8.8 pp at p=0.75**
 (p=0.0035) and -6.1 pp at p=0.85, both surviving BH within the per-level family.
 
-That sign flip is only visible in this arm, and the asymmetry is the point. The
-plain model is below the blind bar at p >= 0.65, so its dense cells cannot show
-a primer effect of either sign -- there is nothing left to damage. The thinking
-model is at 2.9x the bar there, so it has something to lose, and `clustering`
-takes it. The density trend confirms it:
+**Superseded on 2026-09-09 by the `filler` control below.** The reversal is
+real as an observation against `none`, but it is not `clustering` doing the
+damage: a length-matched placebo costs the thinking arm 11.7 pp over the same
+levels, and against *that* control `clustering` helps by 5.8 pp. What follows
+is left as measured, with the caveat that every delta against `none` here is
+content minus length. The density trend:
 
 | primer | range | slope per unit density | p |
 |---|---|---|---|
@@ -1129,10 +1137,11 @@ takes it. The density trend confirms it:
 | components | all 7 | **-0.082** | 0.005 |
 | degree | all 7 | **+0.420** | <0.001 |
 
-So the accurate statement is: **`clustering` helps a 1.7B on graphs that are not
-saturated, with or without reasoning mode, and hurts a reasoning model on dense
-ones.** It remains a non-replication on `ec500`/1.7B (-1.3 pp, p=0.64) -- one
-failure across the settings tried, not two.
+So the accurate statement, after the `filler` control: **`clustering`'s content
+helps a 1.7B from p=0.35 up, with or without reasoning mode, and its length
+costs more than the content is worth once graphs get dense.** It remains a
+non-replication on `ec500`/1.7B (-1.3 pp, p=0.64) -- one failure across the
+settings tried.
 
 The `degree` slope going the other way (+0.420 per unit density, p<0.0001) is
 the coherent counterpart: the denser the graph, the more a stated answer is
@@ -1189,6 +1198,114 @@ PYTHONPATH=. python scripts/score_density_sweep.py \
     --responses "runs/qwen3-1.7b-think.degdensthink.shard*of7.jsonl" \
     --trend-max 0.50
 ```
+
+### The `filler` control, which decomposes every primer effect above
+
+**Results (jobs 870405 / 870407 / 870408, 2026-09-09).** 8,800 rows across three
+jobs, 0 truncated in the plain arms. Two questions: does the headline replicate
+on fresh graphs, and is the dense-graph harm about primer *content* or primer
+*length*?
+
+**1. The headline replicates on an independent corpus.** 400 fresh graphs per
+level at p <= 0.50, seed offset 500,000, 0 `instance_id` collisions with the
+scored corpus:
+
+| | original | replication |
+|---|---|---|
+| `clustering` - `none`, pooled | +0.038 (p=0.0017) | **+0.043 (p=0.0006)** |
+| trend slope per unit density | +0.113 (p=0.15) | +0.102 (p=0.21) |
+
+Per level the replication runs +0.020 / +0.040 / +0.045 / +0.065 against the
+original's +0.003 / +0.033 / +0.075 / +0.043. Same magnitude, same direction,
+same shape. This is the first result in this project to be re-drawn rather than
+re-analysed.
+
+**2. Prompt length is a confound in every primer number in this document, and it
+is large.** `filler` carries no structure and no shortcut -- its bar is 0.082,
+identical to `none` and `clustering` -- so `filler` minus `none` is the price of
+the characters alone:
+
+| | plain | think |
+|---|---|---|
+| `filler` - `none`, pooled | -0.024 (p=0.0013) | **-0.063 (p<0.0001)** |
+| `filler` - `none`, p >= 0.65 | -0.064 (p<0.0001) | **-0.117 (p<0.0001)** |
+
+1,831 characters of irrelevant text cost the thinking arm **11.7 points** on
+dense graphs. The cost is real for the plain arm too, and it grows with density
+in both -- which is what you would expect if the mechanism is aggregation over a
+longer context rather than anything about the text.
+
+**3. So the dense-graph "clustering harms a reasoner" finding was wrong, and
+this run overturns it.** Yesterday's reading was that `clustering` costs the
+thinking arm 8.8 pp at p=0.75. Against a length-matched control it *helps*:
+
+| comparison (think arm, p >= 0.65) | delta | p |
+|---|---|---|
+| `clustering` - `none` | **-0.056** | 0.0007 |
+| `clustering` - `filler` | **+0.058** | 0.0004 |
+
+Both are significant and they point in opposite directions. The net harm against
+`none` is a length penalty of about 11 points partly offset by a content benefit
+of about 6. `clustering` does not damage a reasoning model on dense graphs;
+*adding text* does, and `clustering` is text that pays for about half of itself.
+
+Length-controlled, `clustering`'s content helps at every level from p=0.35 up,
+in both arms:
+
+| p | plain | think |
+|---|---|---|
+| 0.35 | +0.065 | +0.078 |
+| 0.50 | +0.062 | +0.087 |
+| 0.65 | +0.075 | +0.070 |
+| 0.75 | +0.068 | +0.053 |
+| 0.85 | +0.030 | +0.051 |
+| **pooled** | **+0.043** (p<0.0001) | **+0.050** (p<0.0001) |
+
+**4. `filler` is a valid control for `clustering` and for nothing else here.**
+This is the trap in the run and it is worth stating plainly, because the obvious
+next table is wrong. Median characters added to a `none` prompt:
+
+| condition | added | length-matched to `filler`? |
+|---|---|---|
+| `components` | **+40** | no -- it is `none`-length |
+| `degree` | +910 | no -- half |
+| `clustering` | +1,631 | **yes**, within 3.3% |
+| `filler` | +1,831 | -- |
+
+`components` is one sentence. Comparing it against `filler` produces
++0.020 plain and +0.056 think, both significant -- and that is almost entirely
+the 1,800-character difference, not content. **`components` remains inert**, and
+its correct control is `none`, which it matches to 2%: +0.001 and +0.013,
+neither significant. The earlier conclusion stands; it just came within one
+table of being overturned by a comparison that was never controlled.
+
+By the same argument, `degree`'s length-controlled effect is somewhere between
+its `none` and `filler` contrasts, and this run cannot place it exactly. The
+asymmetry that matters survives either way: on dense graphs `degree` is worth
++0.071 plain against +0.423 think versus `filler`, and +0.007 against +0.205
+versus `none`. The plain model does extract *something* from a stated answer --
+more than the +0.007 suggested -- but roughly enough to cancel the length cost,
+which is why it looked like nothing.
+
+**What this means for the rest of the document.** Every primer effect measured
+against `none` is a sum of two terms: what the content buys and what the length
+costs. The two are comparable in size here, and at high density the length term
+dominates. Effects reported against `none` are therefore *lower bounds* on
+content for any primer longer than its control, and the ranking of primers by
+`none`-delta can invert the ranking by content. The `ec500` numbers, the size
+sweep and the `cycle_check` result were all measured this way and none of them
+has a `filler` arm.
+
+Score it with:
+
+```bash
+PYTHONPATH=. python scripts/score_density_sweep.py \
+    --responses "runs/qwen3-1.7b.degdensrep.shard*of5.jsonl" --trend-max 0.50
+```
+
+The `filler` contrasts are cross-file (the control ran as its own job at the
+default seed, so it pairs by `instance_id` against the scored runs); gold was
+checked to agree on all 2,800 shared instances in each arm before pairing.
 ### Deliberately not run
 
 - **`--xlarge` (20-39 nodes) from `docs/difficulty-scaling.md`** -- subsumed.
@@ -1242,13 +1359,19 @@ same graphs, turning reasoning mode on is worth **+29.2 pp pooled and +50.0 pp
 at the densest level** -- an order of magnitude more than any primer, from the
 same checkpoint. The primer question is real and worth the controls it took to
 answer, but the honest ranking is: reasoning mode >> task difficulty >> primer
-choice. `clustering`'s +3.8 pp does survive reasoning mode over the usable
-density range (+2.3 pp, p=0.036); what does not survive is reading it as a
-uniform benefit, since on dense graphs the same primer costs a reasoning model
-8.8 pp.
+choice. `clustering`'s +3.8 pp replicated on fresh graphs (+4.3 pp,
+p=0.0006) and survives reasoning mode. What does not survive is reading any
+`none`-delta as a content effect: a length-matched placebo costs the thinking
+arm 11.7 pp on dense graphs, so those numbers are content minus length, and the
+length term is often the bigger one.
 
 Two rules, both learned the hard way:
 
+0. **Match the control's length before reading a primer effect at all.**
+   `filler` exists for this and had never been run in a powered cell. It costs
+   6.3 pp pooled and 11.7 pp on dense graphs, which is larger than most of the
+   effects in this document. A primer that adds characters is paying a tax that
+   `none` does not.
 1. **Read every result against `bar(cond) - bar(none)` from `shortcuts.json`,
    not against zero**, and check whether the primer simply contains the answer
    before running anything -- the `density40` run lost half its design to
