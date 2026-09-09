@@ -44,3 +44,34 @@ out/
 # --node-naming got`.
 /batch_validation_prompts.jsonl
 /prompts_got.count500.jsonl
+
+# The density-sweep prompt sets, which are large and exactly regenerable.
+#
+# `prompts.degdensity40.jsonl` (18 MB) and `prompts.degdensity40hi.jsonl` (also
+# ~18 MB) are n=40 builds, and a 40-node graph's `incident` encoding lists every
+# one of its hundreds of edges -- so these are roughly twice the largest prompt
+# file this repo does track (`prompts_got.count500.degree.jsonl`, 8.7 MB) while
+# carrying a fraction as many prompts.
+#
+# Tracked prompt files exist because a response is only interpretable against
+# the exact prompt that produced it. That still holds here, and is met a
+# different way: `scripts/build_size_sweep.py` rebuilds both byte for byte from
+# the command in their run's writeup, and `tests/test_build_size_sweep.py` pins
+# the two properties that guarantee it -- a level's graphs depend on its density
+# *value* rather than its position in `--densities`, and the no-`--densities`
+# default is unchanged. Regenerate with the `--densities/--tasks/--conditions`
+# line recorded in docs/primer-effects-and-power.md rather than reaching for a
+# copy.
+/prompts.degdensity40.jsonl
+/prompts.degdensity40hi.jsonl
+/prompts.degdensity40think.jsonl
+/prompts.degdensfiller.jsonl
+/prompts.degdensrep.jsonl
+/prompts.degfixdeg.jsonl
+/prompts.degceil.jsonl
+
+# The retrieval probe prompt set (34 MB), regenerable exactly by
+# `scripts/build_retrieval_probe.py` with the command in its run writeup. Larger
+# than any tracked prompt file because 1,280 statements of surrounding text is
+# the point of the design rather than an accident of it.
+/prompts.retrieval.jsonl

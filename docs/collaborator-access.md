@@ -6,14 +6,20 @@ the models and the environments as well, without re-downloading 111 GB.
 ## Off-cluster: clone
 
 ```bash
-git clone git@github.com:ArnavShahor/GraphTalk.git
+git clone git@github.com:GalBrk/GraphTalk.git
 ```
 
 **[DATA.md](DATA.md) documents every file's schema and how they join.** Everything needed to score and analyse is tracked: `runs/*.jsonl` (the raw model
 responses), `prompts.jsonl` (the exact prompts they answer), and `shortcuts.json`
 (the primer-only solver score each cell is read against). See `runs/README.md` for
-the row schema and `docs/sweep-findings.md` for what the numbers do and do not
-support -- particularly that the McNemar analysis as specified is underpowered.
+the row schema. **Read `docs/primer-effects-and-power.md` first** -- it is the
+current results document and supersedes `docs/sweep-findings.md`, which is the
+older analysis of the 5-19 node corpus and is kept for its retractions rather
+than its conclusions. Two things in it decide how every other number should be
+read: effects are judged against `bar(cond) - bar(none)` from `shortcuts.json`
+rather than against zero, and against a *length-matched* control rather than
+against `none`, since a content-free primer of the same length costs a thinking
+model up to 11.7 points on its own.
 
 ## On the TAU CS cluster: read in place
 
@@ -39,9 +45,15 @@ cd $REPO
 python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.json
 ```
 
-`graphtalk` is a cu130 build and needs driver 580+, so it only runs on n-602,
-n-805 and t-806. `graphtalk-cu126` runs on every GPU node in `killable` and is
-the one to prefer -- it cannot drive a B200, which `killable` does not have.
+`graphtalk` is a cu130 build and needs driver 580+. That is a driver
+requirement, not a fixed node list: n-602, n-805 and t-806 were the nodes known
+to satisfy it when this was written, and n-502 and n-503 have since been
+observed running it too (jobs 866467/866492, driver 580.173.02). The nodes to
+avoid are the 535.x ones -- n-501, n-802, n-803, n-804 -- where `sweep.sbatch`'s
+own CUDA guard fails the job in about 90 seconds rather than silently falling
+back to CPU. `graphtalk-cu126` runs on both driver generations and is the one to
+prefer if you do not want to think about it -- it cannot drive a B200, which
+`killable` does not have.
 
 ### Run models without downloading them
 
@@ -52,8 +64,11 @@ export HF_HOME=/home/dcor/galbarak2/hf_cache
 export HF_HUB_OFFLINE=1
 ```
 
-Four checkpoints are cached: `google/gemma-4-E4B-it`, `google/gemma-4-12B-it`,
-`Qwen/Qwen3-8B`, `Qwen/Qwen3-14B` (111 GB). `HF_HOME` is mode 711 -- you can
+Seven GraphTalk checkpoints are cached: `google/gemma-4-E4B-it`,
+`google/gemma-4-12B-it`, `Qwen/Qwen3-0.6B`, `Qwen/Qwen3-1.7B`, `Qwen/Qwen3-8B`,
+`Qwen/Qwen3-14B` and `Qwen/Qwen3.5-2B`. The cache is shared with other projects
+on this account and holds 14 repos / 141 GB in total, so do not read its size as
+this project's footprint. `HF_HOME` is mode 711 -- you can
 traverse to the models but not list the directory, which keeps the owner's API
 token private. Point `HF_HOME` at it and the libraries find the models by path.
 

@@ -3,6 +3,23 @@
 Course project building on
 [Talk like a Graph: Encoding Graphs for Large Language Models](https://arxiv.org/abs/2310.04560).
 
+**Results live in [docs/primer-effects-and-power.md](docs/primer-effects-and-power.md).**
+It supersedes `docs/sweep-findings.md`, which analyses the 5-19 node corpus and
+is kept for its retractions. In one paragraph, as of 2026-09-09:
+
+Primers are not one intervention. On `node_degree` at n=40, `clustering` is
+worth **+3.8 pp** (p=0.0017) to `qwen3-1.7b`, and that replicated on 400 fresh
+graphs per level (**+4.3 pp**, p=0.0006); `components` is inert everywhere
+tested; `rwse` costs `qwen3-8b` **13.7 pp** on `edge_count`. Two controls decide
+how to read any of it. A primer-only solver that never sees the graph
+(`shortcuts.json`) scores 1.00 on three tasks for the `degree` primer, so effects
+must be read as `bar(cond) - bar(none)`, not against zero. And a *length-matched*
+placebo carrying no structure costs a thinking model **11.7 pp** on dense
+graphs, so an effect measured against `none` is content minus length, with the
+two terms comparable in size. Bigger than every primer effect measured: turning
+reasoning mode on is worth **+29.2 pp** pooled and +50.0 pp at the densest
+level, from the same checkpoint.
+
 `talk_like_a_graph/` is a vendored copy of Google Research's reference
 implementation. See [talk_like_a_graph/UPSTREAM.md](talk_like_a_graph/UPSTREAM.md)
 for the exact upstream commit and our local changes.
@@ -190,19 +207,26 @@ cleanly on 3.12+.
 ## Tests
 
 ```bash
-uv run --no-sync pytest -q
+uv run --no-sync pytest -q --ignore=tests/test_hierarchical_model.py \
+                           --ignore=tests/test_mixed_models.py
 ```
 
-418 tests: 27 vendored ones covering graph generation, text encoders and
+613 tests: 30 vendored ones covering graph generation, text encoders and
 metrics, 138 covering the primer statistics, the renderer, and the committed
-golden primer strings, 143 covering the shortcut solvers, 72 covering prompt
-assembly and answer scoring, 27 covering node naming and the GoT round trip,
-and 11 covering the sweep frame, the failure taxonomy, the wording split, and
-how a row's non-termination flag was obtained.
+golden primer strings, 143 covering the shortcut solvers, 85 covering prompt
+assembly and answer scoring, 86 covering the significance machinery and
+sample-size recommendation, 43 covering the corpus and prompt builders, 33
+covering the sweep frame and failure taxonomy, 27 covering node naming and the
+GoT round trip, 13 covering topology extraction and the task-scoped screen, and
+15 covering the density-sweep scorer and its trend test.
 
-The last of those need `pandas`, which is not in the base install: without
-`pip install -e ".[analysis]"` the suite fails at *collection* rather than
-skipping, so the whole run aborts and none of the other 407 report.
+Two more files -- `tests/test_hierarchical_model.py` and
+`tests/test_mixed_models.py` -- import `statsmodels`/`pymc` at module scope. The
+count above is with both `--ignore`d, which is how they have to be run wherever
+those libraries are absent: a missing one fails at *collection* rather than
+skipping, so the whole run aborts and reports **zero** passes rather than a
+couple of failures. The same is true of `pandas` for `tests/test_analysis.py`,
+which `pip install -e ".[analysis]"` provides.
 
 Two of those deserve mention because they are what the rest rests on. The
 **round trip** renders a primer, parses it back, and requires the recovered

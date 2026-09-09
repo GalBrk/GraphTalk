@@ -119,6 +119,33 @@ was ever tracked.
   it would overflow that model's budget. The exact, authoritative check is
   the one in `hf_backend.py`.
 
+## What the density knob actually found
+
+The density parameter documented above was used, in a controlled form, and the
+results are in `primer-effects-and-power.md` ("Density at a fixed size", "The
+thinking arm", "The `filler` control"). Four things this document should be read
+alongside:
+
+- **Density works as a difficulty knob at fixed size.** Holding n=40 and moving
+  ER density alone, `qwen3-1.7b` on `node_degree` falls 0.922 -> 0.295 across
+  p=0.10 -> 0.50, while the blind baseline barely moves (0.230 -> 0.147).
+- **The knob has a floor.** From p=0.65 up the plain model scores *below* the
+  modal-degree baseline and answers 39 -- the complete-graph degree -- in 61% of
+  rows. A primer stating the answer verbatim is worth +0.7 pp there, which is
+  what proves the cells are uninformative rather than primer-negative. **Density
+  sweeps at n=40 should stop at p=0.50.**
+- **`--graph-source diverse` is the wrong vehicle for this.** The
+  `er_min_sparsity`/`er_max_sparsity` knobs reach only the `er` algorithm; the
+  other six in `diverse_corpus.ALGORITHMS` have no sparsity parameter, so at the
+  `--count 30` recommended below the manipulation touches 5 graphs in 30. The
+  controlled runs generate ER directly via `scripts/build_size_sweep.py
+  --densities`, so 100% of the corpus receives it.
+- **The trend claim this document's driver analysis makes -- that primer benefit
+  grows with density -- gets no support.** Fitted directly as a slope,
+  `clustering` moves +0.113 per unit density (p=0.15) and `components` -0.148
+  (p~0.02), neither surviving correction within the family of fits actually
+  reported.
+
 ## Backward compatibility
 
 Every new parameter defaults to `None`/today's value at every layer
@@ -191,6 +218,17 @@ a laptop with no `torch`/no `g++` toolchain installed
 — confirmed identical via `git stash` against the pre-change tree, so they
 are environment gaps, not regressions from this work). On the cluster,
 where `torch` and a real compiler are present, expect the full clean count.
+
+**Superseded after the merge into `small-model-suite-and-primer-power`
+(2026-09-07).** The 606/607 figures above were measured on `main` alone, on a
+laptop where `statsmodels` is installed. The merged branch reported **593
+passed** at the merge and **613** now (the density-sweep scorer and its
+trend test added fifteen)
+on the cluster conda env with `tests/test_hierarchical_model.py` and
+`tests/test_mixed_models.py` `--ignore`d, because neither `conda_envs/graphtalk`
+nor `conda_envs/graphtalk-cu126` has `statsmodels` or `pymc`. The numbers are
+not comparable and neither is wrong; see `CLAUDE.md` for the count that applies
+to a run on this cluster.
 
 ## Running on the SLURM cluster
 

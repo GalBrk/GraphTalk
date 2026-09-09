@@ -1,5 +1,11 @@
 # Shortcut ceilings
 
+> **Status: executed.** `graphtalk/shortcuts.py` implements this plan --
+> `ALL_RULES` holds 25 rules (16 theorem, 1 heuristic, 8 fitted) and
+> `shortcuts.json` holds the resulting table. Kept as the record of the
+> reasoning; read the module and `docs/primer-effects-and-power.md` for what
+> the numbers currently are.
+
 ## Context
 
 This plan depends on `docs/plans/primer-computation.md` and cannot start before it: it

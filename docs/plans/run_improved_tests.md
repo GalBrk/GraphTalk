@@ -1,5 +1,12 @@
 # Run plan: improving statistical power across GOT and integer sweeps
 
+> **Status: partially executed.** Phases 1 and 2 have landed --
+> `analysis/task_scoped_screen.csv`, `analysis/task_scoped_screen.got.csv` and
+> `analysis/task_scoped_screen_comparison.md` are on disk, as are four
+> `analysis/confirmatory_*.json` pre-registrations. Later phases have no
+> artifacts, so treat them as outstanding. This document is still live: follow
+> its instructions, unlike the executed plans beside it.
+
 ## How to use this document
 
 This is an autonomous execution plan. Work through the phases in order.
@@ -26,11 +33,15 @@ correctly, not from more data. Keep that discipline through every phase
 below.
 
 **Every new script needs tests**, matching this project's existing
-convention (`tests/test_significance.py`, `tests/test_check_significance.py`,
+convention (`tests/test_significance.py`, `tests/test_recommend_count.py`,
 etc.). After each phase, run `pytest -q` and report the pass count and any
 failures/regressions before moving to the next phase (compare against the
-project's known baseline: 572 passed, 2 pre-existing unrelated
-torch-dependent failures, as of `docs/plans/scale-vs-topology-investigation.md`).
+project's known baseline: **613 passed** on the merged
+`small-model-suite-and-primer-power` branch, with
+`tests/test_hierarchical_model.py` and `tests/test_mixed_models.py` `--ignore`d
+because neither graphtalk conda env has `statsmodels`/`pymc`. The 572 figure
+this line used to quote predates both that merge and those ignores; compare
+against 613, or a passing run will look like a regression).
 
 **Effect-size discipline for any new sample-size calculation**: use a
 conservative estimate (the bootstrap CI's lower bound, or an explicitly
