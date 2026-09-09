@@ -79,6 +79,26 @@ that no cell cleared every control. At power, both statements are wrong.
    which is what proves the high-density cells are uninformative rather than
    primer-negative. See "Density at a fixed size".
 
+5a. **But density is a knob, not a cause, and job 871262 settles that.** Holding
+   *mean degree* fixed and varying n drops density 8x while edges and prompt
+   length grow 8x. Accuracy falls along every such block (0.912 -> 0.624 at
+   d=8; 0.575 -> 0.224 at d=16) when a density account predicts it should rise.
+   Difficulty tracks **prompt size** and **answer magnitude** -- at matched edge
+   counts the low-degree block beats the high-degree one every time, 0.624
+   against 0.225 at 640 edges -- and density was standing in for edge count at
+   fixed n. `clustering`'s benefit likewise peaks at density 0.101 (+0.105) and
+   is significantly negative at 0.421 (-0.047), so the "benefit grows with
+   density" claim is now contradicted rather than merely unsupported. This
+   supersedes the causal reading of item 5 everywhere it appears.
+
+5b. **A primer cannot be worth more than the model's ability to read it.** Job
+   871263 measures the ceiling at the four levels where the +3.8 pp headline
+   was taken: `clustering` captures ~a third of it (8% / 35% / 34% / 63%). The
+   ceiling itself is low -- the answer written verbatim reaches only 0.610 at
+   p=0.35 and is worth **+6.8 pp** at p=0.50. Together with `filler`'s cost,
+   the binding constraint on this task is reading long prompts, not primer
+   content.
+
 6. **Prompt length is a confound in every primer number here, and it is the
    same size as the effects.** A length-matched primer with no structure and no
    shortcut (`filler`, bar 0.082) costs the thinking arm **6.3 pp pooled and
@@ -562,7 +582,11 @@ what makes its null interpretable -- see "Density at a fixed size".
 size" below; it is the source of the one clean, significant primer effect this
 project has.
 
-### In flight
+### Completed 2026-09-09, results below
+
+Both jobs on this page landed; see "Density was never the driver" for what they
+found. Their designs are kept here because the design is what makes the result
+readable.
 
 **Job 871262 `fixdeg-q17b`** -- the experiment that separates density from edge
 count, which every result in this document so far confounds. 6,400 rows, 5
@@ -657,7 +681,8 @@ key. This run uses an offset of 500,000; verified 0 `instance_id` collisions
 against `prompts.degdensity40.jsonl`.
 
 Jobs 858244 (`ec17-clean`) and 858671 (`dens40-q17b`) finished 2026-09-07;
-866467, 866492 and 866578 finished 2026-09-08.
+866467, 866492 and 866578 finished 2026-09-08; 871262 and 871263 finished
+2026-09-09. **Nothing is in flight.**
 
 ### Density at a fixed size
 
@@ -1362,6 +1387,78 @@ PYTHONPATH=. python scripts/score_density_sweep.py \
 The `filler` contrasts are cross-file (the control ran as its own job at the
 default seed, so it pairs by `instance_id` against the scored runs); gold was
 checked to agree on all 2,800 shared instances in each arm before pairing.
+### Density was never the driver
+
+**Job 871262, 6,400 rows, 9 capped, 0 unparsed.** Mean degree is held fixed
+while n varies, so density falls 8x while edges and prompt length grow 8x and
+the answer distribution does not move. Density and length make opposite
+predictions here, which is the whole point of the design.
+
+| mean degree | n | density | edges | none | clustering | gap | p |
+|---|---|---|---|---|---|---|---|
+| **8** | 20 | 0.421 | 80 | 0.912 | 0.865 | **-0.047** | 0.0058 |
+| | 40 | 0.205 | 160 | 0.728 | 0.770 | +0.042 | 0.078 |
+| | 80 | 0.101 | 320 | 0.645 | 0.750 | **+0.105** | 0.0000 |
+| | 160 | 0.050 | 640 | 0.624 | 0.693 | +0.069 | 0.022 |
+| **16** | 20 | 0.842 | 160 | 0.575 | 0.740 | **+0.165** | 0.0000 |
+| | 40 | 0.410 | 320 | 0.398 | 0.476 | +0.078 | 0.0087 |
+| | 80 | 0.203 | 640 | 0.225 | 0.323 | **+0.098** | 0.0004 |
+| | 160 | 0.101 | 1,280 | 0.224 | 0.211 | -0.013 | 0.666 |
+
+**Within each block density falls 8x and accuracy falls with it** -- 0.912 ->
+0.624 at d=8, 0.575 -> 0.224 at d=16. Had density driven difficulty, accuracy
+should have *risen* along each block. It falls, monotonically, in both. So the
+density gradient documented throughout this file is density standing in for edge
+count and prompt length at fixed n, and once the two are separated the causal
+claim does not survive.
+
+**A second driver appears across the blocks: the size of the answer.** At
+matched edge counts the low-degree block wins every time -- 640 edges scores
+0.624 at d=8 against 0.225 at d=16; 320 edges scores 0.645 against 0.398; 160
+edges 0.728 against 0.575. Counting to 16 is much harder than counting to 8
+regardless of how much text surrounds it. This is why the design used two degree
+levels: one could not separate "difficulty tracks edges" from "difficulty tracks
+answer magnitude", and the answer is that both are real and neither is density.
+
+**`clustering`'s benefit does not track density either, and now contradicts the
+claim rather than merely failing to support it.** Its largest gain is at density
+**0.101** (+0.105, p<0.0001) and its only significant *harm* is at density
+**0.421** (-0.047, p=0.0058) -- the wrong ends. What the gap does track is
+baseline difficulty: it is negative where `none` is easy (0.912), largest where
+`none` sits mid-range (0.575 -> +0.165), and null where `none` has bottomed out
+(0.224 -> -0.013). That is the inverted-U this document keeps rediscovering,
+and it is indexed by how hard the task is, not by how dense the graph is.
+
+Note this also runs n=160, which `build_size_sweep.py`'s docstring calls
+impossible at 57,217 median tokens. True under U(0, 1) sparsity, false here: at
+fixed mean degree the same n=160 is ~2,800 tokens. The docstring named this
+regime and nobody had run it until now.
+
+### The ceiling: clustering captures about a third of a small maximum
+
+**Job 871263, 1,600 rows, 400 paired triples per level.** The `degree`
+condition states the answer verbatim, so it bounds what any primer could
+achieve at the four levels where the +3.8 pp headline was measured.
+
+| p | none | clustering | gap | ceiling (`degree`) | ceiling gap | p | clustering / ceiling |
+|---|---|---|---|---|---|---|---|
+| 0.10 | 0.922 | 0.925 | +0.003 | 0.953 | +0.030 | 0.059 | 8% |
+| 0.20 | 0.765 | 0.797 | +0.032 | 0.858 | +0.093 | 0.0000 | 35% |
+| 0.35 | 0.393 | 0.468 | +0.075 | 0.610 | +0.217 | 0.0000 | 34% |
+| 0.50 | 0.295 | 0.338 | +0.043 | 0.362 | +0.068 | 0.022 | 63% |
+
+So the headline is roughly **a third** of what is reachable in the middle range,
+which is a real fraction rather than a rounding error.
+
+**The more consequential number is the ceiling itself.** With the answer written
+verbatim into the prompt the model reaches only 0.610 at p=0.35 and 0.362 at
+p=0.50 -- being handed the answer is worth **+6.8 pp** at p=0.50. The binding
+constraint on this task is not what a primer contains. It is that the model
+cannot reliably use explicitly stated information once the prompt is long, which
+is the same failure the high-density collapse showed (enumerate 35 neighbours,
+answer 39) and the same one `filler` prices from the other side. A primer cannot
+be worth more than the model's ability to read it.
+
 ### Still missing on density, after 871262/871263
 
 - **The collapse boundary is bracketed, not located.** p=0.50 scores 0.295
