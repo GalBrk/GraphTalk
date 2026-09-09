@@ -41,9 +41,16 @@ All at `zero_shot`, the only prompt style this project generates or scores.
 Two patterns hold across every model:
 
 - **Primers help, modestly.** `degree` or `all` beats `none` in every model.
-- **`filler` is inert, as the design predicted — the earlier penalty was the
-  control being broken.** The hypothesis for this arm was never that filler would
-  hurt: `docs/plans/primer-computation.md` §"An inert length control" requires it
+- **`filler` is inert *on this corpus*, as the design predicted — the earlier
+  penalty was the control being broken.** Read with the qualifier: this corpus is
+  5–19 nodes, so a `none` prompt is a few hundred characters. At n=40 with dense
+  graphs, where a `none` prompt runs 2,000–6,400 characters, the same primer costs
+  **6.3 points pooled and 11.7 on the densest levels** for a thinking model
+  (`docs/primer-effects-and-power.md`, "The `filler` control"). The two results do
+  not conflict: measured level by level, the penalty is absent or positive on
+  sparse graphs and appears only as the base prompt grows. What is inert is filler
+  in a short prompt, not filler as such. The hypothesis for this arm was never
+  that filler would hurt: `docs/plans/primer-computation.md` §"An inert length control" requires it
   to do nothing, or nothing much, precisely so that the length effect can be
   isolated. The measured penalty of up to 13 points was a surprise, and it was
   written up as a property of primers. It was a property of *that primer*.
@@ -162,7 +169,11 @@ Two separate results in this document turned out to be that and nothing else:
 
 - **"`filler` hurts"** — the length control scored below the no-primer control
   on accuracy *and* had the highest non-termination rate. Both measures were
-  responding to the primer's false numeral, not to padding.
+  responding to the primer's false numeral, not to padding. **On this corpus.**
+  The retraction was correct here and does not generalise: at n=40 on dense
+  graphs the corrected, content-free `filler` does hurt, by 11.7 points on a
+  thinking model, and that is padding — see the `filler` control in
+  `docs/primer-effects-and-power.md`.
 - **"GoT naming costs 4 points"** — GoT names are ~8% longer, on an arm already
   truncating 20% of responses. On terminated rows the effect is −0.1.
 

@@ -41,6 +41,14 @@ condition) rather than as a second confirmed model -- the GOT number
 alone was never strong enough to lean on, and this comparison removes
 what little support it had.
 
+> **Follow-up, 2026-09-09.** "Filler hurts" was retracted on this corpus as an
+> artifact of the primer's false numeral, and the retraction stands here. But a
+> corrected, content-free `filler` *does* hurt once prompts get long: 11.7
+> points on a thinking model at n=40, p>=0.85. So a negative `filler` effect is
+> not automatically an instrument bug -- on long prompts it is the expected
+> length penalty. See `../docs/primer-effects-and-power.md`, "The `filler`
+> control".
+
 **`qwen3-8b`/`filler`/`node_count` reverses between schemes -- flagged,
 not smoothed over.** Integer shows a real, negative effect (filler hurts,
 delta -0.233, p=0.016, ceiling-bound at 1.0 -- see

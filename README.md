@@ -3,6 +3,23 @@
 Course project building on
 [Talk like a Graph: Encoding Graphs for Large Language Models](https://arxiv.org/abs/2310.04560).
 
+**Results live in [docs/primer-effects-and-power.md](docs/primer-effects-and-power.md).**
+It supersedes `docs/sweep-findings.md`, which analyses the 5-19 node corpus and
+is kept for its retractions. In one paragraph, as of 2026-09-09:
+
+Primers are not one intervention. On `node_degree` at n=40, `clustering` is
+worth **+3.8 pp** (p=0.0017) to `qwen3-1.7b`, and that replicated on 400 fresh
+graphs per level (**+4.3 pp**, p=0.0006); `components` is inert everywhere
+tested; `rwse` costs `qwen3-8b` **13.7 pp** on `edge_count`. Two controls decide
+how to read any of it. A primer-only solver that never sees the graph
+(`shortcuts.json`) scores 1.00 on three tasks for the `degree` primer, so effects
+must be read as `bar(cond) - bar(none)`, not against zero. And a *length-matched*
+placebo carrying no structure costs a thinking model **11.7 pp** on dense
+graphs, so an effect measured against `none` is content minus length, with the
+two terms comparable in size. Bigger than every primer effect measured: turning
+reasoning mode on is worth **+29.2 pp** pooled and +50.0 pp at the densest
+level, from the same checkpoint.
+
 `talk_like_a_graph/` is a vendored copy of Google Research's reference
 implementation. See [talk_like_a_graph/UPSTREAM.md](talk_like_a_graph/UPSTREAM.md)
 for the exact upstream commit and our local changes.

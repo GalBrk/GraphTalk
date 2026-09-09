@@ -12,8 +12,14 @@ git clone git@github.com:GalBrk/GraphTalk.git
 **[DATA.md](DATA.md) documents every file's schema and how they join.** Everything needed to score and analyse is tracked: `runs/*.jsonl` (the raw model
 responses), `prompts.jsonl` (the exact prompts they answer), and `shortcuts.json`
 (the primer-only solver score each cell is read against). See `runs/README.md` for
-the row schema and `docs/sweep-findings.md` for what the numbers do and do not
-support -- particularly that the McNemar analysis as specified is underpowered.
+the row schema. **Read `docs/primer-effects-and-power.md` first** -- it is the
+current results document and supersedes `docs/sweep-findings.md`, which is the
+older analysis of the 5-19 node corpus and is kept for its retractions rather
+than its conclusions. Two things in it decide how every other number should be
+read: effects are judged against `bar(cond) - bar(none)` from `shortcuts.json`
+rather than against zero, and against a *length-matched* control rather than
+against `none`, since a content-free primer of the same length costs a thinking
+model up to 11.7 points on its own.
 
 ## On the TAU CS cluster: read in place
 
