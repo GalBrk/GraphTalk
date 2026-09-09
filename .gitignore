@@ -69,3 +69,9 @@ out/
 /prompts.degdensrep.jsonl
 /prompts.degfixdeg.jsonl
 /prompts.degceil.jsonl
+
+# The retrieval probe prompt set (34 MB), regenerable exactly by
+# `scripts/build_retrieval_probe.py` with the command in its run writeup. Larger
+# than any tracked prompt file because 1,280 statements of surrounding text is
+# the point of the design rather than an accident of it.
+/prompts.retrieval.jsonl
