@@ -32,4 +32,15 @@ not reflected upstream.
   rewording to the published dataset's frozen `task_description` field); the
   edit here is for consistency with the vendored source, not functional.
 
+- `graph_generators.py`: `generate_graphs` gained an optional
+  `node_size_ranges` parameter (added 2026-09-06 in `da13241`). Omitted, it
+  resolves to the module's own `_NUMBER_OF_NODES_RANGE`, so every existing
+  caller is byte-identical; passed, it lets a caller ask for graphs outside
+  upstream's 5-19 node range without mutating the module-level dict that the
+  theorem-rule corpora and `show_primers.py` read.
+- `graph_generators.py`: the `sbm` branch now reads
+  `_NUMBER_OF_COMMUNITIES_RANGE.get(bucket, ...["large"])` instead of indexing
+  it directly. That dict has no entry for a caller-supplied bucket name, so the
+  direct index raised `KeyError` as soon as `node_size_ranges` was used.
+
 Original disclaimer: this is not an official Google product.

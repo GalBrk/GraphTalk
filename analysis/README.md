@@ -1,5 +1,15 @@
 # Measurement artefacts
 
+> **Every primer delta in this file is measured against `none`, which is a
+> *shorter* prompt.** Measured 2026-09-09, a length-matched placebo (`filler`,
+> shortcut bar identical to `none`) costs a thinking model 6.3 points pooled and
+> 11.7 on dense graphs purely for its characters. So each delta below is content
+> minus length, the two terms are comparable in size, and the ranking of primers
+> by `none`-delta can differ from the ranking by content. `components` adds 40
+> characters and is barely affected; `clustering` and `all` add ~1,600 and are.
+> See `../docs/primer-effects-and-power.md`, "The `filler` control".
+
+
 Small, expensive-to-reproduce measurements that decisions in this project rest
 on. They live in git because the reasoning in `docs/sweep-findings.md` and
 `cluster/README.md` cites them, and because each cost GPU time that a reader

@@ -52,7 +52,7 @@ pooling if its input carries more than one scheme — see
 | field | type | meaning |
 |---|---|---|
 | `instance_id` | str | pairing key, `"<task>/<index>"` |
-| `task` | str | one of the six tasks below |
+| `task` | str | one of the six tasks below. `graphtalk.scoring.ALL_TASKS` also defines a seventh, `reachability`, added for the synthetic `--graph-source diverse` path; **no tracked row carries it**, and `scoring.TASKS` (the six) is still what drives the published-dataset fetch |
 | `condition` | str | one of the seven primer conditions below |
 | `style` | str | `zero_shot` |
 | `prompt` | str | the exact text handed to the model, primer included |
@@ -105,6 +105,15 @@ differs from the baseline, the solver is reading something it should not.
 `rwse`, `components` (one statistic each), `all` (every statistic), `filler` (a
 primer of the same shape carrying no structural information, which separates
 "primer present" from "primer informative").
+
+**`filler` is the length control, and it is not free.** Measured 2026-09-09 at
+n=40, it costs a thinking model 6.3 points pooled and 11.7 on dense graphs
+purely for its 1,831 characters, while being neutral on sparse ones. Any
+comparison of a primer against `none` therefore mixes content with length. The
+conditions differ enormously in size -- `components` adds 40 characters,
+`degree` 910, `clustering` 1,631, `filler` 1,831 -- so `filler` is a valid
+length control for `clustering` and for nothing else. See
+`primer-effects-and-power.md`, "The `filler` control".
 
 **Styles (1)** — `zero_shot`. Chain-of-thought is measured by the thinking arm
 (native reasoning at `zero_shot`) rather than by a separate prompt style.

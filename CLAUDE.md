@@ -21,6 +21,20 @@ uv venv --python 3.11 && uv pip install -e ".[dev]"
 Python is pinned to `>=3.11,<3.12` (`pyproject.toml`) because `seqio` and
 `tensorflow-gnn` don't resolve cleanly on 3.12+.
 
+**On this machine there is no `.venv`, and the setup above was never run here.**
+Every doc and script docstring in this repo spells commands as
+`PYTHONPATH=. .venv/bin/python ...`; that is correct for a fresh clone that
+follows the step above, and it is not what exists on the lab machines. Use the
+conda env directly instead:
+
+```bash
+/home/dcor/galbarak2/conda_envs/graphtalk/bin/python
+```
+
+`cluster/README.md` documents how that env was built. The `.venv` paths are left
+in place because they are right for anyone who does run `uv venv`; just do not
+expect them to work here without creating one first.
+
 Optional TensorFlow pipeline (only `graph_tasks_utils.py` needs it, ~2 GB):
 
 ```bash
@@ -36,14 +50,25 @@ exports it already).
 Run the full test suite:
 
 ```bash
-uv run --no-sync pytest -q
+uv run --no-sync pytest -q --ignore=tests/test_hierarchical_model.py \
+                           --ignore=tests/test_mixed_models.py
 ```
 
 Always use `--no-sync` — a plain `uv run` re-syncs to the default dependency set
-and uninstalls the optional `pipeline` extras. 345 tests total, plus 23 more in
-`tests/test_node_naming.py` (368). On the cluster, `pytest -q` must report
-exactly that many passed; a different number means the env is wrong, not the
-code.
+and uninstalls the optional `pipeline` extras. That command must report exactly
+**613 passed**; a different number means the env is wrong, not the code.
+
+The two ignored files import `statsmodels`, which is **not** installed in either
+`conda_envs/graphtalk` or `conda_envs/graphtalk-cu126` — the only envs this
+project runs in. (It does exist at 0.12.0 in the base `anaconda3` install and at
+0.15.0 in the unrelated `ember` env, so "is statsmodels on this machine" is the
+wrong question to ask.) Without it pytest aborts during *collection* with a
+`ModuleNotFoundError` and reports **zero** passes rather than two failures, so a
+plain `pytest -q` looks catastrophically broken when nothing is wrong. Those
+files hold 24 further test functions that only run where `statsmodels` is
+present; installing it into the graphtalk env would fold them back into the
+default command, but do not do that while a sweep is running — `sweep.sbatch`
+activates that same env.
 
 Run a single test file or test:
 
@@ -76,6 +101,19 @@ sbatch cluster/sweep.sbatch gemma4-12b
 PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500 --json shortcuts.json
 PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.json
 ```
+
+Runs from `build_size_sweep.py --densities` are scored by density level instead,
+since `score_sweep.py` groups by (task, style) and would average the levels
+together:
+
+```bash
+PYTHONPATH=. python scripts/score_density_sweep.py \
+    --responses "runs/qwen3-1.7b.degdens40.shard*of5.jsonl"
+```
+
+It drops `hit_cap` rows rather than scoring them zero, prints the count dropped
+per cell, and separates the pooled test from the per-level family so a pooled
+p-value cannot drag a per-level one under the threshold.
 
 Check statistical significance beyond `score_sweep.py`'s per-cell McNemar (that test is
 underpowered at 30 pairs/cell — see `docs/sweep-findings.md`). Needs the `analysis` extra
@@ -157,12 +195,23 @@ python scripts/measure_real_rows.py                           # re-measures corp
     loading and greedy generation. Imported only by `scripts/run_sweep.py`.
 - `scripts/` — the three pipeline stages (`build_prompts.py`, `run_sweep.py`,
   `score_sweep.py`) plus `shortcut_table.py`, `draw_graph.py`,
-  `show_primers.py`, `measure_real_rows.py`.
+  `show_primers.py`, `measure_real_rows.py`. `build_size_sweep.py` and
+  `score_density_sweep.py` are the size/density pair: the first generates
+  graphs at chosen sizes and pinned ER densities, the second scores them
+  grouped by density level rather than by (task, style), which is the grouping
+  `score_sweep.py` collapses.
 - `cluster/` — `sweep.sbatch` and `README.md`, the authority on how the sweep
   actually runs on the TAU CS cluster (partitions, memory sizing, driver
   incompatibilities, chained-job submission for jobs that exceed the 24h
   partition limit).
-- `docs/` — `sweep-findings.md` (results and their caveats) and `docs/plans/`
+- `docs/` — **`primer-effects-and-power.md` is the current results document and
+  the one to read first**; it supersedes `sweep-findings.md` (the 5-19 node
+  corpus, kept for its retractions). Two rules from it govern every number
+  elsewhere in the repo: read effects against `bar(cond) - bar(none)` from
+  `shortcuts.json` rather than against zero, and against a length-matched
+  control rather than `none` — a content-free primer of the same length costs a
+  thinking model 11.7 points on dense graphs, which is larger than most measured
+  primer effects. Also `sweep-findings.md` and `docs/plans/`
   (`shortcut-ceilings.md`, `primer-computation.md`) which explain what the
   measured numbers mean; read these before interpreting a new sweep result.
 
@@ -198,8 +247,13 @@ break them:
 
 ### Testing conventions
 
-- 345 tests: vendored generator/encoder/metric tests, primer statistics/renderer/
-  golden-string tests, shortcut-solver tests, prompt-assembly/scoring tests.
+- 613 tests: vendored generator/encoder/metric tests, primer statistics/renderer/
+  golden-string tests, shortcut-solver tests, prompt-assembly/scoring tests,
+  node-naming, analysis, the size/density sweep builders, and the density-sweep
+  scorer. A further 24 test
+  functions live in the two `statsmodels`-dependent files above and do not run
+  in this env — see "Commands" for why they must be `--ignore`d rather than
+  left to fail.
 - Theorem rule precision is asserted at exactly 1.0 over both an Erdős–Rényi
   corpus and an adversarial corpus (trees, forests, cycles, complete bipartite
   graphs) — the ER generator alone never produces a tree, so a rule that's

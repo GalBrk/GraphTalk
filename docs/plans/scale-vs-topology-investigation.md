@@ -165,6 +165,20 @@ density, monotonically:**
 | `density=mid` | +0.348 | 0.0001 |
 | `density=high` | **+0.386** | 0.0001 |
 
+> **Tested directly on 2026-09-09; it does not hold.** Three objections, in
+> increasing order of severity. (1) The `degree` primer's shortcut bar on
+> `edge_count` is **1.00** -- degrees sum to twice the edge count -- so this
+> table measures a primer-only solver, not reasoning. (2) It is observational
+> over a 5-19 node corpus where size, degree variance and density all co-vary;
+> the same document names that confound. (3) Run as a controlled experiment,
+> with size pinned at n=40 and density the only moving variable, the trend is
+> absent: fitted as a slope on the per-graph paired difference, `clustering`
+> gives +0.113 per unit density (p=0.15) and `components` **-0.148** (p~0.02),
+> i.e. the only relationship approaching significance runs *backwards*. See
+> `../primer-effects-and-power.md`, "The trend test". A fourth caveat applies to
+> every row: the deltas are against `none`, a shorter prompt, and length alone
+> is worth up to 11.7 points at these sizes.
+
 The `degree` primer's benefit on `edge_count` grows monotonically and
 substantially with graph size, degree-sequence variance, and density --
 i.e. it helps most exactly where manually counting edges from the encoded

@@ -1,5 +1,13 @@
 # Primer computation
 
+> **Status: executed.** This is the plan as written, kept as the record of why
+> the design is what it is -- not a description of the current tree. Its
+> present-tense statements were true when it was written and several are now
+> stale by design: `parse_graph` has since moved to `graphtalk/graphqa.py`, and
+> `pyproject.toml` now maps both `talk_like_a_graph` and `graphtalk`, so the
+> editable-install caveat in "Constraints" no longer applies. For current
+> behaviour read `graphtalk/primers.py` and `CLAUDE.md`.
+
 ## Context
 
 The project's independent variable is a "primer": a short preamble of factual sentences
@@ -205,6 +213,15 @@ TensorFlow 2.20 / tf-keras / tensorflow-gnn combination that is easy to disturb.
 
 - **Per-node sentences**, matching the proposal's "one short factual sentence per node"
   and the surrounding graph prose.
+
+> **Measured 2026-09-09: the control is inert only while the prompt is short.**
+> The corrected, content-free `filler` is neutral or slightly positive on sparse
+> graphs and costs a thinking model **11.7 points** at n=40, p>=0.85, where a
+> `none` prompt is already 6,400 characters. So "inert length control" is not a
+> property this primer has; it is a property of this primer *in short prompts*.
+> Any cell that adds characters is paying a tax that grows with the base prompt,
+> and the tax is the same size as the primer effects this project measures. See
+> `docs/primer-effects-and-power.md`, "The `filler` control".
 
 - **An inert length control**, not a misinformation placebo. Wrong numbers would
   contradict the edge list in the same prompt, so a drop in accuracy could mean the
