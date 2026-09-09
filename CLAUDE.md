@@ -204,7 +204,14 @@ python scripts/measure_real_rows.py                           # re-measures corp
   actually runs on the TAU CS cluster (partitions, memory sizing, driver
   incompatibilities, chained-job submission for jobs that exceed the 24h
   partition limit).
-- `docs/` — `sweep-findings.md` (results and their caveats) and `docs/plans/`
+- `docs/` — **`primer-effects-and-power.md` is the current results document and
+  the one to read first**; it supersedes `sweep-findings.md` (the 5-19 node
+  corpus, kept for its retractions). Two rules from it govern every number
+  elsewhere in the repo: read effects against `bar(cond) - bar(none)` from
+  `shortcuts.json` rather than against zero, and against a length-matched
+  control rather than `none` — a content-free primer of the same length costs a
+  thinking model 11.7 points on dense graphs, which is larger than most measured
+  primer effects. Also `sweep-findings.md` and `docs/plans/`
   (`shortcut-ceilings.md`, `primer-computation.md`) which explain what the
   measured numbers mean; read these before interpreting a new sweep result.
 
