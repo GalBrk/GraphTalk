@@ -564,8 +564,64 @@ project has.
 
 ### In flight
 
-**Nothing.** Jobs 870405, 870407 and 870408 completed 2026-09-09 and are
-written up in "The `filler` control" below. Their design is recorded here.
+**Job 871262 `fixdeg-q17b`** -- the experiment that separates density from edge
+count, which every result in this document so far confounds. 6,400 rows, 5
+shards (coprime with 2 conditions), tag `degfixdeg`.
+
+At n=40 fixed, density and prompt length are collinear: p=0.10 -> 0.85 moves
+edges 80 -> 664 and the `none` prompt 2,006 -> 6,410 characters in lockstep. So
+every "density effect" here is equally consistent with a *length* effect -- and
+after the `filler` control that is not a hypothetical, since 1,831 characters
+alone are worth -11.7 pp to the thinking arm. The collapse at p >= 0.65 may have
+nothing to do with density.
+
+Holding **mean degree** fixed and varying n breaks the collinearity:
+
+| n | p | density | edges | `none` chars | mean gold |
+|---|---|---|---|---|---|
+| 20 | 0.421 | 0.421 | 80 | 1,308 | 8.0 |
+| 40 | 0.205 | 0.205 | 160 | 2,626 | 7.8 |
+| 80 | 0.101 | 0.101 | 318 | 5,254 | 8.0 |
+| 160 | 0.050 | 0.050 | 636 | 11,109 | 7.7 |
+| 20 | 0.842 | 0.842 | 161 | 1,873 | 16.1 |
+| 40 | 0.410 | 0.410 | 319 | 3,826 | 16.2 |
+| 80 | 0.203 | 0.203 | 642 | 7,767 | 16.1 |
+| 160 | 0.101 | 0.101 | 1,288 | 16,732 | 16.2 |
+
+Density falls 8x while edges and prompt length grow 8x, and **the answer
+magnitude is held constant** (mean gold 8 and 16), so the answer distribution
+cannot explain any trend. The two hypotheses make opposite predictions:
+
+- if **density** drives difficulty, accuracy *rises* along each block;
+- if **edges / prompt length** drives it, accuracy *falls*.
+
+This is the first direct test of this document's own mechanistic claim -- that
+models break on aggregation over scattered mentions, i.e. on edges rather than
+on the ratio. `{none, clustering}` at both levels, so it also asks whether the
+primer effect tracks density or length.
+
+Two levels of mean degree rather than one, because a single value cannot
+distinguish "difficulty tracks edges" from "difficulty tracks the answer size":
+holding gold at 8 and at 16 gives the same edge range twice at different answer
+magnitudes.
+
+Note that `build_size_sweep.py`'s docstring calls n=160 impossible -- 57,217
+tokens at the median under `U(0, 1)` sparsity. That is true of that density
+policy and not of this one: at fixed mean degree the same n=160 is 11,109
+characters, roughly 2,800 tokens. The docstring predicts exactly this ("edges
+linear in n, a different density regime"); nobody had run it.
+
+**Job 871263 `degceil-q17b`** -- the `degree` positive control at p <= 0.50,
+1,600 rows, 3 shards, tag `degceil`. The +3.8 pp `clustering` headline is
+measured at these four levels and **has no measured ceiling there**: `degree`
+ran only at p >= 0.65 on the plain arm, where the model had already collapsed.
+Without it there is no way to say whether +3.8 pp is a large or a negligible
+fraction of what any primer could achieve. Built at the default seed and
+verified to pair: 1,600/1,600 instance_ids shared with the scored corpus, and
+1,600/1,600 prompts contain `"Node <queried> has degree <gold>."`.
+
+Jobs 870405, 870407 and 870408 completed 2026-09-09 and are written up in "The
+`filler` control" below.
 
 **Jobs 870405 `fillplain-q17b` and 870407 `fillthink-q17bT`** -- the `filler`
 control, 2,800 rows per arm, complete, 7 densities x 400 graphs x {`filler`}, 2,800 rows per arm, tags
@@ -1306,6 +1362,28 @@ PYTHONPATH=. python scripts/score_density_sweep.py \
 The `filler` contrasts are cross-file (the control ran as its own job at the
 default seed, so it pairs by `instance_id` against the scored runs); gold was
 checked to agree on all 2,800 shared instances in each arm before pairing.
+### Still missing on density, after 871262/871263
+
+- **The collapse boundary is bracketed, not located.** p=0.50 scores 0.295
+  (above the blind bar) and p=0.65 scores 0.140 (below it); nothing was run
+  between them. Two levels, 0.55 and 0.60, would find the threshold this
+  document recommends stopping at.
+- **The replication covers one arm, one primer, half the range.** Job 870408
+  re-drew `clustering` on the plain arm at p <= 0.50. There is no thinking-arm
+  replication and none for `components` or `filler`.
+- **`filler`'s length penalty rests on a single corpus**, and it is now load
+  bearing for the reinterpretation of every primer number here.
+- **ER only.** "Density" throughout means *Erdos-Renyi* density, which is
+  homogeneous by construction. The other six generators in
+  `diverse_corpus.ALGORITHMS` have no sparsity parameter, so nothing tests
+  whether any of this survives community structure or a heavy-tailed degree
+  distribution -- where the same global density means very different local
+  neighbourhoods, which is what `node_degree` actually asks about.
+- **One task and one model family.** `node_degree` is the only task that clears
+  both the shortcut bars and the headroom filter, so this is a constraint rather
+  than an oversight -- but it does mean every density claim here is a claim
+  about one cell.
+
 ### Deliberately not run
 
 - **`--xlarge` (20-39 nodes) from `docs/difficulty-scaling.md`** -- subsumed.

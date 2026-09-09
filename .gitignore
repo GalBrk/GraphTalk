@@ -67,3 +67,5 @@ out/
 /prompts.degdensity40think.jsonl
 /prompts.degdensfiller.jsonl
 /prompts.degdensrep.jsonl
+/prompts.degfixdeg.jsonl
+/prompts.degceil.jsonl
