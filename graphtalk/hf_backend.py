@@ -41,6 +41,18 @@ class Completion:
   hit_cap: bool
 
 
+class PromptOverflowError(ValueError):
+  """A prompt's token count leaves no room for `max_new_tokens` under the
+  model's `max_context_tokens`.
+
+  A `ValueError` subclass (not a bare `ValueError`) specifically so
+  `scripts/run_sweep.py` can catch this one condition -- a config/build
+  problem the caller should record and move past -- without also
+  swallowing an unrelated `ValueError` raised elsewhere in the same call
+  (e.g. from a malformed `chat_kwargs`).
+  """
+
+
 def load(spec: models.ModelSpec):
   """Loads one model in bf16 and returns (tokenizer, model).
 
@@ -89,7 +101,7 @@ def generate(tokenizer, model, prompt: str, max_new_tokens: int,
 
   prompt_len = inputs["input_ids"].shape[-1]
   if max_context_tokens and prompt_len + max_new_tokens > max_context_tokens:
-    raise ValueError(
+    raise PromptOverflowError(
         f"prompt ({prompt_len} tokens) + max_new_tokens ({max_new_tokens}) "
         f"exceeds max_context_tokens ({max_context_tokens})"
     )
@@ -179,7 +191,7 @@ def generate_batch(tokenizer, model, prompts: list[str], max_new_tokens: int,
 
     prompt_len = inputs["input_ids"].shape[-1]
     if max_context_tokens and prompt_len + max_new_tokens > max_context_tokens:
-      raise ValueError(
+      raise PromptOverflowError(
           f"batch's longest prompt ({prompt_len} tokens) + max_new_tokens "
           f"({max_new_tokens}) exceeds max_context_tokens ({max_context_tokens})"
       )

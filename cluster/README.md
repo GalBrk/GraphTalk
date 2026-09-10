@@ -190,6 +190,7 @@ that needs **580 or newer**:
 | n-805 | 580.173.02 | yes |
 | t-806 | 580.105.08 | yes |
 | **n-802, n-803, n-804** | **535.183.01** (CUDA 12.2) | **no** |
+| **n-501** | pre-580 (same failure shape) | **no** |
 
 On an old node `device_map="auto"` finds no usable CUDA device and puts the model
 on the **CPU** — with no error and no warning, at roughly a fortieth of the
@@ -400,6 +401,28 @@ them and add links to the chain rather than assuming three is enough.
   ```
 
   It queues longer; the partition was 8 jobs deep when last checked.
+
+- **Widen the pool for a small model.** `sweep.sbatch`'s default
+  `--constraint` (`a6000|l40s|h100`) is the 48 GB tier, sized for the sweep's
+  largest model. A model with `min_vram_gb <= 24` (e.g. `qwen3-1.7b`) also
+  fits the Ampere 24 GB tier -- a5000 and geforce_rtx_3090, same bf16 tensor
+  cores as a6000, just less VRAM -- which roughly triples the node pool and is
+  often far less contended than l40s/a6000 (checked 2026-09-08: every l40s in
+  `killable` was fully allocated, `gres/gpu=8/8`, while a5000/geforce_rtx_3090
+  had dozens of idle GPUs). Also size `--mem` down to the checkpoint rather
+  than keeping the 64G default meant for a 28 GB one:
+
+  ```bash
+  sbatch --constraint="a5000|geforce_rtx_3090|a6000|l40s|h100" --mem=16G \
+      cluster/sweep.sbatch qwen3-1.7b
+  ```
+
+  Deliberately excludes `geforce_rtx_2080` and the DGX `v100`/`quadro` nodes:
+  Turing and Volta have no bf16 tensor cores, so `device_map="auto"` would
+  silently place all or part of the model on CPU there rather than erroring —
+  the same failure shape as the pre-580-driver nodes above, just from a
+  different cause. `cluster/run_size_sweep.sh` (the qwen3-1.7b node-size
+  sweep) already applies this override.
 
 ## Preemption
 

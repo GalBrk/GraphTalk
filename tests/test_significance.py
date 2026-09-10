@@ -1047,6 +1047,100 @@ def test_mde_direction_positive_matches_default_both():
   assert positive_only["realized_diff_negative"] is None
 
 
+def test_resample_clusters_default_m_matches_len_clusters():
+  clusters = [[("c0", "t0")], [("c1a", "t1a"), ("c1b", "t1b")]]
+  rng = random.Random(0)
+  items, draw_ids = significance._resample_clusters(clusters, rng)
+  assert len(set(draw_ids)) == len(clusters)
+
+
+def test_resample_clusters_explicit_m_can_exceed_cluster_count():
+  clusters = [[("c0", "t0")], [("c1", "t1")]]
+  rng = random.Random(0)
+  items, draw_ids = significance._resample_clusters(clusters, rng, m=5)
+  assert len(set(draw_ids)) == 5
+  assert len(items) == 5
+
+
+# --- required_n_closed_form / required_sample_size_clustered ---------------
+
+
+def test_required_n_closed_form_matches_hand_computed_value():
+  # 7.84 / 0.1 = 78.4 -> ceil to 79.
+  assert significance.required_n_closed_form(0.1) == 79
+
+
+def test_required_n_closed_form_smaller_delta_needs_more_pairs():
+  small = significance.required_n_closed_form(0.03)
+  large = significance.required_n_closed_form(0.2)
+  assert small > large
+
+
+def test_required_n_closed_form_zero_delta_raises():
+  with pytest.raises(ValueError, match="nonzero"):
+    significance.required_n_closed_form(0.0)
+
+
+def test_required_n_closed_form_sign_does_not_matter():
+  assert significance.required_n_closed_form(0.1) == significance.required_n_closed_form(-0.1)
+
+
+def test_required_sample_size_clustered_no_pairs_returns_none():
+  result = significance.required_sample_size_clustered(
+      [], [], [], target_delta=0.1
+  )
+  assert result["required_n_clusters"] is None
+  assert result["pilot_n_clusters"] == 0
+
+
+def test_required_sample_size_clustered_zero_delta_raises():
+  with pytest.raises(ValueError, match="nonzero"):
+    significance.required_sample_size_clustered(
+        [1.0], [1.0], [0], target_delta=0.0
+    )
+
+
+def test_required_sample_size_clustered_large_effect_converges_to_a_small_n():
+  """A strong, clean effect on a small pilot should need only a modest
+  cluster count to reach 80% power -- not the full max_multiplier ceiling,
+  and not more clusters than a tiny pilot would ever plausibly need."""
+  rng = random.Random(11)
+  n = 20
+  control, treatment, cluster_ids = [], [], []
+  for i in range(n):
+    control.append(1.0 if rng.random() < 0.5 else 0.0)
+    treatment.append(1.0 if rng.random() < 0.5 else 0.0)
+    cluster_ids.append(i)
+  result = significance.required_sample_size_clustered(
+      control, treatment, cluster_ids, target_delta=0.35,
+      n_replicates=50, n_perm=100, seed=11,
+  )
+  assert result["pilot_n_clusters"] == n
+  assert result["required_n_clusters"] is not None
+  assert result["required_n_clusters"] <= n * 8
+  assert result["achieved_power"] >= 0.8
+
+
+def test_required_sample_size_clustered_tiny_effect_needs_more_clusters_than_a_large_one():
+  rng = random.Random(12)
+  n = 20
+  control, treatment, cluster_ids = [], [], []
+  for i in range(n):
+    control.append(1.0 if rng.random() < 0.5 else 0.0)
+    treatment.append(1.0 if rng.random() < 0.5 else 0.0)
+    cluster_ids.append(i)
+  large_effect = significance.required_sample_size_clustered(
+      control, treatment, cluster_ids, target_delta=0.4,
+      n_replicates=50, n_perm=100, seed=12,
+  )
+  tiny_effect = significance.required_sample_size_clustered(
+      control, treatment, cluster_ids, target_delta=0.02,
+      n_replicates=50, n_perm=100, seed=12, max_multiplier=200,
+  )
+  if tiny_effect["required_n_clusters"] is not None and large_effect["required_n_clusters"] is not None:
+    assert tiny_effect["required_n_clusters"] > large_effect["required_n_clusters"]
+
+
 def test_mde_unknown_direction_raises():
   with pytest.raises(ValueError, match="direction"):
     significance.minimum_detectable_effect_clustered(

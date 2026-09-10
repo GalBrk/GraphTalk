@@ -31,6 +31,7 @@ wherever no cluster_id repeats.
 """
 
 import itertools
+import math
 import random
 
 # Below this many clusters, `*_clustered` functions enumerate every sign
@@ -142,11 +143,20 @@ def paired_permutation_test_clustered(
   return {"n_pairs": n, "n_clusters": m, "observed_diff": observed, "p_value": p_value}
 
 
-def _resample_clusters(clusters: list, rng: random.Random):
-  """One bootstrap draw: resamples `len(clusters)` clusters with
-  replacement from `clusters` (each element a list of same-cluster items --
-  diffs, for `cluster_bootstrap_ci_clustered`, or `(control, treatment)`
-  pairs, for `minimum_detectable_effect_clustered`).
+def _resample_clusters(clusters: list, rng: random.Random, m: int | None = None):
+  """One bootstrap draw: resamples `m` clusters (default `len(clusters)`,
+  today's only use) with replacement from `clusters` (each element a list
+  of same-cluster items -- diffs, for `cluster_bootstrap_ci_clustered`, or
+  `(control, treatment)` pairs, for `minimum_detectable_effect_clustered`
+  and `required_sample_size_clustered`).
+
+  `m` is a separate parameter from `len(clusters)` specifically for
+  `required_sample_size_clustered`, which asks "what if there were more
+  (or fewer) clusters like these" -- resampling *more* draws than
+  `len(clusters)` from the same pilot pool is exactly how that prospective
+  question gets simulated from a smaller, already-collected sample.
+  Defaulting to `len(clusters)` keeps every existing call site (which
+  always wants "as many draws as clusters") unaffected.
 
   Returns `(items, draw_ids)`: `items` is every item from each drawn
   cluster concatenated, in draw order; `draw_ids` labels each item with
@@ -159,10 +169,11 @@ def _resample_clusters(clusters: list, rng: random.Random):
   needs and `cluster_bootstrap_ci_clustered` doesn't (it only reads the
   pooled mean, so it discards `draw_ids`).
   """
-  m = len(clusters)
+  n = len(clusters)
+  m = n if m is None else m
   items, draw_ids = [], []
   for draw_idx in range(m):
-    drawn = clusters[rng.randrange(m)]
+    drawn = clusters[rng.randrange(n)]
     items.extend(drawn)
     draw_ids.extend([draw_idx] * len(drawn))
   return items, draw_ids
@@ -401,6 +412,135 @@ def minimum_detectable_effect_clustered(
     result["realized_diff_negative"] = None
     result["note_negative"] = None
   return result
+
+
+def required_n_closed_form(delta: float) -> int:
+  """Fast, formula-based anchor for how many paired instances a follow-up
+  needs to detect an additive effect `delta`, two-sided alpha=0.05, 80%
+  power.
+
+  Derivation: a paired mean-difference test needs N ~= (z_(a/2) + z_beta)^2
+  * Var(D) / delta^2 pairs, where D is the per-pair outcome difference.
+  Approximating Var(D) ~= |delta| itself -- for a real, one-directional
+  effect the paired difference is dominated by the fraction of pairs the
+  effect actually flips, and `Var(D) = b + c - (c - b)^2` (b, c the two
+  discordant-pair rates) collapses to ~|delta| when the effect is small and
+  mostly one-directional -- turns the delta^2 in the denominator into a
+  single delta: N ~= (z_(a/2) + z_beta)^2 / |delta| = 2.8^2 / |delta| =
+  7.84/|delta|, using z_0.025=1.96 and z_0.20=0.84.
+
+  This is a sanity anchor, not the trustworthy answer -- it assumes the
+  Var(D)~=|delta| approximation and ignores this pilot's actual control
+  base rate and cluster structure entirely.
+  `required_sample_size_clustered` simulates directly from the pilot's own
+  data instead and is expected to roughly, not exactly, agree with this.
+  """
+  if delta == 0:
+    raise ValueError("delta must be nonzero")
+  return math.ceil(7.84 / abs(delta))
+
+
+def required_sample_size_clustered(
+    control, treatment, cluster_ids, target_delta: float, alpha: float = 0.05,
+    power_target: float = 0.8, n_replicates: int = 200, n_perm: int = 500,
+    seed=0, max_multiplier: int = 50,
+) -> dict:
+  """Prospective inversion of `minimum_detectable_effect_clustered`: fixes
+  `target_delta` (the effect size a follow-up run should be able to
+  detect -- typically this pilot's own observed delta, floored at some
+  minimum effect of interest) and searches the smallest cluster count `N`
+  such that resampling `N` clusters (with replacement) from *this pilot's
+  own* `(control, treatment)` pairs and injecting `target_delta` the same
+  Bernoulli-probability way `minimum_detectable_effect_clustered` already
+  does (never a deterministic shift -- see that function's own comment on
+  why a fresh draw is what makes a smaller delta genuinely harder to
+  detect) reaches `power_target` on `paired_permutation_test_clustered`.
+
+  Answers "how many graphs would a follow-up need," the mirror image of
+  `minimum_detectable_effect_clustered`'s "what could this many graphs
+  have detected." Reuses the same resampling/injection machinery
+  (`_resample_clusters`'s `m` parameter) rather than a closed-form formula,
+  because the answer is bound to the pilot's own control base rate and
+  cluster-size distribution the same way MDE is -- a near-ceiling pilot
+  needs more clusters to reach the same power than a mid-range one at the
+  same `target_delta`, and a fixed-variance formula would miss that.
+  `required_n_closed_form` is the fast, formula-based anchor for when this
+  simulation is too slow to run for every cell; the two are expected to
+  roughly agree, not be identical.
+
+  Search: doubles a candidate multiplier of the pilot's own
+  `len(clusters)` (starting at 1x) until `power(multiplier) >= power_target`
+  or the multiplier reaches `max_multiplier`, then bisects between the last
+  failing and first succeeding multiplier -- same expand-then-bisect shape
+  as `_search_one_direction`, swept over an integer cluster count instead
+  of a continuous delta.
+
+  Returns `{"required_n_clusters", "achieved_power", "pilot_n_clusters"}`;
+  `required_n_clusters` is `None` if `power_target` isn't reached by
+  `max_multiplier` times the pilot's own cluster count -- an honest "even a
+  lot more data shaped like this wouldn't be enough" answer, not a
+  silently wrong number.
+  """
+  if target_delta == 0:
+    raise ValueError("target_delta must be nonzero")
+  control, treatment = list(control), list(treatment)
+  cluster_ids = list(cluster_ids)
+  if not (len(control) == len(treatment) == len(cluster_ids)):
+    raise ValueError(
+        f"required sample size needs equal lengths, got {len(control)} "
+        f"control, {len(treatment)} treatment, {len(cluster_ids)} cluster_ids"
+    )
+  if len(control) == 0:
+    return {"required_n_clusters": None, "achieved_power": 0.0,
+            "pilot_n_clusters": 0}
+
+  by_cluster: dict = {}
+  for cluster_id, c, t in zip(cluster_ids, control, treatment):
+    by_cluster.setdefault(cluster_id, []).append((c, t))
+  clusters = list(by_cluster.values())
+  pilot_n_clusters = len(clusters)
+  rng = random.Random(seed)
+  sign = 1 if target_delta > 0 else -1
+  delta = abs(target_delta)
+
+  def _power_at(n_clusters: int) -> float:
+    hits = 0
+    for _ in range(n_replicates):
+      pairs, draw_ids = _resample_clusters(clusters, rng, m=n_clusters)
+      c_star = [c for c, _ in pairs]
+      p_star = [min(1.0, c + sign * delta) if sign > 0
+                else max(0.0, c + sign * delta) for c in c_star]
+      t_star = [1.0 if rng.random() < p else 0.0 for p in p_star]
+      result = paired_permutation_test_clustered(
+          c_star, t_star, draw_ids, n_perm=n_perm, seed=rng.randrange(2**31)
+      )
+      if result["p_value"] <= alpha:
+        hits += 1
+    return hits / n_replicates
+
+  multiplier = 1
+  power = _power_at(pilot_n_clusters * multiplier)
+  while power < power_target and multiplier < max_multiplier:
+    multiplier *= 2
+    power = _power_at(pilot_n_clusters * multiplier)
+  if power < power_target:
+    return {"required_n_clusters": None, "achieved_power": power,
+            "pilot_n_clusters": pilot_n_clusters}
+
+  lo_multiplier, hi_multiplier = multiplier // 2, multiplier
+  while hi_multiplier - lo_multiplier > 1:
+    mid = (lo_multiplier + hi_multiplier) // 2
+    mid_power = _power_at(pilot_n_clusters * mid)
+    if mid_power >= power_target:
+      hi_multiplier, power = mid, mid_power
+    else:
+      lo_multiplier = mid
+
+  return {
+      "required_n_clusters": pilot_n_clusters * hi_multiplier,
+      "achieved_power": power,
+      "pilot_n_clusters": pilot_n_clusters,
+  }
 
 
 def cluster_bootstrap_ci(

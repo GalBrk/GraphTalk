@@ -1,0 +1,71 @@
+{
+  "gemma4-e4b-think": {
+    "total": 0,
+    "by_style": {},
+    "by_task": {},
+    "by_condition": {}
+  },
+  "gemma4-12b-think": {
+    "total": 282,
+    "by_style": {
+      "zero_shot": 282
+    },
+    "by_task": {
+      "edge_count": 159,
+      "connected_nodes": 72,
+      "node_degree": 21,
+      "cycle_check": 21,
+      "edge_existence": 9
+    },
+    "by_condition": {
+      "filler": 54,
+      "clustering": 47,
+      "none": 44,
+      "rwse": 39,
+      "components": 35,
+      "degree": 35,
+      "all": 28
+    }
+  },
+  "qwen3-8b-think": {
+    "total": 49,
+    "by_style": {
+      "zero_shot": 49
+    },
+    "by_task": {
+      "edge_count": 28,
+      "node_degree": 9,
+      "connected_nodes": 6,
+      "edge_existence": 4,
+      "cycle_check": 2
+    },
+    "by_condition": {
+      "all": 9,
+      "filler": 8,
+      "components": 8,
+      "none": 7,
+      "clustering": 6,
+      "degree": 6,
+      "rwse": 5
+    }
+  },
+  "qwen3-14b-think": {
+    "total": 19,
+    "by_style": {
+      "zero_shot": 19
+    },
+    "by_task": {
+      "edge_count": 16,
+      "cycle_check": 3
+    },
+    "by_condition": {
+      "filler": 6,
+      "clustering": 3,
+      "all": 2,
+      "none": 2,
+      "rwse": 2,
+      "degree": 2,
+      "components": 2
+    }
+  }
+}

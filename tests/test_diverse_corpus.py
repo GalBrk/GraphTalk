@@ -12,6 +12,7 @@ than re-derived.
 import random
 
 import numpy as np
+import pytest
 
 from graphtalk import diverse_corpus
 from graphtalk import graphqa
@@ -94,6 +95,52 @@ def test_default_pool_unaffected_by_er_sparsity_param():
   assert [(alg, sorted(g.edges())) for alg, g in default] == (
       [(alg, sorted(g.edges())) for alg, g in explicit]
   )
+
+
+def test_algorithms_filter_restricts_pool_to_requested_algorithms():
+  pool = diverse_corpus.build_pool(30, algorithms=("er",))
+  assert len(pool) == 30
+  assert {alg for alg, _ in pool} == {"er"}
+
+
+def test_algorithms_filter_splits_count_across_the_filtered_list():
+  pool = diverse_corpus.build_pool(20, algorithms=("er", "ba"))
+  counts = {"er": 0, "ba": 0}
+  for algorithm, _ in pool:
+    counts[algorithm] += 1
+  assert sum(counts.values()) == 20
+  assert max(counts.values()) - min(counts.values()) <= 1
+
+
+def test_algorithms_filter_unknown_algorithm_raises():
+  with pytest.raises(ValueError, match="unknown algorithm"):
+    diverse_corpus.build_pool(10, algorithms=("not_an_algorithm",))
+
+
+def test_algorithms_filter_empty_tuple_raises():
+  with pytest.raises(ValueError, match="non-empty"):
+    diverse_corpus.build_pool(10, algorithms=())
+
+
+def test_algorithms_filter_default_none_matches_unfiltered_behavior():
+  default = diverse_corpus.build_pool(30, seed=42)
+  explicit_none = diverse_corpus.build_pool(30, seed=42, algorithms=None)
+  assert [(alg, sorted(g.edges())) for alg, g in default] == (
+      [(alg, sorted(g.edges())) for alg, g in explicit_none]
+  )
+
+
+def test_algorithms_filter_reproduces_the_same_er_rows_as_the_full_pool():
+  # A filtered algorithm must draw from the same seed offset it would have
+  # used unfiltered (ALGORITHMS.index, not the filtered list's position),
+  # so restricting to "er" alone reproduces exactly the "er" rows the full
+  # 7-algorithm pool would have produced -- not a different draw that
+  # happens to also be ER graphs.
+  full_pool = diverse_corpus.build_pool(70, seed=42)
+  full_er = [(alg, sorted(g.edges())) for alg, g in full_pool if alg == "er"]
+  er_only_pool = diverse_corpus.build_pool(10, seed=42, algorithms=("er",))
+  er_only = [(alg, sorted(g.edges())) for alg, g in er_only_pool]
+  assert full_er == er_only
 
 
 # --- make_row -----------------------------------------------------------

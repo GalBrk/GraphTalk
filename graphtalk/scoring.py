@@ -169,7 +169,7 @@ def _marker_tail(text: str) -> str | None:
   return found[-1].group(1).strip() if found else None
 
 
-def has_answer_marker(text: str) -> bool:
+def has_answer_marker(text: str | None) -> bool:
   """Whether `text` contains an explicit "answer is/answer:" marker.
 
   A diagnostic signal only. Most responses in this sweep state their answer as
@@ -177,8 +177,12 @@ def has_answer_marker(text: str) -> bool:
   does not by itself imply a truncated or non-terminating response -- see
   `graphtalk/analysis.py` for the length-outlier heuristic actually used to
   flag suspected non-termination beyond the labelled ground truth.
+
+  `None` (an overflow row whose generation was skipped -- see
+  `graphtalk/analysis.py::build_frame`) has no marker, same as any other
+  text without one.
   """
-  return _marker_tail(text) is not None
+  return text is not None and _marker_tail(text) is not None
 
 
 # "node 7"/"nodes 12" -- the queried node's own id, referenced by the same

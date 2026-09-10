@@ -21,6 +21,7 @@ import random
 
 import numpy as np
 
+from graphtalk import diverse_corpus
 from graphtalk import graphqa
 from graphtalk import models
 from graphtalk import node_naming
@@ -109,7 +110,8 @@ def build_diverse(count: int, conditions, styles, k_min: int, k_max: int,
                    seed: int = 1234, tasks=scoring.TASKS,
                    node_size_ranges=None,
                    er_min_sparsity: float = 0.0,
-                   er_max_sparsity: float = 1.0) -> list[dict]:
+                   er_max_sparsity: float = 1.0,
+                   algorithms=None) -> list[dict]:
   """Like `build`, but sources graphs from a balanced multi-algorithm pool
   (`diverse_corpus`) instead of the published (ER-only) zero_shot_test split.
 
@@ -118,10 +120,10 @@ def build_diverse(count: int, conditions, styles, k_min: int, k_max: int,
   the pool is what lets a later analysis compare per-algorithm success rate
   against a consistent graph set across tasks.
 
-  `node_size_ranges`/`er_min_sparsity`/`er_max_sparsity` pass straight through
-  to `diverse_corpus.build_pool` (same defaults, so omitting them reproduces
-  today's behavior exactly) -- see `main`'s `--xlarge`/`--er-min-sparsity`/
-  `--er-max-sparsity` flags.
+  `node_size_ranges`/`er_min_sparsity`/`er_max_sparsity`/`algorithms` pass
+  straight through to `diverse_corpus.build_pool` (same defaults, so omitting
+  them reproduces today's behavior exactly) -- see `main`'s `--xlarge`/
+  `--er-min-sparsity`/`--er-max-sparsity`/`--algorithms` flags.
 
   `graphtalk.diverse_corpus` is imported here, not at module level, so
   that everything else in this script stays importable even in a checkout
@@ -133,6 +135,7 @@ def build_diverse(count: int, conditions, styles, k_min: int, k_max: int,
   pool = diverse_corpus.build_pool(
       count, seed=seed, node_size_ranges=node_size_ranges,
       er_min_sparsity=er_min_sparsity, er_max_sparsity=er_max_sparsity,
+      algorithms=algorithms,
   )
   records = []
   for task in tasks:
@@ -368,6 +371,11 @@ def main() -> None:
                       help="--graph-source diverse only: add a 20-39 node "
                            "size bucket alongside the generator's default "
                            "5-19 node range, for a harder eval.")
+  parser.add_argument("--node-count", type=int, default=None,
+                      help="--graph-source diverse only: fix every graph in "
+                           "the pool at exactly this many nodes (mutually "
+                           "exclusive with --xlarge), for comparing results "
+                           "across specific sizes (e.g. 20/40/80).")
   parser.add_argument("--er-min-sparsity", type=float, default=0.0,
                       help="--graph-source diverse only: minimum ER edge "
                            "probability (only affects the 'er' algorithm "
@@ -376,6 +384,15 @@ def main() -> None:
                       help="--graph-source diverse only: maximum ER edge "
                            "probability (only affects the 'er' algorithm "
                            "in the pool).")
+  parser.add_argument("--algorithms", nargs="+", default=None,
+                      choices=list(diverse_corpus.ALGORITHMS),
+                      help="--graph-source diverse only: restrict the pool "
+                           "to these algorithms instead of all 7 (default: "
+                           "all 7, unchanged). Density (--er-min-sparsity/"
+                           "--er-max-sparsity) only affects 'er', so "
+                           "--algorithms er is how to spend the whole "
+                           "--count on graphs the density flags actually "
+                           "control, instead of wasting 6/7 of it.")
   args = parser.parse_args()
 
   if args.graph_source == "diverse" and args.node_naming != "integer":
@@ -387,21 +404,31 @@ def main() -> None:
         "--tasks reachability requires --graph-source diverse -- the "
         "published HF dataset has no reachability config to fetch"
     )
-  if (args.xlarge or args.er_min_sparsity or args.er_max_sparsity != 1.0
-      ) and args.graph_source != "diverse":
+  if (args.xlarge or args.node_count or args.er_min_sparsity
+      or args.er_max_sparsity != 1.0
+      or args.algorithms is not None) and args.graph_source != "diverse":
     raise ValueError(
-        "--xlarge/--er-min-sparsity/--er-max-sparsity require "
-        "--graph-source diverse"
+        "--xlarge/--node-count/--er-min-sparsity/--er-max-sparsity/"
+        "--algorithms require --graph-source diverse"
     )
+  if args.xlarge and args.node_count:
+    raise ValueError("--xlarge and --node-count are mutually exclusive")
   if args.graph_source == "diverse":
-    node_size_ranges = (
-        {"xlarge": np.arange(20, 40)} if args.xlarge else None
-    )
+    if args.xlarge:
+      node_size_ranges = {"xlarge": np.arange(20, 40)}
+    elif args.node_count:
+      node_size_ranges = {"fixed": np.array([args.node_count])}
+    else:
+      node_size_ranges = None
     records = build_diverse(args.count, args.conditions, args.styles,
                             args.k_min, args.k_max, tasks=args.tasks,
                             node_size_ranges=node_size_ranges,
                             er_min_sparsity=args.er_min_sparsity,
-                            er_max_sparsity=args.er_max_sparsity)
+                            er_max_sparsity=args.er_max_sparsity,
+                            algorithms=(
+                                tuple(args.algorithms)
+                                if args.algorithms else None
+                            ))
   elif args.graph_source == "stratified":
     records = build_stratified(args.count, args.conditions, args.styles,
                                args.split, args.cache, args.k_min, args.k_max,

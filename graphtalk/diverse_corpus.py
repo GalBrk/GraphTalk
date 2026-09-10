@@ -34,11 +34,13 @@ def build_pool(
     node_size_ranges: dict | None = None,
     er_min_sparsity: float = 0.0,
     er_max_sparsity: float = 1.0,
+    algorithms: tuple[str, ...] | None = None,
 ) -> list[tuple[str, nx.Graph]]:
   """`count` canonical graphs, spread as evenly as possible across
-  `ALGORITHMS` (a `count` not a multiple of 7 puts the remainder on the
-  first few algorithms in `ALGORITHMS` order, and a `count` smaller than 7
-  leaves the rest at zero -- both are fine, not edge cases to avoid).
+  `algorithms` (default: all of `ALGORITHMS`) -- a `count` not a multiple
+  of `len(algorithms)` puts the remainder on the first few algorithms in
+  `algorithms` order, and a `count` smaller than `len(algorithms)` leaves
+  the rest at zero -- both are fine, not edge cases to avoid.
 
   One `graph_generators.generate_graphs` call per algorithm rather than
   one shared call, since the vendored function takes a single `algorithm`
@@ -47,14 +49,20 @@ def build_pool(
   coincidentally share the same size/sparsity sequence -- determinism
   only requires `build_pool(count, seed)` itself to be a pure function of
   its inputs, not that sub-calls be independently seeded in any special
-  way.
+  way. The seed offset is `ALGORITHMS.index(algorithm)`, not the filtered
+  list's position, so restricting `algorithms` never changes the seed a
+  surviving algorithm draws from -- `build_pool(count, algorithms=("er",))`
+  reproduces exactly the `"er"` rows `build_pool(count)` would have drawn.
 
   `node_size_ranges` and `er_min_sparsity`/`er_max_sparsity` pass straight
   through to `graph_generators.generate_graphs` (same defaults, so omitting
   them reproduces today's behavior exactly). `er_min_sparsity`/
   `er_max_sparsity` only affect the `"er"` algorithm -- the vendored
   generator consumes them nowhere else, so the other six algorithms in the
-  pool are unaffected by them.
+  pool are unaffected by them. `algorithms` is the filter that makes this
+  matter in practice: density is only really controllable for `"er"`, so a
+  density sweep wants `algorithms=("er",)` rather than spending 6/7 of
+  `count` on algorithms `er_min_sparsity`/`er_max_sparsity` can't touch.
 
   Canonicalized the same way `shortcuts.generate_corpus` canonicalizes its
   own generated graphs, for the same reason: the vendored encoder's output
@@ -67,14 +75,24 @@ def build_pool(
   # `shortcuts.generate_corpus`'s own lazy import, same rationale.
   from talk_like_a_graph import graph_generators  # pylint: disable=g-import-not-at-top
 
-  base, remainder = divmod(count, len(ALGORITHMS))
+  algorithms = algorithms or ALGORITHMS
+  invalid = set(algorithms) - set(ALGORITHMS)
+  if invalid:
+    raise ValueError(
+        f"unknown algorithm(s): {sorted(invalid)}; known: {list(ALGORITHMS)}"
+    )
+  if not algorithms:
+    raise ValueError("algorithms must be non-empty")
+
+  base, remainder = divmod(count, len(algorithms))
   pool = []
-  for index, algorithm in enumerate(ALGORITHMS):
+  for index, algorithm in enumerate(algorithms):
     n = base + (1 if index < remainder else 0)
     if n == 0:
       continue
     graphs = graph_generators.generate_graphs(
-        n, algorithm, directed=False, random_seed=seed + index,
+        n, algorithm, directed=False,
+        random_seed=seed + ALGORITHMS.index(algorithm),
         node_size_ranges=node_size_ranges,
         er_min_sparsity=er_min_sparsity,
         er_max_sparsity=er_max_sparsity,
