@@ -2,7 +2,7 @@
 #SBATCH --partition=killable
 #SBATCH --account=gpu-research
 #SBATCH --gpus=1
-#SBATCH --constraint="a6000|l40s|h100"
+#SBATCH --constraint="[a6000|l40s|h100]"
 #SBATCH --cpus-per-task=8
 # Sized to hold the largest checkpoint in the page cache the warm-up below fills:
 # 29.6 GB for Qwen3-14B, plus the loader's buffers. The weights land on the GPU
@@ -32,6 +32,20 @@
 # match while --partition is `killable`. To use them, override the partition:
 #   sbatch --partition=gpu-h100-killable --constraint=h100 cluster/sweep.sbatch qwen3-14b
 #
+# The default --constraint below is the 48 GB tier (a6000|l40s|h100), sized for
+# the largest model in graphtalk/models.py (min_vram_gb=48). A model with a
+# smaller min_vram_gb can also run on the Ampere 24 GB tier -- same generation
+# as a6000, bf16 tensor cores, just less VRAM -- which is a much bigger, often
+# much less contended pool (`killable` has 2 a6000 nodes and up to 6 l40s nodes
+# vs. 3 a5000 + 7 geforce_rtx_3090 nodes). Override --constraint (and size
+# --mem down to the checkpoint, not the 64G default) for such a model:
+#   sbatch --constraint="a5000|geforce_rtx_3090|a6000|l40s|h100" --mem=16G \
+#       cluster/sweep.sbatch qwen3-1.7b
+# Deliberately excludes geforce_rtx_2080 and the DGX v100/quadro nodes: Turing
+# and Volta lack bf16 tensor cores, so `device_map="auto"` would place all or
+# part of the model on CPU there -- silently, per the driver check below, not
+# with an error. cluster/run_size_sweep.sh applies this override already.
+#
 # `killable` is preemptible, so this job can be stopped and requeued at any
 # moment. run_sweep.py appends to its output and skips work already present, so a
 # requeue resumes rather than restarting -- which is why --out must be a stable
@@ -58,16 +72,24 @@ if [[ ! -f "$PROMPTS" ]]; then
   exit 1
 fi
 
+# Absolute path for runs directory to ensure correct permissions and storage location
+RUNS_DIR="/home/dcor/avivyossef/inbal/GraphTalk/runs"
+
+TASK_DIR="${GRAPHTALK_TASK_DIR:-}"
+if [[ -n "$TASK_DIR" ]]; then
+  RUNS_DIR="${RUNS_DIR}/${TASK_DIR}"
+fi
+
 # A smoke test writes to its own file. Sharing the sweep's output would make its
 # rows count as done, so a smoke run that revealed a broken chat template would
 # leave twenty bad generations that the full sweep then skips.
-OUT="runs/${MODEL}.jsonl"
+OUT="${RUNS_DIR}/${MODEL}.jsonl"
 EXTRA=()
 if [[ -n "$LIMIT" ]]; then
   # Straight into the archive: a smoke run is never part of the sweep, and
   # runs/archive/ is excluded by directory rather than by the `smoke-` prefix.
-  mkdir -p runs/archive
-  OUT="runs/archive/smoke-${MODEL}.jsonl"
+  mkdir -p "${RUNS_DIR}/archive"
+  OUT="${RUNS_DIR}/archive/smoke-${MODEL}.jsonl"
   EXTRA=(--limit "$LIMIT")
 fi
 
@@ -127,6 +149,11 @@ if [[ -n "$BATCH_SIZE" ]]; then
   EXTRA+=(--batch-size "$BATCH_SIZE")
 fi
 
+MAX_NEW_TOKENS_OVERRIDE="${GRAPHTALK_MAX_NEW_TOKENS:-}"
+if [[ -n "$MAX_NEW_TOKENS_OVERRIDE" ]]; then
+  EXTRA+=(--max-new-tokens "$MAX_NEW_TOKENS_OVERRIDE")
+fi
+
 # Which env, and therefore which half of the cluster is reachable.
 #
 # The default is the cu130 build the first sweep was generated with. It needs
@@ -144,13 +171,15 @@ fi
 # Irrelevant on `killable`, which has no B200, but it rules the env out if this
 # ever moves to gpu-b200.
 GRAPHTALK_ENV="${GRAPHTALK_ENV:-graphtalk}"
+set +u
 source /home/dcor/galbarak2/anaconda3/etc/profile.d/conda.sh
 conda activate "/home/dcor/galbarak2/conda_envs/${GRAPHTALK_ENV}"
+set -u
 echo "env: $GRAPHTALK_ENV"
 
 # Models are pre-fetched on the login node; compute nodes may have no outbound
 # network, and a job that tries to download blocks until it times out.
-export HF_HOME=/home/dcor/galbarak2/hf_cache
+export HF_HOME=/home/dcor/avivyossef/inbal/GraphTalk/.cache
 export HF_HUB_OFFLINE=1
 # Reclaims fragmented VRAM, which is what pushed the SlidesGen 12B run over the
 # edge on a 48 GB card.
@@ -159,7 +188,7 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 cd "$SLURM_SUBMIT_DIR"
 export PYTHONPATH="$SLURM_SUBMIT_DIR"
 
-mkdir -p runs out
+mkdir -p "$RUNS_DIR" out
 nvidia-smi
 
 # Nothing left to do? Exit before warming. A chain is submitted with more links
@@ -223,7 +252,7 @@ print(f"FATAL: torch {torch.__version__} sees no usable CUDA device on this node
       file=sys.stderr)
 print("The driver is probably too old for this build; check `nvidia-smi` and",
       file=sys.stderr)
-print("exclude the 535.x nodes (n-802, n-803, n-804).", file=sys.stderr)
+print("exclude the 535.x nodes (n-802, n-803, n-804, n-501).", file=sys.stderr)
 sys.exit(1)
 PY
 

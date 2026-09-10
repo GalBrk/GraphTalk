@@ -82,6 +82,9 @@ MODELS = {
                   "AutoModelForImageTextToText", 24),
         ModelSpec("gemma4-12b", "google/gemma-4-12B-it", "gemma4", "12B",
                   "AutoModelForImageTextToText", 48),
+        ModelSpec("qwen3-1.7b", "Qwen/Qwen3-1.7B", "qwen3", "1.7B",
+                  "AutoModelForCausalLM", 8,
+                  {"enable_thinking": False}, {"zero_shot": 8192}, 32768),
         ModelSpec("qwen3-8b", "Qwen/Qwen3-8B", "qwen3", "8B",
                   "AutoModelForCausalLM", 24,
                   {"enable_thinking": False}),
@@ -99,6 +102,13 @@ MODELS = {
         # the two arms in a file nothing could unmix afterwards.
         #
         # THINK_MAX_NEW_TOKENS is measured, not guessed; see below.
+        # Own override rather than the shared THINK_MAX_NEW_TOKENS: this key
+        # is sized for the 20/40/80-node sweep (up to ~4x the node count the
+        # 8192 placeholder was set for), so it needs more headroom than the
+        # other -think specs without changing their still-unmeasured budget.
+        ModelSpec("qwen3-1.7b-think", "Qwen/Qwen3-1.7B", "qwen3", "1.7B",
+                  "AutoModelForCausalLM", 8,
+                  {"enable_thinking": True}, {"zero_shot": 16384}, 32768),
         ModelSpec("gemma4-e4b-think", "google/gemma-4-E4B-it", "gemma4", "E4B",
                   "AutoModelForImageTextToText", 24,
                   {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),

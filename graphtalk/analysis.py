@@ -379,7 +379,13 @@ def build_frame(
         "shortcut_score": shortcuts_by_cell.get(
             (record["task"], record["condition"])
         ),
-        "response_len_chars": len(record["response"]),
+        # None on an overflow row (generation skipped -- see run_sweep.py),
+        # not 0: an empty response and a never-attempted one are different
+        # facts, and collapsing them would make overflow rows read as
+        # zero-length outputs instead of the missing data they are.
+        "response_len_chars": (
+            len(record["response"]) if record["response"] is not None else None
+        ),
         "failure_type": _failure_type(non_terminating, score),
     })
   frame = pd.DataFrame(rows)
