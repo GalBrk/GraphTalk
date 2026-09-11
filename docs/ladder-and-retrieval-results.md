@@ -371,6 +371,81 @@ which is exactly the missing piece below.
    could safely go for the three ceiling models, or whether their true
    context window would even accommodate one.
 
+## Missing runs vs. tested-no-impact, and what to test next
+
+Gemma (`gemma4-12b`, `gemma4-e4b(-think)`) has never left ceiling anywhere in
+this project. Before treating that as a settled null, it's worth being
+precise about *why* each axis has no data — most of the gap is missing runs,
+not a tested-and-confirmed non-effect:
+
+| axis | status | evidence |
+|---|---|---|
+| Mean degree `k̄` up to 16, `n` up to 300 (this ladder) | **tested — genuinely no impact** | all three gemma arms 900/900 rows, ceiling (0.98-1.00) at every one of the 18 rungs |
+| Mean degree `k̄` past 16 (17-24+) | **missing runs** | never built for *any* model — `graphtalk/ladder.py`'s 45-cell screen validated feasibility up to `k̄=24` but no rung past 16 was ever generated |
+| Size/density sweeps, `ec500`, `cc500` clean-condition experiments | **missing runs, gemma-specific** | confirmed by listing `runs/` directly — these families exist only for `qwen3-0.6b/1.7b/8b(-think)`. Zero files for any gemma arm, despite being exactly the experiments that found `qwen3-1.7b`'s and `qwen3-8b`'s breaking points |
+| `xlarge`/dense/`reachability` graphs (`--graph-source diverse`, `docs/difficulty-scaling.md`) | **missing runs — for everyone** | built specifically because gemma sits at ceiling, but no `.hard.`-tagged run file exists for *any* model — dry-run-validated only, zero GPU-hours spent |
+| Reading limit / retrieval probe | **missing runs, partially** | `gemma4-12b`/`gemma4-e4b-think` have it (no degradation found to ~3,742 tokens — a lower bound, not a limit); `gemma4-e4b` (plain) and `gemma4-12b-think` have zero retrieval data |
+| `gemma4-12b-think`'s non-termination vs. graph difficulty | **missing runs** | this arm has no ladder or retrieval file at all — only the original small-graph sweep, where it showed 22.4% non-termination |
+| Primer content on small (5-19 node) graphs | **tested — small real effect found** | `components`/`filler` significantly *hurt* `gemma4-12b` (−2.6pp/−2.9pp, `analysis/README.md`) even there — real, but far short of breaking ceiling |
+| Alternate graph topology (BA/WS/SBM/star/path vs. ER) | **not missing — deliberately rejected** | a 72-cell family-contrast grid was proposed and decided against: swapping generator families moves the blind-guess baseline by up to 6x on its own, swamping any primer effect |
+
+**What to test, ranked:**
+
+1. **Extend the ladder's `k̄` past 16, toward 20-24.** Cheapest and most
+   directly motivated — the one mechanism already proven to break ceiling
+   models (`qwen3-8b`/`qwen3-14b`/`qwen35-2b` all left ceiling once `k̄`
+   reached 12-16), and gemma (12B) being larger than every model that needed
+   `k̄=16` (max 8B) makes "it just needs a higher `k̄`" plausible before
+   reaching for a different mechanism. Candidate cells, screened with
+   `graphtalk.cell_screen.screen_cell` (structural blind/silent gates only —
+   `maj_base<=0.25`, `clu_sd_rewired>=0.10` — no GPU, no reading-limit check
+   since gemma's is unmeasured) and costed with the token fit from "Token
+   cost vs. density" above:
+
+   | n | k̄ | density | maj_base | clu_sd (rewired) | verdict | ~tokens |
+   |---|---|---|---|---|---|---|
+   | 40 | 20 | 0.513 | 0.178 | 0.116 | pass | 3,381 |
+   | 60 | 20 | 0.339 | 0.158 | 0.122 | pass | 5,404 |
+   | 80 | 20 | 0.253 | 0.147 | 0.130 | pass | 7,426 |
+   | 120 | 20 | 0.168 | 0.123 | 0.136 | pass | 11,472 |
+   | 60 | 24 | 0.407 | 0.175 | 0.113 | pass | 6,383 |
+   | 80 | 24 | 0.304 | 0.136 | 0.102 | pass | 8,733 |
+   | 120 | 24 | 0.202 | 0.111 | 0.125 | pass | 13,432 |
+   | 160 | 24 | 0.151 | 0.110 | 0.130 | pass | 18,130 |
+
+   All eight pass structurally and stay well under the 32,768-token Qwen
+   cap — a conservative stand-in since gemma's own cap is unmeasured. **This
+   requires a code change before it can be run**, not just a script flag:
+   `scripts/build_ladder.py --rungs` only *filters* the existing
+   `graphtalk/ladder.py::RUNGS` tuple, it can't add a cell that isn't already
+   in it. Adding rungs means extending `RUNGS` itself (a shared constant
+   `tests/test_ladder.py` checks against `cell_screen`), then:
+   ```bash
+   PYTHONPATH=. python scripts/build_ladder.py --stage screen --conditions none \
+       --rungs n40k20,n60k20,n80k24,n120k24 \
+       --out prompts.ladder_screen_k20plus.jsonl
+   ```
+   (picking 4 of the 8 as a first, cheaper screen before committing to all
+   eight — same "cheap screen before expensive rewire" discipline the
+   existing ladder already follows).
+2. **`gemma4-12b-think`'s ladder screen**, same cheap `none`-only pass —
+   tests whether its known non-termination pathology gets worse with graph
+   difficulty. The biggest known gemma-accuracy driver currently has zero
+   data on this axis.
+3. **Extend the retrieval probe** for `gemma4-e4b`/`gemma4-12b-think`
+   (missing entirely) and past `k=640` for `gemma4-12b`/`gemma4-e4b-think`
+   (lower bound only) — needed regardless of which structural test runs, to
+   know whether a harder rung is even readable for these two.
+4. **The `reachability` task on `xlarge`/dense graphs** — lower priority, but
+   highest information-per-test if the above come back null again: the only
+   genuinely different *kind* of hard (multi-hop reasoning vs. counting)
+   ever built in this repo, never run on anyone.
+5. **Size/density/`ec500` sweeps on gemma** — ranked last. The repo's own
+   "mechanism, corrected" finding (`docs/graph-corpus-status.md`) is that
+   these are just `k̄`/edge-count proxies the ladder was built to replace
+   with a cleaner design, so this would likely just re-discover what #1
+   tells you more directly.
+
 ## Data completeness caveat
 
 Two of the newer ladder files are from apparently-unfinished generation jobs,
