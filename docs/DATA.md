@@ -81,6 +81,30 @@ Because `model` is on every row, **sharded files need no reassembly**:
 shards correctly. Shard filenames are bookkeeping for resumable jobs, not
 meaningful divisions of the data.
 
+### The ladder/retrieval/rewire families are a different shape
+
+`runs/<model>.ladder_screen.jsonl`, `.retrieval_locate.jsonl`, `.rewire_shared.jsonl`,
+and `.rewire_extra.jsonl` (`docs/ladder-and-rewiring.md`) share the same file-level
+schema above but not the same *values*:
+
+- `instance_id` is not `"<task>/<index>"`. `ladder_screen`/`rewire_shared`/
+  `rewire_extra` use `"node_degree/n<N>k<k̄>/<level>/<i>"` (`<level>` is `base`
+  for the ladder screen, `low`/`base`/`high` -- the rewiring intensity -- for
+  the rewire files). `retrieval_locate` uses
+  `"retrieval/k<statement count>/pos<insertion point>/<magnitude>/<i>"` instead.
+- `condition` includes `retrieval` (the retrieval-locate probe), which is not one
+  of the seven primer conditions above.
+- Every row also carries `overflow` (bool): true when the prompt plus the
+  generation budget wouldn't fit the model's context window, so the row was
+  **skipped before generating anything** -- the opposite case from `hit_cap`,
+  which means generation ran and used the full budget. Conflating the two
+  once misread 35 skipped rows as truncated output; see
+  `graphtalk/ladder.py`'s `context_headroom` and `tests/test_ladder.py`.
+
+These files are **not excluded from a `runs/*.jsonl` glob** (see the "Scoring
+them" gotcha in `runs/README.md`), so score them with `scripts/analyze_ladder.py`
+/ `scripts/analyze_rewiring_sweep.py`, not `score_sweep.py`.
+
 ## `shortcuts.json`
 
 A flat object keyed `"<task>/<condition>"` with a float score in [0, 1]: what a
