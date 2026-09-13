@@ -140,6 +140,19 @@ MODELS = {
                   "AutoModelForCausalLM", 8,
                   {"enable_thinking": False}),
 
+        # The next rung up the same within-family ladder (0.6B -> 1.7B -> 4B ->
+        # 8B -> 14B), rather than jumping straight to 8B where the headroom is
+        # already gone on five of six tasks. Same loader and chat setup as every
+        # other Qwen3 spec above -- unlike `qwen35-2b` below, this is still the
+        # Qwen3 architecture, so it costs no cross-generation confound.
+        #
+        # ~8 GB of bf16 weights (4.02B params, verified via the HF API).
+        # `min_vram_gb` is an estimate scaled from the 1.7B/8B specs' measured
+        # figures, not yet measured on this cluster the way those are.
+        ModelSpec("qwen3-4b", "Qwen/Qwen3-4B", "qwen3", "4B",
+                  "AutoModelForCausalLM", 16,
+                  {"enable_thinking": False}),
+
         # A newer generation, and deliberately a *pair* candidate rather than a
         # fifth unpaired point: Qwen3.5 (Feb 2026) is a different family from
         # Qwen3, so one size of it buys no within-family comparison. This spec
@@ -203,6 +216,9 @@ MODELS = {
                   {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
         ModelSpec("qwen3-1.7b-think", "Qwen/Qwen3-1.7B", "qwen3", "1.7B",
                   "AutoModelForCausalLM", 8,
+                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
+        ModelSpec("qwen3-4b-think", "Qwen/Qwen3-4B", "qwen3", "4B",
+                  "AutoModelForCausalLM", 16,
                   {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
         ModelSpec("qwen35-2b-think", "Qwen/Qwen3.5-2B", "qwen35", "2B",
                   "AutoModelForImageTextToText", 12,
