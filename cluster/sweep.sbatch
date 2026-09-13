@@ -127,6 +127,16 @@ if [[ -n "$BATCH_SIZE" ]]; then
   EXTRA+=(--batch-size "$BATCH_SIZE")
 fi
 
+# Override the spec's max_new_tokens budget, e.g. for a prompt file that mixes
+# in edge_count at a density/size where the default 2048 truncates it:
+#   GRAPHTALK_MAX_NEW_TOKENS=8192 sbatch cluster/sweep.sbatch <model>
+# Applies to every row in this job, not just the ones that need it -- harmless
+# for short-answer tasks since generation still stops at EOS, not at the cap.
+MAX_NEW_TOKENS="${GRAPHTALK_MAX_NEW_TOKENS:-}"
+if [[ -n "$MAX_NEW_TOKENS" ]]; then
+  EXTRA+=(--max-new-tokens "$MAX_NEW_TOKENS")
+fi
+
 # Which env, and therefore which half of the cluster is reachable.
 #
 # The default is the cu130 build the first sweep was generated with. It needs
