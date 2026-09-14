@@ -22,7 +22,9 @@ level, from the same checkpoint.
 
 `talk_like_a_graph/` is a vendored copy of Google Research's reference
 implementation. See [talk_like_a_graph/UPSTREAM.md](talk_like_a_graph/UPSTREAM.md)
-for the exact upstream commit and our local changes.
+for the exact upstream commit and our local changes. For the fuller map of
+what's on `main` and why — including how the n=40 work relates to the paper's
+own 5-19 node benchmark — see [docs/repo-scope.md](docs/repo-scope.md).
 
 `graphtalk/` is this project's own package: `graphqa.py` recovers a networkx
 graph from a GraphQA row and recomputes its gold answer, `primers.py` holds the
