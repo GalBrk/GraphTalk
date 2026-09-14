@@ -49,8 +49,7 @@ default `~/.cache/pip` would eat most of the 6 GB home quota.
 `pip install -e` works normally here; the `PYTHONPATH=.` prefix in the top-level
 README is a macOS-only workaround for a broken editable install. Verify with
 `pytest -q --ignore=tests/test_hierarchical_model.py
---ignore=tests/test_mixed_models.py`, which must report **613 passed** — a
-different number means the env is wrong, not the code. The two ignores are
+--ignore=tests/test_mixed_models.py`. The two ignores are
 required, not tidiness: those files import `statsmodels`/`pymc`, which neither
 `conda_envs/graphtalk` nor `conda_envs/graphtalk-cu126` has, and a missing
 import at module scope aborts *collection* so a bare `pytest -q` reports zero
