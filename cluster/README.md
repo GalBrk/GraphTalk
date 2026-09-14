@@ -508,8 +508,7 @@ them and add links to the chain rather than assuming three is enough.
   Turing and Volta have no bf16 tensor cores, so `device_map="auto"` would
   silently place all or part of the model on CPU there rather than erroring —
   the same failure shape as the pre-580-driver nodes above, just from a
-  different cause. `cluster/run_size_sweep.sh` (the qwen3-1.7b node-size
-  sweep) already applies this override.
+  different cause.
 
 ## Preemption
 
