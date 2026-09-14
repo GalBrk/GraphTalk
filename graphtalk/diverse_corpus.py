@@ -75,7 +75,7 @@ def build_pool(
   # `shortcuts.generate_corpus`'s own lazy import, same rationale.
   from talk_like_a_graph import graph_generators  # pylint: disable=g-import-not-at-top
 
-  algorithms = algorithms or ALGORITHMS
+  algorithms = ALGORITHMS if algorithms is None else algorithms
   invalid = set(algorithms) - set(ALGORITHMS)
   if invalid:
     raise ValueError(
