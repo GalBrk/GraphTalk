@@ -211,10 +211,10 @@ def test_no_task_behavior_is_unaffected_by_the_task_column_existing():
   result, even when the report happens to carry a `task` column (e.g. a
   mixed pooled+per-task report)."""
   report = pd.DataFrame([_report_row(
-      delta=0.1, mde_delta=0.2, bh_significant=False,
+      delta=0.1, mde_delta=0.2, mde_realized_diff=0.15, bh_significant=False,
       bh_significant_global=False, task=None,
   )])
   result = rc.recommend(report)
   row = result.iloc[0]
   assert row["skip_reason"] is None
-  assert row["mde_used"] == pytest.approx(0.2)
+  assert row["mde_used"] == pytest.approx(0.15)
