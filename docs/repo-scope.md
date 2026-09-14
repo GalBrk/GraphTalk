@@ -94,23 +94,19 @@ Three linked pieces, documented in full in `docs/ladder-and-rewiring.md` and
 separately, only for rungs the first two passes have shown are valid for that
 model.
 
-## Two size/density tools, not one
+## Why n=40, not a size sweep
 
-Two independent tools both build density-varying prompt sets and score them,
-at different granularity, for different questions — neither supersedes the
-other:
-
-- **`scripts/build_size_sweep.py` + `scripts/score_density_sweep.py`** — the
-  fixed-size sweep above: one node count (`n=40`), a handful of pinned density
-  levels, full task/condition coverage. This is the canonical n=40 experiment.
-- **`scripts/size_screen.py` + `scripts/score_density_size_grid.py`**
-  (`cluster/run_size_sweep.sh`, `cluster/run_density_size_sweep.sh`) — a
-  broader, two-stage "scout then full" exploration across a **2D node-count ×
-  density grid**, `none`-only and cheap first, then deep-dived on whichever
-  cells survive a relaxed screen (`graphtalk/range_search.py`). Answers a
-  different question: how accuracy varies jointly across size *and* density,
-  not just at one fixed point. See `docs/density-size-range-search.md` and
-  `docs/node_degree-density-and-size.md` for what it's found so far.
+A separate size-only sweep (`cluster/run_size_sweep.sh` +
+`scripts/size_screen.py`, plus a never-executed 2D node-count × density grid,
+`scripts/score_density_size_grid.py`/`cluster/run_density_size_sweep.sh`) was
+tried and then removed from `main`. Neither served the project's actual
+question: the size sweep's own primer-ranking result was an explicit
+non-finding ("no primer is consistently better than `none` at any size...
+likely noise"), and the ladder/rewiring design above already solves the
+underlying problem those tools were reaching for — locating a valid operating
+point — more rigorously, with a real executed primer test at the end rather
+than an unrun exploratory grid. `docs/plans/finding-graphs-that-make-primer-effects-measurable.md`
+has the fuller design history, marked superseded at its top.
 
 ## Significance-testing fixes
 
@@ -145,9 +141,13 @@ parallel without ever merging into each other:
 - `small-model-suite-and-primer-power` — the qwen3-4b model spec and the
   canonical n=40 density sweep.
 - `statistical-significance` — the three bug fixes above.
-- `analyzing-graph-features` — the 2D size×density grid tooling, plus a
-  `graphtalk/significance.py` extension (`required_n_closed_form`,
-  `required_sample_size_clustered`) for prospective sample-size planning.
+- `analyzing-graph-features` — a `graphtalk/significance.py` extension
+  (`required_n_closed_form`, `required_sample_size_clustered`) for
+  prospective sample-size planning, and a real pre-existing bug fix in
+  `graphtalk/diverse_corpus.py`'s `build_pool` (an explicit empty
+  `algorithms` tuple silently fell back to the default instead of raising).
+  Its size/density grid tooling was tried and removed — see "Why n=40, not a
+  size sweep" above.
 
 A fifth branch, `nitzan`, carried no unique content (verified: zero diff
 against its own merge-base with `main`) and was retired without needing to
