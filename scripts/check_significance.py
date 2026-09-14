@@ -996,7 +996,7 @@ def _report_exact_per_task(
         [perm["p_value"] for _, perm, _, _ in group_rows], q=args.q
     )
     for (condition, perm, boot, is_derived), sig in zip(group_rows, reject):
-      ci = f"[{boot['ci_low']:+.3f}, {boot['ci_high']:+.3f}]"
+      ci = _format_ci(boot["ci_low"], boot["ci_high"], boot["n_discordant"])
       print(f"    {condition:<12}{perm['n_clusters']:>11}"
             f"{perm['observed_diff']:>+10.3f}{ci:>22}"
             f"{perm['p_value']:>10.4f}  {'yes' if sig else 'no'}")
