@@ -1,5 +1,15 @@
 # Finding the graphs that make primer effects measurable
 
+> **Superseded.** The realized version of this plan is the ladder/rewiring
+> design (`docs/ladder-and-rewiring.md`) — degree-preserving rewiring at a
+> screened rung, not the grid-search infrastructure this brief describes.
+> `graphtalk/range_search.py`, `scripts/score_density_size_grid.py`, and
+> `cluster/run_density_size_sweep.sh` (the "Smart Hybrid" grid this brief
+> reused) were removed from `main`: the grid was never actually run, and the
+> ladder design already solves the same problem (finding a valid operating
+> point) more rigorously, with a real executed primer test at the end. Kept
+> here for the design history, not as a live how-to.
+
 > Self-contained brief. Repo: `C:\year3\ml-with-graphs\final\GraphTalk`, branch `main`.
 > Read `CLAUDE.md` first. This merges two earlier plans: the "Smart Hybrid" grid search
 > (whose infrastructure is already built and is reused as-is) and a structural-manipulation
