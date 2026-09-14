@@ -68,6 +68,25 @@ verbatim (shortcut bar 1.00). `node_degree` with
 `{none, components, clustering, filler}` is the one cell already validated
 clean at this size.
 
+**GoT-naming replication of the `degree`/`node_degree` shortcut cell.**
+`origin/got-degree-replication` re-ran `qwen3-8b`'s `none`-vs-`degree`
+primer effect on `node_degree` with GoT node names instead of integers, at
+`--count 500` on the small published-corpus graphs (see
+`analysis/confirmatory_got_degree.json`). `scripts/build_size_sweep.py --node-naming`
+(added for this) replicates the same design over the n=40 graphs above —
+same seeds/graphs as `prompts.densfull40.jsonl`, only the rendering and the
+condition/task scope differ:
+
+```bash
+PYTHONPATH=. python scripts/build_size_sweep.py --sizes 40 --densities 0.10 0.20 0.35 0.50 --count 100 \
+    --conditions none degree --tasks node_degree --node-naming got \
+    --out prompts_got.densfull40.degree.jsonl
+```
+
+Score with `scripts/score_density_sweep.py` as above — `node_degree` isn't
+the task `docs/DATA.md` flags as corrupted by GoT naming (that's
+`connected_nodes` only), so no desubstitution step is needed here.
+
 ## The ladder, retrieval, and rewiring design
 
 Three linked pieces, documented in full in `docs/ladder-and-rewiring.md` and

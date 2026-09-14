@@ -136,6 +136,14 @@ sets both env vars for you:
 cluster/submit_sweep.sh --node-naming got cluster/sweep.sbatch gemma4-12b
 ```
 
+`scripts/build_size_sweep.py` (the n=40+ density sweep, see
+`docs/repo-scope.md`'s "canonical n=40 experiment") takes the same
+`--node-naming got` flag, for the identical graphs with GoT names instead of
+node integers. `GOT_NAMES` covers 40 characters (20 vendored + 20 added in
+`graphtalk/node_naming.py`, same additive-override pattern as the `Cat` ->
+`Catelyn` fix above) specifically so it reaches every node at that size;
+`build_name_map` still raises past however many names are defined.
+
 Every other `sbatch` flag/positional passes straight through unchanged, so
 this is a drop-in replacement for the word `sbatch` in any of the invocations
 above or in [cluster/README.md](cluster/README.md) — `--dry-run` prints what
