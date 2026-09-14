@@ -171,6 +171,28 @@ rebuilding (`load_rows()`'s cache makes that safe -- see `README.md#node-naming`
 Omit `--node-naming` (or pass `--node-naming integer`) for the plain scheme;
 nothing else about the wrapper's behavior changes.
 
+### Running the ladder/rewiring sweep
+
+The graph-structure ladder and the degree-preserving rewiring experiment
+(`docs/ladder-and-rewiring.md`) have their own driver, `cluster/run_ladder.sh`,
+rather than going through `sweep.sbatch` by hand:
+
+```bash
+cluster/run_ladder.sh              # submits the probe + ladder-screen stages, both arms
+cluster/run_ladder.sh --dry-run    # print what would submit; build and submit nothing
+STAGES=ladder MODELS=qwen3-1.7b cluster/run_ladder.sh   # one stage, one model
+```
+
+It builds `prompts.retrieval_locate.jsonl` / `prompts.ladder_screen.jsonl` if
+they don't already exist, sizes each model's GPU tier and `--mem` itself (see
+`tier_for()` in the script), and submits one job per model per stage --
+writing to `runs/<model>.retrieval_locate.jsonl` / `runs/<model>.ladder_screen.jsonl`
+(see `runs/README.md`). The rewiring stage is deliberately **not** included in
+the default run (`STAGES` defaults to `probe ladder`); it needs a rewire
+prompt file built separately with `scripts/build_ladder.py --stage rewire`,
+restricted to the rungs that cleared both screens for the models being run --
+read `docs/ladder-and-rewiring.md` before spending GPU time on it.
+
 ## Warm the page cache, or the job dies loading
 
 `sweep.sbatch` reads the whole checkpoint with `cat` before starting Python.

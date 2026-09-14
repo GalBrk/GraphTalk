@@ -184,7 +184,25 @@ echo "env: $GRAPHTALK_ENV"
 
 # Models are pre-fetched on the login node; compute nodes may have no outbound
 # network, and a job that tries to download blocks until it times out.
-export HF_HOME=/home/dcor/avivyossef/inbal/GraphTalk/.cache
+# Weights come from the lab-shared cache by default: it holds Qwen3-0.6B/1.7B/
+# 3.5-2B/8B/14B and gemma-4-E4B/12B, so nothing needs re-downloading.
+#
+# HF_HOME and HF_HUB_CACHE are set SEPARATELY and that split is load-bearing.
+# Pointing HF_HOME at the shared cache fails: huggingface_hub writes a `token`
+# file at HF_HOME's root, and the shared tree is read-only to everyone but its
+# owner, so every load dies with `PermissionError at .../token`. HF_HOME must
+# therefore be somewhere writable, with only HF_HUB_CACHE aimed at the shared
+# blobs. Benign `Ignoring corrupted tree cache file ... Permission denied`
+# warnings are expected from the same read-only-ness and are not an error.
+#
+# Override either for a checkout with its own weights:
+#   GRAPHTALK_HF_CACHE=/path/to/hub sbatch ... <model>
+#
+# Offline is NOT negotiable: the GPU nodes have no route to huggingface.co, so a
+# cache miss fails on the node after queueing rather than at submit time.
+export HF_HOME="${GRAPHTALK_HF_HOME:-/home/dcor/avivyossef/inbal/GraphTalk/.hf_home}"
+export HF_HUB_CACHE="${GRAPHTALK_HF_CACHE:-/home/dcor/galbarak2/hf_cache/hub}"
+mkdir -p "$HF_HOME"
 export HF_HUB_OFFLINE=1
 # Reclaims fragmented VRAM, which is what pushed the SlidesGen 12B run over the
 # edge on a 48 GB card.
@@ -280,7 +298,7 @@ PY
 # `cat` and not python: this has to happen before `import torch`, and the point
 # is the kernel's cache, not anything in the process.
 REPO="$(python -c "from graphtalk import models; print(models.MODELS['$MODEL'].repo_id)")"
-BLOBS="${HF_HOME}/hub/models--${REPO//\//--}/blobs"
+BLOBS="${HF_HUB_CACHE}/models--${REPO//\//--}/blobs"
 echo "warming page cache from $BLOBS"
 WARM_START=$SECONDS
 find "$BLOBS" -type f -size +1M -exec cat {} + > /dev/null
