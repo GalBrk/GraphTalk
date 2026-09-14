@@ -144,6 +144,33 @@ def assert_unique_pairing_key(frame: pd.DataFrame, keys: list[str]) -> None:
     )
 
 
+def graph_index(instance_id: str) -> str:
+  """The graph number out of an `"<task>/<index>"` `instance_id`.
+
+  The same index under different tasks is the *same graph* -- same nodes,
+  same edges, byte-identical encoding in `prompts.jsonl` -- asked a
+  different question. So this, not the whole `instance_id`, is the unit
+  rows can be correlated within, and every analysis that clusters or groups
+  by graph has to agree on it: `scripts/check_significance.py`'s
+  permutation/bootstrap cluster id, `graphtalk/mixed_models.py`'s GEE
+  grouping, and the validators that reconstruct either. It lives here, in
+  the package, so the script and the module can share one definition rather
+  than each splitting the string their own way and drifting into different
+  granularities -- which is how the two ended up disagreeing before.
+
+  Raises rather than guessing on an id that carries no task prefix: using
+  the whole string as the index would silently put one row in every group,
+  the exact no-op this exists to prevent.
+  """
+  _task, separator, index = instance_id.partition("/")
+  if not separator or not index:
+    raise ValueError(
+        f"instance_id {instance_id!r} has no '<task>/<index>' shape -- "
+        f"cannot derive the graph index that grouping needs"
+    )
+  return index
+
+
 def tagged_path(path: str, scheme: str) -> str:
   """`path` unchanged for `"integer"`; `.<scheme>` inserted before the
   extension otherwise -- `analysis/sweep_frame.csv` -> `.got.csv`, matching

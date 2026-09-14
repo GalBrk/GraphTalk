@@ -126,8 +126,12 @@ def main() -> None:
   qs = significance.benjamini_hochberg([r[8] for r in results], q=args.q) \
       if results else []
   for (model, n, m, ci, cg, d, lo, hi, p), sig in zip(results, qs):
+    # `lo`/`hi` are `None` where too few pairs disagreed for a percentile
+    # bootstrap to mean anything -- say so rather than printing a
+    # confident-looking interval; see cluster_bootstrap_ci_clustered.
+    interval = "n/a" if lo is None else f"[{lo:+.1%}, {hi:+.1%}]"
     print(f"{model:<20}{n:>7}{m:>7}{ci:>9.1%}{cg:>8.1%}{d:>+8.1%}"
-          f"{f'[{lo:+.1%}, {hi:+.1%}]':>20}{p:>8.4f}{'  *' if sig else '':>4}")
+          f"{interval:>20}{p:>8.4f}{'  *' if sig else '':>4}")
   if skipped:
     print("\nskipped:")
     for model, why in skipped:
