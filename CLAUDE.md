@@ -55,8 +55,7 @@ uv run --no-sync pytest -q --ignore=tests/test_hierarchical_model.py \
 ```
 
 Always use `--no-sync` — a plain `uv run` re-syncs to the default dependency set
-and uninstalls the optional `pipeline` extras. That command must report exactly
-**613 passed**; a different number means the env is wrong, not the code.
+and uninstalls the optional `pipeline` extras.
 
 The two ignored files import `statsmodels`, which is **not** installed in either
 `conda_envs/graphtalk` or `conda_envs/graphtalk-cu126` — the only envs this
