@@ -1648,6 +1648,110 @@ Two rules, both learned the hard way:
    -4.0 pp (p=0.11) and -5.0 pp (p=0.025). Report the non-termination rate
    alongside accuracy rather than letting it hide inside it.
 
+## The full-task, full-condition density sweep (2026-09-13)
+
+Every earlier density-at-fixed-n run above deliberately narrowed to one or two
+tasks and 2-4 conditions, for the reasons given in "Density at a fixed size"
+(truncation, degeneracy, contamination). This run does the opposite on
+purpose: **n=40, all 4 density levels {0.10, 0.20, 0.35, 0.50}, all 7
+conditions, all 6 tasks, 100 graphs/cell** -- 16,800 prompts
+(`prompts.densfull40.jsonl`), run against every model in the small-model
+ladder. Scored with the new `scripts/score_full_density_sweep.py`, which
+extends `score_density_sweep.py` with `task` as a third grouping key --
+pooling all 6 tasks into one (density, condition) cell, which the older
+script does, mixes `node_count` exact-match with `connected_nodes` F1 into a
+meaningless average.
+
+**Status:** `qwen3-1.7b` and `qwen3-1.7b-think` complete, 16,800/16,800 rows
+each (tag `densfull40`, `runs/<model>.densfull40.shard*of25.jsonl`).
+`qwen3-4b`/`qwen3-4b-think` in flight as of this writing (jobs 895667,
+895672+895673), same prompt file and tag. Two rows out of 16,800 duplicated
+across a preemption/resume boundary on the non-think arm (harmless,
+deduplicated by the scorer, see the disk-quota note below); everything else
+is a clean 1:1 with the prompt file.
+
+### Read the hit_cap rate before anything else this time
+
+| | non-think | think |
+|---|---|---|
+| overall | 4.8% | 15.4% |
+| `edge_count` | **22.4%** | **81.0%** |
+| `cycle_check` | 6.1% | 6.5% |
+| everything else | ≤0.8% | ≤2.5% |
+
+`edge_count` under thinking is mostly not data: several (density, condition)
+cells are **100% capped** at p>=0.35 even at the raised 8192-token budget
+(`GRAPHTALK_MAX_NEW_TOKENS`, added to `sweep.sbatch` for this run), and those
+cells score `nan` rather than a number in the scorer's output -- this was the
+predicted cost of including `edge_count` in a "run every task" design (it
+needs the enumeration budget the size sweep already ruled out at this
+density, and thinking adds a reasoning preamble on top of that enumeration).
+Treat `edge_count`-think at p>=0.35 as absent, not as a result; p=0.10/0.20
+are usable but thin (n as low as 13-27 discordant pairs after dropping caps).
+
+### The `clustering` -> `node_degree` headline, at a quarter of the sample
+
+The original +3.8 pp pooled result (job 866467) pooled 1,600 paired triples
+(400 graphs/level). This design has 100 graphs/level, so it is a power check
+against that result, not an independent replication.
+
+`qwen3-1.7b` non-think, mean score:
+
+| p | none | clustering | delta |
+|---|---|---|---|
+| 0.10 | 0.910 | 0.930 | +2.0 pp |
+| 0.20 | 0.800 | 0.820 | +2.0 pp |
+| 0.35 | 0.410 | 0.470 | +6.0 pp |
+| 0.50 | 0.300 | 0.320 | +2.0 pp |
+
+Direction-consistent at all four levels (never negative), pooled delta +3.0 pp
+-- **p=0.256, not significant at n=100/level.** That is the expected
+consequence of a 4x smaller sample, not a contradiction of the headline.
+Under thinking the effect is gone (deltas +2.1, +2.0, -1.0, -1.0 pp, pooled
+p=0.69) -- `clustering` and the reasoning channel look like they substitute
+for the same thing at low density (both push `none` from ~0.91 to ~0.98
+without help) and neither moves the needle once density/length grows.
+`degree` and `all` are both significant on `node_degree` in both arms
+(p<=0.0014), as expected -- both are contaminated (bar 1.00, the primer
+states the answer verbatim) -- and are not evidence of anything beyond
+retrieval-of-a-stated-fact, already covered above.
+
+### What going to all 6 tasks actually bought
+
+- **`node_count`** -- gold is trivially 40 for every row (n is fixed), so the
+  blind bar is 1.000 by construction, but the *raw model* does not exploit
+  this: `qwen3-1.7b` non-think scores as low as **0.02-0.19** in `none`/
+  `degree` at p=0.10, recovering toward 1.0 only as density rises or under a
+  per-node primer (`clustering`, `filler`, `all` -- each of which hands it a
+  countable list of sentences as a side effect of its content). Thinking
+  mostly erases the failure (>=0.98 almost everywhere). This is a genuine,
+  clean result -- a counting-under-distraction effect -- just not the one the
+  cell was built to measure.
+- **`cycle_check`** -- degenerate as `build_size_sweep.py`'s docstring
+  predicts (blind bar 0.83-1.00, gold "yes" almost everywhere past the
+  sparsest level). Non-think: `degree` and `rwse` *significantly hurt*
+  (-12.6 pp, -7.5 pp, p<0.0001) -- extra text pushes the model off its "yes"
+  default. Think: ~1.000 everywhere, but partly survivorship -- `degree`/
+  `components` shed 12-34% of rows to `hit_cap` per level.
+- **`edge_existence`** -- the cleanest new signal. Non-think: `components`
+  (-8.3 pp, p<0.0001) and `filler` (-15.8 pp, p<0.0001) both *significantly
+  hurt* relative to `none`, replicating this document's length-cost finding
+  ("Two rules, both learned the hard way", rule 0) on a task it had not been
+  measured on. Thinking flattens the task to ceiling (0.95-1.00), erasing the
+  headroom.
+- **`connected_nodes`** -- no headroom either arm (0.93-1.00 throughout),
+  exactly as "Density at a fixed size" predicted from the size-sweep numbers.
+  Nothing significant, nothing to read into it.
+
+Full per-cell tables (hit_cap counts, unparsable counts, bar-adjusted deltas)
+are reproducible with:
+
+```bash
+PYTHONPATH=. python scripts/score_full_density_sweep.py \
+    --responses "runs/qwen3-1.7b.densfull40.shard*of25.jsonl" \
+    --shortcuts shortcuts.json
+```
+
 ## Operational notes
 
 - **`--mem=64G` in `sweep.sbatch` is sized for Qwen3-14B's 29.6 GB checkpoint.**
@@ -1678,6 +1782,31 @@ Two rules, both learned the hard way:
 - **Qwen3.5 needs `AutoModelForImageTextToText`** -- declares
   `Qwen3_5ForConditionalGeneration`, multimodal even at 2B, like Gemma 4.
   Supported by the env's `transformers` 5.15.0.
+- **`/home/dcor/galbarak2` has a hard 1 TB-per-user quota, contrary to what
+  every other doc on this machine says.** `CLAUDE.md` (the home-directory
+  one) and this project's own operational notes elsewhere both claim "no
+  quota against this user" -- wrong, or at least no longer true. `quota -s`
+  reports a real `1024G` hard limit on the
+  `netapp1-244.../dcor-01-2021` mount. It filled during the `densfull40`
+  sweep (2026-09-13, shared with other projects on the account -- GraphTalk's
+  own footprint is under 1 GB) and every shard writing at the time died on
+  `OSError: [Errno 122] Disk quota exceeded` mid-`flush()`, simultaneously,
+  regardless of node or how long each had been running -- the synchronised
+  failure time across unrelated nodes is the tell that this is a quota wall,
+  not a per-job crash. `run_sweep.py`'s append-and-resume design meant no
+  data was lost, just delayed until `quota -s` showed headroom again and the
+  affected shards were resubmitted. Two duplicate rows survived the
+  resume/preemption boundary this produced (see the sweep section above) --
+  harmless, but check for dupes with a fresh multi-attempt resume.
+- **`--array=N-N` (a single index) silently breaks striding.** To resubmit
+  one failed shard of a `K`-way array, do not pass `--array=19` expecting
+  "shard 19 of 25" -- Slurm sets `SLURM_ARRAY_TASK_COUNT=1` for a one-task
+  array, so `sweep.sbatch` would treat it as the *whole* file, not `records[19::25]`.
+  Pass the shard id and original count explicitly instead:
+  `--export=ALL,SLURM_ARRAY_TASK_ID=19,SLURM_ARRAY_TASK_COUNT=25,...` (no
+  `--array` flag at all). Same family of footgun as the `--array=1,2,4` one
+  above, worth restating because it is the one-shard case rather than the
+  multi-shard case.
 
 ## Caveats
 
