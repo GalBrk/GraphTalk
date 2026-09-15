@@ -55,8 +55,7 @@ uv run --no-sync pytest -q --ignore=tests/test_hierarchical_model.py \
 ```
 
 Always use `--no-sync` — a plain `uv run` re-syncs to the default dependency set
-and uninstalls the optional `pipeline` extras. That command must report exactly
-**613 passed**; a different number means the env is wrong, not the code.
+and uninstalls the optional `pipeline` extras.
 
 The two ignored files import `statsmodels`, which is **not** installed in either
 `conda_envs/graphtalk` or `conda_envs/graphtalk-cu126` — the only envs this
@@ -99,7 +98,7 @@ sbatch cluster/sweep.sbatch gemma4-12b
 
 # 3. score, back on the laptop
 PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500 --json shortcuts.json
-PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.json
+PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v '\.got\.') --shortcuts shortcuts.json
 ```
 
 Runs from `build_size_sweep.py --densities` are scored by density level instead,
@@ -120,7 +119,7 @@ underpowered at 30 pairs/cell — see `docs/sweep-findings.md`). Needs the `anal
 (`uv pip install -e ".[dev,analysis]"`) and the joined sweep table built first:
 
 ```bash
-PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py --responses runs/*.jsonl \
+PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py --responses $(ls runs/*.jsonl | grep -v '\.got\.') \
     --shortcuts shortcuts.json --truncated-keys analysis/truncated_keys.json
 PYTHONPATH=. .venv/bin/python scripts/check_significance.py --frame analysis/sweep_frame.csv
 ```

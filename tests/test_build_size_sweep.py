@@ -131,6 +131,31 @@ def test_a_near_seed_is_refused_because_the_corpora_would_overlap():
     _records(densities=[0.5], count=10, seed=build_size_sweep.DEFAULT_SEED + 3)
 
 
+def test_default_output_unchanged_by_node_naming_support():
+  """No `node_naming` argument must reproduce the pre-flag record exactly."""
+  for record in _records():
+    assert "node_naming" not in record
+
+
+def test_got_naming_tags_rows_and_keeps_the_same_graphs():
+  integer_records = _records(sizes=[20], count=3, densities=[0.5])
+  got_records = _records(sizes=[20], count=3, densities=[0.5],
+                         node_naming_scheme="got")
+  assert all(r["node_naming"] == "got" for r in got_records)
+  # Same seeds/graphs -- only the rendering differs.
+  assert [r["gold"] for r in integer_records] == [r["gold"] for r in got_records]
+  assert [r["edges"] for r in integer_records] == [r["edges"] for r in got_records]
+  assert [r["instance_id"] for r in integer_records] == \
+      [r["instance_id"] for r in got_records]
+  assert [r["prompt"] for r in integer_records] != [r["prompt"] for r in got_records]
+  assert all("Node 0" not in r["prompt"] for r in got_records)
+
+
+def test_got_naming_rejects_more_nodes_than_the_40_got_names_cover():
+  with pytest.raises(ValueError, match="GoT names"):
+    _records(sizes=[41], count=1, node_naming_scheme="got")
+
+
 def test_a_distant_seed_shares_no_graph_with_the_default_corpus():
   base = _records(sizes=[40], count=30, densities=[0.35],
                   tasks=("node_degree",), seed=build_size_sweep.DEFAULT_SEED)
