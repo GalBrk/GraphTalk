@@ -27,8 +27,16 @@ no permissions needed).
 | `<model>.degdensthink.shardNof7.jsonl` | 11200 | the thinking arm of the density sweep: all 7 densities x {`none`, `components`, `clustering`, `degree`} x 400. Paired to the two plain runs on 9,600 byte-identical prompts, so think-vs-plain is a within-graph comparison |
 | `<model>.degdensfill.shardNof5.jsonl` / `.degdensfillT.shardNof7.jsonl` | 2800/arm | the **length control**: 7 densities x 400 x {`filler`} only, built at the default seed so it pairs by `instance_id` against the `none` rows of the runs above. Plain and thinking arms. `filler` is the same length as `clustering` to 3.3% and carries no structure, so `filler` - `none` prices the characters alone |
 | `<model>.degdensrep.shardNof5.jsonl` | 3200 | an **independent replication** of the `clustering` headline: 4 levels x 400 *fresh* graphs x {`none`, `clustering`}, seed offset 500,000. Its `instance_id`s carry an `/s<seed>/` segment so they can never be pooled with the default-seed corpus |
+| `<model>.ladder_screen.jsonl` | 900/arm | the ladder screen: 18 rungs (`n` x `k̄`) x 50 graphs, `condition=none` only, `task=node_degree` -- locates each model's informative band before any primer or rewiring is spent. See [../docs/ladder-and-rewiring.md](../docs/ladder-and-rewiring.md) |
+| `<model>.retrieval_locate.jsonl` | 1050/arm | the graph-free retrieval probe: 7 statement counts x 3 positions x 2 magnitudes x 25 graphs, `condition=retrieval` only -- locates each model's reading limit, independently of the ladder |
+| `<model>.rewire_shared.jsonl` | 1800/arm | the rewiring stage at the one rung shared across models (`n40k12`): 3 rewiring levels (`low`/`base`/`high`) x {`none`, `clustering`, `filler`} x 200 |
+| `qwen35-2b.rewire_extra.jsonl` | 2700 | the same rewiring design at two extra rungs (`n60k12`, `n60k16`) run only for `qwen35-2b`, which cleared both screens further up the ladder than the other arms |
 | `../prompts.count100.none_degree.jsonl` | 1200 | prompts for the `probe100` arms |
 | `../prompts.edgecount500.clean.jsonl` | 2000 | prompts for the `ec500` arms |
+| `../prompts.ladder_screen.jsonl` | 900 | prompts for the `ladder_screen` arms |
+| `../prompts.retrieval_locate.jsonl` | 1050 | prompts for the `retrieval_locate` arms |
+| `../prompts.rewire_shared.jsonl` | 1800 | prompts for the `rewire_shared` arms |
+| `../prompts.rewire_2b_extra.jsonl` | 2700 | prompts for `qwen35-2b.rewire_extra.jsonl` |
 | `../prompts.jsonl` | 1260 | the prompts these responses answer |
 
 Full schema, field semantics and join keys: **[../docs/DATA.md](../docs/DATA.md)**.
@@ -68,6 +76,23 @@ directory.
 That is why the regeneration is tagged `rerun` and not `redo` -- the exclusion
 matches on the substring `.redo.shard`, so the wrong tag would drop every
 regenerated row from the frame without raising anything.
+
+`ladder_screen`/`retrieval_locate`/`rewire_shared`/`rewire_extra` files are **not**
+excluded the way `archive/`, `.redo.shard`, or `smoke-` are either, and unlike
+`.got.jsonl` they are not caught by any node-naming check -- `graphtalk/analysis.py`
+has no notion of them at all. A plain `runs/*.jsonl` glob into `score_sweep.py`
+groups purely by `(task, style, condition)`, with no check on `instance_id`
+provenance, so `ladder_screen`'s `node_degree`/`none` rows and `rewire_shared`'s/
+`rewire_extra`'s `node_degree`/`clustering` and `node_degree`/`filler` rows
+silently pool into the *same* cells as the primer sweep's own rows under those
+keys -- the ladder/rewiring graphs are a different, smaller population, so this
+would quietly shift those cells' scores. `retrieval_locate` is comparatively
+safe, since its `condition="retrieval"` doesn't collide with any primer sweep
+condition and shows up as its own (visibly odd) cell instead of vanishing into
+one. Score all four families separately, with `scripts/analyze_ladder.py` and
+`scripts/analyze_rewiring_sweep.py` (see
+[../docs/ladder-and-rewiring.md](../docs/ladder-and-rewiring.md)), not with
+`score_sweep.py`.
 
 `.got.jsonl` files are **not** excluded the way `archive/` is -- they are
 part of the sweep, just a different node-naming scheme, so `runs/*.jsonl`
