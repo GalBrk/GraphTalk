@@ -10,15 +10,15 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 
-\title{Primers, Shortcuts, and Reading Limits: Testing Structural Preambles for LLM Graph Reasoning at Scale}
+\title{Primers and Shortcuts: Testing Structural Preambles for LLM Graph Reasoning at Scale}
 
 \author{
   Gal Barak \\
-  \texttt{github.com/GalBrk} \\\And
+  \footnotesize\texttt{github.com/GalBrk} \\\And
   Nitzan Zacharia \\
-  \texttt{github.com/NitzanZacharia} \\\And
+  \footnotesize\texttt{github.com/NitzanZacharia} \\\And
   Inbal Moryles \\
-  \texttt{github.com/iinbal} \\
+  \footnotesize\texttt{github.com/iinbal} \\
 }
 
 \begin{document}
@@ -246,11 +246,10 @@ screened comes from a separate, graph-free needle-in-haystack probe
 \citep{kamradt2023needle,liu2024lostinthemiddle}: a target statement is
 embedded among $k \in \{160, \dots, 640\}$ distractor statements at
 varying depth, with no graph present in the prompt, isolating raw
-token-position retrieval from graph reasoning entirely. This procedure
-locates a genuine degradation crossing for only 4 of the 11 models tested;
-the remainder (including every model at 8B parameters and above) still
-score $\geq 0.99$ at the longest prompt tested, so only a lower bound on
-their true limit is established, not a precisely located one.
+token-position retrieval from graph reasoning entirely.
+% TODO(followup): report qwen3-1.7b/qwen3-4b (all four arms) retrieval-probe
+% results here once measured. Broader-model screening results removed for
+% now to keep Results focused on the study's own model pair.
 
 \paragraph{Rewiring.} Even once a valid rung is identified, the primer
 test itself must still avoid the length confound described above, since
@@ -332,27 +331,12 @@ clustering, filler\}}. We report and interpret results with this caveat in
 mind rather than omitting the contaminated cells, since a null or negative
 result on an uncontaminated cell remains informative in its own right.
 
-\paragraph{Reading-limit caveat.} The retrieval probe of
-Section~\ref{sec:ladder} locates \texttt{qwen3-1.7b}'s reading limit at
-approximately 1{,}509 tokens and \texttt{qwen3-1.7b-think}'s at
-approximately 2{,}449 tokens. At $n{=}40$, measured (not estimated) prompt
-lengths under the \texttt{none} condition already exceed the plain arm's
-limit by the second density level ($p=0.20$, $\bar{k}\approx 8$, 1{,}691
-tokens); the \texttt{all} condition, which roughly doubles token count,
-crosses it earlier still. An earlier, independent probe design found a
-sharper effect at $n{=}40$-scale lengths specifically at the middle of the
-prompt: at 6{,}305 tokens, retrieval from the prompt's edges remained at
-$\sim$0.89 while retrieval from its middle collapsed to 0.195
-($p=0.00002$), a lost-in-the-middle pattern \citep{liu2024lostinthemiddle}
-distinct from, and not superseded by, the threshold above, since the two
-probes measure different quantities (a degradation threshold versus a
-position effect) and have not been re-run against one another. Any
-density-dependent falloff observed for \texttt{qwen3-1.7b} under
-content-heavy primers must therefore be weighed against both reading-limit
-findings, which are distinct from both the shortcut ceiling and the
-length-matched filler control. No retrieval probe has yet been run for
-\texttt{qwen3-4b}, so its reading behavior at these lengths remains
-unmeasured rather than confirmed clean.
+% TODO(followup): reading-limit caveat pulled for now -- qwen3-1.7b's
+% ~1,509-token / qwen3-1.7b-think's ~2,449-token retrieval-probe limits, and
+% the lost-in-the-middle finding at 6,305 tokens (0.89 edges vs. 0.195
+% middle, p=0.00002), are real but asymmetric: no retrieval probe has been
+% run for either qwen3-4b arm. Restore this caveat, with symmetric qwen3-4b
+% coverage, once that probe is run.
 
 \paragraph{Node naming.} In addition to the default integer node ids, we
 substitute a fixed set of 40 Game-of-Thrones character names\footnote{By
@@ -385,33 +369,6 @@ Section~\ref{sec:results-main}.
 \section{Results}
 \label{sec:results}
 
-\subsection{Ladder and retrieval: where a primer test is interpretable}
-\label{sec:results-ladder}
-
-Of the 11 models screened on the ladder, only \texttt{qwen3-1.7b-think}
-has a rung that is both informative and confirmed readable at present:
-\texttt{n40k12} (\texttt{none} accuracy 0.82 at 2{,}290 tokens, below its
-2{,}449-token reading limit). \texttt{qwen3-0.6b} and \texttt{qwen3-1.7b}
-(plain) have \emph{zero} valid rungs: every rung at which the plain task
-becomes difficult for them already exceeds their measured reading limit,
-so a primer result there would measure reading failure rather than primer
-content. Five further models (\texttt{qwen35-2b}, \texttt{qwen3-8b(-think)},
-\texttt{qwen3-14b}) have candidate informative rungs but no confirmed
-reading limit above 3{,}742 tokens, so their validity remains provisional
-rather than settled. Three models (\texttt{gemma4-12b},
-\texttt{gemma4-e4b(-think)}, \texttt{qwen35-2b-think}) never leave ceiling
-anywhere on the 18-rung ladder tested, so no primer test is yet
-interpretable for them at any rung we have run.
-
-The rewiring test itself (Section~\ref{sec:ladder}) has so far only been
-used to run its own \texttt{filler} control at the one shared rung
-(\texttt{n40k12}), for two models (\texttt{qwen35-2b},
-\texttt{qwen3-1.7b-think}), confirming that the rung remains informative
-under a length-matched but content-free primer. \textbf{The
-primer-\emph{content} rewiring test itself has not yet been run at any
-valid rung.} This is a validated mechanism awaiting its first result, not
-yet a reported finding.
-
 \subsection{The one cell that survives every control}
 \label{sec:results-headline}
 
@@ -431,7 +388,8 @@ Replication & +4.3pp & --- & 0.0006 \\
 $p \le 0.50$. The only (primer, task) cell in this project that withstands
 the shortcut ceiling (bar 0.08, unrelated to the effect), the
 length-matched \texttt{filler} control, and independent replication on a
-fresh graph sample.}
+fresh graph sample. The replication's discard count was not tracked
+separately from the original sample, hence ``---''.}
 \label{tab:headline}
 \end{table}
 
@@ -498,9 +456,10 @@ enforce that comparison by construction rather than through post-hoc
 control.
 
 % TODO: contextualize the full sweep results against the shortcut ceiling,
-% the filler control, the ladder/retrieval validity results
-% (Section~\ref{sec:results-ladder}), and \citet{fatemi2023talklikeagraph}
-% once Table~\ref{tab:main-results} is filled in.
+% the filler control, the ladder/retrieval validity results (once run on
+% qwen3-1.7b/qwen3-4b themselves -- see Section~\ref{sec:ladder}), and
+% \citet{fatemi2023talklikeagraph} once Table~\ref{tab:main-results} is
+% filled in.
 
 \section*{Limitations}
 \label{sec:limitations}
@@ -522,14 +481,12 @@ node-count/density design rather than a broader sweep over graph sizes;
 the ladder of Section~\ref{sec:ladder} locates where a broader design
 would be interpretable, but has not itself yet been run as a primer test.
 
-The reading-limit probe (Section~\ref{sec:setup}) has been run for only 4
-of the 11 models tested, and for neither \texttt{qwen3-4b} arm, so the
-reading-limit confound discussed above is assessed for half of this
-paper's model matrix and not the other half. The rewiring mechanism that
-would isolate a primer's content effect from length by construction
-(Section~\ref{sec:ladder}) is implemented and validated as a mechanism,
-but the primer-content test itself has not yet been run at the one rung
-currently confirmed valid.
+The ladder, retrieval probe, and rewiring mechanism (Section~\ref{sec:ladder})
+are implemented but have not yet been run to completion on
+\texttt{qwen3-1.7b}/\texttt{qwen3-4b} themselves: no rung has yet been
+confirmed valid for either model, so the primer-\emph{content} rewiring
+test has not yet been exercised on any comparison. Both are follow-up work
+rather than a reported result here.
 
 This project's node-naming substitution (Game-of-Thrones character names
 in place of integer ids) is implemented and tested, and is included above
