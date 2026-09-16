@@ -69,6 +69,11 @@ _MARKER = re.compile(
 _YES = re.compile(r"\byes\b", re.IGNORECASE)
 _NO = re.compile(r"\bno\b", re.IGNORECASE)
 _NO_NODES = re.compile(r"\bno\s+nodes?\b", re.IGNORECASE)
+# The textbook definition models recite after answering `cycle_check` -- "Yes,
+# there is a cycle. A cycle is a path ... with no repeated edges or nodes" --
+# whose "no" would otherwise be the last yes/no token and override the answer.
+# It was 229 of qwen3-4b's 5,600 boolean rows on `densfull40`.
+_NO_REPEATED = re.compile(r"\bno\s+repeated\b", re.IGNORECASE)
 # A model answering "None"/"None." in place of the dataset's "No nodes"
 # spelling for an isolated node. Anchored to the end of the scope rather than
 # searched anywhere in free text, so a reasoning sentence like "None of the
@@ -259,7 +264,7 @@ def _extract_boolean(text: str, task: str) -> str | None:
   for scope in (tail, text):
     if not scope:
       continue
-    scope = _NO_NODES.sub(" ", scope)
+    scope = _NO_REPEATED.sub(" ", _NO_NODES.sub(" ", scope))
     last_yes = max((m.start() for m in _YES.finditer(scope)), default=-1)
     last_no = max((m.start() for m in _NO.finditer(scope)), default=-1)
     if last_yes >= 0 or last_no >= 0:
@@ -399,7 +404,7 @@ def _extract_boolean_first(text: str, task: str) -> str | None:
   for scope in (tail, text):
     if not scope:
       continue
-    scope = _NO_NODES.sub(" ", scope)
+    scope = _NO_REPEATED.sub(" ", _NO_NODES.sub(" ", scope))
     first_yes = min((m.start() for m in _YES.finditer(scope)), default=None)
     first_no = min((m.start() for m in _NO.finditer(scope)), default=None)
     if first_yes is not None or first_no is not None:

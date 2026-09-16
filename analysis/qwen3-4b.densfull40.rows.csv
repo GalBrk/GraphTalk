@@ -5492,7 +5492,7 @@ From the description:
 So, node 8 is connected to **8 nodes**.
 
 ### ✅ Answer: **8**."
-cycle_check/size40/p0.2/5,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,131,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/5,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,131,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -6453,7 +6453,7 @@ From the given description:
 So, node 35 is connected to **9 nodes**.
 
 ### ✅ Answer: **9**."
-cycle_check/size40/p0.2/30,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,128,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/30,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,128,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -7329,7 +7329,7 @@ From the given description:
 So, node 25 is connected to **8 nodes**.
 
 ### ✅ Answer: **8**."
-cycle_check/size40/p0.2/55,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,154,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/55,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,154,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -13312,7 +13312,7 @@ node_degree/size40/p0.5/2,node_degree,0.5,degree,zero_shot,20,20,1.0,False,34,"T
 This is given directly in the initial description:
 
 > Node 16 has degree 20."
-cycle_check/size40/p0.5/2,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,188,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/2,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,188,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -13562,7 +13562,7 @@ Now, let's count these:
 There are **26 nodes** connected to node 33.
 
 ### ✅ Final Answer: **26**."
-cycle_check/size40/p0.5/8,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,219,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/8,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,219,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -14417,7 +14417,7 @@ This is determined by counting the number of nodes that node 4 is connected to i
 That is **25** nodes.
 
 **Answer: 25**."
-cycle_check/size40/p0.5/27,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,195,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/27,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,195,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -14645,7 +14645,7 @@ Let's count these:
 There are **24 nodes** connected to node 5.
 
 ### ✅ Final Answer: **24**"
-cycle_check/size40/p0.5/33,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,170,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/33,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,170,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -15646,7 +15646,7 @@ Now, let's count these:
 There are **22 nodes** connected to node 14.
 
 ### ✅ Final Answer: **22**."
-cycle_check/size40/p0.5/58,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,159,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/58,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,159,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -15752,7 +15752,7 @@ $$
 $$
 
 **Answer: 318**"
-cycle_check/size40/p0.5/61,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",No,0.0,False,232,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/61,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",Yes,1.0,False,232,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -23208,7 +23208,7 @@ Now, let's count these:
 That's **13 nodes** connected to node 33.
 
 ### ✅ Final Answer: **13**."
-cycle_check/size40/p0.2/35,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,131,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/35,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,131,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -24094,7 +24094,7 @@ From the given description:
 So, node 27 is connected to **8 nodes**.
 
 ### ✅ Answer: **8**."
-cycle_check/size40/p0.2/60,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,180,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/60,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,180,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -24926,7 +24926,7 @@ From the given list:
 So, node 16 is connected to **6 nodes**.
 
 ### ✅ Answer: **6**."
-cycle_check/size40/p0.2/85,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,128,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/85,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,128,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -29822,7 +29822,7 @@ Let's count these:
 That's **11 connections**.
 
 ### ✅ Answer: **11**."
-cycle_check/size40/p0.35/85,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,134,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.35/85,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,134,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -30646,7 +30646,7 @@ node_degree/size40/p0.5/7,node_degree,0.5,degree,zero_shot,21,21,1.0,False,34,"T
 This is given directly in the problem statement:
 
 > Node 15 has degree 21."
-cycle_check/size40/p0.5/7,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,216,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/7,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,216,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -30875,7 +30875,7 @@ Now, let's count these:
 So, node 38 is connected to **24 nodes**.
 
 ### ✅ Final Answer: **24**."
-cycle_check/size40/p0.5/13,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,149,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/13,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,149,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -31937,7 +31937,7 @@ Let's count these:
 So, node 5 is connected to **15 nodes**.
 
 ### ✅ Answer: **15**"
-cycle_check/size40/p0.5/38,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,169,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/38,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,169,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -33256,7 +33256,7 @@ Let's count these:
 There are **20 connections**.
 
 ### ✅ Final Answer: **20**."
-cycle_check/size40/p0.5/63,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,193,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/63,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,193,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -34060,7 +34060,7 @@ node_degree/size40/p0.5/82,node_degree,0.5,degree,zero_shot,17,17,1.0,False,33,"
 This is given in the initial description:
 
 > Node 10 has degree 17."
-cycle_check/size40/p0.5/82,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,229,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/82,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,229,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -34315,7 +34315,7 @@ Let's count these:
 There are **16 nodes** connected to node 0.
 
 ### ✅ Answer: **16**"
-cycle_check/size40/p0.5/88,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,150,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/88,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,150,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -39289,7 +39289,7 @@ From the given information:
 So, node 7 is connected to **4 nodes**.
 
 ### ✅ Answer: **4**."
-cycle_check/size40/p0.2/13,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,203,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/13,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,203,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -40047,7 +40047,7 @@ From the given information:
 So, node 29 is connected to **4 nodes**.
 
 ### ✅ Answer: **4**."
-cycle_check/size40/p0.2/38,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,142,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/38,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,142,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -40935,7 +40935,7 @@ From the given list of connections:
 So, node 30 is connected to **7 nodes**.
 
 ### ✅ Answer: **7**."
-cycle_check/size40/p0.2/63,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,175,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/63,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,175,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -41965,7 +41965,7 @@ From the given information:
 So, node 8 is connected to **5 nodes**.
 
 ### ✅ Answer: **5**."
-cycle_check/size40/p0.2/88,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,127,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/88,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,127,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -43956,7 +43956,7 @@ Let's count these:
 That's **15 nodes**.
 
 ### ✅ Answer: **15**."
-cycle_check/size40/p0.35/38,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,134,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.35/38,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,134,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -46009,7 +46009,7 @@ Let's count these:
 That's **13 connections**.
 
 ### ✅ Answer: **13**."
-cycle_check/size40/p0.35/88,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,143,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.35/88,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,143,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -46860,7 +46860,7 @@ This is determined by counting the number of nodes that node 5 is connected to i
 That is **27** nodes.
 
 **Answer: 27**."
-cycle_check/size40/p0.5/10,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,170,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/10,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,170,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -47079,7 +47079,7 @@ Now, let's count these:
 That's **16 nodes**.
 
 ### ✅ Final Answer: **16**."
-cycle_check/size40/p0.5/16,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,159,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/16,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,159,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -51358,7 +51358,7 @@ Now, let's count these:
 So, the **degree of node 26 is 26**.
 
 **Answer: 26**."
-cycle_check/size40/p0.5/91,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,159,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/91,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,159,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -54376,7 +54376,7 @@ From the description:
 So, node 0 is connected to **6** other nodes.
 
 ### ✅ Answer: **6**."
-cycle_check/size40/p0.1/66,cycle_check,0.1,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,173,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.1/66,cycle_check,0.1,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,173,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -56156,7 +56156,7 @@ From the given information:
 So, node 0 is connected to **9 nodes**.
 
 ### ✅ Answer: **9**."
-cycle_check/size40/p0.2/16,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,171,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/16,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,171,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -57053,7 +57053,7 @@ Let's count these:
 So, node 16 is connected to **12 nodes**.
 
 ### ✅ Answer: **12**."
-cycle_check/size40/p0.2/41,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,139,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/41,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,139,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -57861,7 +57861,7 @@ Let's count these:
 That's **10 nodes**.
 
 ### ✅ Answer: **10**."
-cycle_check/size40/p0.2/66,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,138,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/66,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,138,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -58846,7 +58846,7 @@ From the given information:
 So, node 13 is connected to **9 nodes**.
 
 ### ✅ Answer: **9**."
-cycle_check/size40/p0.2/91,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,138,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/91,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,138,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -63442,7 +63442,7 @@ $$
 $$
 
 **Answer: 234**"
-cycle_check/size40/p0.35/81,cycle_check,0.35,none,zero_shot,"Yes, there is a cycle",No,0.0,False,162,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.35/81,cycle_check,0.35,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,162,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -65902,7 +65902,7 @@ But in the list of connections for node 5:
 That is **15 connections**, so the degree of node 5 is **15**.
 
 **Correct answer: 15**."
-cycle_check/size40/p0.5/38,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,206,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/38,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,206,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -66808,7 +66808,7 @@ That's **21** connections.
 So the correct degree of node 10 is **21**.
 
 **Answer: 21**."
-cycle_check/size40/p0.5/63,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,192,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/63,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,192,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -67224,7 +67224,7 @@ Let's count these:
 So, node 16 is connected to **23 nodes**.
 
 ### ✅ Answer: **23**"
-cycle_check/size40/p0.5/69,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,153,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/69,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,153,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -75647,7 +75647,7 @@ From the given data:
 So, node 23 is connected to **8 nodes**.
 
 ### ✅ Answer: **8**."
-cycle_check/size40/p0.2/69,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,226,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/69,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,226,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -76616,7 +76616,7 @@ Let's count these:
 So, node 20 is connected to **12 nodes**.
 
 ### ✅ Answer: **12**."
-cycle_check/size40/p0.2/94,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,213,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/94,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,213,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -80583,7 +80583,7 @@ Let's count these:
 So, node 7 is connected to **21 nodes**.
 
 ### ✅ Answer: **21**"
-cycle_check/size40/p0.35/97,cycle_check,0.35,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,468,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.35/97,cycle_check,0.35,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,468,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -83786,7 +83786,7 @@ Let's count these:
 So, node 10 is connected to **19 nodes**.
 
 ### ✅ Answer: **19**."
-cycle_check/size40/p0.5/72,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,159,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/72,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,159,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -89007,7 +89007,7 @@ $$
 $$
 
 **Answer: 132**"
-cycle_check/size40/p0.2/12,cycle_check,0.2,none,zero_shot,"Yes, there is a cycle",No,0.0,False,636,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/12,cycle_check,0.2,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,636,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -89335,7 +89335,7 @@ From the given data:
 So, node 35 is connected to **9 nodes**.
 
 ### ✅ Answer: **9**"
-cycle_check/size40/p0.2/22,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,159,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/22,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,159,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -90390,7 +90390,7 @@ Now, let's count these:
 That's **12 nodes**.
 
 ### ✅ Answer: **12**."
-cycle_check/size40/p0.2/47,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,138,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/47,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,138,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -91228,7 +91228,7 @@ From the given information:
 So, node 8 is connected to **8 nodes**.
 
 ### ✅ Answer: **8**."
-cycle_check/size40/p0.2/72,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,152,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/72,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,152,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -92097,7 +92097,7 @@ From the given data:
 So, node 11 is connected to **7 nodes**.
 
 ### ✅ Answer: **7**."
-cycle_check/size40/p0.2/97,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,148,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/97,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,148,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -92995,7 +92995,7 @@ Let's count these:
 That's **15 nodes**.
 
 ### ✅ Answer: **15**."
-cycle_check/size40/p0.35/22,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,136,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.35/22,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,136,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -96264,7 +96264,7 @@ Let's count these:
 So, node 7 is connected to **21 nodes**.
 
 ### ✅ Final Answer: **21**."
-cycle_check/size40/p0.35/97,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,132,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.35/97,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,132,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -97298,7 +97298,7 @@ Let's count these:
 There are **21 nodes** connected to node 8.
 
 ### ✅ Final Answer: **21**."
-cycle_check/size40/p0.5/25,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,159,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/25,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,159,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -98018,7 +98018,7 @@ node_degree/size40/p0.5/44,node_degree,0.5,degree,zero_shot,15,15,1.0,False,122,
 That is a total of **15** connections.
 
 ### Answer: **15**"
-cycle_check/size40/p0.5/44,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,214,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/44,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,214,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -99102,7 +99102,7 @@ node_degree/size40/p0.5/69,node_degree,0.5,degree,zero_shot,23,23,1.0,False,34,"
 This is given directly in the initial description:
 
 > Node 16 has degree 23."
-cycle_check/size40/p0.5/69,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,400,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/69,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,400,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -99477,7 +99477,7 @@ Let's count these:
 There are **20 connections**.
 
 ### ✅ Final Answer: **20**."
-cycle_check/size40/p0.5/75,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,155,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/75,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,155,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -99793,7 +99793,7 @@ $$
 
 ### Final Answer:
 **281 edges** are in this graph."
-cycle_check/size40/p0.5/84,cycle_check,0.5,components,zero_shot,"Yes, there is a cycle",No,0.0,False,267,"A: **Yes, there is a cycle in this graph.**
+cycle_check/size40/p0.5/84,cycle_check,0.5,components,zero_shot,"Yes, there is a cycle",Yes,1.0,False,267,"A: **Yes, there is a cycle in this graph.**
 
 The graph is described with a large number of nodes and edges, and it is stated that the graph has **1 connected component**, meaning all nodes are connected in one piece. Given the high connectivity of the nodes (each node is connected to many others), it is highly likely that there are multiple cycles in the graph.
 
@@ -99908,7 +99908,7 @@ $$
 $$
 
 **Answer: 306**"
-cycle_check/size40/p0.5/87,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",No,0.0,False,137,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/87,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,137,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -100207,7 +100207,7 @@ node_degree/size40/p0.5/94,node_degree,0.5,degree,zero_shot,20,20,1.0,False,34,"
 This is given directly in the initial description:
 
 > Node 22 has degree 20."
-cycle_check/size40/p0.5/94,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,172,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/94,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,172,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -104764,7 +104764,7 @@ From the given data:
 So, node 27 is connected to **5 nodes**.
 
 ### ✅ Answer: **5**."
-cycle_check/size40/p0.2/0,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,132,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/0,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,132,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -105716,7 +105716,7 @@ From the given data:
 So, node 19 is connected to **10 nodes**.
 
 ### ✅ Answer: **10**."
-cycle_check/size40/p0.2/25,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,157,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/25,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,157,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -106566,7 +106566,7 @@ From the given description:
 So, node 14 is connected to **8 nodes**.
 
 ### ✅ Answer: **8**."
-cycle_check/size40/p0.2/50,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,152,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/50,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,152,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -107463,7 +107463,7 @@ From the given information:
 So, node 4 is connected to **7** nodes.
 
 ### ✅ Answer: **7**."
-cycle_check/size40/p0.2/75,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,176,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/75,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,176,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -112525,7 +112525,7 @@ $$
 $$
 
 **Answer: 321**"
-cycle_check/size40/p0.5/6,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",No,0.0,False,224,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/6,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",Yes,1.0,False,224,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -113413,7 +113413,7 @@ Let's count these:
 There are **20 nodes** connected to node 27.
 
 ### ✅ Final Answer: **20**."
-cycle_check/size40/p0.5/28,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,166,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/28,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,166,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -114387,7 +114387,7 @@ Let's count them:
 So, node 15 is connected to **19 nodes**.
 
 ### ✅ Answer: **19**."
-cycle_check/size40/p0.5/53,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,171,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/53,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,171,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -115200,7 +115200,7 @@ Looking at the connections for Node 11, it is connected to nodes:
 
 Node 15 is listed among these connections, confirming that an edge exists between Node 11 and Node 15."
 node_degree/size40/p0.5/72,node_degree,0.5,degree,zero_shot,19,19,1.0,False,14,The degree of node 10 is **19**.
-cycle_check/size40/p0.5/72,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,408,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/72,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,408,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -116248,7 +116248,7 @@ node_degree/size40/p0.5/97,node_degree,0.5,degree,zero_shot,19,19,1.0,False,32,"
 This is given directly in the problem statement:
 
 > Node 7 has degree 19."
-cycle_check/size40/p0.5/97,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,129,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/97,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,129,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node). Based on the connections provided, we can confirm that the graph contains cycles.
 
@@ -120631,7 +120631,7 @@ From the given list:
 So, node 32 is connected to **8 nodes**.
 
 ### ✅ Answer: **8**."
-cycle_check/size40/p0.2/3,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,156,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/3,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,156,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -121156,7 +121156,7 @@ $$
 $$
 
 **Answer: 131**"
-cycle_check/size40/p0.2/18,cycle_check,0.2,none,zero_shot,"Yes, there is a cycle",No,0.0,False,150,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/18,cycle_check,0.2,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,150,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -121657,7 +121657,7 @@ From the given information:
 So, node 20 is connected to **7 nodes**.
 
 ### ✅ Answer: **7**."
-cycle_check/size40/p0.2/28,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,142,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/28,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,142,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -123605,7 +123605,7 @@ From the given list:
 So, node 29 is connected to **8 nodes**.
 
 ### ✅ Answer: **8**."
-cycle_check/size40/p0.2/53,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,142,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/53,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,142,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -124513,7 +124513,7 @@ From the given information:
 So, node 18 is connected to **7 nodes**.
 
 ### ✅ Answer: **7**."
-cycle_check/size40/p0.2/78,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,153,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/78,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,153,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -129707,7 +129707,7 @@ Counting these nodes:
 - 0, 1, 2, 3, 4, 5, 6, 8, 11, 12, 13, 15, 16, 18, 19, 20, 21, 22, 25, 29, 30, 31, 33 → **23 nodes**
 
 **Answer: 23**"
-cycle_check/size40/p0.5/0,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,162,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/0,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,162,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -129980,7 +129980,7 @@ That's **19 nodes**.
 
 ### ✅ Final Answer:
 **19**"
-cycle_check/size40/p0.5/6,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,175,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/6,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,175,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -131723,7 +131723,7 @@ $$
 $$
 
 **Answer: 288**"
-cycle_check/size40/p0.5/43,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",No,0.0,False,250,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/43,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,250,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -132047,7 +132047,7 @@ However, the question is about whether an **edge** exists directly between Node 
 
 **Final Answer:** No, there is **no direct edge** between Node 9 and Node 19."
 node_degree/size40/p0.5/50,node_degree,0.5,degree,zero_shot,17,17,1.0,False,13,The degree of node 1 is **17**.
-cycle_check/size40/p0.5/50,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,192,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/50,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,192,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -132849,7 +132849,7 @@ $$
 $$
 
 **Answer: 272 edges**."
-cycle_check/size40/p0.5/68,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",No,0.0,False,150,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/68,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,150,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -133406,7 +133406,7 @@ Now, let's count these:
 There are **15 nodes** connected to node 36.
 
 ### ✅ Final Answer: **15**."
-cycle_check/size40/p0.5/81,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,178,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/81,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,178,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -139036,7 +139036,7 @@ $$
 $$
 
 **Answer: 132**"
-cycle_check/size40/p0.2/21,cycle_check,0.2,none,zero_shot,"Yes, there is a cycle",No,0.0,False,132,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/21,cycle_check,0.2,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,132,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -140442,7 +140442,7 @@ From the given list:
 So, node 35 is connected to **9 nodes**.
 
 ### ✅ Answer: **9**."
-cycle_check/size40/p0.2/56,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,151,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/56,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,151,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -147418,7 +147418,7 @@ This is determined by counting the number of nodes listed in the ""connected to"
 2, 3, 4, 5, 7, 8, 10, 12, 17, 18, 19, 21, 23, 29, 30, 32, 33, 35, 38, 39.
 
 That is **20 nodes**, so the degree of node 27 is **20**."
-cycle_check/size40/p0.5/28,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,179,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/28,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,179,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -147632,7 +147632,7 @@ Let's count these:
 There are **24 connections**.
 
 ### ✅ Final Answer: **24**."
-cycle_check/size40/p0.5/34,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,159,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/34,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,159,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -148178,7 +148178,7 @@ $$
 $$
 
 **Answer: 408**"
-cycle_check/size40/p0.5/46,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",No,0.0,False,158,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/46,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,158,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -148520,7 +148520,7 @@ node_degree/size40/p0.5/53,node_degree,0.5,degree,zero_shot,19,19,1.0,False,34,"
 This is given directly in the initial description:
 
 > Node 15 has degree 19."
-cycle_check/size40/p0.5/53,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,439,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/53,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,439,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -148735,7 +148735,7 @@ Let's count them:
 So, node 23 is connected to **17 nodes**.
 
 ### ✅ Answer: **17**"
-cycle_check/size40/p0.5/59,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,170,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/59,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,170,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -151879,7 +151879,7 @@ From the given description:
 So, node 4 is connected to **10** other nodes.
 
 ### ✅ Answer: **10**."
-cycle_check/size40/p0.1/34,cycle_check,0.1,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,188,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.1/34,cycle_check,0.1,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,188,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -155005,7 +155005,7 @@ From the given information:
 So, node 1 is connected to **7 nodes**.
 
 ### ✅ Answer: **7**."
-cycle_check/size40/p0.2/9,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,160,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/9,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,160,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -155542,7 +155542,7 @@ $$
 $$
 
 **Answer: 171**"
-cycle_check/size40/p0.2/24,cycle_check,0.2,none,zero_shot,"Yes, there is a cycle",No,0.0,False,116,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/24,cycle_check,0.2,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,116,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -155930,7 +155930,7 @@ So, node 28 is connected to: **3, 5, 6, 7, 15, 34**.
 That is **6 nodes**.
 
 ### ✅ Answer: **6**."
-cycle_check/size40/p0.2/34,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,145,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/34,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,145,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -156806,7 +156806,7 @@ Now, let's count these:
 That's **12 nodes**.
 
 ### ✅ Answer: **12**."
-cycle_check/size40/p0.2/59,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,136,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/59,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,136,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -157644,7 +157644,7 @@ Now, count the number of nodes in this list:
 That's **11 nodes**.
 
 ### ✅ Answer: **11**"
-cycle_check/size40/p0.2/84,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,176,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/84,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,176,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -162715,7 +162715,7 @@ node_degree/size40/p0.5/6,node_degree,0.5,degree,zero_shot,19,19,1.0,False,41,"T
 This is given directly in the list of degrees at the beginning of the description:
 
 > Node 38 has degree 19."
-cycle_check/size40/p0.5/6,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,176,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/6,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,176,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -162985,7 +162985,7 @@ Let's count these:
 So, node 31 is connected to **19 nodes**.
 
 ### ✅ Final Answer: **19**"
-cycle_check/size40/p0.5/12,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,158,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/12,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,158,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -164139,7 +164139,7 @@ That's **18 nodes**.
 
 ### ✅ Final Answer:
 **The degree of node 39 is 18.**"
-cycle_check/size40/p0.5/37,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,191,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/37,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,191,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -165396,7 +165396,7 @@ Let's count these:
 So, node 11 is connected to **20 nodes**.
 
 ### ✅ Answer: **20**."
-cycle_check/size40/p0.5/62,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,172,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/62,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,172,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -166740,7 +166740,7 @@ $$
 $$
 
 **Answer: 306**"
-cycle_check/size40/p0.5/99,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",No,0.0,False,224,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/99,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,224,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -171198,7 +171198,7 @@ Let's count these:
 That's **11 connections**.
 
 ### ✅ Answer: **11**."
-cycle_check/size40/p0.2/12,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,135,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/12,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,135,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -171610,7 +171610,7 @@ $$
 $$
 
 **Answer: 171**"
-cycle_check/size40/p0.2/24,cycle_check,0.2,components,zero_shot,"Yes, there is a cycle",No,0.0,False,149,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/24,cycle_check,0.2,components,zero_shot,"Yes, there is a cycle",Yes,1.0,False,149,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -172123,7 +172123,7 @@ From the given list:
 That is **11 nodes**.
 
 ### ✅ Answer: **11**."
-cycle_check/size40/p0.2/37,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,190,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/37,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,190,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -172958,7 +172958,7 @@ From the given description:
 So, node 4 is connected to **7** nodes.
 
 ### ✅ Answer: **7**."
-cycle_check/size40/p0.2/62,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,138,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/62,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,138,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -173932,7 +173932,7 @@ Let's count these:
 That's **11 connections**.
 
 ### ✅ Answer: **11**."
-cycle_check/size40/p0.2/87,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,162,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/87,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,162,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -181668,7 +181668,7 @@ Let's count them:
 So, node 11 is connected to **18 nodes**.
 
 ### ✅ Answer: **18**"
-cycle_check/size40/p0.5/65,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,175,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/65,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,175,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -181829,7 +181829,7 @@ $$
 $$
 
 **Answer: 397**"
-cycle_check/size40/p0.5/68,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",No,0.0,False,159,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/68,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",Yes,1.0,False,159,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -182514,7 +182514,7 @@ node_degree/size40/p0.5/84,node_degree,0.5,degree,zero_shot,21,21,1.0,False,34,"
 This is given directly in the initial description:
 
 > Node 15 has degree 21."
-cycle_check/size40/p0.5/84,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,232,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/84,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,232,"Yes, there is a cycle in this graph.
 
 A cycle exists if there is a path that starts and ends at the same node without repeating any edges. Based on the connections provided, the graph is highly connected, and many nodes are connected to multiple other nodes. For example, Node 0 is connected to 23 other nodes, and many of those nodes are also connected to each other. This high level of connectivity strongly suggests the presence of cycles.
 
@@ -182750,7 +182750,7 @@ Now, let's count these:
 There are **17 nodes** connected to node 39.
 
 ### ✅ Final Answer: **17**."
-cycle_check/size40/p0.5/90,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,173,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/90,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,173,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -182839,7 +182839,7 @@ $$
 $$
 
 **Answer: 308**"
-cycle_check/size40/p0.5/93,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",No,0.0,False,226,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/93,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",Yes,1.0,False,226,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -185405,7 +185405,7 @@ So, node 21 is connected to **three** nodes: 16, 34, and 39.
 Therefore, the **degree of node 21 is 3**.
 
 ### ✅ Final Answer: **3**."
-cycle_check/size40/p0.1/58,cycle_check,0.1,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,152,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.1/58,cycle_check,0.1,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,152,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -187076,7 +187076,7 @@ From the given information:
 So, node 3 is connected to **9 nodes**.
 
 ### ✅ Answer: **9**."
-cycle_check/size40/p0.2/8,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,143,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/8,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,143,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -188058,7 +188058,7 @@ Let's count these:
 That's **11 nodes**.
 
 ### ✅ Answer: **11**."
-cycle_check/size40/p0.2/33,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,165,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/33,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,165,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -189619,7 +189619,7 @@ From the given information:
 So, node 21 is connected to **7 nodes**.
 
 ### ✅ Answer: **7**."
-cycle_check/size40/p0.2/58,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,183,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/58,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,183,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -190454,7 +190454,7 @@ From the description:
 So, node 0 is connected to **7 nodes**.
 
 ### ✅ Answer: **7**."
-cycle_check/size40/p0.2/83,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,173,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/83,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,173,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -197139,7 +197139,7 @@ $$
 $$
 
 **Answer: 260**"
-cycle_check/size40/p0.5/23,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",No,0.0,False,149,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/23,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,149,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -197443,7 +197443,7 @@ This is determined by counting the number of nodes directly connected to node 7 
 **1, 2, 6, 8, 10, 11, 12, 14, 15, 16, 17, 19, 20, 21, 22, 24, 25, 28, 29, 30, 31, 32, 33, 36, 37, 39**
 
 That is **26** nodes, so the degree of node 7 is **26**."
-cycle_check/size40/p0.5/30,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,190,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/30,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,190,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -198881,7 +198881,7 @@ $$
 $$
 
 **Answer: 365**"
-cycle_check/size40/p0.5/64,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",No,0.0,False,175,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/64,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",Yes,1.0,False,175,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -199811,7 +199811,7 @@ From the given information:
 That is **15 nodes**.
 
 ### ✅ Answer: **15**"
-cycle_check/size40/p0.5/86,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,171,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/86,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,171,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -203665,7 +203665,7 @@ From the given list of connections:
 So, node 32 is connected to **three** nodes: 17, 21, and 25.
 
 ### ✅ Answer: **3**."
-cycle_check/size40/p0.1/90,cycle_check,0.1,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,296,"A: **Yes, there is a cycle in this graph.**
+cycle_check/size40/p0.1/90,cycle_check,0.1,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,296,"A: **Yes, there is a cycle in this graph.**
 
 ### Explanation:
 
@@ -204525,7 +204525,7 @@ Let's count these:
 That's **10 nodes**.
 
 ### ✅ Answer: **10**"
-cycle_check/size40/p0.2/15,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,166,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/15,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,166,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -205386,7 +205386,7 @@ From the given list:
 So, node 34 is connected to **11 nodes**.
 
 ### ✅ Answer: **11**."
-cycle_check/size40/p0.2/40,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,169,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/40,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,169,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -206713,7 +206713,7 @@ From the given list:
 So, node 26 is connected to **5 nodes**.
 
 ### ✅ Answer: **5**."
-cycle_check/size40/p0.2/65,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,161,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/65,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,161,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -207634,7 +207634,7 @@ From the given list:
 So, node 26 is connected to **5 nodes**.
 
 ### ✅ Answer: **5**."
-cycle_check/size40/p0.2/90,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,128,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/90,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,128,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -210053,7 +210053,7 @@ $$
 
 ### Final Answer:
 **191 edges** are in this graph."
-cycle_check/size40/p0.35/52,cycle_check,0.35,components,zero_shot,"Yes, there is a cycle",No,0.0,False,173,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.35/52,cycle_check,0.35,components,zero_shot,"Yes, there is a cycle",Yes,1.0,False,173,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -212569,7 +212569,7 @@ Let's count these:
 That's a total of **10 nodes**.
 
 ### ✅ Answer: **10**."
-cycle_check/size40/p0.5/18,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,159,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/18,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,159,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -214475,7 +214475,7 @@ Therefore, **there is no direct edge between Node 4 and Node 26**.
 node_degree/size40/p0.5/62,node_degree,0.5,degree,zero_shot,20,20,1.0,False,22,"The degree of node 11 is **20**.
 
 **Answer: 20**."
-cycle_check/size40/p0.5/62,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,201,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/62,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,201,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -215816,7 +215816,7 @@ Let's count these:
 There are **21 connections**.
 
 ### ✅ Answer: **21**."
-cycle_check/size40/p0.5/93,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,312,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/93,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,312,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -221352,7 +221352,7 @@ From the given description:
 So, node 31 is connected to **8 nodes**.
 
 ### ✅ Answer: **8**."
-cycle_check/size40/p0.2/18,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,215,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/18,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,215,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -222380,7 +222380,7 @@ From the given information:
 So, node 18 is connected to **5 nodes**.
 
 ### ✅ Answer: **5**."
-cycle_check/size40/p0.2/43,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,118,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/43,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,118,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -223443,7 +223443,7 @@ From the given information:
 So, node 20 is connected to **4 nodes**.
 
 ### ✅ Answer: **4**."
-cycle_check/size40/p0.2/68,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,131,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/68,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,131,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -224291,7 +224291,7 @@ Let's count these:
 That's **13 nodes**.
 
 ### ✅ Answer: **13**."
-cycle_check/size40/p0.2/93,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,196,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/93,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,196,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -229235,7 +229235,7 @@ From the given information:
 Counting these, we find there are **22** connections.
 
 ### Answer: 22"
-cycle_check/size40/p0.5/15,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,199,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/15,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,199,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -229461,7 +229461,7 @@ Let's count these:
 There are **19 connections**.
 
 ### ✅ Answer: **19**."
-cycle_check/size40/p0.5/21,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,169,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/21,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,169,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -231131,7 +231131,7 @@ $$
 $$
 
 **Answer: 306**"
-cycle_check/size40/p0.5/58,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",No,0.0,False,343,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/58,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,343,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -232087,7 +232087,7 @@ $$
 $$
 
 **Answer: 306 edges**."
-cycle_check/size40/p0.5/83,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",No,0.0,False,224,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/83,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,224,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -232546,7 +232546,7 @@ Let's count them:
 So, node 17 is connected to **21 nodes**.
 
 ### ✅ Answer: **21**."
-cycle_check/size40/p0.5/96,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,178,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/96,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,178,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -237908,7 +237908,7 @@ From the given information:
 So, node 16 is connected to **4 nodes**.
 
 ### ✅ Answer: **4**."
-cycle_check/size40/p0.2/21,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,130,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/21,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,130,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -238713,7 +238713,7 @@ From the given list:
 So, node 12 is connected to **8 nodes**.
 
 ### ✅ Answer: **8**."
-cycle_check/size40/p0.2/46,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,148,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/46,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,148,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -239639,7 +239639,7 @@ From the given list:
 So, node 36 is connected to **5 nodes**.
 
 ### ✅ Answer: **5**."
-cycle_check/size40/p0.2/71,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,157,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/71,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,157,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -240591,7 +240591,7 @@ From the given information:
 That is **10 nodes**.
 
 ### ✅ Answer: **10**."
-cycle_check/size40/p0.2/96,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,130,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/96,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,130,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -244515,7 +244515,7 @@ That's **18 nodes**.
 
 ### ✅ Final Answer:
 **A: 18**"
-cycle_check/size40/p0.35/96,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,155,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.35/96,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,155,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -245112,7 +245112,7 @@ $$
 $$
 
 **Answer: 282**"
-cycle_check/size40/p0.5/11,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",No,0.0,False,150,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/11,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,150,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -245438,7 +245438,7 @@ node_degree/size40/p0.5/18,node_degree,0.5,degree,zero_shot,10,10,1.0,False,33,"
 This is given in the initial description:
 
 > Node 21 has degree 10."
-cycle_check/size40/p0.5/18,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,192,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/18,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,192,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -245788,7 +245788,7 @@ Let's count these:
 There are **19 nodes** connected to node 0.
 
 ### ✅ Final Answer: **19**."
-cycle_check/size40/p0.5/24,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,179,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/24,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,179,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -245923,7 +245923,7 @@ $$
 $$
 
 **Answer: 385**"
-cycle_check/size40/p0.5/27,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",No,0.0,False,234,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/27,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",Yes,1.0,False,234,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -247023,7 +247023,7 @@ Let's count these:
 So, node 9 is connected to **18 nodes**.
 
 ### ✅ Final Answer: **18**."
-cycle_check/size40/p0.5/49,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,178,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/49,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,178,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -248660,7 +248660,7 @@ $$
 $$
 
 **Answer: 316 edges**."
-cycle_check/size40/p0.5/86,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",No,0.0,False,149,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/86,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,149,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -251848,7 +251848,7 @@ From the given data:
 So, the answer is:
 
 **A: 4**."
-cycle_check/size40/p0.1/71,cycle_check,0.1,all,zero_shot,"Yes, there is a cycle",No,0.0,False,174,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.1/71,cycle_check,0.1,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,174,"Yes, there is a cycle in this graph.
 
 A cycle exists when there is a path that starts and ends at the same node without repeating any edges or nodes (except the starting/ending node). Based on the connections provided, we can identify at least one cycle.
 
@@ -254016,7 +254016,7 @@ From the given information:
 So, node 33 is connected to **6 nodes**.
 
 ### ✅ Answer: **6**."
-cycle_check/size40/p0.2/24,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,131,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/24,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,131,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -254892,7 +254892,7 @@ From the given data:
 So, node 37 is connected to **7 nodes**.
 
 ### ✅ Answer: **7**."
-cycle_check/size40/p0.2/49,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,170,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/49,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,170,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -255747,7 +255747,7 @@ From the given information:
 So, node 3 is connected to **9 nodes**.
 
 ### ✅ Answer: **9**."
-cycle_check/size40/p0.2/74,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,156,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/74,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,156,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -256609,7 +256609,7 @@ From the given data:
 So, node 15 is connected to **9 nodes**.
 
 ### ✅ Answer: **9**."
-cycle_check/size40/p0.2/99,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,148,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/99,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,148,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -258207,7 +258207,7 @@ $$
 $$
 
 **Answer: 231**"
-cycle_check/size40/p0.35/39,cycle_check,0.35,none,zero_shot,"Yes, there is a cycle",No,0.0,False,124,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.35/39,cycle_check,0.35,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,124,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -260707,7 +260707,7 @@ Let's count them:
 So, node 16 is connected to **20 nodes**.
 
 ### ✅ Answer: **20**"
-cycle_check/size40/p0.5/2,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,191,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/2,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,191,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -261530,7 +261530,7 @@ From the adjacency lists:
 - Node 15: 20 edges
 - Node 16: 24 edges
 - Node 17: "
-cycle_check/size40/p0.5/5,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",No,0.0,False,223,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/5,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",Yes,1.0,False,223,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -263276,7 +263276,7 @@ Counting these nodes:
 That is **17 nodes**.
 
 ### Answer: 17"
-cycle_check/size40/p0.5/46,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,179,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/46,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,179,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -269378,7 +269378,7 @@ From the given description:
 So, node 9 is connected to **9 nodes**.
 
 ### ✅ Answer: **9**."
-cycle_check/size40/p0.2/2,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,130,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/2,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,130,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -270171,7 +270171,7 @@ From the given information:
 So, node 28 is connected to **4 nodes**.
 
 ### ✅ Answer: **4**."
-cycle_check/size40/p0.2/27,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,153,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/27,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,153,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -271124,7 +271124,7 @@ From the given list:
 So, node 29 is connected to **6 nodes**.
 
 ### ✅ Answer: **6**."
-cycle_check/size40/p0.2/52,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,152,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/52,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,152,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -277464,7 +277464,7 @@ Now, let's count these:
 There are **20 nodes** connected to node 15.
 
 ### ✅ Final Answer: **20**."
-cycle_check/size40/p0.5/5,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,161,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/5,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,161,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -277598,7 +277598,7 @@ $$
 $$
 
 **Answer: 320**"
-cycle_check/size40/p0.5/8,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",No,0.0,False,232,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/8,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",Yes,1.0,False,232,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -279581,7 +279581,7 @@ There are **24 nodes** connected to node 14.
 
 ### ✅ Final Answer:
 **24**"
-cycle_check/size40/p0.5/55,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,232,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/55,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,232,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -282812,7 +282812,7 @@ From the description:
 So, node 10 is connected to **4 nodes**.
 
 ### ✅ Answer: **4**."
-cycle_check/size40/p0.1/36,cycle_check,0.1,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,295,"A: **Yes, there is a cycle in this graph.**
+cycle_check/size40/p0.1/36,cycle_check,0.1,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,295,"A: **Yes, there is a cycle in this graph.**
 
 To determine whether a cycle exists in a graph, we can look for a path that starts and ends at the same node without repeating any edges or nodes (except the starting/ending node).
 
@@ -285551,7 +285551,7 @@ From the description:
 So, node 0 is connected to **9** nodes.
 
 ### ✅ Answer: **9**."
-cycle_check/size40/p0.2/11,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,160,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/11,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,160,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -286572,7 +286572,7 @@ Let's count these:
 That's **10 nodes**.
 
 ### ✅ Answer: **10**."
-cycle_check/size40/p0.2/36,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,146,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/36,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,146,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -287497,7 +287497,7 @@ From the given list:
 So, node 37 is connected to **7 nodes**.
 
 ### ✅ Answer: **7**."
-cycle_check/size40/p0.2/61,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,226,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/61,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,226,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -288339,7 +288339,7 @@ From the given data:
 So, node 7 is connected to **8 nodes**.
 
 ### ✅ Answer: **8**."
-cycle_check/size40/p0.2/86,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,134,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/86,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,134,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -288833,7 +288833,7 @@ $$
 $$
 
 **Answer: 231**"
-cycle_check/size40/p0.35/1,cycle_check,0.35,none,zero_shot,"Yes, there is a cycle",No,0.0,False,144,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.35/1,cycle_check,0.35,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,144,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -293352,7 +293352,7 @@ This is determined by counting the number of nodes listed in the ""connected to"
 0, 3, 4, 6, 7, 8, 9, 11, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 27, 28, 29, 32, 35, 36, 37, 38.
 
 That is **26** nodes, so the degree of node 33 is **26**."
-cycle_check/size40/p0.5/8,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,463,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/8,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,463,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -293593,7 +293593,7 @@ Now, let's count these:
 There are **20 nodes** connected to node 33.
 
 ### ✅ Final Answer: **20**."
-cycle_check/size40/p0.5/14,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,175,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/14,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,175,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -295110,7 +295110,7 @@ $$
 $$
 
 **Answer: 402**"
-cycle_check/size40/p0.5/51,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",No,0.0,False,243,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/51,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,243,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -296670,7 +296670,7 @@ Let's count these:
 There are **20 nodes** connected to node 0.
 
 ### ✅ Answer: **20**"
-cycle_check/size40/p0.5/89,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,159,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/89,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,159,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -301235,7 +301235,7 @@ From the given list:
 So, node 17 is connected to **9 nodes**.
 
 ### ✅ Answer: **9**."
-cycle_check/size40/p0.2/14,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,159,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/14,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,159,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -302111,7 +302111,7 @@ From the given list:
 So, node 29 is connected to **6 nodes**.
 
 ### ✅ Answer: **6**."
-cycle_check/size40/p0.2/39,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,149,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/39,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,149,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -303077,7 +303077,7 @@ From the given information:
 So, node 19 is connected to **7 nodes**.
 
 ### ✅ Answer: **7**."
-cycle_check/size40/p0.2/64,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,212,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/64,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,212,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -310318,7 +310318,7 @@ $$
 $$
 
 **Answer: 305**"
-cycle_check/size40/p0.5/45,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",No,0.0,False,181,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/45,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",Yes,1.0,False,181,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -311288,7 +311288,7 @@ Now, let's count these:
 There are **18 nodes** connected to node 34.
 
 ### ✅ Final Answer: **18**."
-cycle_check/size40/p0.5/67,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,156,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/67,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,156,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -311448,7 +311448,7 @@ Since the number of edges must be an integer, this suggests a possible error in 
 $$
 \boxed{388}
 $$"
-cycle_check/size40/p0.5/70,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",No,0.0,False,241,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/70,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",Yes,1.0,False,241,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -312356,7 +312356,7 @@ Let's count these:
 So, node 16 is connected to **18 nodes**.
 
 ### ✅ Answer: **18**."
-cycle_check/size40/p0.5/92,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,171,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/92,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,171,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -317894,7 +317894,7 @@ From the given information:
 That is **9 connections**.
 
 ### ✅ Answer: **9**."
-cycle_check/size40/p0.2/17,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,141,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/17,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,141,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -318790,7 +318790,7 @@ From the given information:
 So, node 18 is connected to **9 nodes**.
 
 ### ✅ Answer: **9**."
-cycle_check/size40/p0.2/42,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,156,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/42,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,156,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -319734,7 +319734,7 @@ From the given information:
 So, node 32 is connected to **6 nodes**.
 
 ### ✅ Answer: **6**."
-cycle_check/size40/p0.2/67,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,133,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/67,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,133,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -320599,7 +320599,7 @@ From the description:
 So, node 5 is connected to **8 nodes**.
 
 ### ✅ Answer: **8**."
-cycle_check/size40/p0.2/92,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,149,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/92,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,149,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -321697,7 +321697,7 @@ Let's count these:
 There are **15** nodes connected to node 37.
 
 ### ✅ Final Answer: **15**."
-cycle_check/size40/p0.35/17,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,131,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.35/17,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,131,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -325588,7 +325588,7 @@ node_degree/size40/p0.5/14,node_degree,0.5,degree,zero_shot,20,20,1.0,False,36,"
 This is given directly in the initial list of degrees:
 
 > Node 33 has degree 20."
-cycle_check/size40/p0.5/14,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,188,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/14,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,188,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -325923,7 +325923,7 @@ Let's count these:
 There are **14 nodes** connected to node 37.
 
 ### ✅ Final Answer: **14**."
-cycle_check/size40/p0.5/20,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,191,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/20,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,191,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -326039,7 +326039,7 @@ $$
 $$
 
 **Answer: 308**"
-cycle_check/size40/p0.5/23,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",No,0.0,False,219,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/23,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",Yes,1.0,False,219,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -326930,7 +326930,7 @@ Let's count these:
 There are **21 connections**.
 
 ### ✅ Final Answer: **21**."
-cycle_check/size40/p0.5/45,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,157,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/45,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,157,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -327090,7 +327090,7 @@ $$
 $$
 
 **Answer: 387**"
-cycle_check/size40/p0.5/48,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",No,0.0,False,205,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/48,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",Yes,1.0,False,205,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -328021,7 +328021,7 @@ Let's count these:
 That's **19 nodes**.
 
 ### ✅ Final Answer: **19**."
-cycle_check/size40/p0.5/70,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,171,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/70,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,171,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -334239,7 +334239,7 @@ So, node 22 is connected to:
 Therefore, the **degree of node 22 is 6**.
 
 ### ✅ Final Answer: **6**."
-cycle_check/size40/p0.2/20,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,212,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/20,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,212,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -336419,7 +336419,7 @@ Let's count these:
 That's **10 nodes**.
 
 ### ✅ Answer: **10**."
-cycle_check/size40/p0.2/45,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,161,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/45,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,161,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -337281,7 +337281,7 @@ So, node 4 is connected to **5 nodes**: 5, 14, 22, 23, and 30.
 Therefore, the **degree of node 4 is 5**.
 
 ### ✅ Final Answer: **5**."
-cycle_check/size40/p0.2/70,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,159,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/70,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,159,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -338381,7 +338381,7 @@ From the given list:
 So, node 16 is connected to **8 nodes**.
 
 ### ✅ Answer: **8**."
-cycle_check/size40/p0.2/95,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,210,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/95,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,210,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -344202,7 +344202,7 @@ Node 25 is one of the nodes connected to Node 23. Therefore, there is an edge be
 node_degree/size40/p0.5/42,node_degree,0.5,degree,zero_shot,15,15,1.0,False,22,"The degree of node 33 is **15**.
 
 **Answer: 15**."
-cycle_check/size40/p0.5/42,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,225,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/42,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,225,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node). Based on the connections provided, the graph is highly connected, and many nodes are connected to multiple other nodes in a way that forms cycles.
 
@@ -344625,7 +344625,7 @@ $$
 $$
 
 **Answer: 305**"
-cycle_check/size40/p0.5/51,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",No,0.0,False,215,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/51,cycle_check,0.5,clustering,zero_shot,"Yes, there is a cycle",Yes,1.0,False,215,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -344874,7 +344874,7 @@ $$
 
 ### Final Answer:
 **271 edges** are in this graph."
-cycle_check/size40/p0.5/57,cycle_check,0.5,components,zero_shot,"Yes, there is a cycle",No,0.0,False,196,"A: **Yes, there is a cycle in this graph.**
+cycle_check/size40/p0.5/57,cycle_check,0.5,components,zero_shot,"Yes, there is a cycle",Yes,1.0,False,196,"A: **Yes, there is a cycle in this graph.**
 
 The graph is described with a large number of nodes and edges, and it is stated that the graph has **1 connected component**, meaning all nodes are connected in one piece. Given the high connectivity of the nodes (each node is connected to many others), it is highly likely that there are multiple cycles in the graph.
 
@@ -345616,7 +345616,7 @@ Now, let's count these nodes:
 There are **19 nodes** connected to node 34.
 
 ### ✅ Final Answer: **19**."
-cycle_check/size40/p0.5/73,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,175,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/73,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,175,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -346404,7 +346404,7 @@ node_degree/size40/p0.5/92,node_degree,0.5,degree,zero_shot,18,18,1.0,False,34,"
 This is given directly in the problem statement:
 
 > Node 16 has degree 18."
-cycle_check/size40/p0.5/92,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,274,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/92,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,274,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -352040,7 +352040,7 @@ From the given information:
 So, node 39 is connected to **4 nodes**.
 
 ### ✅ Answer: **4**."
-cycle_check/size40/p0.2/23,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,142,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/23,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,142,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -354662,7 +354662,7 @@ From the given data:
 So, node 13 is connected to **4 nodes**: 0, 5, 12, and 34.
 
 ### ✅ Answer: **4**."
-cycle_check/size40/p0.2/73,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,138,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/73,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,138,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -359221,7 +359221,7 @@ $$
 $$
 
 **Answer: 232** edges."
-cycle_check/size40/p0.35/85,cycle_check,0.35,components,zero_shot,"Yes, there is a cycle",No,0.0,False,154,"A: **Yes, there is a cycle in this graph.**
+cycle_check/size40/p0.35/85,cycle_check,0.35,components,zero_shot,"Yes, there is a cycle",Yes,1.0,False,154,"A: **Yes, there is a cycle in this graph.**
 
 The graph is connected and has multiple nodes with multiple connections, which implies that cycles are likely present. To confirm, we can observe that a cycle exists between nodes 0, 1, 2, and back to 0 (for example), or between other sets of nodes that form a closed path with no repeated nodes except the starting/ending node.
 
@@ -359793,7 +359793,7 @@ Now, let's count these:
 That's **21 nodes**.
 
 ### ✅ Final Answer: **21**."
-cycle_check/size40/p0.5/1,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,170,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/1,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,170,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -360725,7 +360725,7 @@ Let's count these:
 So, the **degree of node 27 is 24**.
 
 **Answer: 24**."
-cycle_check/size40/p0.5/26,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,161,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/26,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,161,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -361839,7 +361839,7 @@ Let's count them:
 So, node 23 is connected to **21 nodes**.
 
 ### ✅ Answer: **21**"
-cycle_check/size40/p0.5/51,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,155,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/51,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,155,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -362510,7 +362510,7 @@ From the given information:
 That is **19 connections**.
 
 ### ✅ Answer: **19**."
-cycle_check/size40/p0.5/70,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,188,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/70,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,188,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -363259,7 +363259,7 @@ $$
 $$
 
 **Answer: 308**"
-cycle_check/size40/p0.5/88,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",No,0.0,False,290,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/88,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,290,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -363758,7 +363758,7 @@ node_degree/size40/p0.5/95,node_degree,0.5,degree,zero_shot,13,13,1.0,False,32,"
 This is given directly in the problem statement:
 
 > Node 5 has degree 13."
-cycle_check/size40/p0.5/95,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,248,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/95,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,248,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -368597,7 +368597,7 @@ From the given description:
 So, node 36 is connected to **6 nodes**.
 
 ### ✅ Answer: **6**."
-cycle_check/size40/p0.2/1,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,131,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/1,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,131,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -369382,7 +369382,7 @@ Looking at the list of connections for **node 39**:
 So, node 39 is connected to **6 nodes**.
 
 ### ✅ Answer: **6**."
-cycle_check/size40/p0.2/26,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,159,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/26,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,159,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -370244,7 +370244,7 @@ Let's count these:
 That's **11 nodes**.
 
 ### ✅ Answer: **11**."
-cycle_check/size40/p0.2/51,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,141,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/51,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,141,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -372552,7 +372552,7 @@ $$
 $$
 
 **Answer: 231**"
-cycle_check/size40/p0.35/16,cycle_check,0.35,none,zero_shot,"Yes, there is a cycle",No,0.0,False,167,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.35/16,cycle_check,0.35,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,167,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -377344,7 +377344,7 @@ node_degree/size40/p0.5/23,node_degree,0.5,degree,zero_shot,20,20,1.0,False,41,"
 This is given directly in the list of degrees at the beginning of the description:
 
 > Node 14 has degree 20."
-cycle_check/size40/p0.5/23,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,217,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/23,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,217,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -377618,7 +377618,7 @@ Now, let's count these:
 There are **23** nodes connected to node 12.
 
 ### ✅ Final Answer: **23**."
-cycle_check/size40/p0.5/29,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,167,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/29,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,167,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -378493,7 +378493,7 @@ Node 37 is listed among the connections of Node 34, confirming that an edge exis
 node_degree/size40/p0.5/48,node_degree,0.5,degree,zero_shot,19,19,1.0,False,20,"The degree of node 21 is **19**.
 
 **Answer:** 19"
-cycle_check/size40/p0.5/48,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,212,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/48,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,212,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -379123,7 +379123,7 @@ $$
 $$
 
 **Answer: 360**"
-cycle_check/size40/p0.5/66,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",No,0.0,False,235,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/66,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,235,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -380831,7 +380831,7 @@ $$
 $$
 
 **Answer: 272**"
-cycle_check/size40/p0.5/91,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",No,0.0,False,267,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/91,cycle_check,0.5,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,267,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -383941,7 +383941,7 @@ node_degree/size40/p0.1/76,node_degree,0.1,degree,zero_shot,5,5,1.0,False,30,"Th
 This is given directly in the problem statement:
 
 > Node 0 has degree 5."
-cycle_check/size40/p0.1/76,cycle_check,0.1,all,zero_shot,"Yes, there is a cycle",No,0.0,False,161,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.1/76,cycle_check,0.1,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,161,"Yes, there is a cycle in this graph.
 
 A cycle exists if there is a path that starts and ends at the same node without repeating any edges. Based on the connections provided, we can identify at least one cycle.
 
@@ -385097,7 +385097,7 @@ From the given list:
 So, node 24 is connected to **8 nodes**.
 
 ### ✅ Answer: **8**."
-cycle_check/size40/p0.2/4,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,139,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/4,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,139,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -387916,7 +387916,7 @@ From the given list:
 So, node 18 is connected to **8 nodes**.
 
 ### ✅ Answer: **8**."
-cycle_check/size40/p0.2/79,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,138,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/79,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,138,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -388804,7 +388804,7 @@ Let's count these:
 That's **13 nodes**.
 
 ### ✅ Final Answer: **13**."
-cycle_check/size40/p0.35/4,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,156,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.35/4,cycle_check,0.35,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,156,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -395075,7 +395075,7 @@ node_degree/size40/p0.5/51,node_degree,0.5,degree,zero_shot,21,21,1.0,False,36,"
 This is given directly in the initial list of degrees:
 
 > Node 23 has degree 21."
-cycle_check/size40/p0.5/51,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,455,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/51,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,455,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -396266,7 +396266,7 @@ Let's count these:
 There are **17 nodes** connected to node 10.
 
 ### ✅ Final Answer: **17**."
-cycle_check/size40/p0.5/82,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,168,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/82,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,168,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -400429,7 +400429,7 @@ $$
 $$
 
 **Answer: 67**"
-cycle_check/size40/p0.1/97,cycle_check,0.1,none,zero_shot,"Yes, there is a cycle",No,0.0,False,203,"A: **Yes, there is a cycle in this graph.**
+cycle_check/size40/p0.1/97,cycle_check,0.1,none,zero_shot,"Yes, there is a cycle",Yes,1.0,False,203,"A: **Yes, there is a cycle in this graph.**
 
 ### Explanation:
 
@@ -400901,7 +400901,7 @@ From the given list:
 So, node 20 is connected to **9 nodes**.
 
 ### ✅ Answer: **9**."
-cycle_check/size40/p0.2/7,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,180,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/7,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,180,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -401740,7 +401740,7 @@ From the description:
 So, node 9 is connected to **5 nodes**.
 
 ### ✅ Answer: **5**."
-cycle_check/size40/p0.2/32,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,337,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/32,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,337,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -402832,7 +402832,7 @@ So, node 3 is connected to **6 nodes**.
 Therefore, the **degree of node 3 is 6**.
 
 ### ✅ Final Answer: **6**."
-cycle_check/size40/p0.2/57,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,146,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/57,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,146,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -403650,7 +403650,7 @@ From the given information:
 So, node 11 is connected to **4 nodes**.
 
 ### ✅ Answer: **4**."
-cycle_check/size40/p0.2/82,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",No,0.0,False,152,"A: Yes, there is a cycle in this graph.
+cycle_check/size40/p0.2/82,cycle_check,0.2,filler,zero_shot,"Yes, there is a cycle",Yes,1.0,False,152,"A: Yes, there is a cycle in this graph.
 
 **Explanation:**
 
@@ -408661,7 +408661,7 @@ node_degree/size40/p0.5/4,node_degree,0.5,degree,zero_shot,19,20,0.0,False,34,"T
 This is given directly in the problem statement:
 
 > Node 39 has degree 20."
-cycle_check/size40/p0.5/4,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",No,0.0,False,201,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/4,cycle_check,0.5,all,zero_shot,"Yes, there is a cycle",Yes,1.0,False,201,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -408931,7 +408931,7 @@ That's **30 nodes**.
 
 ### ✅ Final Answer:
 **30**"
-cycle_check/size40/p0.5/10,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,158,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/10,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,158,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 
@@ -412112,7 +412112,7 @@ Let's count these:
 So, node 14 is connected to **22 nodes**.
 
 ### ✅ Final Answer: **22**."
-cycle_check/size40/p0.5/85,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",No,0.0,False,368,"Yes, there is a cycle in this graph.
+cycle_check/size40/p0.5/85,cycle_check,0.5,rwse,zero_shot,"Yes, there is a cycle",Yes,1.0,False,368,"Yes, there is a cycle in this graph.
 
 A **cycle** in a graph is a path that starts and ends at the same node, with no repeated edges or nodes (except the starting/ending node).
 

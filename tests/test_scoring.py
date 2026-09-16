@@ -116,3 +116,14 @@ def test_reachability_accepted_by_score_one():
 def test_extract_answer_still_raises_on_unknown_task():
   with pytest.raises(ValueError, match="unknown task"):
     scoring.extract_answer("Answer: 3.", "not_a_real_task")
+
+
+def test_cycle_definition_boilerplate_does_not_override_the_answer():
+  # Real qwen3-4b response shape: the answer, then a definition whose "no" is
+  # the last yes/no token in the text.
+  text = ("A: Yes, there is a cycle in this graph.\n\n**Explanation:**\n\n"
+          "A cycle in a graph is a path that starts and ends at the same node, "
+          "with no repeated edges or nodes (except the starting/ending node).")
+  assert scoring.extract_answer(text, "cycle_check") == "Yes"
+  assert scoring.extract_answer_first(text, "cycle_check") == "Yes"
+  assert scoring.extract_answer("No, there is no cycle.", "cycle_check") == "No"

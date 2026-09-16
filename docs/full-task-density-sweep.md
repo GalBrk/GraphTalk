@@ -265,28 +265,27 @@ blind bar: 1.000 at every density (gold is "Yes" almost everywhere)
 
 mean score by density x condition (hit_cap dropped):
   p               all  clustering  components      degree      filler        none        rwse
-  0.1           0.980       1.000       0.969       0.990       0.938       0.980       1.000
-  0.2           1.000       1.000       0.979       0.990       0.140       0.959       1.000
-  0.35          1.000       1.000       0.980       0.969       0.919       0.960       0.990
-  0.5           0.640       0.870       0.960       0.980       1.000       0.860       0.510
+  0.1           1.000       1.000       0.969       0.990       0.990       0.990       1.000
+  0.2           1.000       1.000       0.990       0.990       1.000       1.000       1.000
+  0.35          1.000       1.000       1.000       0.969       1.000       1.000       1.000
+  0.5           0.970       1.000       0.980       0.980       1.000       1.000       1.000
 
-`filler` collapses to 0.140 at p=0.2 specifically -- a one-density anomaly,
-not a trend (it's back to 0.919-1.000 at every other level). `none`/`all`/
-`rwse` collapse together at p=0.5 (0.86/0.64/0.51) while `components`/
-`degree`/`filler` hold near ceiling there -- a density-specific cliff, not
-explained by hit_cap (capped counts at p=0.5 are 0-1 rows for every
-condition, see the score log).
+Rescored after the 2026-09-16 extraction fix (see Caveats). Before it, `filler`
+read 0.140 at p=0.2 and `none`/`all`/`rwse` 0.86/0.64/0.51 at p=0.5: the
+responses said "Yes, there is a cycle" and then defined a cycle as a path
+"with no repeated edges or nodes", and the extractor took that "no" as the
+answer.
 
 shortcut bar: all p  0.946 (all/degree) / 0.832 (clustering/filler/none/rwse)
 / 1.000 (components)
 
 pooled across densities, paired vs 'none' (exact McNemar):
-          all - none: n=  395 win   21 lose   35 delta -0.0354 p=0.0814  bar-adj -0.1494
-   clustering - none: n=  395 win   21 lose   10 delta +0.0278 p=0.0708  bar-adj +0.0278
-   components - none: n=  391 win   23 lose   10 delta +0.0332 p=0.0351  bar-adj -0.1348
-       degree - none: n=  391 win   23 lose    6 delta +0.0435 p=0.0023  *sig(BH)  bar-adj -0.0705
-       filler - none: n=  392 win   19 lose   93 delta -0.1888 p=0.0000  *sig(BH)  bar-adj -0.1888
-         rwse - none: n=  392 win   19 lose   45 delta -0.0663 p=0.0016  *sig(BH)  bar-adj -0.0663
+          all - none: n=  395 win    1 lose    3 delta -0.0051 p=0.6250  bar-adj -0.1191
+   clustering - none: n=  395 win    1 lose    0 delta +0.0025 p=1.0000  bar-adj +0.0025
+   components - none: n=  391 win    1 lose    6 delta -0.0128 p=0.1250  bar-adj -0.1808
+       degree - none: n=  391 win    0 lose    6 delta -0.0153 p=0.0312  bar-adj -0.1293
+       filler - none: n=  392 win    0 lose    1 delta -0.0026 p=1.0000  bar-adj -0.0026
+         rwse - none: n=  392 win    1 lose    0 delta +0.0026 p=1.0000  bar-adj +0.0026
 
 TASK: edge_count
 blind bar: 0.050-0.079 across densities (real headroom)
@@ -418,472 +417,123 @@ is 0.616, so more than half of the raw effect is shortcut-explainable even
 before the harm direction is accounted for).
 ```
 
-## Pooled accuracy by primer, per task (each model)
+## Summary: accuracy vs `none`, pooled over densities
 
-Same data as the per-task tables above, pooled across all four densities and
-reshaped task x primer for a per-model read. `connected_nodes` is set-F1, not
-exact match. Delta is percentage points vs `none` for that task; bold marks
-the largest moves.
+Exact match for every task, including `connected_nodes`: its F1 sits at 96-100% for every
+condition and hides the differences exact match shows. `hit_cap` rows dropped. `none` column is
+accuracy (%); the others are pp vs `none`. **Bold** = significant, from a paired exact McNemar
+test on pairs where neither row capped, BH-corrected across the 6 primers within the task.
+Re-verified 2026-09-16 from `runs/*.densfull40.*`.
 
-### qwen3-1.7b (plain)
+| qwen3-1.7b | cap | none | components | clustering | rwse | degree | filler | all |
+|---|---|---|---|---|---|---|---|---|
+| connected_nodes | 0% | 72.5 | +0.8 | +1.2 | +1.0 | +3.5 | **−6.2** | +2.2 |
+| cycle_check | 6% | 99.7 | −0.5 | +0.3 | **−7.6** | **−11.2** | +0.3 | −1.0 |
+| edge_count | 22% | 1.8 | −1.4 | −0.9 | −1.2 | +2.9 | −0.8 | +1.0 |
+| edge_existence | 0% | 70.5 | **−8.2** | +3.8 | +5.2 | +4.0 | **−15.8** | **+11.5** |
+| node_count | 0% | 31.5 | **+21.2** | **+67.2** | +2.0 | **+6.8** | **+39.8** | **+47.0** |
+| node_degree | 0% | 60.5 | +1.8 | +3.0 | +4.2 | **+7.5** | −0.5 | **+10.2** |
 
-| task | none | components | clustering | rwse | degree | filler | all |
-|---|---|---|---|---|---|---|---|
-| connected_nodes | 97.21% | 97.16% (−0.04) | 97.24% (+0.03) | 97.02% (−0.18) | 97.94% (+0.74) | 96.24% (−0.96) | 96.50% (−0.70) |
-| cycle_check | 99.73% | 99.20% (−0.53) | 100.00% (+0.27) | 92.11% (**−7.61**) | 88.52% (**−11.21**) | 100.00% (+0.27) | 98.74% (−0.99) |
-| edge_count | 1.78% | 0.34% (−1.44) | 0.91% (−0.86) | 0.61% (−1.17) | 4.70% (+2.92) | 1.02% (−0.76) | 2.78% (+1.00) |
-| edge_existence | 70.50% | 62.25% (**−8.25**) | 74.25% (+3.75) | 75.69% (+5.19) | 74.50% (+4.00) | 54.75% (**−15.75**) | 82.00% (**+11.50**) |
-| node_count | 31.50% | 52.75% (+21.25) | 98.75% (**+67.25**) | 33.50% (+2.00) | 38.25% (+6.75) | 71.25% (**+39.75**) | 78.50% (**+47.00**) |
-| node_degree | 60.50% | 62.25% (+1.75) | 63.50% (+3.00) | 64.66% (+4.16) | 68.00% (+7.50) | 60.00% (−0.50) | 70.75% (**+10.25**) |
+| qwen3-1.7b-think | cap | none | components | clustering | rwse | degree | filler | all |
+|---|---|---|---|---|---|---|---|---|
+| connected_nodes | 1% | 79.7 | +2.3 | +1.2 | −0.3 | **+6.5** | +1.9 | **+5.9** |
+| cycle_check | 7% | 100.0 | +0.0 | +0.0 | +0.0 | −0.7 | +0.0 | +0.0 |
+| edge_count | 81% | 86.3 | −1.8 | −3.4 | +8.0 | **−20.5** | −2.5 | −18.3 |
+| edge_existence | 0% | 99.2 | −0.8 | −1.0 | −1.3 | −2.3 | −0.7 | −2.0 |
+| node_count | 3% | 98.6 | +1.1 | +1.4 | +1.4 | +0.6 | +1.4 | +1.4 |
+| node_degree | 1% | 76.8 | −1.2 | +1.1 | +2.5 | **+12.9** | −3.4 | **+11.9** |
 
-### qwen3-1.7b-think
+| qwen3-4b | cap | none | components | clustering | rwse | degree | filler | all |
+|---|---|---|---|---|---|---|---|---|
+| connected_nodes | 0% | 86.0 | **+9.2** | +1.0 | +0.0 | −3.0 | **−12.5** | −2.8 |
+| cycle_check | 1% | 99.7 | −1.3 | +0.3 | +0.3 | −1.5 | −0.0 | −0.5 |
+| edge_count | 1% | 2.0 | −1.2 | −1.2 | −1.5 | **+27.8** | +1.2 | **+3.8** |
+| edge_existence | 0% | 90.5 | −2.8 | **+4.0** | **−10.0** | **−4.3** | **−7.0** | **−9.8** |
+| node_count | 0% | 90.2 | **+9.0** | **+8.8** | **+9.2** | **+8.0** | **+9.2** | **+9.8** |
+| node_degree | 0% | 99.2 | +0.2 | −0.5 | **−2.2** | **−6.5** | −0.5 | **−9.2** |
 
-| task | none | components | clustering | rwse | degree | filler | all |
-|---|---|---|---|---|---|---|---|
-| connected_nodes | 98.56% | 98.25% (−0.31) | 98.55% (−0.01) | 96.25% (−2.31) | 97.74% (−0.82) | 98.18% (−0.37) | 98.07% (−0.49) |
-| cycle_check | 100.00% | 100.00% (+0.00) | 100.00% (+0.00) | 100.00% (+0.00) | 99.34% (−0.66) | 100.00% (+0.00) | 100.00% (+0.00) |
-| edge_count | 86.30% | 84.51% (−1.79) | 82.86% (−3.44) | 94.34% (+8.04) | 65.79% (**−20.51**) | 83.82% (−2.48) | 68.03% (**−18.27**) |
-| edge_existence | 99.25% | 98.50% (−0.75) | 98.25% (−1.00) | 97.99% (−1.25) | 96.98% (−2.26) | 98.50% (−0.75) | 97.25% (−2.00) |
-| node_count | 98.64% | 99.73% (+1.09) | 100.00% (+1.36) | 100.00% (+1.36) | 99.23% (+0.58) | 100.00% (+1.36) | 100.00% (+1.36) |
-| node_degree | 76.83% | 75.63% (−1.20) | 77.94% (+1.12) | 79.35% (+2.52) | 89.71% (**+12.88**) | 73.43% (−3.39) | 88.72% (**+11.90**) |
+| qwen3-4b-think | cap | none | components | clustering | rwse | degree | filler | all |
+|---|---|---|---|---|---|---|---|---|
+| connected_nodes | 3% | 98.7 | +0.8 | +0.5 | +0.3 | +0.3 | +0.8 | −0.3 |
+| cycle_check | 2% | 100.0 | +0.0 | +0.0 | +0.0 | −0.8 | +0.0 | +0.0 |
+| edge_count | 62% | 97.6 | +0.8 | −1.3 | −5.2 | **−28.5** | −1.3 | **−48.4** |
+| edge_existence | 1% | 100.0 | +0.0 | +0.0 | +0.0 | +0.0 | +0.0 | +0.0 |
+| node_count | 0% | 99.5 | +0.0 | +0.5 | +0.5 | +0.5 | +0.5 | +0.5 |
+| node_degree | 2% | 99.7 | −0.3 | −0.2 | **−1.8** | +0.0 | +0.3 | −0.5 |
 
-Thinking mostly flattens variance across primers -- `connected_nodes`,
-`cycle_check`, `edge_existence` and `node_count` are all near ceiling for
-every condition, so there is little room for a primer to move anything. The
-two tasks where it doesn't flatten move in opposite directions: `node_degree`
-opens up a *bigger* `degree`/`all` gap under thinking (+12.9/+11.9 pp vs
-+7.5/+10.3 pp plain), while `edge_count` turns `degree`/`all` from small
-plain-arm moves into large think-arm harm (−20.5/−18.3 pp) -- see the hit_cap
-caveats above before reading that one as a reasoning effect rather than
-truncation.
+## Conclusions
 
-### qwen3-4b (plain)
+**Bottom line: no primer gain replicates across model sizes.** Several (task, primer) cells
+beat both `none` and `filler` significantly in one plain arm, but none does so in both. The
+closest, `degree`/`all` on `node_degree`, helps both 1.7B arms and hurts 4B. Three patterns
+are robust: `degree` helps only where the primer states the answer, and only partly; extra
+text of any kind moves the tasks whose answer is trivial, regardless of content; thinking
+removes almost all headroom.
 
-| task | none | components | clustering | rwse | degree | filler | all |
-|---|---|---|---|---|---|---|---|
-| connected_nodes | 98.71% | 99.76% (+1.05) | 98.45% (−0.26) | 97.76% (−0.95) | 97.68% (−1.03) | 96.60% (**−2.12**) | 97.43% (−1.28) |
-| cycle_check | 93.25% | 96.25% (+3.00) | 95.75% (+2.50) | 86.25% (**−7.00**) | 96.75% (+3.50) | 73.75% (**−19.50**) | 90.00% (−3.25) |
-| edge_count | 2.00% | 0.75% (−1.25) | 0.75% (−1.25) | 0.50% (−1.50) | 29.25% (**+27.25**) | 3.25% (+1.25) | 5.75% (+3.75) |
-| edge_existence | 90.50% | 94.50% (+4.00) | 87.75% (−2.75) | 80.50% (**−10.00**) | 85.75% (−4.75) | 83.50% (−7.00) | 80.50% (**−10.00**) |
-| node_count | 90.25% | 99.00% (+8.75) | 99.25% (+9.00) | 99.25% (+9.25) | 98.25% (+8.00) | 99.50% (+9.25) | 100.00% (**+9.75**) |
-| node_degree | 99.25% | 98.75% (−0.50) | 99.50% (+0.25) | 97.00% (−2.25) | 92.75% (**−6.50**) | 98.75% (−0.50) | 90.00% (**−9.25**) |
+**Two rules for reading this run:**
+- **`shortcuts.json` bars were fit on GraphQA's small ER graphs, not n=40.** Here always
+  answering "40" scores 100% on `node_count` and always answering "Yes" scores 100% on
+  `cycle_check`. Only bars backed by exact theorems carry over reliably: `degree`/`all` state
+  the `node_degree` answer, and summing the stated degrees gives `edge_count`. Ignore the
+  `bar-adj` column in the per-task logs above everywhere else.
+- **`filler` is not neutral.** It significantly hurts 4B on `connected_nodes` (−12.5) and
+  `edge_existence` (−7.0), and 1.7B on `edge_existence` (−15.8)
+  and `connected_nodes` (−6.2). At n=40 it adds ~1,830 characters: close to `clustering`
+  (1,631), twice `degree` (893), far above `components` (39), below `rwse` (2,951) and `all`
+  (4,693).
 
-### qwen3-4b-think
+**By task:**
+- **`node_count`: no structural effect.** Nearly every wrong answer is "39", an off-by-one
+  from the encoding's "nodes 0, …, 39" listing. In 4B every condition, `filler` included,
+  fixes it equally (+8 to +10). In 1.7B the gains follow no content logic: `clustering` +67,
+  `filler` +40, `components` +21, `degree` +7, `rwse` +2 (n.s.). The earlier claim that
+  "`components` is a real gain that replicates" is retracted.
+- **`node_degree`: `degree` is the only primer with a consistent content effect, and its sign
+  depends on model size.** It helps the small model, far short of the 100% the primer makes
+  available: +7.5 (1.7B), +12.9 (1.7B-think). It hurts 4B: `degree` −6.5 and `all` −9.2, worst
+  at p=0.1 and p=0.5 (at p=0.5: `none` 99%, `degree` 87%, `all` 84%). 26 of 4B's 29 `degree`
+  misses are off by 1-3. `clustering` → `node_degree`, the earlier headline, is not
+  significant in any arm (+3.0 / +1.1 / −0.5 / −0.2).
+- **`edge_count`: only `degree` moves plain arms**, where summing the stated degrees gives the
+  answer: +27.8 for 4B, which still fails ~70% of the time. Under thinking the task is
+  unreadable. 62-81% of rows cap, only easy graphs finish (`none` scores 86-98% on the ones
+  that do), and the large `degree`/`all` drops rest on 13-41 pairs.
+- **`cycle_check` (gold is always "Yes"): only 1.7B is hurt, by answering "No".** `degree`
+  −11.2 holds under both ways of handling capped rows. `rwse` −7.6 does not: it vanishes when
+  capped rows count as wrong. 4B scores 98-100% under every condition with no significant
+  difference; its earlier `filler` −19.3 / `rwse` −6.6 "collapses" were an extraction bug
+  (see Caveats).
+- **`edge_existence`: the effects depend on model size.** 1.7B: `all` +11.5, `components`
+  −8.2, `filler` −15.8. 4B: `rwse` −10.0, `all` −9.8, `filler` −7.0, `degree` −4.3,
+  `clustering` +4.0. Only `filler` (harm) has the same sign and significance in both sizes;
+  `all` flips sign.
+- **`connected_nodes`:** F1 is at ceiling everywhere. On exact match: 4B `components` +9.2
+  and `filler` −12.5; 1.7B-think `degree` +6.5 and `all` +5.9.
 
-| task | none | components | clustering | rwse | degree | filler | all |
-|---|---|---|---|---|---|---|---|
-| connected_nodes | 96.36% | 95.44% (−0.92) | 96.41% (+0.06) | 96.76% (+0.41) | 96.85% (+0.50) | 97.20% (+0.84) | 95.51% (−0.84) |
-| cycle_check | 99.25% | 99.25% (+0.00) | 96.00% (−3.25) | 99.50% (+0.25) | 93.75% (**−5.50**) | 99.75% (+0.50) | 98.75% (−0.50) |
-| edge_count | 20.00% | 44.75% (**+24.75**) | 44.75% (**+24.75**) | 30.25% (+10.25) | 28.50% (+8.50) | 32.25% (+12.25) | 21.75% (+1.75) |
-| edge_existence | 99.75% | 99.00% (−0.75) | 99.25% (−0.50) | 98.50% (−1.25) | 99.75% (+0.00) | 99.75% (+0.00) | 98.75% (−1.00) |
-| node_count | 99.50% | 99.75% (+0.25) | 99.50% (+0.00) | 99.75% (+0.25) | 99.75% (+0.25) | 100.00% (+0.50) | 100.00% (+0.50) |
-| node_degree | 97.00% | 98.75% (+1.75) | 97.25% (+0.25) | 95.75% (−1.25) | 99.50% (**+2.50**) | 99.00% (+2.00) | 97.50% (+0.50) |
-
-`qwen3-4b` plain is already close to ceiling on 4 of 6 tasks under `none`
-(90-99%), unlike `qwen3-1.7b` plain, which was near-floor on `node_count`
-(31.5%) and `edge_count` (1.8%). That ceiling is why the two model sizes'
-pooled-across-tasks numbers point in opposite directions (see the
-cross-check section below): `qwen3-1.7b`'s pooled gains are mostly
-`node_count` shortcut ghosts riding a near-zero baseline up; `qwen3-4b` has
-no such baseline to ride, so its pooled numbers surface the real per-task
-harms on `edge_existence`/`cycle_check`/`node_degree` instead. The one
-result that replicates across both model sizes in the same direction and
-survives bar-adjustment either way is `node_count`/`components` (see below).
-`qwen3-4b-think` is close to ceiling on 5 of 6 tasks and, like
-`qwen3-1.7b-think`, only really moves on `edge_count` -- though here that
-move is a large apparent *gain* under `clustering`/`components` rather than a
-harm, entirely inside the heavily-capped, thin-n regime flagged above.
-
-## Which results are statistically significant
-
-Significance is read from the exact-McNemar tests already computed per task
-above (pooled across densities, Benjamini-Hochberg corrected within each
-task's 6 comparisons against `none`). A significant raw delta is not the same
-as a real effect here -- the bar-adjusted delta (raw delta minus what the
-shortcut-only solver gains from the same primer) is what tells the two apart.
-
-**Real, bar-clean significant effects** (the shortcut bar does not explain
-them):
-
-| model | task | primer | effect | p |
-|---|---|---|---|---|
-| qwen3-1.7b | cycle_check | degree | **−12.6 pp (harm)** | <0.0001 |
-| qwen3-1.7b | cycle_check | rwse | **−7.5 pp (harm)** | <0.0001 |
-| qwen3-1.7b | edge_existence | filler | **−15.8 pp (harm)** | <0.0001 |
-| qwen3-1.7b | edge_existence | components | **−8.3 pp (harm)** | <0.0001 |
-| qwen3-1.7b | node_count | components | **+21.3 pp raw / +20.1 pp bar-adjusted (real gain)** | <0.0001 |
-| qwen3-4b | cycle_check | filler | **−18.9 pp (harm)** | <0.0001 |
-| qwen3-4b | cycle_check | rwse | **−6.6 pp (harm)** | 0.0016 |
-| qwen3-4b | edge_existence | filler | **−7.0 pp (harm)** | 0.0002 |
-| qwen3-4b | edge_existence | all | **−9.8 pp raw / −39.4 pp bar-adjusted (harm, worse than raw)** | <0.0001 |
-| qwen3-4b | edge_existence | degree | **−4.3 pp raw / −33.9 pp bar-adjusted (harm, worse than raw)** | 0.0186 |
-| qwen3-4b | edge_existence | rwse | **−10.0 pp raw / −24.4 pp bar-adjusted (harm, worse than raw)** | <0.0001 |
-| qwen3-4b | node_count | components | **+9.0 pp raw / +7.8 pp bar-adjusted (real gain)** | <0.0001 |
-| qwen3-4b | node_degree | degree | **−6.5 pp raw / −98.3 pp bar-adjusted (harm, worse than raw)** | <0.0001 |
-| qwen3-4b | node_degree | all | **−9.3 pp raw / −101.1 pp bar-adjusted (harm, worse than raw)** | <0.0001 |
-
-`node_count`/`components` replicates across both model sizes -- it is the one
-genuinely good result in this run: `components` measurably helps beyond what
-a primer-only solver could already extract from the same text, for
-`qwen3-1.7b` and `qwen3-4b` alike. The "worse than raw" `qwen3-4b` rows above
-are a different pattern from `qwen3-1.7b`'s bar-clean ones: `edge_existence`
-and `node_degree`'s harmful conditions there also happen to carry a *high*
-shortcut bar (e.g. `node_degree`/`degree`/`all` both hand a primer-only
-solver a perfect 1.000), so subtracting that bar makes the deltas even more
-negative -- the model is not just failing to reason better than `none`, it's
-failing to even parrot information the primer states outright.
-
-**Significant but shortcut-explained** (the primer states or implies the
-answer, so the "effect" is retrieval, not reasoning):
-
-- `qwen3-1.7b` `node_count`: `all` (+47.0 pp), `clustering` (+67.3 pp),
-  `filler` (+39.8 pp) -- all bar-adjusted strongly *negative* (−0.26 to
-  −0.54), i.e. the shortcut solver gains even more than the model does from
-  the same text.
-- `node_degree`: `all` and `degree`, in `qwen3-1.7b` (both arms) -- bar-adjusted
-  −0.80 to −0.84.
-- `qwen3-1.7b` `edge_existence`: `all` (+11.5 pp) -- bar-adjusted −0.18.
-- `qwen3-1.7b-think` `edge_count`: `degree` (−61.5 pp, p=0.0078) -- technically
-  clears BH, but rests on only **13** surviving pairs after `hit_cap`
-  filtering (this cell is over 80% capped); not trustworthy regardless of the
-  p-value.
-- `qwen3-4b` `node_count`: `all`, `clustering`, `degree`, `filler`, `rwse`
-  (+8.0 to +9.8 pp, all p<0.0001) -- bar-adjusted −0.78 to −0.86, same
-  shortcut-giveaway story as `qwen3-1.7b`. `components` (above) is the one
-  exception on this task in both model sizes.
-- `qwen3-4b` `cycle_check`: `degree` (+4.4 pp) -- bar-adjusted −0.07, a small
-  ghost.
-- `qwen3-4b` `edge_count`: `all` (+3.8 pp) and `degree` (+27.7 pp) --
-  bar-adjusted −0.94 and −0.70; `degree`'s shortcut bar on this task is
-  1.000 (the primer states the answer outright), so this is the largest
-  ghost in the table.
-- `qwen3-4b` `edge_existence`: `clustering` (+4.0 pp) -- bar-adjusted −0.18.
-
-**Not significant anywhere:** `connected_nodes` for either model size on the
-metric this pooled test actually uses (F1/`primary` is near-ceiling
-everywhere and the test is close to degenerate on it -- see the per-task
-tables' note and the cross-check section's exact-match numbers for the more
-informative view), and under thinking: `qwen3-1.7b-think`'s
-`cycle_check`/`edge_existence`/`node_count`, plus `qwen3-4b-think`'s
-`cycle_check` (`degree` aside, not significant)/`edge_existence`/`node_count`
--- all near ceiling with nothing left to detect.
-
-**Net:** `qwen3-1.7b` plain has 2 real harms (`cycle_check`) and 1 real gain
-(`node_count`/`components`); `qwen3-4b` plain has 8 real harms
-(`cycle_check` x2, `edge_existence` x4, `node_degree` x2 -- see table) and
-the same 1 real gain (`node_count`/`components`) replicating across model
-size. Every other "significant" cell in either model is a shortcut ghost or,
-for `edge_count`-think in either model, too underpowered/capped to trust.
-
-## Cross-checked against the original 5-19-node sweep's own significance pipeline
-
-Everything above uses `score_full_density_sweep.py`'s own per-task exact
-McNemar + per-task BH correction. The original 5-19-node sweep answers "is
-this significant" with a different tool: `scripts/build_sweep_frame.py` +
-`scripts/check_significance.py`, `graphtalk/significance.py`'s clustered
-permutation test + cluster bootstrap + Benjamini-Hochberg, built specifically
-because per-cell McNemar is underpowered (`docs/sweep-findings.md`, "The
-McNemar analysis is underpowered"). Ran it here, unmodified, against the same
-`densfull40` run files:
-
-```bash
-PYTHONPATH=. python scripts/build_sweep_frame.py \
-    --responses "runs/qwen3-1.7b.densfull40.shard*of25.jsonl" \
-                "runs/qwen3-1.7b-think.densfull40.shard*of25.jsonl" \
-    --shortcuts shortcuts.json --out analysis/densfull40_frame.csv
-
-PYTHONPATH=. python scripts/check_significance.py \
-    --frame analysis/densfull40_frame.csv --metric exact --no-mde \
-    --out analysis/densfull40_significance.csv
-```
-
-One fix was needed first: `build_sweep_frame.py`'s loader (unlike
-`score_full_density_sweep.py`'s) doesn't dedupe, and this data carries the
-same "a handful of duplicate rows survive preemption/resume" artifact that
-script already guards against -- 4 exact-duplicate rows (same key, same
-score) were dropped from the frame before testing.
-
-**Pooled across all 6 tasks and all 4 densities** (the tracked sweep's own
-"cross-condition comparison" view, `qwen3-1.7b` plain arm):
-
-| condition | delta | 95% CI | p (perm) | BH-sig |
-|---|---|---|---|---|
-| clustering | +13.9 pp | [+12.0, +15.8] | 0.0001 | yes |
-| all | +13.1 pp | [+11.3, +15.0] | 0.0001 | yes |
-| filler | +3.3 pp | [+1.6, +5.0] | 0.0001 | yes |
-| components | +2.8 pp | [+1.1, +4.3] | 0.0010 | yes |
-| rwse | +1.8 pp | [+0.0, +3.7] | 0.0542 | no |
-| degree | +1.2 pp | [−0.5, +3.0] | 0.1828 | no |
-
-Every one of these pooled deltas is dominated by `node_count`, the task with
-by far the largest raw gains -- exactly why `score_full_density_sweep.py`
-tests per-task rather than pooling across tasks in the first place. Read this
-table as "does this condition move the average at all," not as "is this a
-real effect" -- that needs the bar-adjusted, per-task view.
-
-**Per-task, same clustered-permutation machinery**: agrees with the per-task
-table above on every cell in `edge_count`, `edge_existence`, `node_count`, and
-`node_degree` -- same direction, same BH-significance call, all 24 pairs
-across the two tables. `node_count`/`components`'s real gain reproduces
-almost exactly (+21.3 pp there, +21.2 pp here, both bar-independent
-significant).
-
-`cycle_check` is the exception, and it disagrees on 3 of 6 conditions:
-
-| condition | this doc (`hit_cap` dropped) | this pipeline (`hit_cap` forced wrong) |
-|---|---|---|
-| degree | −12.6 pp, sig | −17.5 pp, sig |
-| rwse | **−7.5 pp, sig (harm)** | **−0.3 pp, not sig** |
-| clustering | **+0.3 pp, not sig** | **+8.5 pp, sig (gain)** |
-| all | **−1.1 pp, not sig** | **+7.0 pp, sig (gain)** |
-| components | −0.6 pp, not sig | +2.0 pp, not sig |
-| filler | +0.3 pp, not sig | +3.0 pp, not sig |
-
-This is not the more rigorous test catching something the per-task table
-missed -- it's the two pipelines applying opposite rules for what a truncated
-response counts as (this document drops `hit_cap` rows; `check_significance.py`
-forces them to score 0, its own deliberate choice for the tracked sweep, see
-`graphtalk/analysis.py::build_frame`'s docstring), and `cycle_check` is where
-that choice actually bites. Checking the frame directly confirms it --
-`none`'s own non-termination rate on this task is far higher than most
-conditions it's compared against:
-
-| condition | non-terminating rate on `cycle_check` |
-|---|---|
-| `none` | 9.00% |
-| `degree` | 17.25% |
-| `components` | 6.50% |
-| `filler` | 6.25% |
-| `rwse` | 1.75% |
-| `clustering` | 0.75% |
-| `all` | 1.00% |
-
-Forcing every non-terminating row to "wrong" punishes `none` (9.0% capped)
-far more than `clustering`/`all` (under 1% capped each), manufacturing an
-apparent `clustering`/`all` gain that is really just `none` losing extra rows
-to truncation. The same mechanism erases `rwse`'s harm (`rwse` is capped less
-than `none` too, so `none`'s own-goal closes most of the gap). `degree`, capped
-even more than `none` (17.25%), gets *more* harmful under the forced-wrong
-convention, not less -- consistent with the same story running the other way.
-
-Net: `degree`'s harm on `cycle_check` is the one finding that survives both
-conventions and both tools -- treat it as the robust result. `rwse`'s harm and
-`clustering`/`all`'s apparent gains on this task are convention-dependent
-artifacts of differential truncation rates, not established effects, under
-either tool alone.
-
-**A result this pipeline adds that has no counterpart above**: thinking-arm
-non-termination rate vs `none`, pooled across all 6 tasks, tested the same way
-`check_significance.py` tests it for the tracked sweep's own thinking arm:
-
-| condition | delta (non-termination rate) | p (perm) | BH-sig |
-|---|---|---|---|
-| all | −3.4 pp (less truncation) | 0.0001 | yes |
-| degree | +3.4 pp (more truncation) | 0.0001 | yes |
-| filler | −1.8 pp (less truncation) | 0.0007 | yes |
-| clustering | −1.3 pp (less truncation) | 0.0161 | yes |
-| rwse | −1.0 pp | 0.0525 | no |
-| components | +1.2 pp | 0.0665 | no |
-
-`degree` reliably makes the thinking arm truncate more often; `clustering`,
-`filler`, and `all` reliably make it truncate less. This backs the hit_cap-rate
-story in "Read the hit_cap rate before anything else" with an actual
-BH-corrected p-value instead of an eyeballed percentage.
-
-**Bottom line for `qwen3-1.7b`:** yes, this is the same analysis as the
-original 5-19-node sweep, mechanically -- same unmodified tool, same
-clustered-permutation + bootstrap + BH machinery, run against this run data
-instead of the tracked sweep's. It reproduces every real/shortcut-ghost call
-made above for 5 of the 6 tasks. `cycle_check` is the one place it disagrees,
-and the disagreement is fully explained by the two pipelines' opposite,
-both-deliberate conventions for a truncated response interacting with this
-task's unusually uneven per-condition `hit_cap` rates -- not by this pipeline
-being more sensitive.
-
-### The same cross-check for `qwen3-4b`
-
-Ran identically:
-
-```bash
-PYTHONPATH=. python scripts/build_sweep_frame.py \
-    --responses "runs/qwen3-4b.densfull40.shard*of25.jsonl" \
-                "runs/qwen3-4b-think.densfull40.shard*of25.jsonl" \
-    --shortcuts shortcuts.json --out analysis/densfull40_frame_4b.csv
-
-PYTHONPATH=. python scripts/check_significance.py \
-    --frame analysis/densfull40_frame_4b.csv --metric exact --no-mde \
-    --out analysis/densfull40_significance_4b.csv
-```
-
-No duplicate-key rows this time (the preemption/resume artifact that hit
-`qwen3-1.7b` didn't recur here).
-
-**Pooled across all 6 tasks and all 4 densities** (`qwen3-4b` plain arm):
-
-| condition | delta | 95% CI | p (perm) | BH-sig |
-|---|---|---|---|---|
-| degree | +4.1 pp | [+2.6, +5.6] | 0.0001 | yes |
-| components | +2.8 pp | [+1.8, +4.0] | 0.0001 | yes |
-| clustering | +2.5 pp | [+1.3, +3.6] | 0.0001 | yes |
-| all | −2.0 pp | [−3.4, −0.5] | 0.0073 | yes |
-| rwse | −1.9 pp | [−3.3, −0.6] | 0.0048 | yes |
-| filler | **−4.8 pp** | [−6.3, −3.4] | 0.0001 | yes |
-
-Every condition clears BH here (unlike `qwen3-1.7b`, where `degree`/`rwse`
-didn't) -- and note the sign split: `filler`/`rwse`/`all` are net *harmful*
-pooled across tasks for `qwen3-4b`, the opposite of `qwen3-1.7b`'s pooled
-sign for those same three conditions. This is the ceiling effect flagged in
-the pooled-accuracy tables above, not a contradiction: `qwen3-1.7b`'s pooled
-gains were mostly `node_count` shortcut ghosts riding a nearly-0% `none`
-baseline upward; `qwen3-4b`'s `none` baseline on `node_count` is already
-90.25%, leaving far less shortcut-ghost room, so the real per-task harms on
-`edge_existence`/`node_degree` dominate the pooled average instead.
-
-**Per-task agreement is tighter than for `qwen3-1.7b`**: only two borderline
-BH-call flips across all 30 (task, condition) cells in `edge_count`,
-`edge_existence`, `node_count`, and `node_degree` -- `cycle_check`/`degree`
-(sig here at p=0.0023, not-quite-BH-sig there at p=0.0348) and
-`node_degree`/`rwse` (sig here at p=0.0225, not-quite-BH-sig there at
-p=0.0237) -- both "just barely" in one direction or the other, no sign
-flips. `edge_existence` and `node_count` reproduce almost to the decimal
-point (e.g. `node_count`/`components`: +9.00 pp there, +9.0 pp here). This
-tighter agreement traces directly to `qwen3-4b` plain's near-zero (0.3%)
-hit_cap rate: with almost nothing to force to "wrong," the two pipelines'
-opposite non-terminating-row conventions have almost nothing to disagree
-about.
-
-**A new, different disagreement on `connected_nodes`** -- not a hit_cap
-artifact this time, but a genuine metric mismatch: `check_significance.py`'s
-per-task test always compares the `exact` column, never `primary`
-(set-F1, the metric this task is actually scored on -- see `graphtalk/
-scoring.py`). Checked directly against the frame:
-
-| condition | mean `exact` | mean `primary` (F1) |
-|---|---|---|
-| filler | 73.50% | 96.60% |
-| degree | 83.00% | 97.68% |
-| all | 83.25% | 97.43% |
-| rwse | 86.00% | 97.76% |
-| none | 86.00% | 98.71% |
-| clustering | 87.00% | 98.45% |
-| components | 95.25% | 99.76% |
-
-`exact` varies by over 20 points across conditions while `primary`/F1 sits
-in a tight 96.6-99.8% band -- so this pipeline calls `components` (+9.2 pp)
-and `filler` (−12.5 pp) significant on `connected_nodes`, while the
-density-sweep's own F1-based test (correctly) shows almost nothing. Every
-other task uses exact-match natively (`primary == exact` there, per
-`scoring.py`), so this mismatch is isolated to `connected_nodes` alone -- it
-doesn't affect any other task's cross-check numbers above.
-
-**Thinking-arm non-termination rate vs `none`**, pooled across all 6 tasks:
-
-| condition | delta (non-termination rate) | p (perm) | BH-sig |
-|---|---|---|---|
-| clustering | −4.3 pp (less truncation) | 0.0001 | yes |
-| all | −3.7 pp (less truncation) | 0.0001 | yes |
-| components | −3.6 pp (less truncation) | 0.0001 | yes |
-| degree | −3.1 pp (less truncation) | 0.0001 | yes |
-| filler | −2.6 pp (less truncation) | 0.0001 | yes |
-| rwse | −2.0 pp (less truncation) | 0.0005 | yes |
-
-Every condition significantly *reduces* thinking-arm non-termination for
-`qwen3-4b` -- a cleaner, more uniform pattern than `qwen3-1.7b-think`, where
-`degree` significantly *increased* it. Any non-`none` primer appears to give
-this model's thinking arm something to anchor on that shortens its reasoning
-trace.
-
-**Bottom line for `qwen3-4b`:** same tool, same result as `qwen3-1.7b` in
-spirit -- this is a faithful, mechanical re-run of the original sweep's own
-significance pipeline -- but with far tighter agreement against this
-document's own per-task numbers, because `qwen3-4b` plain barely truncates at
-all. The one place it disagrees (`connected_nodes`) is a different, genuinely
-new failure mode from `qwen3-1.7b`'s `cycle_check` case: a metric mismatch
-(`exact` vs. `primary`/F1) baked into `check_significance.py`'s per-task
-test, not a hit_cap-convention artifact.
-
-## Synthesis
-
-- **The `clustering` -> `node_degree` headline (job 866467's clean +3.8 pp,
-  p=0.0017) does not replicate at significance in either arm here**, once
-  pooled across all four densities: +3.0 pp (p=0.256) plain, +1.0 pp (p=0.694)
-  think. Same direction every time it has been measured, never negative, but
-  underpowered at n=400 pooled pairs when spread this thin across densities
-  and conditions -- consistent with the "power check, not independent
-  replication" framing already in `primer-effects-and-power.md`.
-- **`cycle_check`: `degree` and `rwse` cause real, bar-clean harm in the plain
-  arm** (-12.6 pp and -7.5 pp, both p<0.0001, bar-adjusted delta equal to the
-  raw delta since both conditions share `none`'s shortcut bar). **The thinking
-  arm erases it completely** -- ceiling at 1.000 everywhere, though partly by
-  survivorship (`degree`/`components` lose 12-34% of rows to `hit_cap`).
-- **`edge_existence`: `components` (-8.3 pp) and `filler` (-15.8 pp) cause
-  real, bar-clean harm in the plain arm** (both p<0.0001), replicating this
-  project's length-cost finding on a task it hadn't been measured on before.
-  Thinking again flattens the task to ceiling (0.95-1.00), removing the
-  headroom needed to see it.
-- **Most `node_count`/`node_degree` "wins" are shortcut ghosts, not
-  reasoning gains.** `all`, `degree`, and `filler` all post large, nominally
-  significant positive deltas on `node_count`, but bar-adjusted they are all
-  strongly *negative* (-0.47 to -0.92) -- the shortcut-only solver gains even
-  more from those primers than the model does. `components` is the one
-  exception with a genuine bar-adjusted +0.20 on `node_count`.
-- **`edge_count` is barely usable at n=40 with 100 graphs/level**, and
-  essentially unusable under thinking past p=0.20 -- capped rows run 10-100
-  per 100-row cell in the plain arm and reach 100% in several think-arm cells.
-  Any headline drawn from this task in this run should be treated as absent,
-  not measured, per the same reasoning `primer-effects-and-power.md` already
-  applies to the size sweep's exclusion of `edge_count`.
-- **`connected_nodes` has no headroom in either arm** (0.93-1.00 throughout),
-  exactly as "Density at a fixed size" predicted from the size-sweep numbers --
-  nothing significant, nothing to read into it.
-- **`node_count`/`components`'s real gain replicates across model size** --
-  the one effect in this entire sweep that is both bar-clean and confirmed
-  in both `qwen3-1.7b` (+21.3 pp / +20.1 pp bar-adjusted) and `qwen3-4b`
-  (+9.0 pp / +7.8 pp bar-adjusted). Smaller in absolute terms for the larger
-  model (less headroom -- `qwen3-4b`'s `none` baseline on this task is
-  already 90.25% vs `qwen3-1.7b`'s 31.5%), but the same direction, same
-  bar-clean status, same primer.
-- **`qwen3-4b` plain is a much harder-to-help, easier-to-hurt model on this
-  sweep than `qwen3-1.7b`.** It starts near ceiling on 4 of 6 tasks under
-  `none`, so there's little shortcut-ghost room left for a primer's raw
-  score to inflate -- and where a primer does move the needle, it's real,
-  bar-robust harm 8 times over (`cycle_check` x2, `edge_existence` x4,
-  `node_degree` x2), against only 2 real harms for `qwen3-1.7b`. Several of
-  `qwen3-4b`'s harms are on primers (`degree`, `all`) that hand a primer-only
-  solver a perfect answer outright, yet the model still scores *below*
-  `none` -- it isn't failing to reason better than baseline, it's failing to
-  even parrot free information back correctly.
-- **`qwen3-4b` plain has a density-specific cliff on `cycle_check` at
-  p=0.5**: `none`/`all`/`rwse` collapse to 0.86/0.64/0.51 there while
-  `components`/`degree`/`filler` hold 0.96-1.00, with `hit_cap` ruled out as
-  the cause (0-1 capped rows per condition at that density). Not otherwise
-  investigated here.
-- **`qwen3-4b-think` truncates far less overall than `qwen3-1.7b-think`**
-  (11.7% vs 15.4%) and every primer condition significantly reduces its
-  non-termination rate further vs `none` (see the cross-check section) -- the
-  opposite of `qwen3-1.7b-think`, where `degree` significantly increased it.
+**Thinking** takes `cycle_check`, `edge_existence`, `node_count` and (for 4B)
+`connected_nodes` to ceiling for every condition. The primers also change how often the
+thinking arm truncates, compared with `none`, across all tasks (paired McNemar):
+- 1.7B-think: `degree` truncates more (+3.4 pp, p<0.001). `all` (−3.4), `filler` (−1.8) and
+  `clustering` (−1.3) truncate less.
+- 4B-think: every primer truncates less, by 2.0-4.3 pp (all p<0.001).
 
 ## Caveats
 
-- All numbers here exclude GoT-named rows (none exist in this tag) and drop
-  `hit_cap` rows rather than scoring them zero, per this project's house rule
-  -- see `primer-effects-and-power.md`'s `ec500` write-up for why that choice
-  is load-bearing specifically for conditions with an elevated truncation
-  rate (`rwse`, and here `edge_count` broadly). Several of the "significant"
-  cells above rest on well under 50 discordant pairs and should be read as
-  directional, not as independent confirmation.
-- The pooled McNemar/permutation test on `connected_nodes` is close to
-  degenerate everywhere in this document: it's computed on `primary` (F1),
-  and a partial-credit score is almost never exactly 0.0, so "wrong" barely
-  registers and the test shows near-zero discordant pairs regardless of
-  model or condition. The `qwen3-4b` cross-check section's `exact`-vs-`primary`
-  table is the only place in this document where `connected_nodes`'s real
-  per-condition variation (up to 22 points on `exact`) is visible -- read the
-  F1 numbers elsewhere in this doc as "no headroom," not as "no effect
-  possible in principle."
-- `qwen3-4b`'s per-row CSVs (`analysis/qwen3-4b.densfull40.rows.csv`,
-  `analysis/qwen3-4b-think.densfull40.rows.csv`) are large for the same
-  reason `qwen3-1.7b-think`'s is (full response text x 16,800 rows,
-  `-think` responses running long) -- `qwen3-1.7b-think`'s copy is already
-  99.6 MB, close to GitHub's 50 MB *recommended* (not hard) limit; consider
-  Git LFS before these grow further.
+- **Boolean extraction was fixed on 2026-09-16, and every number here uses the fix.**
+  `scoring._extract_boolean` takes the last yes/no token. 4B plain answers "Yes, there is a
+  cycle" and then defines a cycle as a path "with no repeated edges or nodes", so that "no"
+  was scored as the answer. The extractor now ignores "no repeated" (`_NO_REPEATED`,
+  regression test in `tests/test_scoring.py`). Rescoring changed only 4B `cycle_check` (225
+  rows, all wrong→right); the other three arms are unchanged, and
+  `analysis/qwen3-4b.densfull40.rows.csv` was regenerated with the fix.
+- **Capped rows are dropped.** On `cycle_check` and `edge_count` that choice changes the
+  verdict. `check_significance.py` scores capped rows as 0. On 1.7B `cycle_check` that turns
+  `rwse` null and makes `clustering` (+8.5) and `all` (+7.0) significant, because `none` caps
+  more often than either (9% vs <1%). That explains the two pipelines' disagreement on this
+  task; neither one is simply more sensitive.
+- The McNemar test in `score_full_density_sweep.py` binarizes `connected_nodes` F1 as "> 0".
+  That is almost always true, so the test is degenerate on that task; use exact match, as
+  above.
+- The accuracy deltas are unpaired differences of means. The significance marks come from the
+  paired test, so the two can differ by a few tenths.
+- `analysis/*-think.densfull40.rows.csv` are 90-105 MB; consider Git LFS.
