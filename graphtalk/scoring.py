@@ -230,7 +230,21 @@ def _extract_integer(text: str) -> str | None:
     found = _INTEGER.findall(scope)
     if found:
       return found[-1]
-  found = _INTEGER.findall(text)
+  # No answer marker at all. Mask node-id references before taking the last
+  # integer, exactly as the marker-tail branch above already does. Without the
+  # mask, any response that justifies itself after answering is read at the id
+  # it happens to end on:
+  #     "The degree of node 34 is **1**. This is because node 34 is connected
+  #      to only one node, which is node 11."   -> 11, not 1.
+  # That was 8 of qwen3-4b's 40 `all`-condition node_degree errors (20% of the
+  # cell's error mass) and 0 elsewhere -- a condition-correlated scoring error,
+  # which is the kind that surfaces in a results table as a content effect.
+  # Masking rather than preferring an explicit "the ... is N" phrase is
+  # deliberate: the phrase also occurs mid-reasoning in a long thinking trace,
+  # and preferring it there costs qwen3-4b-think 7.7 points on `none` by
+  # reading a discarded intermediate value as the answer.
+  masked = _NODE_ID_REF.sub(" ", text)
+  found = _INTEGER.findall(masked) or _INTEGER.findall(text)
   return found[-1] if found else None
 
 

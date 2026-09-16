@@ -118,6 +118,27 @@ def test_extract_answer_still_raises_on_unknown_task():
     scoring.extract_answer("Answer: 3.", "not_a_real_task")
 
 
+def test_justification_after_the_answer_does_not_override_it():
+  # Real qwen3-4b response shape under the `all` primer: the answer is stated
+  # plainly, with no answer marker, and the justification that follows ends on
+  # a node id. The bare "last integer anywhere" fallback read that node id as
+  # the answer on 8 of 40 errors in that cell.
+  text = ("The degree of node 34 is **1**.  This is because node 34 is "
+          "connected to only one node, which is node 11.")
+  assert scoring.extract_answer(text, "node_degree") == "1"
+
+  # A trailing value that is NOT a node reference is still the answer, so a
+  # long trace that concludes at the end is unaffected.
+  revised = ("The number of edges is 72. Recounting the incident list gives "
+             "74.")
+  assert scoring.extract_answer(revised, "edge_count") == "74"
+
+  # An explicit marker still wins outright.
+  marked = ("The degree of node 5 is the number of nodes it connects to. "
+            "Counting these gives 37.\nA: 30")
+  assert scoring.extract_answer(marked, "node_degree") == "30"
+
+
 def test_cycle_definition_boilerplate_does_not_override_the_answer():
   # Real qwen3-4b response shape: the answer, then a definition whose "no" is
   # the last yes/no token in the text.
