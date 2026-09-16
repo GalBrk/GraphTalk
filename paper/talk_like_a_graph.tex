@@ -61,10 +61,10 @@ worth $+27.8$ points where the baseline is $0.02$ and $-6.5$ where it is
 $0.99$ --- within a single model. Our graph-blind solver separates this from
 a ceiling artifact: over $177$ cells that offer the model a substitute route
 to the answer the effect tracks baseline at $r = -0.390$, while over $177$
-baseline-matched cells that do not it tracks nothing ($r = +0.041$). Both
-results replicate on thirteen held-out arms spanning $0.6$--$14$B and two
+baseline-matched cells that do not it tracks nothing ($r = +0.041$). The
+relation replicates on eleven held-out arms spanning $0.6$--$14$B and two
 model families, where parameter count adds nothing once baseline is included
-($p = 0.82$). One cell survives every
+($p = 0.64$). One cell survives every
 control: \texttt{clustering} on \texttt{node\_degree} for
 \texttt{qwen3-1.7b}, $+3.8$ points, replicated at $+4.3$ ($p=0.0006$).
 \end{abstract}
@@ -228,15 +228,17 @@ yielding 16{,}800 prompts per model arm. Generation is greedy, with a raised out
 budget (up to 8192 tokens). Auxiliary sweeps include a fixed \texttt{node\_degree} 
 sweep at $400$ graphs per density level, and an extended range sweep up to $p=0.85$.
 
-\paragraph{Held-out arms.} Thirteen further model arms are held out as a
-replication set and were not used to develop any claim here. Eight are
-evaluated on the published GraphQA split (30 graphs per cell, five tasks,
-six conditions): \texttt{qwen3-8b} and \texttt{qwen3-14b}, and
+\paragraph{Held-out arms.} Eleven further model arms are held out as a
+replication set. No checkpoint among them appears in the main sweep, so
+neither the model nor the corpus was used to develop any claim here. Eight
+are evaluated on the published GraphQA split (30 graphs per cell, five
+tasks, six conditions): \texttt{qwen3-8b} and \texttt{qwen3-14b}, and
 \texttt{gemma-4-E4B-it} and \texttt{gemma-4-12B-it} from a second model
-family, each with and without chain-of-thought. Five more --- including
-\texttt{qwen3-0.6b} and \texttt{qwen35-2b} --- answer a 100-graph
-\texttt{\{none, degree\}} probe over all six tasks. Together they extend the
-comparison from $1.7$--$4$B in one family to $0.6$--$14$B in two.
+family, each with and without chain-of-thought. Three more ---
+\texttt{qwen3-0.6b} with and without chain-of-thought, and
+\texttt{qwen35-2b} --- answer a 100-graph \texttt{\{none, degree\}} probe
+over all six tasks. Together they extend the comparison from $1.7$--$4$B in
+one family to $0.6$--$14$B in two.
 
 \paragraph{Metrics and reproducibility.} We use exact match for integer-
 and boolean-valued tasks and set-F1 for connected nodes, reporting every
@@ -453,17 +455,22 @@ as the task gets harder, exactly where an answer-stating primer's benefit
 grows. The two mechanisms are separable and have opposite signs, which is
 why pooling all conditions into one correlation understates both.
 
-\paragraph{Both hold on thirteen arms and a second model family.} On the
-held-out arms of Section~\ref{sec:setup} --- $0.6$B to $14$B, Qwen3 and
-Gemma, none of them used to formulate the claim --- the dissociation
-reappears unchanged. Across $83$ cells offering a substitute route,
-$r = -0.650$ ($p = 3 \cdot 10^{-11}$); across the $58$ that do not,
-$r = +0.049$ ($p = 0.71$). Regressing the effect on baseline, $\log$
+\paragraph{The relation holds on eleven unseen arms and a second model
+family.} On the held-out arms of Section~\ref{sec:setup} --- $0.6$B to
+$14$B, Qwen3 and Gemma --- the relation reappears at full strength where a
+substitute route exists: $r = -0.662$ over $73$ cells
+($p = 2 \cdot 10^{-10}$). Over the $54$ cells without one it is not
+significant, $r = -0.206$ ($p = 0.14$), so the contrast survives, though
+less sharply than in Table~\ref{tab:baseline}; these two groups are not
+baseline-matched as those were ($0.903 \pm 0.206$ against
+$0.949 \pm 0.151$), which is why Table~\ref{tab:baseline} and not this
+comparison carries the control. Regressing the effect on baseline, $\log$
 parameter count and reasoning mode together gives a baseline coefficient of
-$-30.0$ ($p = 6 \cdot 10^{-11}$) and a parameter coefficient of $+0.19$
-($p = 0.82$). Once baseline is in the model, scale contributes nothing
-measurable. Gemma alone cannot confirm it --- its baselines have almost no
-spread left ($0.982 \pm 0.028$) --- but it does not contradict it either.
+$-30.7$ ($p = 1 \cdot 10^{-10}$) and a parameter coefficient of $+0.39$
+($p = 0.64$). Once baseline is in the model, scale contributes nothing
+measurable. Gemma alone cannot confirm the relation --- its baselines have
+almost no spread left ($0.982 \pm 0.028$, $r = -0.280$, $p = 0.14$) --- but
+it does not contradict it either.
 
 One quantity does not transfer: the crossover. It sits at $0.79$ on the
 $n{=}40$ corpus and near $0.99$ on the published split, so the threshold is

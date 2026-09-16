@@ -56,7 +56,7 @@ uv run --no-sync pytest -q --ignore=tests/test_hierarchical_model.py \
 
 Always use `--no-sync` — a plain `uv run` re-syncs to the default dependency set
 and uninstalls the optional `pipeline` extras. That command must report exactly
-**614 passed**; a different number means the env is wrong, not the code.
+**630 passed**; a different number means the env is wrong, not the code.
 
 The two ignored files import `statsmodels`, which is **not** installed in either
 `conda_envs/graphtalk` or `conda_envs/graphtalk-cu126` — the only envs this
@@ -130,6 +130,20 @@ testing 288 tiny cells, reporting a permutation p-value, a bootstrap CI on the e
 and a Benjamini-Hochberg correction — for both main-sweep accuracy and thinking-arm
 non-termination rate. Pass `--out <path.csv>` to save the printed rows instead of only
 seeing them in the terminal.
+
+Reproduce the baseline-accuracy result the paper's Results section rests on
+(the shortcut-bar split, the density continuum, the held-out arms, and the
+negative control that bounds the claim):
+
+```bash
+PYTHONPATH=. python scripts/analyze_baseline_law.py --shortcuts shortcuts.json
+```
+
+Each of the four tests can be run alone with `--test split|continuum|heldout|
+instrument`. It reads `runs/` directly and needs no frame built first; see
+`docs/primer-effects-and-power.md`'s "Is the primer effect organised by
+baseline accuracy?" section for what each one establishes and for the n=40
+bar correction it applies, which is the part that is easy to get wrong.
 
 Other one-off scripts:
 
@@ -251,7 +265,7 @@ break them:
 
 ### Testing conventions
 
-- 614 tests: vendored generator/encoder/metric tests, primer statistics/renderer/
+- 630 tests: vendored generator/encoder/metric tests, primer statistics/renderer/
   golden-string tests, shortcut-solver tests, prompt-assembly/scoring tests,
   node-naming, analysis, the size/density sweep builders, and the density-sweep
   scorer. A further 24 test

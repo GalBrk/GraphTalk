@@ -1830,3 +1830,143 @@ PYTHONPATH=. python scripts/score_full_density_sweep.py \
   `--constraint=a6000` after three separate 535.x-driver failures.
 - All GoT-named runs are excluded throughout. Re-including them requires
   desubstitution and would mainly affect `connected_nodes`.
+
+
+## Is the primer effect organised by baseline accuracy? (2026-09-16)
+
+Reproduce everything below with:
+
+```bash
+PYTHONPATH=. python scripts/analyze_baseline_law.py --shortcuts shortcuts.json
+```
+
+The observation that starts this off is in `docs/full-task-density-sweep.md`:
+the same primer helps `qwen3-1.7b` on `node_degree` and hurts `qwen3-4b`,
+which reads as a scale effect. It is not one. Within `qwen3-4b` alone the
+`degree` primer is worth **+27.8 pp** on `edge_count` (baseline 0.02) and
+**-6.5 pp** on `node_degree` (baseline 0.99), with no second model involved.
+
+The obvious objection is regression to the mean. Baseline and effect are
+computed from the same responses, so a cell at 0.99 has nowhere to go but
+down and a cell at 0.02 nowhere but up. A single pooled correlation cannot
+distinguish the two, and **the pooled correlation is not the evidence.**
+Three tests are, and a fourth is the control that fails.
+
+### 1. The shortcut bar is an instrument, not just a control
+
+`shortcuts.json` already measures, per (task, condition), how much of the
+answer a graph-blind solver recovers from primer text alone. Its *gain* over
+`none` splits the conditions into those that hand the model a substitute
+route to the answer and those that only add text. On the four non-degenerate
+tasks that split is 177 cells against 177, with near-identical baseline
+distributions (**0.785 +- 0.341** against **0.800 +- 0.342**):
+
+| cells | r(delta, baseline) | p | crosses zero at |
+|---|---|---|---|
+| primer offers a substitute route | **-0.390** | 8e-8 | **0.79** |
+| primer offers none | +0.041 | 0.59 | -- |
+| ... of which `filler` (pure length) | -0.006 | 0.97 | -- |
+
+Ceiling pressure is identical in both groups by construction. Only the
+primers that state an answer show the slope, so regression to the mean does
+not account for it.
+
+**The n=40 correction matters and is easy to miss.** The bars were fitted on
+the published split's small graphs, where a per-node primer gives
+`node_count` away (raw gain +0.936). At n=40 the gold answer is the constant
+40, so the blind bar is ~1.00 under `none` too and the primer adds nothing;
+`cycle_check` is the same story with "yes". Left uncorrected, both land in
+the wrong group and the clean-primer correlation flips from +0.04 to -0.41.
+`analyze_baseline_law.DEGENERATE_TASKS` holds the exclusion.
+
+### 2. Difficulty manipulated rather than observed
+
+The strongest evidence, because nothing is pooled across tasks or models.
+One arm (`qwen3-1.7b-think`), one task (`node_degree`), seven pinned
+densities, up to 400 paired graphs each -- only difficulty varies:
+
+| p | none | degree | clustering | filler |
+|---|---|---|---|---|
+| 0.10 | 0.952 | +3.1 | +1.8 | +2.3 |
+| 0.20 | 0.877 | +6.4 | +4.8 | +2.5 |
+| 0.35 | 0.632 | +19.6 | +3.3 | -4.3 |
+| 0.50 | 0.585 | +22.8 | -0.8 | -9.5 |
+| 0.65 | 0.439 | +29.3 | -2.0 | -9.3 |
+| 0.75 | 0.442 | +30.6 | -8.8 | -14.1 |
+| 0.85 | 0.494 | **+34.2** | -6.1 | -11.7 |
+| **r** | | **-0.975** | +0.763 | +0.953 |
+| **p** | | 0.0002 | 0.046 | 0.0009 |
+
+Two separable effects with opposite signs:
+
+- **Substitution.** The answer-stating primer's benefit rises monotonically
+  as the model's own route degrades, +3.1 to +34.2 pp. No sampling artifact
+  produces a monotone ramp of that size against a variable we set.
+- **Load.** The content-free `filler` costs nothing on sparse graphs and
+  -14.1 pp on dense ones (plain arm agrees, r=+0.805, p=0.029). Added text is
+  not a fixed tax; its cost grows exactly where substitution's benefit grows.
+
+This is why pooling every condition into one correlation understates both,
+and why rule 0 of "Two rules, both learned the hard way" should be read as
+"length costs *more on harder instances*" rather than as a flat penalty.
+
+### 3. Eleven arms that were never used to develop the claim
+
+Eight on the published split (`qwen3-8b`, `qwen3-14b`, `gemma4-e4b`,
+`gemma4-12b`, each +/- think) and three on the `probe100` corpus
+(`qwen3-0.6b` +/- think, `qwen35-2b`). No checkpoint overlaps the main sweep,
+so neither model nor corpus was seen. Same split:
+
+| cells | r | p |
+|---|---|---|
+| substitute route (73) | **-0.662** | 2e-10 |
+| no route (54) | -0.206 | 0.14 |
+
+Regressing delta on baseline, log parameter count and reasoning mode
+together, over the 73 substitute-route cells:
+
+| term | coef | p |
+|---|---|---|
+| baseline | **-30.7** | 1e-10 |
+| log params | +0.39 | **0.64** |
+| think | +2.88 | 0.08 |
+
+**Once baseline is in the model, scale contributes nothing measurable** --
+across 0.6B to 14B and two model families. Two caveats travel with it: the
+two groups are not baseline-matched here the way test 1's are (0.903 +- 0.206
+against 0.949 +- 0.151), so test 1 and not this one carries the RTM control;
+and Gemma alone cannot confirm anything (baselines 0.982 +- 0.028, r=-0.280,
+p=0.14) because it has no spread left to correlate against.
+
+### 4. The control that fails, and what it means
+
+Replace each cell's own baseline with the **other three arms'** `none`
+accuracy on the same cell, so the x-axis shares no observation with the
+y-axis. Over the same 177 substitute-route cells:
+
+| x-axis | r | p |
+|---|---|---|
+| this arm's own baseline | -0.390 | 8e-8 |
+| the other arms' baseline | +0.113 | 0.14 |
+
+The relation does not survive an independent difficulty estimate. Read
+correctly this is a boundary on the claim, not a refutation of it: the effect
+is governed by **a model's own competence on an item set**, not by any
+difficulty intrinsic to the items. A cell that `qwen3-1.7b` fails and
+`qwen3-4b` solves is hard for one and not the other, and the primer's value
+follows the model, not the graph.
+
+An item-level version of the same instrument was tried and is **not usable**:
+a per-item difference `v - own` can only be <=0 where `own`=1 and >=0 where
+`own`=0, so its slope against any difficulty measure is mechanical. It
+returns +0.4 (p=0.83) pooled and flips sign per arm (1.7b -24.5, 4b +11.5,
+both significant). Aggregating to cells removes the bound; do not reintroduce
+it by regressing per-item differences.
+
+### What does not transfer
+
+The **crossover point**. It sits at 0.79 on the n=40 corpus and near 0.99 on
+the published split. Fitting on one and predicting the *sign* of a small
+effect on the other does worse than the majority-class rate (47/86 against
+0.651). The ordering replicates; the threshold is a property of a corpus.
+Anything that quotes "0.8" has to say which corpus it came from.
