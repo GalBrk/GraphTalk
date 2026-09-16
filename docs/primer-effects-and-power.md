@@ -1662,32 +1662,35 @@ pooling all 6 tasks into one (density, condition) cell, which the older
 script does, mixes `node_count` exact-match with `connected_nodes` F1 into a
 meaningless average.
 
-**Status:** `qwen3-1.7b` and `qwen3-1.7b-think` complete, 16,800/16,800 rows
-each (tag `densfull40`, `runs/<model>.densfull40.shard*of25.jsonl`).
-`qwen3-4b`/`qwen3-4b-think` in flight as of this writing (jobs 895667,
-895672+895673), same prompt file and tag. Two rows out of 16,800 duplicated
-across a preemption/resume boundary on the non-think arm (harmless,
-deduplicated by the scorer, see the disk-quota note below); everything else
-is a clean 1:1 with the prompt file.
+**Status: all four arms complete** (2026-09-16), 16,800/16,800 rows each --
+`qwen3-1.7b`, `qwen3-1.7b-think`, `qwen3-4b`, `qwen3-4b-think` -- tag
+`densfull40`, `runs/<model>.densfull40.shard*of25.jsonl`. Two rows out of
+16,800 duplicated across a preemption/resume boundary on the `qwen3-1.7b`
+non-think arm only (harmless, deduplicated by the scorer, see the disk-quota
+note below); every other arm is a clean 1:1 with the prompt file, no failed
+shards on the second pass.
 
 ### Read the hit_cap rate before anything else this time
 
-| | non-think | think |
-|---|---|---|
-| overall | 4.8% | 15.4% |
-| `edge_count` | **22.4%** | **81.0%** |
-| `cycle_check` | 6.1% | 6.5% |
-| everything else | ≤0.8% | ≤2.5% |
+| | qwen3-1.7b | qwen3-1.7b-think | qwen3-4b | qwen3-4b-think |
+|---|---|---|---|---|
+| overall | 4.8% | 15.4% | 0.3% | 11.7% |
+| `edge_count` | 22.4% | **81.0%** | 0.6% | **62.2%** |
+| `cycle_check` | 6.1% | 6.5% | 1.0% | 1.9% |
+| everything else | ≤0.8% | ≤2.5% | ≤0.1% | ≤3.5% |
 
-`edge_count` under thinking is mostly not data: several (density, condition)
-cells are **100% capped** at p>=0.35 even at the raised 8192-token budget
-(`GRAPHTALK_MAX_NEW_TOKENS`, added to `sweep.sbatch` for this run), and those
-cells score `nan` rather than a number in the scorer's output -- this was the
-predicted cost of including `edge_count` in a "run every task" design (it
-needs the enumeration budget the size sweep already ruled out at this
-density, and thinking adds a reasoning preamble on top of that enumeration).
-Treat `edge_count`-think at p>=0.35 as absent, not as a result; p=0.10/0.20
-are usable but thin (n as low as 13-27 discordant pairs after dropping caps).
+`edge_count` under thinking is mostly not data at either model size: several
+(density, condition) cells are **100% capped** at p>=0.35 even at the raised
+8192-token budget (`GRAPHTALK_MAX_NEW_TOKENS`, added to `sweep.sbatch` for
+this run), and those cells score `nan` rather than a number in the scorer's
+output -- this was the predicted cost of including `edge_count` in a "run
+every task" design (it needs the enumeration budget the size sweep already
+ruled out at this density, and thinking adds a reasoning preamble on top of
+that enumeration). Treat `edge_count`-think at p>=0.35 as absent, not as a
+result. `qwen3-4b` non-think is far cleaner across the board than
+`qwen3-1.7b` non-think (0.3% vs 4.8% overall) -- a stronger model narrates
+less and hits generation budgets less often, independent of anything about
+primers.
 
 ### The `clustering` -> `node_degree` headline, at a quarter of the sample
 
@@ -1716,7 +1719,7 @@ without help) and neither moves the needle once density/length grows.
 states the answer verbatim) -- and are not evidence of anything beyond
 retrieval-of-a-stated-fact, already covered above.
 
-### What going to all 6 tasks actually bought
+### What going to all 6 tasks actually bought (`qwen3-1.7b`)
 
 - **`node_count`** -- gold is trivially 40 for every row (n is fixed), so the
   blind bar is 1.000 by construction, but the *raw model* does not exploit
@@ -1743,12 +1746,57 @@ retrieval-of-a-stated-fact, already covered above.
   exactly as "Density at a fixed size" predicted from the size-sweep numbers.
   Nothing significant, nothing to read into it.
 
+### `qwen3-4b`: headroom mostly gone, and a new kind of harm
+
+The bigger model closes off most of the design before a primer gets a chance
+to matter, but the two cells that stay open produce results `qwen3-1.7b`
+never showed.
+
+**`node_degree` has almost no headroom left.** `none` alone is 0.84-1.00
+across all four densities (`qwen3-1.7b`: 0.30-0.91) -- so the clustering
+headline literally cannot be tested on this model, there is nothing for a
+primer to add. What *is* there is new: `degree`, `all` and `rwse` all
+**significantly hurt** relative to `none` (non-think, pooled: degree -6.5 pp
+p<0.0001, all -9.25 pp p<0.0001, rwse -2.25 pp p=0.0225). `degree` states the
+correct answer verbatim and *still makes the model worse*. This is not the
+"reading limit" story from earlier in this document (a weaker model failing
+to use a stated fact under length pressure) -- `qwen3-4b` does not need the
+fact, so adding it is pure distraction with no potential upside, and the
+model pays for it anyway. Thinking removes even this: `qwen3-4b-think` sits
+at 0.94-1.00 everywhere except `degree`/`all` (contamination noise from a
+handful of discordant pairs), nothing else significant.
+
+**`edge_existence` is the one cell where an uncontaminated primer
+significantly *helps* a model with real headroom.** Non-think: `clustering`
++4.0 pp (p=0.0166) -- the first (and only) case anywhere in this document's
+full-task design of a clean-bar condition producing a significant *positive*
+effect. Every other condition on this task still significantly hurts
+(`components` n.s., `degree` -4.3 pp, `filler` -7.0 pp, `rwse` -10.0 pp, all
+p<=0.02) -- so the length-cost story replicates at this model size too,
+`clustering` is just the one exception. Thinking again flattens the task to
+1.000 everywhere, erasing the headroom entirely.
+
+**`node_count` mostly recovers** (0.92-1.00 across conditions) but keeps one
+sharp dip: `none` at p=0.20 is 0.690 against >=0.97 for every other
+condition at that density -- a smaller, size-4b echo of the counting-under-
+distraction pattern `qwen3-1.7b` showed much more severely.
+
+**One anomaly, reported rather than explained.** `qwen3-4b` non-think on
+`cycle_check` has two data points that don't fit any story here: `filler`
+collapses to **0.140** at p=0.20 (every other condition at that density is
+0.96-1.00), and at p=0.50 several conditions collapse together (`none`
+0.860, `rwse` 0.510, `all` 0.640) while `degree` and `filler` stay near 1.0.
+Not hit_cap-driven (checked against the capped-row table) and not consistent
+with either a length-cost or a contamination story. Flagging it rather than
+building a narrative around it -- worth a closer read of the actual
+responses in those cells before citing it as anything.
+
 Full per-cell tables (hit_cap counts, unparsable counts, bar-adjusted deltas)
-are reproducible with:
+are reproducible for any arm with:
 
 ```bash
 PYTHONPATH=. python scripts/score_full_density_sweep.py \
-    --responses "runs/qwen3-1.7b.densfull40.shard*of25.jsonl" \
+    --responses "runs/qwen3-4b.densfull40.shard*of25.jsonl" \
     --shortcuts shortcuts.json
 ```
 
