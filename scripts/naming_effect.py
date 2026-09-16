@@ -56,11 +56,20 @@ def _load(paths: list[str]) -> list[dict]:
   return score_sweep.score_records(score_sweep.desubstitute_named_responses(rows))
 
 
-def arm_paths(runs: str, model: str) -> tuple[list[str], list[str]]:
-  """(integer paths, got paths) for one arm, excluding archived rows."""
+def arm_paths(runs: str, model: str, tag: str | None = None) -> tuple[list[str], list[str]]:
+  """(integer paths, got paths) for one arm, excluding archived rows.
+
+  `tag`, if given, restricts to files whose name contains `.<tag>.` -- needed
+  for a model (e.g. `qwen3-1.7b`) that also has runs from unrelated
+  experiments under the same `runs/` directory, which the default ARMS models
+  never did (each of those only ever carried one tracked-sweep tag plus its
+  `got` counterpart), so this stayed unnecessary until now.
+  """
   every = glob.glob(os.path.join(runs, f"{model}.*jsonl")) + \
           glob.glob(os.path.join(runs, f"{model}.jsonl"))
   every = [p for p in set(every) if "archive" not in p and ".redo." not in p]
+  if tag:
+    every = [p for p in every if f".{tag}." in p]
   got = sorted(p for p in every if ".got" in p)
   integer = sorted(p for p in every if ".got" not in p)
   return integer, got
@@ -94,11 +103,23 @@ def main() -> None:
                            "they are dropped, since a truncated response's score "
                            "reflects abandoned working and GoT names cost more "
                            "tokens, which would confound naming with truncation")
+  parser.add_argument("--models", nargs="+", default=None,
+                      help="override ARMS for this invocation (default: the "
+                           "tracked main-sweep arms). Needed for a model that "
+                           "also has runs from unrelated experiments, e.g. "
+                           "qwen3-1.7b -- combine with --tag so those don't "
+                           "get pooled in.")
+  parser.add_argument("--tag", default=None,
+                      help="restrict to run files whose name contains "
+                           "'.<tag>.', e.g. --tag densfull40 for the n=40 "
+                           "density sweep's qwen3-1.7b/qwen3-4b arms, which "
+                           "otherwise share runs/ with several other tags for "
+                           "the same model keys")
   args = parser.parse_args()
 
   results, skipped = [], []
-  for model in ARMS:
-    ipaths, gpaths = arm_paths(args.runs, model)
+  for model in (args.models or ARMS):
+    ipaths, gpaths = arm_paths(args.runs, model, tag=args.tag)
     if not gpaths:
       skipped.append((model, "no GoT rows"))
       continue

@@ -75,3 +75,13 @@ out/
 # than any tracked prompt file because 1,280 statements of surrounding text is
 # the point of the design rather than an accident of it.
 /prompts.retrieval.jsonl
+
+# The GoT-named twin of prompts.densfull40.jsonl (125 MB) -- not a convention
+# choice like the files above, a hard requirement: GitHub rejects any push
+# over 100 MB outright, and GoT character names are longer strings than the
+# integers they replace, so this file is ~46% bigger than the (trackable)
+# 86 MB integer one. Rebuilds byte-for-byte from the exact command in
+# cluster/run-got-density-sweep.md; verified identical to the integer file
+# on every (instance_id, task, condition)'s gold/edges/nodes before this was
+# written.
+/prompts.densfull40.got.jsonl

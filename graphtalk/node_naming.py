@@ -52,6 +52,19 @@ GOT_NAMES: dict[int, str] = name_dictionaries.create_name_dict(None, "got")
 # closes.
 GOT_NAMES[1] = "Catelyn"
 
+# Indices 20-39, added for the n=40 density sweep (docs/full-task-density-sweep.md):
+# the vendored list only has 20 names, and `build_name_map` raises past that.
+# Same override pattern as the Catelyn fix above -- appended here rather than
+# in the vendored file, and screened the same way for common-English-word
+# collisions (none of these read as an ordinary word the way "Cat" did).
+for _i, _name in enumerate((
+    "Tyrion", "Samwell", "Davos", "Margaery", "Tywin", "Varys", "Brienne",
+    "Podrick", "Melisandre", "Ramsay", "Missandei", "Bronn", "Gendry",
+    "Tormund", "Yara", "Oberyn", "Loras", "Renly", "Barristan", "Qyburn",
+), start=20):
+  GOT_NAMES[_i] = _name
+del _i, _name
+
 NAMINGS = ("integer", "got")
 
 _NODE_REF_RE = re.compile(r"\b([Nn]ode) (\d+)\b")

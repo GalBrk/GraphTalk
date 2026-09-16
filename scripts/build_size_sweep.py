@@ -46,6 +46,7 @@ import networkx as nx
 
 from graphtalk import diverse_corpus
 from graphtalk import graphqa
+from graphtalk import node_naming
 from graphtalk import prompts
 from graphtalk import scoring
 
@@ -60,7 +61,7 @@ DEFAULT_SEED = 20260906
 
 
 def build(sizes, count, conditions, seed, style="zero_shot", densities=None,
-          tasks=TASKS):
+          tasks=TASKS, node_naming_scheme="integer"):
   """Prompts for one graph per (density level, size, index).
 
   `densities=None` is the original size-sweep behaviour: sparsity is drawn
@@ -116,6 +117,14 @@ def build(sizes, count, conditions, seed, style="zero_shot", densities=None,
         graph = graphqa.canonical(
             nx.erdos_renyi_graph(size, sparsity, seed=s)
         )
+        # Position-keyed and graph-size-only (node_naming.build_name_map), so
+        # this is the same map for every graph at a fixed size -- computed per
+        # graph anyway to match build_prompts.py's build_stratified/build_named
+        # pattern rather than special-casing the fixed-size case here.
+        name_map = (
+            node_naming.build_name_map(graph, node_naming_scheme)
+            if node_naming_scheme != "integer" else None
+        )
         for task in tasks:
           row = diverse_corpus.make_row(graph, task, random.Random(s))
           for condition in conditions:
@@ -124,6 +133,15 @@ def build(sizes, count, conditions, seed, style="zero_shot", densities=None,
             # collide into one key, or run_sweep.py would treat the second as
             # already generated and skip it in silence.
             suffix = ("" if density is None else f"/p{density:g}") + seed_suffix
+            if name_map is None:
+              prompt = prompts.build_prompt(
+                  graph, condition, row["task_description"], style=style
+              )
+            else:
+              prompt = node_naming.build_named_prompt(
+                  graph, condition, row["task_description"], name_map,
+                  style=style,
+              )
             record = {
                 # Tagged with the size class so no downstream frame can pool a
                 # size sweep row with a tracked-corpus row of the same index.
@@ -131,9 +149,7 @@ def build(sizes, count, conditions, seed, style="zero_shot", densities=None,
                 "task": task,
                 "condition": condition,
                 "style": style,
-                "prompt": prompts.build_prompt(
-                    graph, condition, row["task_description"], style=style
-                ),
+                "prompt": prompt,
                 "gold": row["gold"],
                 "nodes": graph.number_of_nodes(),
                 "edges": graph.number_of_edges(),
@@ -142,6 +158,8 @@ def build(sizes, count, conditions, seed, style="zero_shot", densities=None,
             if density is not None:
               record["density_class"] = density
               record["density"] = sparsity
+            if node_naming_scheme != "integer":
+              record["node_naming"] = node_naming_scheme
             records.append(record)
   return records
 
@@ -163,6 +181,7 @@ def main() -> None:
                            "instance_id with /s<seed> so a replication corpus "
                            "can never collide with the scored one")
   parser.add_argument("--out", default="prompts.sizesweep.jsonl")
+  parser.add_argument("--node-naming", default="integer", choices=node_naming.NAMINGS)
   args = parser.parse_args()
 
   for task in args.tasks:
@@ -170,7 +189,8 @@ def main() -> None:
       parser.error(f"unknown task {task!r}; known: {' '.join(scoring.TASKS)}")
 
   records = build(args.sizes, args.count, args.conditions, args.seed,
-                  densities=args.densities, tasks=tuple(args.tasks))
+                  densities=args.densities, tasks=tuple(args.tasks),
+                  node_naming_scheme=args.node_naming)
   with open(args.out, "w") as handle:
     for record in records:
       handle.write(json.dumps(record) + "\n")

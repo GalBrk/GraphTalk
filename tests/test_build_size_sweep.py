@@ -131,6 +131,34 @@ def test_a_near_seed_is_refused_because_the_corpora_would_overlap():
     _records(densities=[0.5], count=10, seed=build_size_sweep.DEFAULT_SEED + 3)
 
 
+def test_node_naming_default_omits_the_record_field():
+  """Matches build_prompts.py's build_named convention: the field only
+  appears for a non-integer scheme, so the default path's records (and
+  test_default_output_unchanged_by_density_support's guarantee) are untouched."""
+  for record in _records():
+    assert "node_naming" not in record
+
+
+def test_node_naming_got_tags_the_record_and_renames_the_prompt():
+  records = _records(node_naming_scheme="got", tasks=("node_degree",))
+  assert records
+  for record in records:
+    assert record["node_naming"] == "got"
+    assert "Node 0" not in record["prompt"]
+    assert "Ned" in record["prompt"]  # GOT_NAMES[0]
+
+
+def test_node_naming_got_leaves_no_bare_node_digit_reference():
+  """Every "Node <id>"/"node <id>" self-reference must be renamed -- a
+  leftover bare digit would mean the script fell through to the integer
+  assembly path despite --node-naming got."""
+  import re
+
+  records = _records(node_naming_scheme="got", tasks=("node_degree",))
+  for record in records:
+    assert not re.search(r"\b[Nn]ode \d+\b", record["prompt"])
+
+
 def test_a_distant_seed_shares_no_graph_with_the_default_corpus():
   base = _records(sizes=[40], count=30, densities=[0.35],
                   tasks=("node_degree",), seed=build_size_sweep.DEFAULT_SEED)
