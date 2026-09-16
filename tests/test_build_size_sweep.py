@@ -159,6 +159,26 @@ def test_node_naming_got_leaves_no_bare_node_digit_reference():
     assert not re.search(r"\b[Nn]ode \d+\b", record["prompt"])
 
 
+def test_node_naming_got_keeps_the_same_graphs_as_integer():
+  """--node-naming must change only the rendering, not the seed formula --
+  an integer and a got build with identical flags are the same graphs, so
+  every non-prompt field must match and only `prompt` may differ."""
+  integer_records = _records(sizes=[20], count=3, densities=[0.5])
+  got_records = _records(sizes=[20], count=3, densities=[0.5],
+                         node_naming_scheme="got")
+  assert [r["gold"] for r in integer_records] == [r["gold"] for r in got_records]
+  assert [r["edges"] for r in integer_records] == [r["edges"] for r in got_records]
+  assert [r["instance_id"] for r in integer_records] == \
+      [r["instance_id"] for r in got_records]
+  assert [r["prompt"] for r in integer_records] != [r["prompt"] for r in got_records]
+
+
+def test_node_naming_got_rejects_more_nodes_than_got_names_cover():
+  """Pins the exact boundary the 40-name extension exists to cover."""
+  with pytest.raises(ValueError, match="GoT names"):
+    _records(sizes=[41], count=1, node_naming_scheme="got")
+
+
 def test_a_distant_seed_shares_no_graph_with_the_default_corpus():
   base = _records(sizes=[40], count=30, densities=[0.35],
                   tasks=("node_degree",), seed=build_size_sweep.DEFAULT_SEED)
