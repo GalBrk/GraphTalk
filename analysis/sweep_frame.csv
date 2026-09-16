@@ -3394,7 +3394,7 @@ cycle_check/4,cycle_check,rwse,zero_shot,"Yes, there is a cycle.",gemma4-e4b-thi
 cycle_check/8,cycle_check,components,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,1271,unaffected,True,1.0,3078,correct,False
 cycle_check/10,cycle_check,all,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,590,unaffected,True,0.946,1922,correct,False
 cycle_check/11,cycle_check,none,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,765,unaffected,True,0.832,1869,correct,False
-cycle_check/13,cycle_check,degree,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,No,,True,1.0,1.0,False,False,,False,retokenized,2252,unaffected,True,0.946,4535,correct,False
+cycle_check/13,cycle_check,degree,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,2252,unaffected,True,0.946,4535,correct,False
 cycle_check/15,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,1022,unaffected,True,0.832,2440,correct,False
 cycle_check/16,cycle_check,rwse,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,706,unaffected,True,0.832,2142,correct,False
 cycle_check/20,cycle_check,components,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,1302,unaffected,True,1.0,2794,correct,False
@@ -3620,7 +3620,7 @@ cycle_check/7,cycle_check,all,zero_shot,"Yes, there is a cycle.",gemma4-e4b-thin
 cycle_check/8,cycle_check,none,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,1313,unaffected,True,0.832,2966,correct,False
 cycle_check/10,cycle_check,degree,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,435,unaffected,True,0.946,1417,correct,False
 cycle_check/12,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,876,unaffected,True,0.832,2303,correct,False
-cycle_check/13,cycle_check,rwse,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,No,,True,1.0,1.0,False,False,,False,retokenized,1760,unaffected,True,0.832,4415,correct,False
+cycle_check/13,cycle_check,rwse,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,1760,unaffected,True,0.832,4415,correct,False
 cycle_check/17,cycle_check,components,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,464,unaffected,True,1.0,1430,correct,False
 cycle_check/19,cycle_check,all,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,845,unaffected,True,0.946,1791,correct,False
 cycle_check/20,cycle_check,none,zero_shot,"Yes, there is a cycle.",gemma4-e4b-think,gemma4-e4b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,1374,unaffected,True,0.832,2909,correct,False
@@ -4634,7 +4634,7 @@ cycle_check/21,cycle_check,rwse,zero_shot,"Yes, there is a cycle.",gemma4-e4b,ge
 cycle_check/22,cycle_check,all,zero_shot,"Yes, there is a cycle.",gemma4-e4b,gemma4-e4b,False,integer,Yes,No,,True,1.0,1.0,False,False,,False,retokenized,445,unaffected,False,0.946,1316,correct,False
 cycle_check/22,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",gemma4-e4b,gemma4-e4b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,843,unaffected,True,0.832,2199,correct,False
 cycle_check/22,cycle_check,components,zero_shot,"Yes, there is a cycle.",gemma4-e4b,gemma4-e4b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,532,unaffected,True,1.0,1222,correct,False
-cycle_check/22,cycle_check,degree,zero_shot,"Yes, there is a cycle.",gemma4-e4b,gemma4-e4b,False,integer,Yes,No,,True,1.0,1.0,False,False,,False,retokenized,883,unaffected,False,0.946,2055,correct,False
+cycle_check/22,cycle_check,degree,zero_shot,"Yes, there is a cycle.",gemma4-e4b,gemma4-e4b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,883,unaffected,False,0.946,2055,correct,False
 cycle_check/22,cycle_check,none,zero_shot,"Yes, there is a cycle.",gemma4-e4b,gemma4-e4b,False,integer,Yes,No,,True,1.0,1.0,False,False,,False,retokenized,524,unaffected,False,0.832,1287,correct,False
 cycle_check/22,cycle_check,rwse,zero_shot,"Yes, there is a cycle.",gemma4-e4b,gemma4-e4b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,760,unaffected,True,0.832,1980,correct,False
 cycle_check/23,cycle_check,all,zero_shot,"Yes, there is a cycle.",gemma4-e4b,gemma4-e4b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,414,unaffected,True,0.946,1103,correct,False
@@ -5397,7 +5397,7 @@ cycle_check/19,cycle_check,filler,zero_shot,"Yes, there is a cycle.",qwen3-14b-t
 cycle_check/21,cycle_check,filler,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,Yes,No,,True,1.0,1.0,False,False,,False,generator,2134,revised,True,0.832,6063,correct,False
 cycle_check/23,cycle_check,filler,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,1222,revised,True,0.832,4037,correct,False
 cycle_check/25,cycle_check,filler,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,1204,revised,True,0.832,3635,correct,False
-cycle_check/27,cycle_check,filler,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,No,No,False,True,0.0,0.0,False,False,,True,generator,8192,revised,False,0.832,33852,non_terminating,True
+cycle_check/27,cycle_check,filler,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,No,Yes,False,True,0.0,0.0,False,False,,True,generator,8192,revised,False,0.832,33852,non_terminating,True
 cycle_check/29,cycle_check,filler,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,1901,revised,True,0.832,5780,correct,False
 node_count/0,node_count,all,zero_shot, 18.,qwen3-14b-think,qwen3-14b,True,integer,18,18,,True,1.0,1.0,False,False,0.0,False,retokenized,1270,unaffected,True,1.0,2675,correct,False
 node_count/1,node_count,clustering,zero_shot, 10.,qwen3-14b-think,qwen3-14b,True,integer,10,10,,True,1.0,1.0,False,False,0.0,False,retokenized,1030,unaffected,True,1.0,3316,correct,False
@@ -5619,11 +5619,11 @@ cycle_check/24,cycle_check,components,zero_shot,"Yes, there is a cycle.",qwen3-1
 cycle_check/24,cycle_check,rwse,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,1043,unaffected,True,0.832,3363,correct,False
 cycle_check/25,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,1807,unaffected,True,0.946,5592,correct,False
 cycle_check/26,cycle_check,all,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,1446,unaffected,True,0.946,5035,correct,False
-cycle_check/27,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,No,No,False,True,0.0,0.0,False,False,,True,retokenized,8192,unaffected,False,0.832,33644,non_terminating,True
+cycle_check/27,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,No,Yes,False,True,0.0,0.0,False,False,,True,retokenized,8192,unaffected,False,0.832,33644,non_terminating,True
 cycle_check/27,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,No,No,False,True,0.0,0.0,False,False,,True,retokenized,8192,unaffected,False,0.832,24881,non_terminating,True
 cycle_check/28,cycle_check,components,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,2126,unaffected,True,1.0,5953,correct,False
 cycle_check/28,cycle_check,rwse,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,1256,unaffected,True,0.832,3964,correct,False
-cycle_check/29,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,Yes,No,,True,1.0,1.0,False,False,,False,retokenized,1656,unaffected,True,0.946,5187,correct,False
+cycle_check/29,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-14b-think,qwen3-14b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,1656,unaffected,True,0.946,5187,correct,False
 node_count/0,node_count,clustering,zero_shot, 18.,qwen3-14b-think,qwen3-14b,True,integer,18,0,,True,1.0,1.0,False,False,0.0,False,retokenized,707,unaffected,True,1.0,2190,correct,False
 node_count/0,node_count,none,zero_shot, 18.,qwen3-14b-think,qwen3-14b,True,integer,18,0,,True,1.0,1.0,False,False,0.0,False,retokenized,546,unaffected,True,0.064,1761,correct,False
 node_count/1,node_count,components,zero_shot, 10.,qwen3-14b-think,qwen3-14b,True,integer,10,10,,True,1.0,1.0,False,False,0.0,False,retokenized,1157,unaffected,True,0.076,3959,correct,False
@@ -7121,7 +7121,7 @@ cycle_check/16,cycle_check,components,zero_shot,"Yes, there is a cycle.",qwen3-1
 cycle_check/16,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-14b,qwen3-14b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,344,unaffected,False,0.946,1087,correct,False
 cycle_check/16,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-14b,qwen3-14b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,237,unaffected,False,0.832,742,correct,False
 cycle_check/16,cycle_check,rwse,zero_shot,"Yes, there is a cycle.",qwen3-14b,qwen3-14b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,220,unaffected,True,0.832,885,correct,False
-cycle_check/17,cycle_check,all,zero_shot,"Yes, there is a cycle.",qwen3-14b,qwen3-14b,False,integer,No,Yes,,True,0.0,0.0,False,False,,False,retokenized,279,unaffected,False,0.946,1150,wrong,False
+cycle_check/17,cycle_check,all,zero_shot,"Yes, there is a cycle.",qwen3-14b,qwen3-14b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,279,unaffected,False,0.946,1150,correct,False
 cycle_check/17,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",qwen3-14b,qwen3-14b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,288,unaffected,False,0.832,1171,correct,False
 cycle_check/17,cycle_check,components,zero_shot,"Yes, there is a cycle.",qwen3-14b,qwen3-14b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,194,unaffected,True,1.0,789,correct,False
 cycle_check/17,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-14b,qwen3-14b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,375,unaffected,True,0.946,1187,correct,False
@@ -8111,7 +8111,7 @@ cycle_check/5,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b-thi
 cycle_check/6,cycle_check,all,zero_shot,"Yes, there is a cycle.",qwen3-8b-think,qwen3-8b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,2475,unaffected,True,0.946,6975,correct,False
 cycle_check/7,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",qwen3-8b-think,qwen3-8b,True,integer,No,No,False,True,0.0,0.0,False,False,,True,retokenized,8192,unaffected,False,0.832,19195,non_terminating,False
 cycle_check/7,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b-think,qwen3-8b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,1867,unaffected,True,0.832,6088,correct,False
-cycle_check/8,cycle_check,components,zero_shot,"Yes, there is a cycle.",qwen3-8b-think,qwen3-8b,True,integer,Yes,No,,True,1.0,1.0,False,False,,False,retokenized,2779,unaffected,True,1.0,9542,correct,False
+cycle_check/8,cycle_check,components,zero_shot,"Yes, there is a cycle.",qwen3-8b-think,qwen3-8b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,2779,unaffected,True,1.0,9542,correct,False
 cycle_check/8,cycle_check,rwse,zero_shot,"Yes, there is a cycle.",qwen3-8b-think,qwen3-8b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,4119,unaffected,True,0.832,12894,correct,False
 cycle_check/9,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b-think,qwen3-8b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,2207,unaffected,True,0.946,7133,correct,False
 cycle_check/10,cycle_check,all,zero_shot,"Yes, there is a cycle.",qwen3-8b-think,qwen3-8b,True,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,2385,unaffected,True,0.946,9215,correct,False
@@ -9546,7 +9546,7 @@ cycle_check/0,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwe
 cycle_check/0,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,602,unaffected,True,0.832,1833,correct,False
 cycle_check/0,cycle_check,rwse,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,175,unaffected,False,0.832,683,correct,False
 cycle_check/1,cycle_check,all,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,389,unaffected,True,0.946,1173,correct,False
-cycle_check/1,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,No,,True,1.0,1.0,False,False,,False,retokenized,507,unaffected,False,0.832,1470,correct,False
+cycle_check/1,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,507,unaffected,False,0.832,1470,correct,False
 cycle_check/1,cycle_check,components,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,714,unaffected,True,1.0,2102,correct,False
 cycle_check/1,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,375,unaffected,True,0.946,1037,correct,False
 cycle_check/1,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,339,unaffected,True,0.832,994,correct,False
@@ -9629,12 +9629,12 @@ cycle_check/14,cycle_check,components,zero_shot,"No, there is no cycle.",qwen3-8
 cycle_check/14,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,0.0,0.0,False,False,,False,retokenized,439,unaffected,True,0.946,1299,wrong,False
 cycle_check/14,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,0.0,0.0,False,False,,False,retokenized,353,unaffected,True,0.832,1061,wrong,False
 cycle_check/14,cycle_check,rwse,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,0.0,0.0,False,False,,False,retokenized,296,unaffected,True,0.832,894,wrong,False
-cycle_check/15,cycle_check,all,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,No,Yes,,True,0.0,0.0,False,False,,False,retokenized,214,unaffected,False,0.946,779,wrong,False
+cycle_check/15,cycle_check,all,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,214,unaffected,False,0.946,779,correct,False
 cycle_check/15,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,555,unaffected,True,0.832,1457,correct,False
 cycle_check/15,cycle_check,components,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,640,unaffected,True,1.0,1711,correct,False
 cycle_check/15,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,854,unaffected,True,0.946,2561,correct,False
 cycle_check/15,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,177,unaffected,False,0.832,582,correct,False
-cycle_check/15,cycle_check,rwse,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,No,Yes,,True,0.0,0.0,False,False,,False,retokenized,224,unaffected,False,0.832,647,wrong,False
+cycle_check/15,cycle_check,rwse,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,224,unaffected,False,0.832,647,correct,False
 cycle_check/16,cycle_check,all,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,285,unaffected,False,0.946,884,correct,False
 cycle_check/16,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,951,unaffected,True,0.832,2807,correct,True
 cycle_check/16,cycle_check,components,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,386,unaffected,True,1.0,1246,correct,False
@@ -9659,7 +9659,7 @@ cycle_check/19,cycle_check,components,zero_shot,"Yes, there is a cycle.",qwen3-8
 cycle_check/19,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,515,unaffected,True,0.946,1503,correct,False
 cycle_check/19,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,647,unaffected,True,0.832,1495,correct,False
 cycle_check/19,cycle_check,rwse,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,219,unaffected,False,0.832,667,correct,False
-cycle_check/20,cycle_check,all,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,No,Yes,,True,0.0,0.0,False,False,,False,retokenized,242,unaffected,False,0.946,866,wrong,False
+cycle_check/20,cycle_check,all,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,242,unaffected,False,0.946,866,correct,False
 cycle_check/20,cycle_check,clustering,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,781,unaffected,True,0.832,2003,correct,False
 cycle_check/20,cycle_check,components,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,598,unaffected,True,1.0,2344,correct,False
 cycle_check/20,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,integer,Yes,Yes,,True,1.0,1.0,False,False,,False,retokenized,649,unaffected,True,0.946,2094,correct,False
