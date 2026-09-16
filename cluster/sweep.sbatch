@@ -262,8 +262,16 @@ REPO="$(python -c "from graphtalk import models; print(models.MODELS['$MODEL'].r
 BLOBS="${HF_HOME}/hub/models--${REPO//\//--}/blobs"
 echo "warming page cache from $BLOBS"
 WARM_START=$SECONDS
-find "$BLOBS" -type f -size +1M -exec cat {} + > /dev/null
-echo "page cache warmed in $(( (SECONDS - WARM_START) / 60 ))m $(( (SECONDS - WARM_START) % 60 ))s"
+if find "$BLOBS" -type f -size +1M -exec cat {} + > /dev/null; then
+  echo "page cache warmed in $(( (SECONDS - WARM_START) / 60 ))m $(( (SECONDS - WARM_START) % 60 ))s"
+else
+  # `find` needs list (r) permission on $BLOBS to enumerate it; actual
+  # loading below only needs traverse (x) permission to open a file it
+  # already knows the name of via the snapshots/ symlink, so a listing
+  # failure here -- e.g. reading someone else's shared cache -- doesn't
+  # mean loading will fail too. This step is a speed optimization only.
+  echo "page cache warm-up skipped (couldn't list $BLOBS, likely a permissions gap on a shared cache); continuing without it"
+fi
 
 python scripts/run_sweep.py \
   --model "$MODEL" \
