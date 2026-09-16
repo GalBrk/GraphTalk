@@ -1,6 +1,8 @@
 \documentclass[11pt]{article}
 
-\usepackage[final]{acl}
+% "preprint" = numbered pages, authors visible, no review line numbers.
+% Switch to [final] for a camera-ready, or [review] for double-blind.
+\usepackage[preprint]{acl}
 
 \usepackage{times}
 \usepackage{latexsym}
@@ -39,14 +41,14 @@ a length-only upper bound. Evaluated at $n=40$ on
 \texttt{qwen3-1.7b} and \texttt{qwen3-4b}, with and without
 chain-of-thought, we find that no primer effect replicates across model
 scale. Across four arms, six tasks and six primers, several cells beat both
-\texttt{none} and \texttt{filler} significantly in one model size but none
-does so in both, and the largest consistent content effect --- the
+\texttt{none} and \texttt{filler} significantly in one model size, but none
+does so in both. The largest consistent content effect --- the
 \texttt{degree} primer on \texttt{node\_degree}, which states the answer
 verbatim --- reverses sign between 1.7B ($+7.5$ points) and 4B ($-6.5$).
-The filler is not inert: it costs the thinking arm up to $14.1$ points on
-dense graphs and harms both sizes on \texttt{edge\_existence}, while the
-largest apparent gains fall on tasks whose answer is effectively constant,
-where content-free text moves accuracy as much as a structural primer.
+Nor is the filler inert: it costs the thinking arm up to $14.1$ points on
+dense graphs and harms both sizes on \texttt{edge\_existence}. The largest
+apparent gains fall on tasks whose answer is effectively constant, where
+content-free text moves accuracy as much as a structural primer.
 Chain-of-thought on an identical checkpoint is worth $+29.2$ points pooled,
 an order of magnitude more than any primer effect measured. One cell
 survives every control: \texttt{clustering} on \texttt{node\_degree} for
@@ -59,8 +61,8 @@ survives every control: \texttt{clustering} on \texttt{node\_degree} for
 
 \citet{fatemi2023talklikeagraph} demonstrate that a large language model's
 accuracy on graph-reasoning questions depends substantially on how the
-graph is encoded as text, independent of its underlying reasoning ability:
-their study varies the encoding function --- adjacency lists, incident
+graph is encoded as text, independent of its underlying reasoning ability.
+Their study varies the encoding function --- adjacency lists, incident
 lists, and ``themed'' encodings renaming nodes as people or places ---
 while holding question and graph fixed.
 
@@ -132,16 +134,15 @@ local or global structure, prepended to the standard text encoding and the
 task question. A single renderer produces every condition, so all
 node-level facts share identical sentence framing (``Node $N$ has\dots'')
 and floating-point values are rounded and formatted identically; conditions
-therefore differ in content alone. We evaluate seven: \textbf{none}, the
+therefore differ in content alone. Six state a fact: \textbf{none}, the
 encoding with no primer; \textbf{components}, one graph-level sentence
 giving the number of connected components; \textbf{degree}, each node's
 exact degree; \textbf{clustering}, each node's clustering coefficient;
 \textbf{rwse}, each node's random-walk return probabilities
-\citep{dwivedi2022graph}; \textbf{all}, the latter three combined; and
-\textbf{filler}, a content-free control (``Node $N$ is simply present
-within the graph $G$.'') that carries no structural information at
-comparable length, and so isolates content from the confound of merely
-lengthening the prompt.
+\citep{dwivedi2022graph}; and \textbf{all}, the latter three combined. The
+seventh, \textbf{filler}, is a content-free control of comparable length
+(``Node $N$ is simply present within the graph $G$.''). It isolates content
+from the confound of merely lengthening the prompt.
 
 \subsection{Shortcut solvers}
 \label{sec:shortcuts}
@@ -156,10 +157,10 @@ sixteen exact rules (deriving edge count algebraically from a
 rules whose fitting and scoring graph sets are kept structurally disjoint,
 and an exact enumeration bound for small graphs. Being structurally
 incapable of observing the graph, its accuracy on a (primer, task) cell is
-a model-independent bound: results there should be read against this
-\emph{shortcut ceiling} rather than against zero, since a primer that fully
-determines the answer (ceiling $1.0$) makes model accuracy on that cell
-uninformative about graph reasoning, however high.
+a model-independent bound. Results there should be read against this
+\emph{shortcut ceiling} rather than against zero. Where a primer fully
+determines the answer --- a ceiling of $1.0$ --- model accuracy on that
+cell is uninformative about graph reasoning, however high.
 
 \subsection{Prompt assembly}
 \label{sec:prompts}
@@ -175,8 +176,8 @@ order the original question happened to list them in.
 
 Every comparison reported here is paired: a primer condition is compared
 against \texttt{none} on the same graph, with the same question and gold
-answer, and pairs in which either arm reached the output-token cap are
-dropped from that comparison rather than scored as incorrect. Because a
+answer. Pairs in which either arm reached the output-token cap are dropped
+from that comparison rather than scored as incorrect. Because a
 graph contributes exactly one pair to a given (task, condition)
 comparison, the pairs entering a single test are independent and no
 clustering correction is required; we do not pool across tasks, where they
@@ -186,13 +187,13 @@ The primary test is the exact McNemar test \citep{mcnemar1947note},
 Benjamini--Hochberg corrected across the six primer conditions within a
 task \citep{benjaminihochberg1995controlling} --- $q=0.05$, six hypotheses
 per family, not one family of $144$. For the comparisons we interpret
-substantively we additionally report a paired permutation test
-(sign-flipping each pair's observed difference, $20{,}000$ resamples with
-the add-one correction of North et al.) and a paired bootstrap $95\%$
-confidence interval on the effect size ($20{,}000$ resamples, whole pairs
-resampled together). The permutation and McNemar $p$-values agree to within
-a few thousandths on every cell where we report both, so the interval, not
-the second $p$-value, is what the extra computation buys.
+substantively we additionally report two resampling statistics: a paired
+permutation test, sign-flipping each pair's observed difference over
+$20{,}000$ resamples with the add-one correction of North et al., and a
+paired bootstrap $95\%$ confidence interval on the effect size, resampling
+whole pairs $20{,}000$ times. The permutation and McNemar $p$-values agree
+to within a few thousandths on every cell where we report both, so the
+interval, not the second $p$-value, is what the extra computation buys.
 
 \section{Experimental Setup}
 \label{sec:setup}
@@ -325,13 +326,13 @@ within a task ($q=0.05$).}
 \paragraph{No primer effect replicates across model scale.} Several
 (primer, task) cells significantly exceed both \texttt{none} and
 \texttt{filler} in one plain arm; none does so in both. The strongest
-candidate is \texttt{degree} --- and \texttt{all}, which contains it ---
-on \texttt{node\_degree}, where the primer states the requested quantity
-verbatim: $+7.5$ $[+3.0, +12.0]$ and $+10.2$ $[+5.2, +15.2]$ points to
-\texttt{qwen3-1.7b} and $+11.7$ and $+11.6$ to
-\texttt{qwen3-1.7b-think} (Table~\ref{tab:main-think}), but $-6.5$ $[-9.2,
--4.0]$ and $-9.2$ $[-12.2, -6.2]$ to \texttt{qwen3-4b}, with
-non-overlapping intervals between the sizes. A primer that \emph{contains the answer} makes the larger model
+candidate is \texttt{degree}, and \texttt{all} which contains it, on
+\texttt{node\_degree} --- the one task where a primer states the requested
+quantity verbatim. It is worth $+7.5$ $[+3.0, +12.0]$ and $+10.2$ $[+5.2,
++15.2]$ points to \texttt{qwen3-1.7b}, and $+11.7$ and $+11.6$ to
+\texttt{qwen3-1.7b-think} (Table~\ref{tab:main-think}). To
+\texttt{qwen3-4b} it is worth $-6.5$ $[-9.2, -4.0]$ and $-9.2$ $[-12.2,
+-6.2]$, with non-overlapping intervals between the sizes. A primer that \emph{contains the answer} makes the larger model
 worse; $26$ of its $29$ \texttt{degree} losses are off by one to three,
 consistent with the primer competing with, rather than replacing, the
 model's own enumeration of the encoding. Table~\ref{tab:density} shows
@@ -400,12 +401,12 @@ consequence is that the thinking arms sit at ceiling on
 \texttt{cycle\_check}, \texttt{edge\_existence} and \texttt{node\_count}
 under every condition, and \texttt{qwen3-4b-think} on five of six tasks,
 leaving no headroom for a primer effect. Primers do change how often those
-arms fail to terminate --- a process effect, not an accuracy one: for
-\texttt{qwen3-1.7b-think} \texttt{degree} truncates $3.4$ points more often
-than \texttt{none} ($p < 0.001$) while \texttt{all}, \texttt{filler} and
-\texttt{clustering} truncate $1.3$--$3.4$ points less; for
-\texttt{qwen3-4b-think} every primer truncates $2.0$ to $4.3$ points less
-(all $p < 0.001$).
+arms fail to terminate --- a process effect, not an accuracy one. For
+\texttt{qwen3-1.7b-think}, \texttt{degree} truncates $3.4$ points more
+often than \texttt{none} ($p < 0.001$), while \texttt{all},
+\texttt{filler} and \texttt{clustering} truncate $1.3$--$3.4$ points less.
+For \texttt{qwen3-4b-think} every primer truncates $2.0$ to $4.3$ points
+less (all $p < 0.001$).
 
 \paragraph{The one cell that survives every control.}
 \label{sec:results-headline}
@@ -440,16 +441,16 @@ verbatim, and then only partially: \texttt{degree} and \texttt{all} move
 consistently, while the statistics naming no answer survive both controls
 in no more than one arm. This is answer retrieval done badly --- never more
 than $28$ of $100$ available points, and at 4B backwards. Second, added text
-is an active treatment regardless of content, harming both sizes on
-\texttt{edge\_existence} and \texttt{connected\_nodes} and helping both on
+is an active treatment regardless of content. It harms both sizes on
+\texttt{edge\_existence} and \texttt{connected\_nodes} and helps both on
 \texttt{node\_count}, at magnitudes ($-15.8$ to $+39.8$) exceeding nearly
-every content effect here; a design comparing a primer only against
+every content effect here. A design comparing a primer only against
 \texttt{none} therefore estimates content and length confounded, with the
 length term often the larger. Third, the headroom is largely consumed by
-the decoding mode: chain-of-thought is worth $+29.2$ points pooled and
-moves most cells to ceiling, and where it does not saturate a task it
-censors it, the $62$--$81\%$ truncation on \texttt{edge\_count} removing
-that task from both thinking arms.
+the decoding mode. Chain-of-thought is worth $+29.2$ points pooled and
+moves most cells to ceiling; where it does not saturate a task it censors
+it, the $62$--$81\%$ truncation on \texttt{edge\_count} removing that task
+from both thinking arms.
 
 \looseness=-1
 The interesting quantity is therefore not whether a structural preamble
@@ -468,12 +469,12 @@ larger models or to other architectures. Several (primer condition, task)
 cells are known in advance to be shortcut-dominated at this graph size and
 density range (Section~\ref{sec:setup}); results on those cells bound what
 can be concluded about genuine graph reasoning even though we report them.
-Graphs are drawn from a single generator family (Erd\H{o}s--R\'enyi);
-whether primer effects transfer to other graph generators, which
-\citet{fatemi2023talklikeagraph} show matters for encoding effects,
-remains untested here, and, as noted in Section~\ref{sec:related-work}, we
-found directly that varying the generator family itself is not a safe way
-to test this, since doing so confounds structure with task difficulty.
+Graphs are drawn from a single generator family (Erd\H{o}s--R\'enyi).
+Whether primer effects transfer to other generators remains untested, and
+\citet{fatemi2023talklikeagraph} show the generator matters for encoding
+effects. As noted in Section~\ref{sec:related-work}, varying the generator
+family is not itself a safe way to test this: it confounds structure with
+task difficulty.
 Compute and time constraints limited this sweep to a single
 node-count/density design rather than a broader sweep over graph sizes.
 
