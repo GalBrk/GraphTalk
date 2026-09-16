@@ -154,6 +154,9 @@ fi
 # Irrelevant on `killable`, which has no B200, but it rules the env out if this
 # ever moves to gpu-b200.
 GRAPHTALK_ENV="${GRAPHTALK_ENV:-graphtalk}"
+# conda.sh references $PS1, which a non-interactive batch shell never sets --
+# fatal under this script's `set -u` otherwise.
+export PS1="${PS1:-}"
 source /home/dcor/galbarak2/anaconda3/etc/profile.d/conda.sh
 conda activate "/home/dcor/galbarak2/conda_envs/${GRAPHTALK_ENV}"
 echo "env: $GRAPHTALK_ENV"
