@@ -1,0 +1,94 @@
+"""Permutation p + bootstrap CI for every (arm, task, condition) cell.
+
+Also emits the drop-vs-zero sensitivity analysis and MAE on integer tasks.
+"""
+import collections
+import glob
+import json
+
+from graphtalk import scoring, significance
+
+ARMS = ["qwen3-1.7b", "qwen3-1.7b-think", "qwen3-4b", "qwen3-4b-think"]
+CONDS = ["components", "clustering", "rwse", "degree", "filler", "all"]
+TASKS = ["connected_nodes", "cycle_check", "edge_count", "edge_existence",
+         "node_count", "node_degree"]
+INTEGER = {"node_count", "edge_count", "node_degree"}
+
+
+def load(arm):
+    seen, rows = set(), []
+    for path in sorted(glob.glob(f"runs/{arm}.densfull40.shard*of25.jsonl")):
+        with open(path) as fh:
+            for line in fh:
+                if not line.strip():
+                    continue
+                r = json.loads(line)
+                k = (r["instance_id"], r["condition"], r["style"])
+                if k in seen:
+                    continue
+                seen.add(k)
+                rows.append(r)
+    return rows
+
+
+out = {}
+for arm in ARMS:
+    rows = load(arm)
+    scored = collections.defaultdict(dict)   # (task, iid) -> cond -> (capped, exact, abserr)
+    for r in rows:
+        t = r["task"]
+        capped = bool(r.get("hit_cap"))
+        if capped:
+            scored[(t, r["instance_id"])][r["condition"]] = (True, 0.0, None)
+            continue
+        res = scoring.score_one(
+            scoring.extract_answer(r["response"], t), r["gold"], t)
+        scored[(t, r["instance_id"])][r["condition"]] = (
+            False, res["exact"], res["absolute_error"])
+
+    for t in TASKS:
+        # MAE on integer tasks, none vs each condition, non-capped rows only
+        mae = {}
+        for c in ["none"] + CONDS:
+            errs = [v[c][2] for k, v in scored.items()
+                    if k[0] == t and c in v and not v[c][0] and v[c][2] is not None]
+            mae[c] = (sum(errs) / len(errs), len(errs)) if errs else (None, 0)
+
+        for c in CONDS:
+            drop_ctrl, drop_treat, zero_ctrl, zero_treat = [], [], [], []
+            for k, v in scored.items():
+                if k[0] != t or "none" not in v or c not in v:
+                    continue
+                ncap, ne, _ = v["none"]
+                ccap, ce, _ = v[c]
+                zero_ctrl.append(0.0 if ncap else ne)
+                zero_treat.append(0.0 if ccap else ce)
+                if ncap or ccap:
+                    continue
+                drop_ctrl.append(ne)
+                drop_treat.append(ce)
+            if not drop_ctrl:
+                continue
+            perm = significance.paired_permutation_test(
+                drop_ctrl, drop_treat, n_perm=10000, seed=0)
+            ci = significance.cluster_bootstrap_ci(
+                drop_ctrl, drop_treat, n_boot=10000, seed=0)
+            mc = scoring.mcnemar(drop_ctrl, drop_treat)
+            mcz = scoring.mcnemar(zero_ctrl, zero_treat)
+            out[f"{arm}|{t}|{c}"] = {
+                "n_drop": len(drop_ctrl),
+                "delta_drop": (sum(drop_treat) - sum(drop_ctrl)) / len(drop_ctrl) * 100,
+                "ci": [ci["ci_low"] * 100, ci["ci_high"] * 100],
+                "p_perm": perm["p_value"],
+                "p_mcnemar": mc["p_value"],
+                "n_zero": len(zero_ctrl),
+                "delta_zero": (sum(zero_treat) - sum(zero_ctrl)) / len(zero_ctrl) * 100,
+                "p_mcnemar_zero": mcz["p_value"],
+                "mae_none": mae["none"][0],
+                "mae_cond": mae[c][0],
+            }
+        print(f"done {arm} {t}", flush=True)
+
+with open("ci_all.json", "w") as fh:
+    json.dump(out, fh, indent=1)
+print(f"wrote {len(out)} cells to ci_all.json")
