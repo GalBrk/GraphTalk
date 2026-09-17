@@ -2,7 +2,36 @@
 #SBATCH --partition=killable
 #SBATCH --account=gpu-research
 #SBATCH --gpus=1
-#SBATCH --constraint="[a6000|l40s|h100]"
+# Widened from `a6000|l40s|h100` on 2026-09-17. That set had stopped being a
+# filter and become a bottleneck: every a6000 and l40s GPU in `killable` was
+# allocated, while 25 GPUs sat free on the 3090 and a5000 nodes the constraint
+# excluded -- for a sweep whose largest live model is 4B (~8 GB of bf16
+# weights). Driver versions were measured across the whole partition before
+# widening rather than assumed (the table in cluster/README.md); all six
+# reachable 3090 nodes are on 595.84, well past the 580+ the default cu130 env
+# needs, so this costs no env change.
+#
+# Every card named here has at least 24 GB, which covers the registry up to
+# `min_vram_gb=24`. The 48 GB models (qwen3-14b, gemma4-12b) are NOT safe on
+# the 24 GB half of that pool, so the VRAM guard further down refuses them on a
+# too-small card rather than letting them OOM an hour in -- that guard, not
+# this line, is what keeps the wider pool honest for the big models.
+#
+# The 2080 nodes are deliberately still out even though 30 of them are idle:
+# sm_75 has no bf16, so they need an fp16 path first, not just a wider
+# constraint.
+#SBATCH --constraint="a6000|l40s|a5000|geforce_rtx_3090|h100"
+# The 535.x-driver nodes the default cu130 env cannot use, plus n-801, whose
+# read throughput collapses to 3.4 MB/s under load (both stalls in this project
+# landed there; its driver is fine at 580.126.09, it is the I/O that is not).
+# Measured 2026-09-17. Note n-501 is an a5000, not an l40s, and only became
+# reachable at all when `a5000` joined the constraint above.
+#
+# An --exclude on the sbatch command line REPLACES this list rather than adding
+# to it, so `--exclude=n-801` silently re-admits all four 535.x nodes. To use
+# those nodes on purpose, pass GRAPHTALK_ENV=graphtalk-cu126 instead, which
+# runs on both driver generations.
+#SBATCH --exclude=n-501,n-801,n-802,n-803,n-804
 #SBATCH --cpus-per-task=8
 # Sized to hold the largest checkpoint in the page cache the warm-up below fills:
 # 29.6 GB for Qwen3-14B, plus the loader's buffers. The weights land on the GPU
@@ -275,8 +304,61 @@ print(f"FATAL: torch {torch.__version__} sees no usable CUDA device on this node
       file=sys.stderr)
 print("The driver is probably too old for this build; check `nvidia-smi` and",
       file=sys.stderr)
-print("exclude the 535.x nodes (n-802, n-803, n-804, n-501).", file=sys.stderr)
+print("exclude the 535.x nodes (n-501, n-802, n-803, n-804).", file=sys.stderr)
 sys.exit(1)
+PY
+
+# Refuse to run a model that does not fit the card we landed on.
+#
+# The --constraint above spans 24 GB cards (3090, a5000) and 48 GB ones (a6000,
+# l40s), because the small models this sweep actually runs fit anywhere and
+# pinning them to the 48 GB half is what left them queueing behind a full
+# partition. `min_vram_gb` has been in the registry since the beginning,
+# documented as the field used "to pick a --constraint rather than discovering
+# an OOM an hour into the queue" -- but nothing read it, so nothing enforced it.
+# This is that enforcement, and it is what makes the wider constraint safe for
+# qwen3-14b and gemma4-12b (48 GB) rather than a way to OOM them on a 3090.
+#
+# Checked here, before the page-cache warm-up: the warm-up costs ~20 min and
+# reads the whole checkpoint, so discovering the mismatch after it is 20 wasted
+# minutes plus a pointless hammering of the filer.
+#
+# Two details that a first cut of this check got wrong, both worth keeping:
+#
+# `min_vram_gb` is written in spec-sheet GB (decimal), not GiB, so the byte
+# count divides by 1e9 and not by 1024**3. Measured totals, 2026-09-17:
+#
+#   3090   24576 MiB    a5000  24564 MiB
+#   a6000  49140 MiB    l40s   46068 MiB
+#
+# An l40s is sold as 48 GB and reports 45.0 GiB. Dividing by 1024**3 and asking
+# for `>= 48` therefore REFUSES qwen3-14b and gemma4-12b on the l40s nodes --
+# the exact cards those models are meant to run on, and the only cards in
+# `killable` that can. A fixed slack cannot paper over this either, because the
+# nominal-to-reported gap is 0% on a 3090 and 6% on an l40s.
+#
+# The 10% is then for the driver/ECC reserve that makes torch's total_memory a
+# little under the board total. It is nowhere near tight: the nearest refusal
+# boundary is a 24 GB card reaching 27 GB against a 48 GB model.
+python - "$MODEL" <<'PY' || exit 1
+import sys
+
+import torch
+
+from graphtalk import models
+
+spec = models.MODELS[sys.argv[1]]
+props = torch.cuda.get_device_properties(0)
+total_gb = props.total_memory / 1e9
+if total_gb * 1.10 < spec.min_vram_gb:
+  print(f"FATAL: {spec.key} needs ~{spec.min_vram_gb} GB of VRAM; this node's "
+        f"{props.name} has {total_gb:.1f} GB.", file=sys.stderr)
+  print("The --constraint in sweep.sbatch spans 24 GB and 48 GB cards. Narrow",
+        file=sys.stderr)
+  print("it for this model, e.g. --constraint='a6000|l40s'.", file=sys.stderr)
+  sys.exit(1)
+print(f"vram ok: {props.name} has {total_gb:.1f} GB, "
+      f"{spec.key} needs ~{spec.min_vram_gb} GB")
 PY
 
 # Warm the page cache with one sequential pass over the checkpoint before the
