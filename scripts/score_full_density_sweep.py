@@ -18,6 +18,7 @@ family across all 42 (task, condition) cells.
 
 import argparse
 import collections
+import csv
 import glob
 import json
 
@@ -25,6 +26,12 @@ from graphtalk import scoring
 from graphtalk import significance
 
 CONTROL = "none"
+
+# Same two presets `check_significance.py` offers: a fast approximate default
+# for routine runs, and a slower one for a number meant to be quoted, via
+# --mde.
+_MDE_FAST = {"n_replicates": 50, "n_perm": 200, "n_steps": 5}
+_MDE_FULL = {"n_replicates": 200, "n_perm": 500, "n_steps": 8}
 
 
 def density_of(instance_id: str) -> float | None:
@@ -101,13 +108,55 @@ def paired_arms(paired, task, condition, control=CONTROL, density=None):
   return control_hits, treatment_hits
 
 
+def mde_for_arms(control_hits, treatment_hits, seed, settings) -> dict:
+  """MDE for one pooled McNemar row, on the paired hit vectors the test
+  itself used.
+
+  A full-task density sweep pair is one graph at one density under one
+  task, contributing exactly one row here, never repeated -- so each pair
+  is its own cluster, unlike the main sweep's six-tasks-per-graph rows.
+  """
+  cluster_ids = list(range(len(control_hits)))
+  return significance.minimum_detectable_effect_clustered(
+      control_hits, treatment_hits, cluster_ids, initial_hi=0.05,
+      seed=seed, **settings,
+  )
+
+
+def write_csv(path: str, rows: list) -> None:
+  """Writes `rows` to `path`, header from the first row's keys.
+
+  Writes nothing (not even a header) for an empty list -- a family that
+  reduces to nothing on this data is a valid, silent outcome, not an error
+  to paper over with a headerless file.
+  """
+  if not rows:
+    return
+  with open(path, "w", newline="") as handle:
+    writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
+    writer.writeheader()
+    writer.writerows(rows)
+
+
 def main():
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--responses", nargs="+", required=True)
   parser.add_argument("--shortcuts", default=None)
   parser.add_argument("--control", default=CONTROL)
   parser.add_argument("--tasks", nargs="+", default=None)
+  parser.add_argument("--mde", action="store_true",
+                      help="full-precision MDE (200/500/8 replicates/perm/"
+                           "steps) instead of the default fast preset "
+                           "(50/200/5) -- use for a number meant to be quoted")
+  parser.add_argument("--no-mde", action="store_true",
+                      help="skip MDE entirely (it only runs on conditions "
+                           "that don't survive BH, but the search itself is "
+                           "not free)")
+  parser.add_argument("--csv", default=None,
+                      help="write one row per (task, condition) pooled test "
+                           "to this CSV path")
   args = parser.parse_args()
+  mde_settings = _MDE_FULL if args.mde else _MDE_FAST
 
   bars = {}
   if args.shortcuts:
@@ -125,6 +174,7 @@ def main():
   tasks = args.tasks or sorted({t for t, _, _ in cells})
   densities = sorted({d for _, d, _ in cells})
   conditions = sorted({c for _, _, c in cells})
+  csv_rows = []
 
   for task in tasks:
     print(f"\n{'='*90}\nTASK: {task}\n{'='*90}")
@@ -187,14 +237,47 @@ def main():
       delta = (test["c"] - test["b"]) / len(ctrl_hits)
       mean_ctrl = sum(ctrl_hits) / len(ctrl_hits)
       mean_treat = sum(treat_hits) / len(treat_hits)
-      rows.append((c, len(ctrl_hits), test, delta, mean_treat - mean_ctrl))
-    reject = significance.benjamini_hochberg([t["p_value"] for *_, t, _, _ in rows])
-    for (c, n, test, delta, raw_diff), keep in zip(rows, reject):
+      rows.append((c, len(ctrl_hits), test, delta, mean_treat - mean_ctrl,
+                   ctrl_hits, treat_hits))
+    reject = significance.benjamini_hochberg(
+        [row[2]["p_value"] for row in rows])
+    if reject and not args.no_mde:
+      print("  (MDE printed under any row that did not survive BH -- the "
+            "smallest true effect, in each direction, this row's data could "
+            "reliably have detected; fast preset unless --mde was passed)")
+    for (c, n, test, delta, raw_diff, ctrl_hits, treat_hits), keep in zip(
+        rows, reject):
       bar_delta = ""
       if bars.get(task) and bars[task].get(c) is not None and bars[task].get(args.control) is not None:
         bar_delta = f"  bar-adj {raw_diff - (bars[task][c] - bars[task][args.control]):+.4f}"
       print(f"  {c:>11} - {args.control}: n={n:>5} win {test['c']:>4} lose {test['b']:>4} "
             f"delta {delta:+.4f} p={test['p_value']:.4f}{'  *sig(BH)' if keep else ''}{bar_delta}")
+      mde = None
+      if not keep and not args.no_mde:
+        mde_seed = f"{task}:{c}:mde"
+        mde = mde_for_arms(ctrl_hits, treat_hits, mde_seed, mde_settings)
+        print(f"    MDE: delta={mde['delta']} realized={mde['realized_diff']} "
+              f"({mde['note'] or 'ok'})  "
+              f"delta_negative={mde['delta_negative']} "
+              f"realized_negative={mde['realized_diff_negative']} "
+              f"({mde['note_negative'] or 'ok'})")
+      if args.csv:
+        csv_rows.append({
+            "task": task, "condition": c, "n": n, "win": test["c"],
+            "lose": test["b"], "delta": delta, "p_value": test["p_value"],
+            "bh_significant": keep,
+            "mde_delta": mde["delta"] if mde else None,
+            "mde_realized_diff": mde["realized_diff"] if mde else None,
+            "mde_note": mde["note"] if mde else None,
+            "mde_delta_negative": mde["delta_negative"] if mde else None,
+            "mde_realized_diff_negative":
+                mde["realized_diff_negative"] if mde else None,
+            "mde_note_negative": mde["note_negative"] if mde else None,
+        })
+
+  if args.csv:
+    write_csv(args.csv, csv_rows)
+    print(f"\nwrote {args.csv}")
 
 
 if __name__ == "__main__":
