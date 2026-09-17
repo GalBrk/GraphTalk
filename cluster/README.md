@@ -222,35 +222,77 @@ diagnostic runs — budget for it before submitting anything small.
 `killable` spans two driver generations, and the env's torch is a **cu130** build
 that needs **580 or newer**:
 
-| node | card | driver | usable |
-|---|---|---|---|
-| n-601, n-602 | a6000 | 595.84 (n-602) | yes |
-| n-805 | l40s | 580.173.02 | yes |
-| t-806 | l40s | 580.105.08 | yes |
-| n-502, n-503 | a5000 | 580+ | yes |
-| **n-802, n-803, n-804** | l40s | **535.183.01** (CUDA 12.2) | **no** |
-| **n-501** | a5000 | **535.x** (CUDA 12.2) | **no** |
+Measured across the whole partition on 2026-09-17, one CPU-only `srun` per node
+running `nvidia-smi --query-gpu=driver_version` — `nvidia-smi` reports the driver
+without a GPU allocated, so this schedules even on a fully allocated node and
+costs nothing:
+
+| node | card | VRAM | driver | usable |
+|---|---|---|---|---|
+| n-301, n-303, n-304, n-306, n-307, n-350 | 3090 | 24 GB | 595.84 | yes |
+| n-302, n-305 | 3090 | 24 GB | *unverified* (probe preempted) | presumed |
+| n-602 | a6000 | 48 GB | 595.84 | yes |
+| n-601 | a6000 | 48 GB | *unverified* (probe preempted) | presumed |
+| n-503 | a5000 | 24 GB | 595.84 | yes |
+| n-502 | a5000 | 24 GB | 580.173.02 | yes |
+| n-801 | l40s | 48 GB | 580.126.09 | driver yes, **see below** |
+| n-805 | l40s | 48 GB | 580.173.02 | yes |
+| t-806 | l40s | 48 GB | 580.105.08 | yes |
+| **n-802, n-803, n-804** | l40s | 48 GB | **535.183.01** (CUDA 12.2) | **no** |
+| **n-501** | a5000 | 24 GB | **535.288.01** (CUDA 12.2) | **no** |
+
+Two things this measurement corrected. **Every 3090 node is on 595.84** — the
+newest driver in the partition — so widening `--constraint` onto them needs no
+env change at all; the assumption that the old drivers were "the cheap nodes"
+was backwards. And **n-801's driver is fine**; it is excluded for read
+throughput alone (next section), which is a different failure with a different
+symptom, so do not reach for the cu126 env when a job is slow on it.
 
 **`n-501` is on this list and is easy to miss** -- it is an a5000 node, so it is
 not caught by thinking of the bad nodes as "the l40s ones". It cost three
-separate job failures on 2026-09-05 before it was identified. The default
-`--constraint=a6000|l40s|h100` spans both driver generations, so **every
-submission is a dice roll**; the driver guard in `sweep.sbatch` turns that into a
-fast, visible failure (~90 s, non-zero exit) rather than a silent CPU fallback,
-but it does not prevent it. Two ways to make placement deterministic:
+separate job failures on 2026-09-05 before it was identified, and it matters
+again now that `a5000` is in the constraint: before that widening n-501 was
+unreachable by accident, and it no longer is.
+
+`sweep.sbatch` therefore carries a default `--exclude` of the four 535.x nodes
+plus n-801, so ordinary placement is deterministic without anyone remembering
+the table. **An `--exclude` on the command line replaces that list rather than
+adding to it** -- `sbatch --exclude=n-801 ...` silently re-admits n-501, n-802,
+n-803 and n-804. The driver guard in `sweep.sbatch` still backstops it with a
+fast, visible failure (~90 s, non-zero exit) rather than a silent CPU fallback.
+
+To use the 535.x nodes on purpose, switch the env rather than editing the
+exclude:
 
 ```bash
-# pin to nodes known good for the cu130 env
-sbatch --constraint=a6000 ... cluster/sweep.sbatch <model>
+# the cu126 build, which runs on BOTH driver generations
+sbatch --export=ALL,GRAPHTALK_ENV=graphtalk-cu126 --exclude=n-801 ... \
+    cluster/sweep.sbatch <model>
 
-# or use the cu126 build, which runs on BOTH driver generations
-sbatch --export=ALL,GRAPHTALK_ENV=graphtalk-cu126 ... cluster/sweep.sbatch <model>
+# or pin to one card type, when an arm is a headline result and should not
+# straddle two CUDA builds
+sbatch --constraint=a6000 ... cluster/sweep.sbatch <model>
 ```
 
 Pinning to `a6000` keeps one card type and one CUDA build across an arm, which
 matters when the arm is a headline result; `graphtalk-cu126` places faster
 because it can use every node. Note `a6000` is only n-601 and n-602 (16 GPUs,
-shared cluster-wide), so it can queue.
+shared cluster-wide), so it can queue -- which is exactly what happened on
+2026-09-17, when every a6000 and l40s GPU in `killable` was allocated and 25
+GPUs sat free on the 3090/a5000 nodes the old constraint excluded.
+
+### The constraint spans 24 GB and 48 GB cards
+
+Widening onto the 3090 and a5000 nodes means `--constraint` no longer implies a
+48 GB card. `qwen3-14b` and `gemma4-12b` (`min_vram_gb=48`) do not fit a 24 GB
+one. `sweep.sbatch` now reads `min_vram_gb` from the registry and refuses a card
+that is too small, before the 20-minute page-cache warm-up rather than after, so
+those models fail fast instead of OOMing an hour in. For a big-model arm, narrow
+the constraint at submission time anyway and skip the bounce:
+
+```bash
+sbatch --constraint='a6000|l40s' ... cluster/sweep.sbatch qwen3-14b
+```
 
 On an old node `device_map="auto"` finds no usable CUDA device and puts the model
 on the **CPU** — with no error and no warning, at roughly a fortieth of the
@@ -259,11 +301,15 @@ symptom is indistinguishable from a busy filer or a contended card, so it costs 
 long detour to diagnose. The tell is `nvidia-smi` reporting **0 MiB used on your
 own assigned device** while the process holds the weights in host RAM.
 
-`sweep.sbatch` now refuses to start on such a node. Submit with the old nodes
-excluded so the scheduler does not waste a link finding out:
+`sweep.sbatch` now refuses to start on such a node, and excludes them by default
+so the scheduler does not waste a link finding out. If you override `--exclude`
+for another reason, carry the whole list -- **including n-501**, which the
+pre-2026-09-17 version of this example omitted because the constraint did not
+reach a5000 nodes then:
 
 ```bash
-sbatch --exclude=n-801,n-802,n-803,n-804 --mem=32G cluster/sweep.sbatch qwen3-8b
+sbatch --exclude=n-501,n-801,n-802,n-803,n-804 --mem=32G \
+    cluster/sweep.sbatch qwen3-8b
 ```
 
 Do not check the driver on the login node and assume it generalises — the login
