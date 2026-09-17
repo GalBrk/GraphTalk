@@ -129,6 +129,18 @@ key count -- that is the check that catches a silent skip.
 deliberately excludes -- and since exclusion is now by directory, keeping
 regenerated rows out of `runs/archive/` is what matters more than the tag.
 
+A third override, `GRAPHTALK_MAX_NEW_TOKENS`, raises the generation budget for
+every row in the job (added for the `densfull40` sweep, which mixes
+`edge_count` in with short-answer tasks and needs ~8192 tokens instead of the
+2048 default or `edge_count` truncates at n=40/p>=0.35):
+
+```bash
+GRAPHTALK_MAX_NEW_TOKENS=8192 sbatch cluster/sweep.sbatch qwen3-1.7b
+```
+
+Harmless for the tasks that don't need it -- generation still stops at EOS,
+so a higher cap only costs anything on rows that actually run long.
+
 ### Running the GoT node-naming scheme
 
 `GRAPHTALK_PROMPTS`/`GRAPHTALK_RUN_TAG` above are also how a
