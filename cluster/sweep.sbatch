@@ -163,7 +163,12 @@ echo "env: $GRAPHTALK_ENV"
 
 # Models are pre-fetched on the login node; compute nodes may have no outbound
 # network, and a job that tries to download blocks until it times out.
-export HF_HOME=/home/dcor/galbarak2/hf_cache
+#
+# Overridable so a user without write (or even read, on some cache
+# subdirectories -- see the warm-up's permission handling above) access to
+# gal's cache can point this at their own pre-downloaded copy instead:
+#   sbatch --export=ALL,HF_HOME=/path/to/own/hf_cache cluster/sweep.sbatch <model>
+export HF_HOME="${HF_HOME:-/home/dcor/galbarak2/hf_cache}"
 export HF_HUB_OFFLINE=1
 # Reclaims fragmented VRAM, which is what pushed the SlidesGen 12B run over the
 # edge on a 48 GB card.
