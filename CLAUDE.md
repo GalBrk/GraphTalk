@@ -198,7 +198,11 @@ python scripts/measure_real_rows.py                           # re-measures corp
   `score_density_sweep.py` are the size/density pair: the first generates
   graphs at chosen sizes and pinned ER densities, the second scores them
   grouped by density level rather than by (task, style), which is the grouping
-  `score_sweep.py` collapses.
+  `score_sweep.py` collapses. `score_full_density_sweep.py` extends that
+  scorer with `task` as a third grouping key, for a density sweep that (unlike
+  every earlier one) covers more than one or two tasks at once -- see
+  `docs/primer-effects-and-power.md`'s "full-task, full-condition density
+  sweep" section.
 - `cluster/` — `sweep.sbatch` and `README.md`, the authority on how the sweep
   actually runs on the TAU CS cluster (partitions, memory sizing, driver
   incompatibilities, chained-job submission for jobs that exceed the 24h
