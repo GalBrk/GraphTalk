@@ -21,7 +21,7 @@ def main():
         "percentage points against \\texttt{none}, a $95\\%$ paired-bootstrap",
         "interval, the permutation $p$-value, and $\\Delta$ under the alternative",
         "convention that scores truncated generations incorrect rather than",
-        "dropping the pair (Section~\\ref{sec:results-sensitivity}). $n$ is the",
+        "dropping the pair (Section~\\ref{sec:extraction}). $n$ is the",
         "number of pairs in which neither arm truncated.",
         "",
     ]
