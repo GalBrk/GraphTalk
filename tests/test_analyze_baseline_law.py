@@ -228,3 +228,19 @@ def test_cluster_bootstrap_ci_brackets_a_strong_positive_slope():
   )
   assert boot["slope_ci"][0] > 0
   assert boot["r_ci"][0] > 0
+
+
+def test_ceiling_by_arm_averages_only_the_none_condition():
+  scores_by_arm = {
+      "armA": {
+          ("t", None, "g1", "none"): 1.0,
+          ("t", None, "g2", "none"): 0.0,
+          ("t", None, "g1", "degree"): 1.0,   # not `none`; must be ignored
+          ("t", None, "g3", "none"): None,    # hit_cap; must be dropped
+      },
+      "armB": {
+          ("t", None, "g1", "degree"): 1.0,   # no `none` rows at all
+      },
+  }
+  table = abl.ceiling_by_arm(scores_by_arm)
+  assert table == {"armA": (0.5, 2)}

@@ -27,6 +27,10 @@ artifact, and the one that fails.
                          plus a mixed-effects (random intercept per arm)
                          robustness check. Covers densfull40hi as well as
                          densfull40, unlike tests 1-4.
+  6. `--test ceiling`    accuracy under `none` per held-out arm -- the
+                         near-universal ceiling that motivates reporting
+                         these arms as a headroom argument rather than a
+                         primer-effect one.
 
 Run them all:
 
@@ -678,9 +682,45 @@ def test_crossfit(args, bars):
           f"confirmatory test.")
 
 
+def ceiling_by_arm(scores_by_arm):
+  """Mean accuracy under `none`, per arm, given each arm's already-scored
+  {(task, density, instance_id, condition): score|None} table.
+
+  The paper's earlier-collected-models section leans on near-universal
+  ceilings (e.g. gemma4-12b at ~99%) as evidence for its headroom argument;
+  this is the table that claim reads off of.
+  """
+  out = {}
+  for arm, scores in scores_by_arm.items():
+    vals = [v for (_task, _dens, _iid, cond), v in scores.items()
+            if cond == "none" and v is not None]
+    if vals:
+      out[arm] = (sum(vals) / len(vals), len(vals))
+  return out
+
+
+def test_ceiling(args, bars):
+  scores_by_arm = {
+      arm: score_run([f"{args.runs}/{os.path.basename(p)}" for p in patterns],
+                     by_density=False)
+      for arm, patterns in HELDOUT_GLOBS.items()
+  }
+  table = ceiling_by_arm(scores_by_arm)
+  if not table:
+    print("\n[ceiling] no held-out runs found; skipped")
+    return
+  print("\nTEST 6  ceiling saturation on the earlier-collected arms"
+        " (`none` accuracy, published split + probe100)")
+  for arm, (acc, n) in sorted(table.items(), key=lambda kv: -kv[1][0]):
+    print(f"    {arm:<20}{n:>6} pairs  {acc:>7.3f}")
+  accs = [acc for acc, _ in table.values()]
+  print(f"    mean={sum(accs) / len(accs):.3f}  min={min(accs):.3f}"
+        f"  max={max(accs):.3f}  over {len(accs)} arms")
+
+
 TESTS = {"split": test_split, "continuum": test_continuum,
          "heldout": test_heldout, "instrument": test_instrument,
-         "crossfit": test_crossfit}
+         "crossfit": test_crossfit, "ceiling": test_ceiling}
 
 
 def main():
@@ -695,7 +735,7 @@ def main():
   with open(args.shortcuts, encoding="utf-8") as handle:
     bars = json.load(handle)
   for name in args.test or ["split", "continuum", "heldout", "instrument",
-                            "crossfit"]:
+                            "crossfit", "ceiling"]:
     TESTS[name](args, bars)
 
 
