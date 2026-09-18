@@ -229,9 +229,31 @@ python scripts/measure_real_rows.py                           # re-measures corp
   `shortcuts.json` rather than against zero, and against a length-matched
   control rather than `none` — a content-free primer of the same length costs a
   thinking model 11.7 points on dense graphs, which is larger than most measured
-  primer effects. Also `sweep-findings.md` and `docs/plans/`
-  (`shortcut-ceilings.md`, `primer-computation.md`) which explain what the
-  measured numbers mean; read these before interpreting a new sweep result.
+  primer effects. Every other file in `docs/` (and `docs/plans/`), so nothing
+  here is only discoverable by grepping:
+
+  | File | Status | What it's for |
+  |---|---|---|
+  | `DATA.md` | current | Authority on every tracked file's schema, the `(instance_id, condition, style)` pairing key, and per-row caveats (truncated/`hit_cap` rows, CPU- vs GPU-generated rows, the `filler`/`edge_existence` rewording) |
+  | `sweep-findings.md` | retracted | The original 5-19 node analysis; kept for its retractions, not its conclusions |
+  | `rq3-leads.md` | current | CPU-only forensics on the `clustering`/`node_degree` effect (selection artifacts, heterogeneity, error shape, response behaviour); GPU follow-up design lives in `plans/rq3-gpu-tests.md` |
+  | `candidate-analyses.md` | working notes | Six directions considered for the paper, run against existing `runs/` data, each with an adopt/reject verdict |
+  | `difficulty-scaling.md` | current | Four additive eval-pipeline changes (larger synthetic graphs, denser topology, a `reachability` task, an overflow guard) via `--graph-source diverse` |
+  | `features-considered.md` | current | Which graph features were evaluated for the primer (degree, clustering, RWSE, components) and why the rest were rejected, against a four-test selection criterion |
+  | `full-task-density-sweep.md` | current | Full per-task, per-density tables behind the `densfull40` sweep summarized in `primer-effects-and-power.md` |
+  | `ladder-and-rewiring.md` | current | Design notes for the shared `(n, mean_degree)` ladder and the rewiring experiment; read before `ladder-and-retrieval-results.md` |
+  | `ladder-and-retrieval-results.md` | current | First results pass over the ladder design above, plus the reading-limit retrieval probe |
+  | `collaborator-access.md` | current | How a teammate gets at the data and cached models — off-cluster clone vs. reading in place on the TAU cluster |
+  | `paper-revision-handoff.md` | done | Log of rewriting the paper to a single ACL source: what changed, what was cut for page budget, and where to pick it back up |
+  | `plans/primer-computation.md` | executed | Original design for `primers.py`'s statistics and renderer; record of why, not current behaviour — read `graphtalk/primers.py` for that |
+  | `plans/shortcut-ceilings.md` | executed | Original design for `shortcuts.py`'s theorem/heuristic/fitted rules |
+  | `plans/run_improved_tests.md` | partially executed, still live | Phased plan for statistical-power work across GOT/integer sweeps; phases 1-2 landed, later phases are outstanding — follow its instructions rather than treating it as history |
+  | `plans/scale-vs-topology-investigation.md` | done | Investigation into whether a GOT-naming effect's significance flip at n=500 was added power or a real effect shift |
+  | `plans/rq3-gpu-tests.md` | planned, not run | GPU test design for the `clustering` effect (shuffled/reversed-order primers); see `rq3-leads.md` for the CPU findings that motivate it |
+
+  Read `sweep-findings.md` and `docs/plans/` (`shortcut-ceilings.md`,
+  `primer-computation.md`) before interpreting a new sweep result — they
+  explain what the measured numbers mean.
 
 ### Core design invariants
 
