@@ -1070,6 +1070,25 @@ def generate_corpus(count: int, seed: int) -> list:
   ]
 
 
+def generate_n40_corpus(count: int, seed: int, density: float) -> list:
+  """Canonical n=40 ER graphs at a fixed density.
+
+  Uses the exact per-graph seed formula `scripts/build_size_sweep.py` used to
+  build `densfull40`/`densfull40hi` (`seed + 1e6*(1+round(1000*density)) +
+  1000*n + index`), so a shortcut-bar fit/test split at `seed` values other
+  than densfull40's `DEFAULT_SEED` (20260906) draws graphs from the same
+  generative process at this density -- never the graphs any model was
+  actually scored on, but the right population to bound them against.
+  """
+  import networkx as nx  # pylint: disable=g-import-not-at-top
+
+  graphs = []
+  for index in range(count):
+    s = seed + 1_000_000 * (1 + round(density * 1000)) + 1000 * 40 + index
+    graphs.append(graphqa.canonical(nx.erdos_renyi_graph(40, density, seed=s)))
+  return graphs
+
+
 def _fit_threshold(rows, feature, high: str, low: str):
   """Best split point on a scalar feature, chosen to maximise fitting accuracy."""
   scored = []

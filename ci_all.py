@@ -1,7 +1,13 @@
 """Permutation p + bootstrap CI for every (arm, task, condition) cell.
 
 Also emits the drop-vs-zero sensitivity analysis and MAE on integer tasks.
+
+`--corpus densfull40hi` scores the high-density extension (p=0.65-0.85,
+node_degree + edge_existence only) as its own file rather than pooling it
+into the main p=0.10-0.50 sweep: the two corpora represent different density
+regimes and the paper reports them as separate rows, not one averaged cell.
 """
+import argparse
 import collections
 import glob
 import json
@@ -15,9 +21,9 @@ TASKS = ["connected_nodes", "cycle_check", "edge_count", "edge_existence",
 INTEGER = {"node_count", "edge_count", "node_degree"}
 
 
-def load(arm):
+def load(arm, corpus):
     seen, rows = set(), []
-    for path in sorted(glob.glob(f"runs/{arm}.densfull40.shard*of25.jsonl")):
+    for path in sorted(glob.glob(f"runs/{arm}.{corpus}.shard*.jsonl")):
         with open(path) as fh:
             for line in fh:
                 if not line.strip():
@@ -31,9 +37,16 @@ def load(arm):
     return rows
 
 
+ap = argparse.ArgumentParser()
+ap.add_argument("--corpus", default="densfull40")
+ap.add_argument("--out", default=None)
+args = ap.parse_args()
+out_path = args.out or ("ci_all.json" if args.corpus == "densfull40"
+                         else f"ci_all_{args.corpus.replace('densfull40', '')}.json")
+
 out = {}
 for arm in ARMS:
-    rows = load(arm)
+    rows = load(arm, args.corpus)
     scored = collections.defaultdict(dict)   # (task, iid) -> cond -> (capped, exact, abserr)
     for r in rows:
         t = r["task"]
@@ -89,6 +102,6 @@ for arm in ARMS:
             }
         print(f"done {arm} {t}", flush=True)
 
-with open("ci_all.json", "w") as fh:
+with open(out_path, "w") as fh:
     json.dump(out, fh, indent=1)
-print(f"wrote {len(out)} cells to ci_all.json")
+print(f"wrote {len(out)} cells to {out_path}")
