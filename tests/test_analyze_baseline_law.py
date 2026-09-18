@@ -162,3 +162,69 @@ def test_ols_zeroes_the_coefficient_of_an_irrelevant_term():
   terms = {name: coef for name, coef, _, _ in abl.ols(rows, ["x", "z"])}
   assert terms["x"] == pytest.approx(2.0, abs=1e-9)
   assert terms["z"] == pytest.approx(0.0, abs=1e-9)
+
+
+# --- cross-fitted cells and cluster bootstrap (TEST 5) ----------------------
+
+def _synthetic_scores(n=40, seed=0):
+  """40 paired instances, `none` and `degree`, with real per-pair noise so
+  the two folds are not byte-identical to each other.
+  """
+  import random
+  rng = random.Random(seed)
+  scores = {}
+  for i in range(n):
+    iid = f"g{i}"
+    b = 1.0 if rng.random() < 0.5 else 0.0
+    v = 1.0 if rng.random() < 0.8 else 0.0
+    scores[("node_degree", 0.5, iid, "none")] = b
+    scores[("node_degree", 0.5, iid, "degree")] = v
+  return scores
+
+
+def test_crossfit_produces_two_disjoint_fold_assignments_per_cell():
+  scores = _synthetic_scores()
+  cells = abl.cells_from_scores_crossfit(scores, min_pairs=4)
+  assert {c["fold"] for c in cells} == {"a>b", "b>a"}
+  assert len(cells) == 2
+  a_over_b, b_over_a = (c for c in cells if c["fold"] == "a>b"), \
+                       (c for c in cells if c["fold"] == "b>a")
+  # every pair used for the *_"a>b"_ cell's baseline is <n> the OTHER cell's
+  # delta fold; checked indirectly via the fold sizes summing to n.
+  for cell in cells:
+    assert cell["n_baseline_fold"] + cell["n_delta_fold"] == 40
+
+
+def test_crossfit_is_deterministic_across_calls():
+  scores = _synthetic_scores()
+  first = abl.cells_from_scores_crossfit(scores, min_pairs=4)
+  second = abl.cells_from_scores_crossfit(scores, min_pairs=4)
+  assert first == second
+
+
+def test_crossfit_drops_cells_with_a_too_small_fold():
+  # 5 pairs total is enough for cells_from_scores's min_pairs=4, but with a
+  # coin-flip 2-way split neither fold reliably clears min_pairs // 2 = 2.
+  scores = {}
+  for i in range(5):
+    scores[("node_degree", 0.5, f"g{i}", "none")] = 0.0
+    scores[("node_degree", 0.5, f"g{i}", "degree")] = 1.0
+  # min_pairs=100 forces both folds below the len(fold) < min_pairs // 2 gate.
+  assert abl.cells_from_scores_crossfit(scores, min_pairs=100) == []
+
+
+def test_cluster_bootstrap_ci_brackets_a_strong_positive_slope():
+  # baseline and delta move together within each block by construction, so
+  # the bootstrap CI on the slope must sit entirely above zero.
+  cells = []
+  for block in range(6):
+    for i in range(5):
+      b = 0.1 * i
+      cells.append({"arm": "x", "task": "t", "density": block,
+                    "baseline": b, "delta": 50.0 * b})
+  boot = abl.cluster_bootstrap_r_slope(
+      cells, block_key=lambda c: (c["arm"], c["task"], c["density"]),
+      n_boot=500, seed=0,
+  )
+  assert boot["slope_ci"][0] > 0
+  assert boot["r_ci"][0] > 0
