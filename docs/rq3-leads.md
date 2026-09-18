@@ -167,7 +167,8 @@ per-node primer that repeats "Node v …" in encoding order helps the model
 find and copy a node's line, mostly for lines early in a long prompt.
 `filler` repeats the node names too, without numbers, and does not help.
 
-GPU tests that would confirm or kill this, in priority order:
+GPU tests that would confirm or kill this, in priority order. Full design,
+time estimate and CPU prep in `docs/plans/rq3-gpu-tests.md`:
 
 1. **Shuffled-value primer** (same template and values, permuted across
    nodes). Predicts the same gain if the mechanism is format/retrieval, and
