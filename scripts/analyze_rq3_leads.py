@@ -154,6 +154,16 @@ def test_selection(rows, graphs):
   )
   rep_p = out["replication"]["p"]
   out["replication_bonferroni_over_screen"] = min(1.0, rep_p * len(cand))
+  # The paper's pooled estimate at the intermediate densities. The range was
+  # chosen from the default seed, so the replication seed is its
+  # out-of-sample check.
+  mid = lambda i: not is_rep(i) and abl.density_of(i) in (0.35, 0.5)
+  rep_mid = lambda i: is_rep(i) and abl.density_of(i) in (0.35, 0.5)
+  out["mid_pooled"] = dict(
+      clust_none=summary(pairs(rows, "clustering", "none", mid)),
+      clust_filler=summary(pairs(rows, "clustering", "filler", mid)),
+      filler_none=summary(pairs(rows, "filler", "none", mid)),
+      replication_clust_none=summary(pairs(rows, "clustering", "none", rep_mid)))
   # Holm across the 14 per-density tests behind "beats both controls at
   # p=.35/.50" (7 densities x {vs none, vs filler}).
   tests = []

@@ -52,11 +52,25 @@ per-density tests (7 densities × {vs `none`, vs `filler`}):
 | p=.50 vs none | +4.3 | .16 | 1.0 |
 
 The two tests that survive, at p ≥ .65, reflect `filler`'s own cost, not a
-`clustering` gain (`clustering` − `none` there is −2.0 to +0.5). The paper's
-statement that `clustering` "exceeds both controls only at p = .35 and .50"
-rests on uncorrected p-values. What the data support is a pooled effect
-concentrated at intermediate densities. They do not identify *which*
-densities.
+`clustering` gain (`clustering` − `none` there is −2.0 to +0.5). The earlier
+paper wording, that `clustering` "exceeds both controls only at p = .35
+and .50", rested on uncorrected per-density p-values.
+
+**What the data do support** is one pooled test over the intermediate
+range (`selection.mid_pooled` in `rq3_leads.json`; this is what the paper
+now reports):
+
+| p = .35 and .50 pooled | Δ | 95% CI | p | n |
+|---|---|---|---|---|
+| `clustering` − `none` | +5.9 | [+2.1, +9.8] | .0036 | 800 |
+| `clustering` − `filler` | +6.4 | [+2.8, +10.0] | .0012 | 800 |
+| `filler` − `none` | −0.5 | [−3.9, +3.1] | .84 | 800 |
+| replication seed, `clustering` − `none` | +5.5 | [+1.5, +9.5] | .0083 | 800 |
+
+The range was chosen after seeing the default seed. The replication
+seed played no part in choosing it, so it is the out-of-sample test of the
+range, and it holds. The per-density estimates are too imprecise to narrow
+the range further.
 
 ## 2. Heterogeneity: which instances gain?
 
