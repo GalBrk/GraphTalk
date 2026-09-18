@@ -58,6 +58,10 @@ echo "== review checks: interaction, logit, headline split, SDT, budget, prior, 
 # without it the `tokens` check is skipped and the other checks still run.
 PYTHONPATH=. "$PY" scripts/analyze_review_checks.py ${QWEN3_TOKENIZER:+--tokenizer "$QWEN3_TOKENIZER"}
 
+echo "== RQ3 leads: selection, heterogeneity, error shape, transcription (docs/rq3-leads.md) =="
+# The `hetero` test's regression needs statsmodels.
+PYTHONPATH=. "$PY" scripts/analyze_rq3_leads.py
+
 echo "== tables and figures =="
 PYTHONPATH=. "$PY" paper/make_main_table.py
 PYTHONPATH=. "$PY" paper/make_ci_table.py
