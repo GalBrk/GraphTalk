@@ -54,6 +54,44 @@
    "n": 1600
   },
   "replication_bonferroni_over_screen": 0.022055408456959497,
+  "mid_pooled": {
+   "clust_none": {
+    "delta": 5.88,
+    "ci": [
+     2.12,
+     9.75
+    ],
+    "p": 0.0036057041709479463,
+    "n": 800
+   },
+   "clust_filler": {
+    "delta": 6.38,
+    "ci": [
+     2.75,
+     10.0
+    ],
+    "p": 0.0011742180217893434,
+    "n": 800
+   },
+   "filler_none": {
+    "delta": -0.5,
+    "ci": [
+     -3.88,
+     3.12
+    ],
+    "p": 0.8360563438452241,
+    "n": 800
+   },
+   "replication_clust_none": {
+    "delta": 5.5,
+    "ci": [
+     1.5,
+     9.5
+    ],
+    "p": 0.00825496842318893,
+    "n": 800
+   }
+  },
   "per_density_holm": {
    "p0.65_vs_filler": {
     "delta": 7.5,
