@@ -36,52 +36,37 @@ for LLM Graph Reasoning}
 
 \begin{abstract}
 Prepending a \emph{primer} of factual sentences about a graph's structure
---- node degree, clustering coefficient, a random-walk structural encoding,
-or component membership --- before its text encoding is a natural way to
-ease graph-reasoning prompts for a language model. Any apparent gain is
-illusory if a solver can recover the answer from the primer text without
-consulting the graph, and confounded if the primer merely lengthens the
-prompt. We evaluate four controls together: a graph-blind shortcut solver
-refit at the evaluation graph size, a length-matched content-free filler, a
-length-free content control, and a degree-preserving rewiring that varies
-triangle count while holding the prompt string length constant. On four
-arms (\texttt{qwen3-1.7b}, \texttt{qwen3-4b}, each with and without native
-thinking mode) at $n{=}40$, primer effects are organised chiefly by the
-model's own no-primer accuracy: where the primer offers a substitute route
-to the answer, effect size falls with baseline ($r{=}{-0.31}$, $232$
-cross-fitted cells, $p{=}1.8{\times}10^{-6}$); where it does not, there is
-no relation ($r{=}{+0.02}$, $762$ cells). This reproduces on eleven
-held-out arms spanning $0.6$--$14$B and a second model family
-($r{=}{-0.674}$ over $105$ route cells vs. $r{=}{-0.186}$ over $93$
-no-route cells) and, separately, under Game-of-Thrones node renaming
-($r{=}0.933$ between the two naming schemes' effect sizes for the
-route-offering primer). One non-answer-leaking effect ---
-\texttt{clustering} on \texttt{node\_degree} --- beats the length-matched
-filler across five of seven density levels ($+4.3$pp pooled, $p{=}2.4
-{\times}10^{-8}$) and, at high density where the larger model is off
-ceiling, replicates in \texttt{qwen3-4b} too ($+11.3$pp vs. \texttt{none},
-$+9.3$pp vs. filler). A rewiring test that holds prompt length and degree
-sequence fixed while permuting triangle count does not show the benefit
-tracking the clustering values themselves. Two validity threats turn out to
-explain much of the rest of the sweep: \texttt{edge\_existence} accuracy
-moves mainly through a yes/no response bias (hit rate $99$--$100\%$
-throughout; false-alarm rate swinging $7.5$--$61.8\%$ by condition), and
-\texttt{node\_count}'s largest apparent gains fix an off-by-one artifact on
-a task whose gold answer is constant at this graph size. We report every
-result against a Benjamini--Hochberg correction and, for null cells, a
-minimum detectable effect, so an absence of significance is distinguished
-from a demonstrated absence of effect.
+(node degree, clustering coefficient, random-walk return probabilities or
+component count) to its text encoding is a natural way to assist a
+language model on graph-reasoning questions. An apparent gain is
+uninformative if the answer can be read from the primer without consulting
+the graph, and confounded if the primer merely lengthens the prompt. We
+evaluate primers against four controls jointly: a graph-blind shortcut
+solver refit at the evaluated graph size, a length-matched content-free
+filler, a minimal-length content control, and a degree-preserving rewiring
+that varies triangle count at fixed prompt length. Across four Qwen3 arms
+(1.7B and 4B, with and without thinking mode) on $40$-node
+Erd\H{o}s--R\'enyi graphs, primers that state the answer help a model at
+floor and harm a model at ceiling (cross-fitted interaction with baseline
+accuracy $-11.0$ points, $95\%$ CI $[-17.1, -5.7]$), whereas primers that
+do not state it show no such relation. The pattern replicates on eleven
+held-out arms ($0.6$--$14$B, two families) but is not graded at
+intermediate baselines. The only effect of a primer that does not state
+the answer, \texttt{clustering} on \texttt{node\_degree}, is small relative
+to no primer ($+1.9$ points) and confined to intermediate densities; two
+candidate mechanisms for it are not supported.
 \end{abstract}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{crossfit.pdf}
-\caption{Cross-fitted paired delta vs.\ cross-fitted baseline accuracy
-(Section~\ref{sec:results-baseline}), for the $232$ cells where a primer
-offers the model a substitute route to the answer (left) and the $762$
-that do not (right). Baseline and delta are estimated from disjoint halves
-of the paired graphs, so the negative slope on the left cannot be
-regression to the mean by construction.}
+\caption{Cross-fitted paired effect against cross-fitted baseline accuracy
+(Section~\ref{sec:results-baseline}) for the $116$ cells in which a primer
+offers a substitute route to the answer (left) and the $381$ that do not
+(right). Each cell appears once per fold direction. Because baseline and
+effect are estimated from disjoint halves of the paired graphs, shared
+sampling noise cannot produce the slope; the bounded accuracy scale can,
+which Section~\ref{sec:results-baseline} examines separately.}
 \label{fig:crossfit}
 \end{figure}
 
@@ -89,70 +74,72 @@ regression to the mean by construction.}
 \label{sec:introduction}
 
 \citet{fatemi2023talklikeagraph} show that a large language model's
-accuracy on graph-reasoning questions depends substantially on how the
-graph is encoded as text, independent of reasoning ability, by varying the
-encoding function while holding the question and graph fixed. This work
-asks a different question about the same benchmark: does prepending a short
-\emph{primer} of derived, node-level facts before the graph encoding help a
-model answer questions about that graph?
+accuracy on graph-reasoning questions varies substantially with the choice
+of text encoding when the graph and question are held fixed. We ask a
+complementary question about the same benchmark: does prepending a short
+\emph{primer} of derived, node-level facts to the graph encoding improve
+the model's answers?
 
-Two confounds make such an effect hard to read. If a primer helps because
-the model reads the answer out of the preamble rather than reasoning over
-the graph, that is answer leakage, not reasoning. If it helps or hurts
-because it changes prompt length, that says nothing about content:
-\citet{liu2024lostinthemiddle} and the needle-in-a-haystack protocol of
-\citet{kamradt2023needle} show that context length and position alone move
-retrieval accuracy. A third, quieter confound is measurement: an extraction
-bug that correlates with response style manifests as a condition effect
-with nothing in the resulting table that looks wrong (Section
-\ref{sec:extraction}). A fourth is headroom: once a model is near ceiling
-on a task, no primer effect --- helpful or harmful --- has room to show up.
+Four confounds complicate the interpretation of such an effect. First, a
+primer may help because the model reads the answer from it rather than
+reasoning over the graph (answer leakage). Second, a primer changes prompt
+length, and context length and position alone affect retrieval and
+reasoning accuracy \citep{liu2024lostinthemiddle,kamradt2023needle,
+levy2024sametask}. Third, answer extraction can err in ways that correlate
+with response style, which appears as a spurious condition effect
+(Section~\ref{sec:extraction}). Fourth, a model near ceiling on a task
+leaves no room for any primer effect to appear.
 
-We build a control battery to separate these from a genuine structural
-effect: a graph-blind shortcut solver refit at the graph size actually
-evaluated (Section~\ref{sec:shortcuts}), a length-matched content-free
-\texttt{filler} condition, a length-free content control
-(\texttt{components}), and a degree-preserving rewiring that moves triangle
-count while holding the rendered prompt byte-identical in length
-(Section~\ref{sec:rewiring}). Our contributions:
-(i) this control battery, applied together rather than one at a time;
-(ii) an empirical map of where primers move accuracy on $n{=}40$
-Erd\H{o}s--R\'enyi graphs, four model arms, six tasks;
-(iii) a demonstration that answer-stating primers act as a second route to
-the answer whose value is set by the model's own baseline accuracy, with
-cross-fitted, cluster-bootstrapped evidence and two independent
-replications (held-out arms, node renaming); and
-(iv) one non-answer-leaking content effect, replicated within one model,
-across model scale in a baseline-matched regime, and constrained --- not
-confirmed --- by a rewiring test of its mechanism.
+We address three research questions. \textbf{RQ1}: when a primer improves
+accuracy, is the improvement attributable to the primer stating the
+answer? \textbf{RQ2}: does added text affect accuracy independently of its
+content? \textbf{RQ3}: does any primer that does not state the answer
+improve accuracy beyond a length-matched control, and through what
+mechanism? Our contributions are (i) a battery of controls applied jointly:
+a graph-blind shortcut solver refit at the evaluated graph size
+(Section~\ref{sec:shortcuts}), a length-matched content-free
+\texttt{filler}, a minimal-length content control (\texttt{components}),
+and a degree-preserving rewiring that changes triangle count at fixed
+prompt length (Section~\ref{sec:rewiring}); (ii) an empirical map of primer
+effects on $40$-node Erd\H{o}s--R\'enyi graphs across four model arms and
+six tasks; (iii) evidence that answer-stating primers act as a substitute
+route whose value depends on the model's own baseline accuracy, supported
+by a cross-fitted interaction test and replicated on held-out models and
+under node renaming; and (iv) a characterisation of the single effect of a
+primer that does not state the answer, together with two mechanism tests
+that it fails.
 
 \section{Related Work}
 \label{sec:related-work}
 
 We adopt the GraphQA task definitions of \citet{fatemi2023talklikeagraph}
-and fix graph size and edge density experimentally (Section
-\ref{sec:setup}) rather than sampling structure incidentally, so that
-difficulty is a manipulated variable. \citet{wang2023nlgraph} report LLMs
-are brittle to spurious correlations in graph and problem structure;
-\citet{guo2023gpt4graph} find models struggle to exploit graph description
-languages directly; \citet{jin2024largelanguagemodelsongraphs} survey the
-wider LLM-graph literature. \citet{dziri2023faithandfate} argue
-transformers solve compositional tasks by linearised subgraph matching
-rather than systematic reasoning, which is the same question a primer's
-apparent benefit raises: is a gain evidence of reasoning, or of a shorter
-pattern to match? \citet{geirhos2020shortcut} frame this as \emph{shortcut
-learning}; our shortcut solver (Section~\ref{sec:shortcuts}) operationalises
-that concern for the primer channel specifically. The \texttt{rwse}
-condition adapts the random-walk structural encoding of
-\citet{dwivedi2022graph}, rendered as sentences rather than fed to an
-attention mechanism. Our degree-preserving rewiring
-(Section~\ref{sec:rewiring}) follows the double-edge-swap configuration
-model of \citet{fosdick2018configuring}. Paired significance testing follows
-\citet{dror2018hitchhikers}. We distinguish the ``thinking'' arms evaluated
-here --- Qwen3's native thinking mode, toggled via the chat template ---
-from chain-of-thought \emph{prompting} \citep{wei2022chainofthought}; the
-two are not the same intervention, and we do not claim this paper tests the
-latter.
+and manipulate graph size and edge density directly, so that difficulty is
+an experimental variable rather than an incidental one.
+\citet{wang2023nlgraph} report that LLMs are brittle to spurious
+correlations in graph problems and propose \emph{Build-a-Graph} and
+\emph{Algorithmic} prompting, the prompt-level interventions closest to a
+primer; \citet{perozzi2024letyourgraph} instead learn a continuous graph
+encoding. \citet{guo2023gpt4graph} find that models struggle to exploit
+graph description languages directly, and
+\citet{jin2024largelanguagemodelsongraphs} survey the wider literature.
+\citet{dziri2023faithandfate} argue that transformers solve compositional
+tasks by linearised subgraph matching rather than systematic reasoning,
+which raises the same question as a primer's benefit: does it reflect
+reasoning or a shorter pattern to match? \citet{geirhos2020shortcut} frame
+this as \emph{shortcut learning}; our shortcut solver operationalises that
+concern for the primer channel. Irrelevant context degrades reasoning
+\citep{shi2023distracted}, as does input length well below the context
+limit \citep{levy2024sametask}; our \texttt{filler} condition measures this
+cost directly. The \texttt{rwse} condition adapts the random-walk
+structural encoding of \citet{dwivedi2022graph}, rendered as sentences, and
+the rewiring follows the double-edge-swap configuration model
+\citep{fosdick2018configuring}. For statistics we follow
+\citet{dror2018hitchhikers} on paired testing, test differences between
+groups directly rather than contrasting their significance
+\citep{gelman2006difference}, and borrow cross-fitting from
+\citet{chernozhukov2018double}. We distinguish Qwen3's native thinking mode,
+toggled through the chat template, from chain-of-thought \emph{prompting}
+\citep{wei2022chainofthought}; this paper tests only the former.
 
 \section{Method}
 \label{sec:method}
@@ -160,59 +147,62 @@ latter.
 \subsection{Primers}
 \label{sec:primers}
 
-A primer is a preamble of factual sentences about a graph's local or global
-structure, prepended to the standard text encoding and the task question. A
-single renderer produces all seven conditions, so every condition shares
-identical sentence framing and formatting for the facts it states (the
-degenerate case, \textbf{filler}, states no fact and therefore uses its own
-frame, ``Node~$N$ is simply present\dots''; this is a length control, not a
-content one, by design). \textbf{none} is the graph encoding alone.
-\textbf{components} gives one sentence with the graph's connected-component
-count. \textbf{degree} states each node's exact degree; \textbf{clustering}
-each node's clustering coefficient; \textbf{rwse} each node's random-walk
-return probabilities \citep{dwivedi2022graph}. \textbf{all} combines
-degree, clustering and rwse (not components). Mean rendered length at
-$n{=}40$ ranges from $37$ characters (\texttt{components}) to $4{,}691$
-(\texttt{all}); \texttt{filler} at $1{,}829$ characters brackets
-\texttt{degree} ($891$) and \texttt{clustering} ($1{,}629$) from above but
-sits below \texttt{rwse} ($2{,}949$) and \texttt{all}, so it bounds rather
-than exactly matches the length term for those two conditions.
+A primer is a preamble of factual sentences about a graph's structure,
+prepended to the standard text encoding and the task question (a complete
+example appears in Appendix~\ref{sec:appendix-prompt}). A single renderer
+produces all seven conditions, so conditions share sentence framing and
+number formatting and differ only in the facts stated. The exception is
+\textbf{filler}, which states no fact and therefore uses its own frame
+(``Node~$N$ is simply present within the graph G.''); it is a length
+control, not a content control. \textbf{none} is the graph encoding alone.
+\textbf{components} gives one sentence stating the number of connected
+components. \textbf{degree} states each node's degree, \textbf{clustering}
+each node's clustering coefficient, and \textbf{rwse} each node's
+random-walk return probabilities after two and three steps
+\citep{dwivedi2022graph}. \textbf{all} combines degree, clustering and rwse.
+Because the model reads tokens rather than characters, we measure length
+with the Qwen3 tokenizer: mean primer length at $n{=}40$ is $8$ tokens
+(\texttt{components}), $372$ (\texttt{degree}), $470$ (\texttt{filler}),
+$510$ (\texttt{clustering}), $1{,}070$ (\texttt{rwse}) and $1{,}612$
+(\texttt{all}), against a mean \texttt{none} prompt of $2{,}165$ tokens.
+\texttt{filler} is therefore longer than \texttt{degree}, $8\%$ shorter than
+\texttt{clustering} (a conservative control for it), and substantially
+shorter than \texttt{rwse} and \texttt{all}, for which it bounds rather than
+matches the length term.
 
 \subsection{Shortcut solvers}
 \label{sec:shortcuts}
 
-A primer's measured accuracy is evidence of graph reasoning only once it
-exceeds what a solver that never sees the graph can already recover from
-the primer text. Our shortcut solver combines sixteen exact rules, one
-heuristic, eight fitted rules (fit and scored on structurally disjoint
-graph sets), and an exact enumeration bound for small graphs; being
-structurally incapable of reading the graph object, its accuracy on a
-(task, condition) cell is a content-only lower bound, which we call the
-\emph{shortcut bar} rather than a ``ceiling'' --- it never overstates what a
-model could achieve, but does not itself upper-bound model accuracy.
+A primer's measured benefit is evidence of graph reasoning only if it
+exceeds what a solver that never sees the graph can recover from the
+primer text. Our shortcut solver combines sixteen exact rules, one
+heuristic, eight fitted rules (fit and scored on disjoint graph sets) and an
+exact enumeration bound for small graphs. Because it has no access to the
+graph object, its accuracy on a (task, condition) cell is a content-only
+lower bound, which we call the \emph{shortcut bar}: it never overstates
+what the primer text alone permits, but it does not upper-bound model
+accuracy.
 
-The published GraphQA generator draws $5$--$19$-node graphs; our
-evaluation corpus is $n{=}40$. A bar fit on the small-graph distribution
-does not transfer: refitting the same solver on $n{=}40$
-Erd\H{o}s--R\'enyi graphs at the seven densities used in our sweep
-(disjoint $300$-graph fit/test sets per density) moves the
-\texttt{edge\_existence}/\texttt{none} bar from $0.498$ to a
-density-averaged $0.735$, driven by class imbalance rather than anything a
-primer supplies, and drops the \texttt{degree}-over-\texttt{none} gap on
-that task from $+0.296$ to $+0.011$ --- below the threshold at which we
-call a primer a substitute route. We therefore reclassify route status
-using the $n{=}40$ refit (Table~\ref{tab:shortcut}), not the published
-split: only \texttt{node\_degree} (under \texttt{rwse}, \texttt{degree},
-\texttt{all}) and \texttt{edge\_count} (under \texttt{clustering},
-\texttt{degree}, \texttt{all}) remain routes once bars are measured on the
-right graph size; \texttt{edge\_existence} and \texttt{connected\_nodes} do
-not. \texttt{node\_count} and \texttt{cycle\_check} are excluded from the
-split entirely: at $n{=}40$ their gold answers are constant ($40$, and
-``yes'' respectively, at every one of the seven densities we tested), so
-every condition's bar sits near $1.0$ under \texttt{none} already, and the
-published-split bars overstate what a primer adds here. The published-split
-bars (Table~\ref{tab:shortcut}, top) remain the correct instrument for the
-held-out arms of Section~\ref{sec:setup}, which answer that corpus.
+The published GraphQA generator draws graphs of $5$--$19$ nodes, whereas
+our evaluation corpus has $n{=}40$, and a bar fit on small graphs does not
+transfer. Refitting the solver on $n{=}40$ Erd\H{o}s--R\'enyi graphs at the
+seven densities of our sweep (disjoint $300$-graph fit and test sets per
+density) raises the \texttt{edge\_existence}/\texttt{none} bar from $0.498$
+to $0.735$, an effect of class imbalance rather than primer content, and
+reduces the \texttt{degree}-over-\texttt{none} gap on that task from
+$+0.296$ to $+0.011$. We classify a (task, condition) pair as offering a
+\emph{substitute route} when its bar exceeds the \texttt{none} bar by more
+than $0.05$; at $n{=}40$ every gain is either at most $0.011$ or at least
+$0.066$, so any threshold between these values yields the same split. Under
+the refit bars (Table~\ref{tab:shortcut}, bottom), only
+\texttt{node\_degree} (under \texttt{rwse}, \texttt{degree}, \texttt{all})
+and \texttt{edge\_count} (under \texttt{clustering}, \texttt{degree},
+\texttt{all}) offer a route. \texttt{node\_count} and \texttt{cycle\_check}
+are excluded from the split: at $n{=}40$ their gold answers are constant
+($40$, and ``yes'' at all seven densities), so a blind solver reaches
+$1.00$ under every condition. The published-split bars
+(Table~\ref{tab:shortcut}, top) are used for the held-out arms, which
+answer that corpus.
 
 \begin{table}[t]
 \centering
@@ -230,7 +220,7 @@ Task (5--19 nodes) & none & comp. & clust. & rwse & degree & filler & all \\
 \texttt{edge\_existence}  & .498 & .498 & .720 & .642 & .794 & .498 & .794 \\
 \texttt{cycle\_check}     & .832 & \textbf{1.00} & .832 & .832 & .946 & .832 & .946 \\
 \midrule
-\multicolumn{8}{l}{\emph{Task ($n{=}40$, mean over $p\in\{.10..85\}$)}} \\
+\multicolumn{8}{l}{\emph{Task ($n{=}40$, mean over $p\in\{.10,\dots,.85\}$)}} \\
 \texttt{node\_count}      & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 \\
 \texttt{edge\_count}      & .030 & .030 & .104 & .030 & \textbf{1.00} & .030 & \textbf{1.00} \\
 \texttt{node\_degree}     & .144 & .144 & .144 & .210 & \textbf{1.00} & .144 & \textbf{1.00} \\
@@ -240,144 +230,135 @@ Task (5--19 nodes) & none & comp. & clust. & rwse & degree & filler & all \\
 \bottomrule
 \end{tabular}}
 \caption{Shortcut bars: accuracy of a solver that reads only the rendered
-primer, never the graph. Top: $500$ graphs from the published generator
-(unchanged since these bars are the correct ones for the held-out arms).
-Bottom: refit at $n{=}40$, the corpus our main sweep evaluates, averaged
-over seven densities (per-density table in the Appendix).
-\textbf{Bold} marks cells a primer fully determines.}
+primer, never the graph. Top: $500$ graphs from the published generator,
+used for the held-out arms. Bottom: refit at $n{=}40$, the size evaluated
+in the main sweep, averaged over seven densities. \textbf{Bold}: the primer
+content alone determines the answer. The unbolded $1.00$ entries at
+$n{=}40$ reflect a constant gold answer, not primer content.}
 \label{tab:shortcut}
 \end{table}
 
 \subsection{Rewiring: isolating structure from length}
 \label{sec:rewiring}
 
-The length-matched \texttt{filler} bounds the length confound but is not an
-exact match (Section~\ref{sec:primers}), and no design that compares
-different graphs (or different generators) can hold a structural quantity
-fixed while claiming to vary only it: across five generator families at
-matched $(n, m)$, the majority-class baseline alone ranges $0.15$ to
-$1.000$. We add a within-instance design instead. A double-edge swap
-removes edges $(a,b)$, $(c,d)$ and adds $(a,d)$, $(c,b)$
-\citep{fosdick2018configuring}; every endpoint keeps its degree exactly, so
-the degree sequence, $n$, $m$, and the rendered prompt's character length
-are unchanged, while the triangle count --- what \texttt{clustering}
-reports --- moves. We generate \texttt{low}/\texttt{base}/\texttt{high}
-triangle-count graphs this way ($n{=}40$, $\bar k{=}12$, $200$ graphs per
-level) and evaluate \texttt{node\_degree} under \texttt{none},
-\texttt{clustering} and \texttt{filler} on each, on \texttt{qwen3-1.7b},
-its thinking twin, and \texttt{qwen35-2b} (Section~\ref{sec:results-clustering}).
+The \texttt{filler} condition bounds the length confound only approximately
+(Section~\ref{sec:primers}), and comparisons across graph generators cannot
+isolate a structural quantity: across five generator families at matched
+$(n, m)$, the majority-class baseline alone ranges from $0.15$ to $1.00$. We
+therefore use a within-instance design. A double-edge swap removes edges
+$(a,b)$ and $(c,d)$ and adds $(a,d)$ and $(c,b)$
+\citep{fosdick2018configuring}; every endpoint keeps its degree, so the
+degree sequence, $n$, $m$, the gold answer and the prompt length are
+unchanged, while the triangle count, which the \texttt{clustering} primer
+reports, changes. We generate \texttt{low}, \texttt{base} and \texttt{high}
+triangle-count variants of each graph ($n{=}40$, mean degree $12$, $200$
+graphs per level; mean clustering coefficient $0.01$, $0.31$ and $0.73$)
+and evaluate \texttt{node\_degree} under \texttt{none}, \texttt{clustering}
+and \texttt{filler} with \texttt{qwen3-1.7b}, \texttt{qwen3-1.7b-think} and
+\texttt{qwen35-2b} (Section~\ref{sec:setup}).
+
+The design tests two predictions. If the \texttt{clustering} benefit
+derives from the stated values, it should vary with triangle count when
+everything else is fixed. More specifically, local clustering in an
+Erd\H{o}s--R\'enyi graph is approximately the edge probability $p$, so the
+primer implicitly states the density, and $\bar{C}\,(n-1)$ approximates the
+expected degree. A model that used the primer as a density prior would bias
+its degree estimates toward $\bar{C}\,(n-1)$, which equals $0.5$, $12.0$ and
+$28.7$ across the three levels while the true mean degree stays at $12$.
 
 \subsection{Answer extraction and measurement validity}
 \label{sec:extraction}
 
-Turning free model text into a scored answer is a quiet source of
-measurement error, and it is not symmetric across conditions: thinking
-responses are longer and messier than zero-shot ones, so a naive extractor
-makes the thinking arm look worse than it is on exactly the comparison we
-want to draw. One failure is worth reporting in full because it produced a
-headline-sized effect that did not exist. Our boolean extractor originally
-took the last yes/no token in the response; on \texttt{cycle\_check},
-\texttt{qwen3-4b} frequently answers correctly and then recites the
-definition (``\dots a path with no repeated edges or nodes''), and the
-trailing ``no'' became the extracted answer. Correcting the extractor to
-ignore ``no repeated'' moved $225$ of \texttt{qwen3-4b}'s scored boolean
-rows from wrong to right, all on \texttt{cycle\_check}, none the other
-way; before the fix this read as a dramatic condition-dependent collapse,
-after it nothing on that task is significant. All numbers here use the
-corrected extractor. We also verified directly that Qwen3's \texttt{<think>}
-tags never reach the extractor unstripped for the thinking arms (a spot
-check of $50$ random rows per arm, plus a corpus-wide comparison of
-extraction with and without the pre-\texttt{</think>} text, finds no
-mismatch), and that scoring truncated (\texttt{hit\_cap}) generations as
-wrong rather than dropping them changes the verdict on two cells (
-\texttt{rwse}/\texttt{cycle\_check} and \texttt{clustering},
-\texttt{all}/\texttt{cycle\_check} for \texttt{qwen3-1.7b}; full comparison
-in Appendix~\ref{sec:appendix}). We drop truncated pairs throughout
-the main text and report the alternative there.
+Answer extraction errs asymmetrically across conditions, because thinking
+responses are longer and less regular than direct ones. One failure
+produced a spurious effect of headline magnitude: the boolean extractor
+took the last yes/no token, and on \texttt{cycle\_check}
+\texttt{qwen3-4b} often answers correctly and then recites the definition
+of a cycle (``\dots a path with no repeated edges or nodes''). Ignoring ``no
+repeated'' moved $225$ of \texttt{qwen3-4b}'s rows from incorrect to
+correct and none in the other direction, and removed an apparent
+condition-dependent collapse; all results use the corrected extractor. A
+manual check of $50$ rows per arm and a corpus-wide comparison found that
+\texttt{<think>} blocks never reach the extractor unstripped. Scoring
+truncated generations as incorrect instead of dropping them changes the
+significance verdict on three \texttt{qwen3-1.7b} \texttt{cycle\_check}
+cells (\texttt{rwse}, \texttt{clustering}, \texttt{all};
+Appendix~\ref{sec:appendix}); the main text drops truncated pairs.
 
 \subsection{Significance testing}
-\label{sec:prompts}
+\label{sec:significance}
 
-Every reported comparison is paired: a condition against \texttt{none} (or
-another condition) on the same graph and question, truncated pairs dropped
-from both sides. The primary test is the exact McNemar test
+Every comparison is paired: a condition against \texttt{none} (or another
+condition) on the same graph and question, with pairs dropped when either
+side is truncated. The primary test is the exact McNemar test
 \citep{mcnemar1947note}, Benjamini--Hochberg corrected
 \citep{benjaminihochberg1995controlling} within each (arm, task) family of
-six conditions at $q{=}0.05$; where we report ``beats both controls'' we
-additionally require significance under a \emph{global} BH correction
-pooling every test run for that claim, not only the family. For the
-baseline-dependence relation (Section~\ref{sec:results-baseline}) we use a
-cross-fitted design --- baseline estimated from one random half of a
-cell's paired graphs, delta from the disjoint other half, both
-directions pooled --- with a cluster bootstrap that resamples whole (arm,
-task, density) blocks rather than individual cells, since conditions at the
-same block share one \texttt{none} sample. For null cells we report a
-minimum detectable effect (fast preset: $50$ replicates, $200$
-permutations, $5$ power-curve steps), so an absence of significance is
-distinguished from a demonstrated absence of effect rather than left
-ambiguous.
+six conditions at $q{=}0.05$; where we claim that a condition beats both
+controls, we additionally require significance under a global correction
+across every test run for that claim. For the relation between effect and
+baseline (Section~\ref{sec:results-baseline}), baseline and effect are
+estimated from disjoint random halves of each cell's paired graphs, and the
+difference between route and no-route cells is tested directly as the
+interaction in $\Delta \sim \mathrm{baseline} \times \mathrm{route}$, with a
+bootstrap that resamples whole (arm, task, density) blocks, because
+conditions within a block share one \texttt{none} sample. For each null cell
+we estimate a minimum detectable effect (MDE): the smallest paired effect
+that the same test detects with probability $0.8$ at $\alpha{=}0.05$ in
+simulation ($50$ replicates, $200$ permutations per replicate).
 
 \section{Experimental Setup}
 \label{sec:setup}
 
 \paragraph{Tasks.} Six GraphQA tasks \citep{fatemi2023talklikeagraph}: node
-count, edge count, node degree, connected nodes, edge existence, cycle
+count, edge count, node degree, connected nodes, edge existence and cycle
 check.
 
-\paragraph{Models.} We compare \texttt{qwen3-1.7b} and \texttt{qwen3-4b}
-\citep{qwen2025qwen3}, each with native thinking mode on and off, for four
-arms. This pair was chosen for its paired thinking/non-thinking checkpoints
-at two sizes within one open-weight family and moderate compute cost; we
-make no claim about an architectural advantage for graph tasks specifically,
-and Section~\ref{sec:results-baseline} extends the comparison to eleven
-further arms including a second family.
+\paragraph{Models.} An \emph{arm} is a model checkpoint with a fixed
+decoding configuration. The main arms are Qwen3-1.7B and Qwen3-4B
+\citep{qwen2025qwen3}, each with native thinking mode off
+(\texttt{qwen3-1.7b}, \texttt{qwen3-4b}) and on (\texttt{-think}), chosen
+because they offer both modes of the same weights at two sizes and
+moderate cost.
 
 \paragraph{Sweep design.} All four arms answer one shared prompt set:
-Erd\H{o}s--R\'enyi graphs \citep{erdosrenyi1959random}, $n{=}40$, four
-densities $p\in\{.10,.20,.35,.50\}$ (\texttt{densfull40}), $100$ graphs per
-(density, task) cell across all seven conditions and six tasks --- $16{,}800$
-prompts per arm. Generation is greedy; the output budget is $2{,}048$
-tokens for the plain arms and $8{,}192$ for the thinking arms (the two are
-not the same budget, and we say so wherever a comparison depends on it). A
-second corpus (\texttt{densfull40hi}) extends \texttt{node\_degree} and
-\texttt{edge\_existence} to $p\in\{.65,.75,.85\}$, $100$ graphs/cell, all
-four arms. A dedicated \texttt{node\_degree} sweep at $400$ graphs/density
-level (all seven densities, \texttt{qwen3-1.7b}) backs the one content
-effect that survives every control (Section~\ref{sec:results-clustering}).
+Erd\H{o}s--R\'enyi graphs \citep{erdosrenyi1959random} with $n{=}40$ at
+densities $p\in\{.10,.20,.35,.50\}$, $100$ graphs per (density, task) cell,
+seven conditions and six tasks, for $16{,}800$ prompts per arm. Decoding is
+greedy with a budget of $2{,}048$ new tokens for plain arms and $8{,}192$
+for thinking arms; Section~\ref{sec:results-thinking} reports a
+budget-matched comparison. A high-density extension covers
+\texttt{node\_degree} and \texttt{edge\_existence} at $p\in\{.65,.75,.85\}$
+($100$ graphs per cell, all four arms). For the one content effect that
+survives the controls (Section~\ref{sec:results-clustering}), a dedicated
+\texttt{node\_degree} sweep with \texttt{qwen3-1.7b} uses $400$ graphs per
+density at all seven densities, and a replication uses $400$ newly seeded
+graphs per density at $p\le.50$.
 
 \paragraph{Held-out arms.} Eleven further arms were not used to develop any
-claim here, though the corpus that eight of them answer --- the published
-GraphQA split, $30$ graphs/cell, five tasks, six conditions, plus a rerun of
-\texttt{filler} and \texttt{edge\_existence} after a wording fix --- predates
-this project and was analysed earlier for other questions, so we call them
-earlier-collected rather than pre-registered. Eight arms
-(\texttt{qwen3-8b}, \texttt{qwen3-14b}, \texttt{gemma-4-E4B-it},
-\texttt{gemma-4-12B-it}, each $\pm$ thinking) answer that split; three more
-(\texttt{qwen3-0.6b} $\pm$ thinking, \texttt{qwen35-2b}) answer a
-$100$-graph \texttt{\{none, degree\}} probe over all six tasks. Together
-they extend the comparison to $0.6$--$14$B and two families
-(Section~\ref{sec:results-heldout}).
+claim reported here. Eight (Qwen3-8B, Qwen3-14B, Gemma-4-E4B-it and
+Gemma-4-12B-it \citep{gemma4}, each with and without thinking) answer the
+published GraphQA split ($30$ graphs per cell, five tasks, six conditions);
+three (Qwen3-0.6B with and without thinking, and Qwen3.5-2B
+\citep{qwen35}, \texttt{qwen35-2b}) answer a $100$-graph probe of
+\texttt{none} and \texttt{degree} on all six tasks. The published-split
+responses were collected before this project's hypotheses were formed and
+were analysed earlier for other questions, so we describe these arms as
+held out rather than pre-registered.
 
-\paragraph{Metrics.} Exact match for every task, including
-\texttt{connected\_nodes}: its set-F1 is $0.96$--$1.00$ everywhere at this
-graph size, so it does not discriminate between conditions and exact match
-is what every table here uses.
-
-\paragraph{Known validity caveats.} \texttt{node\_count} and
-\texttt{cycle\_check} are shortcut-dominated at $n{=}40$
-(Section~\ref{sec:shortcuts}); \texttt{degree} and \texttt{all} state the
-\texttt{node\_degree} and \texttt{edge\_count} answers verbatim. Results on
-these cells are reported but bound what can be concluded about graph
-reasoning rather than demonstrate it.
+\paragraph{Metrics.} Exact match for every task. For \texttt{connected\_nodes},
+set-F1 is $0.96$--$1.00$ in every cell at this graph size and does not
+discriminate between conditions, so we report exact match. For the integer
+tasks, mean absolute error is reported in the Appendix.
 
 \section{Results}
 \label{sec:results}
 
-All four arms completed the sweep ($16{,}800$ scored generations each).
-Unless stated otherwise, $\Delta$ is a paired difference against
-\texttt{none} over instances where neither arm was truncated.
+All four arms completed the main sweep ($16{,}800$ scored generations
+each). Unless stated otherwise, $\Delta$ is a paired difference against
+\texttt{none}, in percentage points, over instances in which neither
+condition was truncated.
 
-\subsection{Validity first: truncation and constant answers}
+\subsection{Truncation and constant answers}
 \label{sec:results-truncation}
 
 \begin{table}[t]
@@ -396,20 +377,19 @@ Task & 1.7B & 1.7B-th. & 4B & 4B-th. \\
 \texttt{node\_count}     & 0.0\%  & 2.5\%  & 0.0\%  & 0.1\% \\
 \bottomrule
 \end{tabular}
-\caption{Truncation rate (share of \texttt{densfull40} generations reaching
-the output budget: $2{,}048$ tokens plain, $8{,}192$ thinking), by task and
-arm, pooled over condition and density.}
+\caption{Truncation rate (share of main-sweep generations reaching the
+output budget: $2{,}048$ tokens plain, $8{,}192$ thinking), by task and
+arm, pooled over condition and density. \textbf{Bold}: above $50\%$.}
 \label{tab:hitcap}
 \end{table}
 
-Truncation (Table~\ref{tab:hitcap}) is neither uniform across tasks nor
-arms: on \texttt{edge\_count} the thinking arms truncate on $62$--$81\%$ of
-instances, so surviving pairs there are a biased subset and we report but
-do not interpret that cell under thinking. Every other task truncates
-under $7\%$. Separately, \texttt{node\_count} (gold $=40$, constant) and
-\texttt{cycle\_check} (gold $=$ ``yes'' at every density we tested) are
-shortcut-dominated (Section~\ref{sec:shortcuts}); apparent gains there are
-reported in Section~\ref{sec:results-main} but read as an artifact
+On \texttt{edge\_count} the thinking arms truncate on $62$--$81\%$ of
+instances (Table~\ref{tab:hitcap}), so surviving pairs are a selected
+subset that we report but do not interpret; every other task truncates on
+fewer than $7\%$. \texttt{node\_count} (gold $=40$) and
+\texttt{cycle\_check} (gold $=$ ``yes'' at every density) have constant
+answers (Section~\ref{sec:shortcuts}); their apparent gains are
+reported in Table~\ref{tab:main-results-plain} but interpreted as artifacts
 (Section~\ref{sec:results-length}), not as graph reasoning.
 
 \subsection{The full density sweep}
@@ -417,27 +397,30 @@ reported in Section~\ref{sec:results-main} but read as an artifact
 
 \input{main_table.tex}
 
-Table~\ref{tab:main-results-plain} (thinking arms in the Appendix,
-Table~\ref{tab:main-think}) pools over the four densities. Bold marks
-significance under McNemar, BH-corrected within each (arm, task) family.
-Several cells are significant in one arm without replicating in the other
-at the same sign and magnitude; Section~\ref{sec:results-baseline} explains
-why that is not evidence against a structural effect, since the two
-model sizes are rarely at matched baseline on the same cell.
+Table~\ref{tab:main-results-plain} (thinking arms in
+Table~\ref{tab:main-think}) pools over the four densities; paired
+bootstrap intervals for every cell are given in the Appendix. Several cells
+are significant in one arm without replicating in the other with the same
+sign and magnitude; Section~\ref{sec:results-baseline} shows why this is
+expected, since the two model sizes are rarely at matched baseline accuracy
+on the same cell. Mean absolute error (Appendix Table~\ref{tab:mae})
+agrees in sign, except that \texttt{degree}'s $+27.7$ on
+\texttt{edge\_count} for \texttt{qwen3-4b} leaves it unchanged ($39.2$
+vs.\ $40.4$ edges).
 
 \subsection{Length is an active treatment}
 \label{sec:results-length}
 
-\texttt{filler} is not inert. It significantly harms \texttt{qwen3-1.7b} on
-\texttt{edge\_existence} ($-15.8$) and \texttt{connected\_nodes} ($-6.2$),
-and \texttt{qwen3-4b} on both ($-7.0$, $-12.5$). Over the full seven-density
-range (\texttt{qwen3-1.7b-think}, \texttt{node\_degree}) it costs $-6.3$
-points pooled ($p{<}10^{-4}$): negligible at $p{\le}.35$, then $-9.5$,
-$-9.3$, $-14.1$, $-11.7$ at the four densest levels
-($r{=}{+0.953}$, $p{=}0.00088$ against baseline). Length's cost grows with
-task difficulty, the same direction an answer-stating primer's benefit
-grows in (Section~\ref{sec:results-baseline}); pooling all conditions into
-one correlation against \texttt{none} would understate both.
+\texttt{filler} is not inert. It significantly reduces accuracy for
+\texttt{qwen3-1.7b} on \texttt{edge\_existence} ($-15.8$) and
+\texttt{connected\_nodes} ($-6.2$), and for \texttt{qwen3-4b} on both
+($-7.0$, $-12.5$). Over the full seven-density range
+(\texttt{qwen3-1.7b-think}, \texttt{node\_degree}) it costs $6.3$ points
+pooled ($p{<}10^{-4}$): negligibly at $p{\le}.35$, then $9.5$, $9.3$, $14.1$
+and $11.7$ points at the four densest levels ($r{=}{+0.953}$ with
+baseline across levels, $p{=}0.00088$). The cost of added length thus grows
+with task difficulty, in the same direction as the benefit of an
+answer-stating primer (Section~\ref{sec:results-baseline}).
 
 \begin{table}[t]
 \centering
@@ -448,40 +431,46 @@ one correlation against \texttt{none} would understate both.
 Arm & Cond. & hit rate & false alarm \\
 \midrule
 \multirow{3}{*}{qwen3-1.7b} & none       & 100.0\% & 40.3\% \\
-                            & filler     & 100.0\% & \textbf{61.8}\% \\
+                            & filler     & 100.0\% & 61.8\% \\
                             & clustering & 100.0\% & 35.2\% \\
 \midrule
 \multirow{3}{*}{qwen3-4b}   & none       & 99.1\%  & 12.6\% \\
                             & filler     & 100.0\% & 22.5\% \\
-                            & clustering & 100.0\% & \textbf{7.5}\% \\
+                            & clustering & 100.0\% & 7.5\% \\
 \bottomrule
 \end{tabular}
 \caption{\texttt{edge\_existence}, $p{=}0.50$: hit rate (correct on gold
-``yes'') vs.\ false-alarm rate (wrong ``yes'' on gold ``no''). Accuracy
-moves almost entirely through the false-alarm rate.}
+``yes'') and false-alarm rate (``yes'' on gold ``no''). Accuracy changes
+almost entirely through the false-alarm rate.}
 \label{tab:booleanbias}
 \end{table}
 
-The largest \texttt{edge\_existence} swings in Table~\ref{tab:main-results-plain}
-are not graph reading. Table~\ref{tab:booleanbias} decomposes accuracy into
-hit rate and false-alarm rate: hit rate sits at $99$--$100\%$ under every
-condition for both arms, so the model essentially never misses a real
-edge. What moves is the false-alarm rate --- how often it says ``yes'' to a
-non-edge --- and it moves by condition, not by anything resembling graph
-content: \texttt{filler} \emph{raises} it ($40.3{\to}61.8\%$, $12.6{\to}
-22.5\%$) while \texttt{clustering} lowers it. We read \texttt{edge\_existence}
-condition effects as shifting a yes/no response bias, not as evidence of
-reading the graph more or less accurately.
+The largest \texttt{edge\_existence} effects in
+Table~\ref{tab:main-results-plain} do not reflect more accurate reading of
+the graph. Table~\ref{tab:booleanbias} decomposes accuracy into hit rate and
+false-alarm rate: the hit rate is $99$--$100\%$ under every condition for
+both arms, so accuracy varies only through false alarms, which
+\texttt{filler} increases ($40.3{\to}61.8\%$ and $12.6{\to}22.5\%$) and
+\texttt{clustering} decreases. A signal-detection analysis
+\citep{macmillan2005detection}, with the log-linear correction for extreme
+proportions \citep{hautus1995corrections}, cannot separate a shift in
+response criterion from a change in sensitivity here: with the hit rate at
+ceiling, a change in the false-alarm rate alone moves $d'$ and $c$
+together and cannot be attributed to either (Appendix
+Table~\ref{tab:sdt}). We therefore report only that accuracy on this task
+moves through the false-alarm rate, and do not interpret these effects as
+changes in graph reading. Under \texttt{none}, \texttt{qwen3-1.7b}'s
+criterion becomes steadily more liberal with density ($c$ from $-0.27$ at
+$p{=}.10$ to $-1.74$ at $p{=}.50$).
 
-\texttt{node\_count}'s largest apparent gains are the same kind of
-artifact. Gold is the constant $40$ at this graph size; the dominant
-\texttt{none} failure is the answer ``$39$'', an off-by-one from the
-encoder's ``nodes $0,\dots,39$'' preamble. \texttt{qwen3-1.7b}'s ``$39$''
-rate is $68.5\%$ under \texttt{none}, $61.8\%$ under \texttt{degree},
-$28.8\%$ under \texttt{filler}, and $1.3\%$ under \texttt{clustering} ---
-almost any interposed text reduces it, \texttt{clustering} nearly
-eliminates it, and none of this is a structural primer effect on a task
-with one possible answer.
+\texttt{node\_count}'s largest apparent gains are also an artifact. Gold is
+the constant $40$; the dominant \texttt{none} error is ``$39$'', an
+off-by-one induced by the encoder's ``nodes $0,\dots,39$'' preamble.
+\texttt{qwen3-1.7b} answers ``$39$'' on $68.5\%$ of instances under
+\texttt{none}, $61.8\%$ under \texttt{degree}, $28.8\%$ under
+\texttt{filler} and $1.3\%$ under \texttt{clustering}. Almost any
+interposed text reduces this error, and none of these changes is a
+structural effect on a task with a single possible answer.
 
 \subsection{Answer-stating primers: route substitution}
 \label{sec:results-baseline}
@@ -502,92 +491,96 @@ $0.50$--$0.75$ & $6$  & $+15.5$ & $24$  & $+0.4$ \\
 $0.75$--$0.95$ & $11$ & $+4.2$  & $33$  & $-3.9$ \\
 $0.95$--$1.00$ & $34$ & $-9.0$  & $186$ & $-0.4$ \\
 \midrule
-$r(\Delta,\mathrm{baseline})$ & \multicolumn{2}{c}{$\mathbf{-0.417}$} & \multicolumn{2}{c}{$-0.050$} \\
- & \multicolumn{2}{c}{$k{=}81,\,p{=}1.1{\times}10^{-4}$} & \multicolumn{2}{c}{$k{=}273,\,p{=}0.41$} \\
+$r(\Delta,\mathrm{baseline})$ & \multicolumn{2}{c}{$-0.417$} & \multicolumn{2}{c}{$-0.050$} \\
 \bottomrule
 \end{tabular}
-\caption{Mean primer effect in percentage points, binned by \texttt{none}
-accuracy on the same cell, using the $n{=}40$-refit route split (Table
-\ref{tab:shortcut}, bottom). Route baseline $0.614\pm0.428$; no-route
-$0.845\pm0.291$ --- the groups are no longer as closely baseline-matched
-as an earlier, published-split classification made them look, which
-Figure~\ref{fig:crossfit}'s cross-fitted design is the more decisive
-evidence for.}
+\caption{Mean primer effect (percentage points), binned by \texttt{none}
+accuracy on the same (arm, task, density, condition) cell of the main
+sweep, using the $n{=}40$ route split (Table~\ref{tab:shortcut}, bottom).
+Mean baseline is $0.61$ for route cells and $0.85$ for no-route cells, so
+the groups are not baseline-matched; the cross-fitted interaction test in
+the text addresses this.}
 \label{tab:baseline}
 \end{table}
 
-Table~\ref{tab:baseline} splits the $354$ non-degenerate cells by whether
-the shortcut solver, refit at $n{=}40$, recovers more from the condition
-than from \texttt{none}. Where it does, effect falls with baseline at
-$r{=}{-0.417}$ ($p{=}1.1{\times}10^{-4}$); where it does not, there is no
-relation ($r{=}{-0.050}$, $p{=}0.41$). Because this split's two groups are
-not baseline-matched, we treat Figure~\ref{fig:crossfit} --- baseline and
-delta estimated from disjoint graph halves, so a low-baseline pair cannot
-mechanically inflate its own delta --- as the stronger evidence: $r{=}
-{-0.31}$ over $232$ route cells ($p{=}1.8{\times}10^{-6}$, $95\%$
-cluster-bootstrap CI $[-0.42,-0.17]$) against $r{=}{+0.02}$ over $762$
-no-route cells ($p{=}0.51$). A mixed-effects model with a random intercept
-per arm gives the same sign and a comparable magnitude on the route cells
-($-12.0$, $p{=}1.2{\times}10^{-5}$; only four arms, so we read this as a
-consistency check, not an independently powered test).
+A \emph{cell} is an (arm, task, density, condition) combination with at
+least ten usable pairs. Table~\ref{tab:baseline} splits the $354$
+main-sweep cells on non-constant tasks by whether the primer offers a
+substitute route. Route cells gain at low baseline and lose at high
+baseline ($r{=}{-0.417}$, $81$ cells); no-route cells do not
+($r{=}{-0.050}$, $273$ cells). Two problems prevent reading this contrast
+directly: baseline and effect share sampling noise, and a difference in
+significance is not a significant difference \citep{gelman2006difference}.
+We therefore estimate baseline and effect from disjoint halves of each
+cell's graphs and test the route $\times$ baseline interaction, adding the
+high-density extension ($117$ route and $381$ no-route cells;
+Figure~\ref{fig:crossfit}). The interaction is $-11.0$ points per unit of
+baseline ($95\%$ block-bootstrap CI $[-17.1, -5.7]$, $83$ blocks). Within
+groups, the cross-fitted correlation is $r{=}{-0.34}$ for route cells
+($116$ cells, one fold direction, $p{=}1.6{\times}10^{-4}$) and $r{=}{+0.03}$
+for no-route cells; the other fold direction gives $-0.28$ and $+0.02$.
 
-The density continuum makes the same point with difficulty manipulated
-rather than observed. Holding the arm (\texttt{qwen3-1.7b-think}) and task
-(\texttt{node\_degree}) fixed and varying only density from $p{=}.10$ to
-$.85$ drives \texttt{none} accuracy from $0.95$ to $0.44$;
-\texttt{degree}'s benefit rises from $+3.1$ to $+34.2$ points
-($r{=}{-0.975}$, $p{=}1.9{\times}10^{-4}$), while \texttt{filler}'s cost
-grows from negligible to $-14.1$ ($r{=}{+0.953}$, $p{=}8.8{\times}10^{-4}$).
-The two effects run in opposite directions and grow together as the task
-hardens.
+Accuracy is bounded, so a cell near $1.0$ can only lose and a cell near
+$0.0$ can only gain. On the logit scale, which removes this compression,
+the interaction persists ($-1.46$ logits, CI $[-2.11, -0.79]$). Restricted
+to cells with baseline between $0.10$ and $0.90$, however, neither group
+shows a relation (route $r{=}{-0.01}$, $78$ cells; no-route $r{=}{-0.07}$,
+$187$ cells; interaction CI $[-29, +41]$). The evidence therefore supports a
+contrast between floor and ceiling (a stated answer helps a model that
+cannot compute it and harms one that already can) rather than a graded
+dependence that can be detected at intermediate baselines, where our data
+are sparsest (Appendix Table~\ref{tab:robust}).
+
+The density continuum manipulates difficulty instead of observing it.
+Holding the arm (\texttt{qwen3-1.7b-think}) and task (\texttt{node\_degree})
+fixed and raising density from $p{=}.10$ to $.85$ lowers \texttt{none}
+accuracy from $0.95$ to $0.44$, while \texttt{degree}'s benefit rises from
+$+3.1$ to $+34.2$ points ($r{=}{-0.975}$ across levels,
+$p{=}1.9{\times}10^{-4}$) and \texttt{filler}'s cost grows from negligible
+to $14.1$ points. The two effects run in opposite directions and both grow
+as the task becomes harder.
 
 \paragraph{Held-out arms and a second family.}
 \label{sec:results-heldout}
-On the eleven held-out arms (including, unlike an earlier pass, the
-\texttt{.rerun} rows for \texttt{filler} and \texttt{edge\_existence}), the
-relation reappears where a route exists: $r{=}{-0.674}$ over $105$ cells
-($p{\approx}0$), against $r{=}{-0.186}$ over $93$ no-route cells
-($p{=}0.075$). Regressing effect on baseline, $\log$ parameter count and
-thinking mode together gives a baseline coefficient of $-30.2$ ($p{=}3.5
-{\times}10^{-15}$) and a parameter coefficient of $+0.40$ ($p{=}0.54$):
-once baseline is in the model, scale adds nothing measurable. Replacing
-each cell's own baseline with the \emph{other} arms' accuracy on the same
-cell --- a negative control sharing no observation with the effect ---
-leaves no relation ($r{=}{+0.113}$, $p{=}0.135$), so what the effect tracks
-is a model's own competence on an item, not a difficulty intrinsic to the
-item.
+On the eleven held-out arms the relation reappears where a route exists:
+$r{=}{-0.674}$ over $105$ route cells ($p{=}3.5{\times}10^{-15}$) against
+$r{=}{-0.186}$ over $93$ no-route cells ($p{=}0.075$), with an interaction
+of $-24.7$ (block-bootstrap CI $[-109, -3.8]$, $p{=}0.027$, $43$ (arm, task)
+blocks), weaker than on the main sweep but excluding zero. In an ordinary
+least-squares regression of effect on baseline, log parameter count and
+thinking mode (classical standard errors, so descriptive only), the
+baseline coefficient is $-30.2$ and the parameter coefficient $+0.40$
+($p{=}0.54$): once baseline is accounted for, scale adds nothing
+measurable. Replacing each cell's own baseline with the other arms'
+accuracy on the same cell, a negative control that shares no observation
+with the effect, removes the relation ($r{=}{+0.113}$, $p{=}0.135$), so the
+effect tracks a model's own competence rather than item difficulty. Most
+held-out arms are near ceiling under \texttt{none} (mean $0.924$), and a
+confirmatory $500$-graph run with a pre-specified condition
+(\texttt{qwen3-8b}, \texttt{degree}) gives $+6.67$ points
+($p{=}1{\times}10^{-4}$).
 
-\paragraph{Renaming nodes.} If the route effect were token copying rather
-than content substitution, renaming nodes from integers to
-Game-of-Thrones characters throughout the prompt should disrupt it. It does
-not: on the published split, the route-offering \texttt{degree} condition's
-effect size correlates $r{=}0.933$ between the integer- and GoT-named
-sweeps ($39$ cells), while non-route conditions correlate weakly or not at
-all (\texttt{clustering} $r{=}0.079$, \texttt{components} $r{=}0.345$,
-\texttt{rwse} $r{=}{-0.381}$). Separately, renaming nodes with no primer at
-all changes accuracy by a precise, non-significant $-0.19$ points pooled
-across eight arms (zero of eight significant after BH), so the
-route-transfer result is not naming changing accuracy on its own, but the
-same substitution effect surviving a token-level change to how the answer
-is expressed.
+\paragraph{Renaming nodes.} Replacing integer node identifiers with
+Game-of-Thrones character names throughout the prompt leaves the route
+effect largely intact: on the published split, \texttt{degree}'s effect
+correlates at $r{=}0.933$ between the integer- and name-based sweeps ($39$
+cells), whereas non-route conditions correlate weakly or not at all
+(\texttt{clustering} $r{=}0.079$, \texttt{components} $r{=}0.345$,
+\texttt{rwse} $r{=}{-0.381}$). Renaming without a primer changes accuracy
+by $-0.19$ points pooled across eight arms (none significant after
+correction). Because renaming changes identifiers but not the stated degree
+values, this shows that the effect does not depend on integer labels; it
+does not distinguish copying the stated value from computing the answer,
+which requires a primer that states incorrect values
+(Section~\ref{sec:future-work}).
 
-\paragraph{What copying looks like.} Where a primer states the answer and
-the model still errs, $41.4\%$ of \texttt{qwen3-4b}'s $29$
-\texttt{degree}/\texttt{node\_degree} errors state an adjacent node's
-degree ($k{\pm}1$) rather than the queried node's, against $5.7\%$ under
-\texttt{all}, which also states the answer but states thirty-nine other
-facts alongside it. This is consistent with position-sensitive copying
-under \texttt{degree} specifically, not a general degradation from stating
-the answer.
-
-\paragraph{Practical reading.} A primer effect reported against a
-no-primer baseline, without reporting that baseline, is uninterpretable:
-within \texttt{qwen3-4b} alone, \texttt{degree} is worth $+27.7$ on
-\texttt{edge\_count} (baseline $0.02$) and $-6.5$ on \texttt{node\_degree}
-(baseline $0.99$) --- a cross-task, not a same-task, contrast, since the
-degree primer states \texttt{node\_degree}'s answer verbatim while only
-implying \texttt{edge\_count}'s through a sum, but the direction is the
-same one the baseline relation predicts.
+\paragraph{Error analysis.} When a primer states the answer and the model
+still errs, the errors indicate positional copying. Of \texttt{qwen3-4b}'s
+$29$ errors under \texttt{degree} on \texttt{node\_degree}, $12$ ($41.4\%$)
+equal the stated degree of the node listed immediately before or after the
+queried one, against $17.3\%$ expected by chance (binomial $p{=}.002$); under
+\texttt{all}, which states the same degree amid three facts per node, the
+rate is $2$ of $35$ ($5.7\%$).
 
 \subsection{Non-answer content: clustering on node\_degree}
 \label{sec:results-clustering}
@@ -595,207 +588,365 @@ same one the baseline relation predicts.
 \begin{table}[t]
 \centering
 \footnotesize
-\setlength{\tabcolsep}{3.5pt}
+\setlength{\tabcolsep}{2pt}
 \begin{tabular}{lrrcr}
 \toprule
 Comparison & $\Delta$ & $n$ & density & $p$ \\
 \midrule
-vs.\ none, main sweep    & $+3.0$ & $400$  & $.10$--$.50$ & n.s. \\
-vs.\ none, 7 densities   & $+1.9$ & $2800$ & $.10$--$.85$ & $0.022$ \\
-vs.\ filler, 7 densities & $\mathbf{+4.3}$ & $2800$ & $.10$--$.85$ & $2.4{\times}10^{-8}$ \\
-vs.\ none, replication   & $+4.2$ & $1600$ & $.10$--$.50$ & $0.00055$ \\
+clust.\ vs.\ none (main)    & $+3.0$ & $400$  & $.10$--$.50$ & $0.26$ \\
+clust.\ vs.\ none                & $+1.9$ & $2800$ & $.10$--$.85$ & $0.022$ \\
+filler vs.\ none                 & $-2.4$ & $2800$ & $.10$--$.85$ & $0.0013$ \\
+clust.\ vs.\ filler              & $+4.3$ & $2800$ & $.10$--$.85$ & $2.4{\times}10^{-8}$ \\
+clust.\ vs.\ none                & $+7.5$ & $400$  & $.35$ & $0.0089$ \\
+clust.\ vs.\ none (new seed) & $+4.2$ & $1600$ & $.10$--$.50$ & $0.00055$ \\
 \bottomrule
 \end{tabular}
-\caption{\texttt{qwen3-1.7b}, \texttt{node\_degree}, \texttt{clustering}.
-The dedicated $400$-graph/density sweep's own \texttt{filler} arm covers
-all seven densities, unlike \texttt{densfull40}'s.}
+\caption{\texttt{qwen3-1.7b}, \texttt{node\_degree}. All rows except the
+first come from the dedicated $400$-graph-per-density sweep; the last row
+uses newly seeded graphs. Per-density values are in Appendix
+Table~\ref{tab:headline-density}.}
 \label{tab:headline}
 \end{table}
 
-Table~\ref{tab:headline} is the one cell we find robust to every control
-we have. Against \texttt{none} alone, pooling all seven densities washes
-the effect down to $+1.9$ ($p{=}0.022$): it is positive and significant at
-$p{=}.35$ ($+7.5$), null at the two lowest and two highest densities where
-\texttt{none} itself is near floor, and briefly negative on one density.
-Against \texttt{filler} the picture is cleaner and holds where the
-\texttt{none} comparison does not: $+4.3$ pooled ($p{=}2.4{\times}
-10^{-8}$), significant at five of seven densities, and negative only at
-$p{=}.10$ ($-2.8$, $p{=}0.043$, where the model is already near ceiling).
-Churn is real but the effect survives it: $53$ instances helped, $41$
-hurt on the main sweep alone. \texttt{qwen3-4b} cannot test this cell in
-the main densities (baseline $0.99$), but at high density
-(\texttt{densfull40hi}, $p{\in}\{.65,.75,.85\}$, where its own baseline
-drops to headroom) \texttt{clustering} beats \texttt{none} \emph{and}
-\texttt{filler} \emph{and} \texttt{components}, all globally
-BH-significant: $+11.3$ vs.\ \texttt{none} ($p{<}10^{-3}$), $+9.3$ vs.\
-\texttt{filler} ($p{=}6{\times}10^{-4}$), on \texttt{node\_degree}, and
-$+5.3$/$+11.7$ on \texttt{edge\_existence}. This is the cross-scale
-replication a blanket ``no primer effect replicates across model scale''
-claim would miss: the effect does replicate once the second model is
-measured off ceiling, at the baseline where it has room to show up.
-\texttt{qwen3-1.7b-think} does not show it (Table~\ref{tab:main-think},
-Appendix), and \texttt{qwen3-4b-think} is saturated on this task
-throughout.
+\texttt{clustering} on \texttt{node\_degree} is the only cell in which a
+primer that does not state the answer was followed up. It was selected
+after the main sweep and examined in a dedicated sweep and an
+independent-seed replication (Table~\ref{tab:headline}). Against
+\texttt{none}, the effect is small when pooled over seven densities ($+1.9$
+points, $p{=}0.022$) and significant individually only at $p{=}.35$
+($+7.5$); it is $+0.3$ and $+3.3$ at the two lowest densities, $+4.3$ at
+$p{=}.50$, and within two points of zero at the three highest. The
+independent-seed replication at $p{\le}.50$ confirms a
+modest gain ($+4.2$, $p{=}0.00055$). Against the length-matched
+\texttt{filler}, the pooled advantage is larger ($+4.3$,
+$p{=}2.4{\times}10^{-8}$), but much of it reflects \texttt{filler}'s own
+cost ($-2.4$ against \texttt{none}, $p{=}0.0013$). At $p{\ge}.65$, where
+\texttt{clustering} and \texttt{none} do not differ, \texttt{filler} costs
+$3.5$--$9.5$ points, which accounts for the entire difference there. Only at
+$p{=}.35$ and $.50$ does \texttt{clustering} exceed both controls ($+6.5$
+and $+6.3$ against \texttt{filler}, $p{=}0.027$ and $0.022$). Length does not
+explain this residual effect, since \texttt{filler} is $40$ tokens shorter
+than \texttt{clustering}. For \texttt{qwen3-4b}, which is at ceiling on this
+task in the main sweep, the high-density extension gives $+11.3$ points
+against \texttt{none} ($p{<}10^{-3}$) and $+9.3$ against \texttt{filler}
+($p{=}6{\times}10^{-4}$), both significant under the global correction. The
+effect is absent in \texttt{qwen3-1.7b-think} (Table~\ref{tab:main-think}),
+and \texttt{qwen3-4b-think} is at ceiling on this task throughout.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{rewiring.pdf}
-\caption{\texttt{node\_degree} accuracy by triangle level (degree
-sequence, $n$, $m$ and prompt length held fixed within each arm) and
-condition, $n{=}200$/level, $n{=}40$-\texttt{k}12 rung.}
+\caption{\texttt{node\_degree} accuracy by triangle level and condition
+($200$ graphs per level, $n{=}40$, mean degree $12$). Within each arm, the
+degree sequence, $n$, $m$ and prompt length are identical across levels;
+mean clustering is $0.01$, $0.31$ and $0.73$ from \texttt{low} to
+\texttt{high}.}
 \label{fig:rewiring}
 \end{figure}
 
-The mechanism we can rule in is limited. Figure~\ref{fig:rewiring} holds
-every arm's degree sequence, $n$, $m$ and rendered prompt length fixed
-within triangle level and varies only triangle count (Section
-\ref{sec:rewiring}). \texttt{clustering}'s curve moves roughly in parallel
-with \texttt{none}'s own level-to-level shape rather than tracking the
-actual clustering values, which fall monotonically from \texttt{low} to
-\texttt{high} by construction while the benefit does not: for
-\texttt{qwen3-1.7b}, clustering$-$none is $+3.5$/$+6.0$/$+2.5$ at
-low/base/high. For \texttt{qwen35-2b}, \texttt{filler} matches or beats
-\texttt{clustering} at every level. We read this as evidence the
-clustering benefit is not simply a function of the clustering values
-stated, and leave the mechanism as future work
-(Section~\ref{sec:future-work}) rather than infer one.
+The rewiring experiment constrains the mechanism but does not identify it
+(Figure~\ref{fig:rewiring}). Mean clustering rises from $0.01$ to $0.31$
+to $0.73$ across levels by construction, but the benefit does not follow:
+for \texttt{qwen3-1.7b}, \texttt{clustering} minus \texttt{none} is $+3.5$,
+$+6.0$ and $+2.5$ points at the three levels, broadly parallel to
+\texttt{none}'s own level-to-level variation, and for \texttt{qwen35-2b}
+\texttt{filler} matches or exceeds \texttt{clustering} at every level. The
+density-prior prediction (Section~\ref{sec:rewiring}) fails as well: it
+implies that errors under \texttt{clustering} should shift upward by up to
+$17$ at the \texttt{high} level, but the paired shift in signed error
+relative to \texttt{none} is within $0.3$ of zero at every level for all
+three arms (Appendix Table~\ref{tab:prior}). Neither mechanism we can test
+accounts for the effect.
 
 \subsection{Thinking mode}
 \label{sec:results-thinking}
 
-Thinking moves most (task, arm) cells to ceiling, leaving no headroom for
-a primer effect, and where it does not saturate a task it can censor it
-instead (Table~\ref{tab:hitcap}). It also changes how long the model
-generates before answering, which is itself condition-dependent:
-\texttt{qwen3-1.7b-think}'s \texttt{degree} raises the non-termination rate
-on \texttt{node\_degree} by $3.4$pp over \texttt{none} ($p{<}0.001$) while
-\texttt{filler} lowers it; outside \texttt{edge\_count}, \texttt{degree}
-produces $137$ non-terminating generations of which $7$ also fail to
-terminate under \texttt{none} --- $130$ new failures attributable to the
-primer. Separately, \texttt{qwen3-4b-think} answers correctly on all $29$
-of the instances \texttt{degree} breaks for \texttt{qwen3-4b}, under the
-identical primer and weights: whatever the primer disrupts is recoverable
-within the same network once a reasoning trace runs, which we report as an
-observation about the process, not as evidence for a specific mechanism.
-We do not report a single pooled ``thinking beats every primer effect by
-an order of magnitude'' figure: the comparisons available differ in token
-budget ($2{,}048$ vs.\ $8{,}192$) and task mix, so a fair same-budget
-comparison is not one we have.
+Thinking brings most cells to ceiling, and where it does not, truncation
+censors the task (Table~\ref{tab:hitcap}). Generation length also depends on
+condition: for \texttt{qwen3-1.7b-think}, \texttt{degree} raises the
+non-termination rate on \texttt{node\_degree} by $3.4$ points
+($p{<}0.001$), producing $130$ non-terminating generations outside
+\texttt{edge\_count} that do not occur under \texttt{none}.
+\texttt{qwen3-4b-think} answers correctly on all $29$ instances on which
+\texttt{degree} causes \texttt{qwen3-4b} to fail.
 
-\subsection{Earlier-collected models}
-\label{sec:results-earlier}
+Because the two modes had different budgets, we rescored the thinking arms
+as if capped at the plain arms' $2{,}048$ tokens; under greedy decoding this
+is exact, since a trace that finished within $2{,}048$ tokens is unaffected
+by the lower cap. At equal budget, thinking still outperforms the plain
+mode on \texttt{edge\_existence} ($97.8$ vs.\ $70.5\%$ for 1.7B; $99.8$
+vs.\ $90.5\%$ for 4B) and \texttt{node\_count}, but underperforms on
+\texttt{cycle\_check} ($38.0$ vs.\ $90.7\%$; $62.0$ vs.\ $99.0\%$) and on
+\texttt{node\_degree} for 4B ($91.2$ vs.\ $99.3\%$), and no
+\texttt{edge\_count} trace finishes within the budget (Appendix
+Table~\ref{tab:budget}). Part of the advantage of thinking is therefore an
+advantage of budget.
 
-The eleven held-out arms are mostly near ceiling under \texttt{none} on
-the published split (mean $0.924$; \texttt{gemma4-12b} $0.989$,
-\texttt{qwen3-8b-think} $1.000$), so headroom, not primer lift, is the
-question they answer best; only the smallest arms
-(\texttt{qwen3-0.6b} $0.705$, \texttt{qwen35-2b} $0.876$) have
-meaningful room. A confirmatory $500$-graph replication
-(\texttt{qwen3-8b}, \texttt{degree}, pre-specified condition) gives
-$+6.67$pp pooled ($p{=}1{\times}10^{-4}$), one instance of route
-substitution at $8$B. Renaming nodes to Game-of-Thrones characters with no
-primer moves accuracy by $-0.19$pp pooled, zero of eight arms significant
-after BH (Section~\ref{sec:results-baseline}), a precise null over
-$1{,}200{+}$ paired rows per arm.
-
-\subsection{Power}
+\subsection{Statistical power}
 \label{sec:results-power}
 
-For every null cell in the main sweep we compute a minimum detectable
-effect (Section~\ref{sec:prompts}) rather than report only a $p$-value.
-Coverage is uneven: on \texttt{qwen3-1.7b} and \texttt{qwen3-4b} $10$ of
-$24$/$20$ null cells cannot detect even a $1.0$-point effect at our power
-target; on \texttt{qwen3-4b-think}, near ceiling on most tasks, all $33$
-null cells are underpowered at that threshold, which is the ceiling
-speaking, not evidence the primer has no effect there. Full table in the
-Appendix.
+For every null cell in the main sweep we estimate an MDE
+(Section~\ref{sec:significance}). Where it is finite, the median MDE is
+$5.6$ (\texttt{qwen3-1.7b}) and $10.0$ points (\texttt{qwen3-4b}) for gains
+and $2$--$3$ points for losses. In $10$ of $24$ null cells for
+\texttt{qwen3-1.7b}, $10$ of $20$ for \texttt{qwen3-4b}, $23$ of $33$ for
+\texttt{qwen3-1.7b-think} and $33$ of $33$ for \texttt{qwen3-4b-think}, an
+effect in at least one direction is undetectable at any magnitude because
+\texttt{none} accuracy is at or near $0$ or $100\%$. These nulls reflect
+ceiling or floor, not evidence of no effect.
 
 \section{Discussion}
 \label{sec:discussion}
 
-Three regularities account for most of what we measure, and only one of
-them is a content effect. First, a primer that states the requested
-quantity acts as a second route to the answer, and whether that route
-helps is set by whether it is more reliable than the model's own --- a
-relation that holds across four cross-checks (cross-fitted cells, eleven
-held-out arms, a negative-control difficulty estimate, and node renaming)
-and needs none of them individually to be conclusive. Second, added text
-is an active treatment regardless of content: the length-matched
-\texttt{filler} harms both model sizes on some tasks, at magnitudes
-exceeding most content effects measured here, and its cost grows with
-task difficulty in the same way an answer-stating primer's benefit does.
-An experimental design that compares a primer only against \texttt{none}
-estimates content and length confounded. Third, headroom is scarce and
-unevenly distributed: thinking saturates most cells, class imbalance
-inflates \texttt{edge\_existence}'s blind-solver bar at this graph size,
-and a fixed gold answer removes \texttt{node\_count} and
-\texttt{cycle\_check} from consideration entirely.
-
-Against that background, one content effect survives: \texttt{clustering}
-on \texttt{node\_degree} beats a length control across most of the
-density range in one model, and replicates in a second, larger model once
-that model is evaluated off its own ceiling. We read this as a genuine
-finding about where headroom and this content overlap, not as evidence for
-a mechanism: the rewiring test that could show the benefit tracking
-triangle count directly does not show that, and we report the negative
-result alongside the positive one rather than the positive one alone.
-
-We emphasise throughout that these are behavioural claims. We measured no
-attention weights, activations or internal states, and did not intervene
-on the model's computation.
-
-\section{Limitations}
-\label{sec:limitations}
-
-The main sweep covers two model sizes from one family; the held-out arms
-extend the range but on a smaller, earlier-collected corpus with fewer
-conditions, and were not pre-registered against this project's hypotheses.
-The route/no-route split depends on a threshold (Section~\ref{sec:shortcuts})
-and on the $n{=}40$ shortcut refit's own fit/test split; we report the
-reclassification it produced relative to the published-split bars as a
-sensitivity check rather than treating either bar set as definitive.
-Graphs are drawn from one generator family (Erd\H{o}s--R\'enyi); the
-rewiring test varies triangle count within that family but does not test
-transfer to another. The length control (\texttt{filler}) brackets rather
-than exactly matches length for two of five content conditions. The
-crossover baseline at which an answer-stating primer stops helping does
-not transfer between corpora (near $0.7$ at $n{=}40$ on the route-only
-split, near $0.99$ on the published split), so it is a property of a
-corpus, not a universal constant. Finally, several results in
-Section~\ref{sec:results-clustering} and~\ref{sec:results-earlier} rest on
-$n{\le}300$ per cell; we report a minimum detectable effect for every null
-result but that does not substitute for a larger sample where one would
-change the conclusion.
+Three regularities account for most of the measured effects. For RQ1, a
+primer that states the requested quantity acts as a second route to the
+answer, helping a model at floor and harming one at ceiling; the contrast
+survives cross-fitting, a logit transformation, held-out arms, a
+negative-control difficulty estimate and node renaming, but it is not
+graded at intermediate baselines, and renaming cannot establish whether the
+model copies or computes. For RQ2, added text is an active treatment whose
+cost exceeds most content effects and grows with difficulty, so a primer
+compared only against \texttt{none} confounds content with length. Third,
+headroom is scarce: thinking saturates most cells, and constant gold
+answers remove two tasks from consideration. For RQ3, one effect of a
+primer that does not state the answer survives, \texttt{clustering} on
+\texttt{node\_degree}, worth four to seven points at intermediate densities
+for \texttt{qwen3-1.7b} and present in \texttt{qwen3-4b} below ceiling, but
+neither mechanism we could test explains it. All claims are behavioural: we
+measured no internal states of the models.
 
 \section{Future Work}
 \label{sec:future-work}
 
-Two prompt-only experiments would discriminate directly between the
-accounts in Section~\ref{sec:discussion} without new machinery. A
-\emph{single-fact} primer stating only the queried node's degree keeps the
-answer available while removing the other $39$ sentences, separating
-interference from route substitution. A \emph{corrupted} primer stating a
-wrong degree measures reliance directly: a model that copies collapses, a
-model that computes is unaffected. Extending the clustering-on-node\_degree
-sweep and the rewiring test to \texttt{qwen3-4b} at high density, and down
-and up the Qwen3 parameter ladder, would turn the two-point cross-scale
-replication in Section~\ref{sec:results-clustering} into a curve. The
-rewiring result itself invites a direct test of what \emph{does} predict
-the clustering benefit, since triangle count alone does not appear to.
+Each of the following needs new generations. A \emph{shuffled-value}
+primer (same template and values, permuted across nodes) is a stricter
+placebo than \texttt{filler}; a \emph{corrupted} primer stating wrong
+degrees separates copying from computation; and a \emph{single-fact}
+primer separates interference from route substitution. Varying primer
+position, encoding and generator family (e.g.\ Barab\'asi--Albert, in which
+clustering varies across nodes), matching fillers in tokens to each
+condition, running the plain arms at $8{,}192$ tokens, and extending the
+\texttt{clustering} sweep across Qwen3 sizes would address the remaining
+limitations.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+Structural primers change LLM accuracy on GraphQA mainly by stating the
+answer, which helps only a model that cannot otherwise produce it, and by
+lengthening the prompt, which costs accuracy on harder instances; the one
+surviving effect of non-answer content is small and unexplained. Studies of
+prompt-level graph augmentations should therefore report baseline
+accuracy, a length-matched control and a graph-blind solver, and check for
+constant answers at the evaluated graph size.
+
+\section*{Limitations}
+\label{sec:limitations}
+
+The main sweep covers two model sizes from one family; the held-out arms
+extend the range but on a smaller corpus with fewer conditions and were not
+pre-registered. The route classification depends on a threshold and on the
+$n{=}40$ shortcut refit, and the route relation is not detectable within
+the $0.10$--$0.90$ baseline window, where data are sparse. All graphs are
+Erd\H{o}s--R\'enyi, in which local clustering is nearly uniform, so the
+\texttt{clustering} primer carries little node-specific information; the
+rewiring varies triangle count within this family but does not test other
+families. The length control matches \texttt{clustering} to within $8\%$ in
+tokens but is much shorter than \texttt{rwse} and \texttt{all}. Every prompt
+uses one encoding (\texttt{incident}), one template and one primer
+position, with greedy decoding. The \texttt{clustering} cell was selected
+after the main sweep, and several results rest on $400$ or fewer instances
+per cell; an MDE is reported for every null result, but it does not replace
+a larger sample.
 
 \section*{Ethics Statement}
 
 This work evaluates open-weight language models on synthetically generated
 Erd\H{o}s--R\'enyi graphs. It involves no human subjects, no personal or
-identifying data, and no annotation labour. We see no direct risk of harm
-from the findings; the principal societal cost is the compute expended.
+identifying data and no annotation labour. We see no direct risk of harm
+from the findings; the principal cost is the GPU compute for approximately
+$200{,}000$ generations.
 
 \bibliography{custom}
 
 \appendix
 
-\section{Supplementary tables}
+\section{Supplementary material}
 \label{sec:appendix}
+
+\subsection{Example prompt}
+\label{sec:appendix-prompt}
+
+A \texttt{clustering}-condition \texttt{node\_degree} prompt at $p{=}0.10$
+(elisions marked \dots). Other conditions replace the first paragraph;
+\texttt{none} omits it.
+
+{\scriptsize
+\begin{verbatim}
+Node 0 has clustering coefficient 0.20. Node 1
+has clustering coefficient 0.00. ... Node 39
+has clustering coefficient 0.00.
+
+G describes a graph among nodes 0, 1, 2, ...,
+38, and 39.
+In this graph:
+Node 0 is connected to nodes 2, 6, 8, 12, 35.
+Node 1 is connected to nodes 5, 20.
+...
+Node 39 is connected to nodes 15, 16, 18, 20.
+Q: What is the degree of node 16?
+A:
+\end{verbatim}
+}
+
+\subsection{Robustness analyses}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrrl}
+\toprule
+Estimate & $r_{\mathrm{route}}$ & $k$ & $r_{\mathrm{none}}$ & $k$ & interaction [95\% CI] \\
+\midrule
+naive, pp          & $-0.35$ & $117$ & $-0.01$ & $381$ & $-12.5$ $[-19.5, -6.3]$ \\
+cross-fit (one direction), pp & $-0.34$ & $116$ & $+0.03$ & $381$ & $-12.1$ $[-17.9, -7.0]$ \\
+cross-fit (both), pp & $-0.31$ & $232$ & $+0.02$ & $762$ & $-11.0$ $[-17.1, -5.7]$ \\
+cross-fit (both), logit & $-0.40$ & $232$ & $+0.04$ & $762$ & $-1.35$ $[-1.93, -0.77]$ \\
+baseline $.10$--$.90$, pp & $-0.01$ & $78$ & $-0.07$ & $187$ & $+3.0$ $[-29.1, +41.1]$ \\
+baseline $.10$--$.90$, logit & $+0.02$ & $78$ & $-0.05$ & $187$ & $+0.22$ $[-1.36, +1.94]$ \\
+held-out, pp & $-0.67$ & $105$ & $-0.19$ & $93$ & $-24.7$ $[-109, -3.8]$ \\
+\bottomrule
+\end{tabular}}
+\caption{Route $\times$ baseline relation, main sweep plus high-density
+extension (held-out: published split and probe). ``Both'' counts each cell
+once per fold direction; $k$ for the window rows counts points. Interaction
+CIs resample (arm, task, density) blocks, or (arm, task) for held-out
+arms.}
+\label{tab:robust}
+\end{table}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrr}
+\toprule
+$p$ & clust.$-$none & filler$-$none & clust.$-$filler \\
+\midrule
+$.10$ & $+0.3$ & $+3.0^{*}$ & $-2.8^{*}$ \\
+$.20$ & $+3.3$ & $+0.5$ & $+2.8$ \\
+$.35$ & $+7.5^{*}$ & $+1.0$ & $+6.5^{*}$ \\
+$.50$ & $+4.3$ & $-2.0$ & $+6.3^{*}$ \\
+$.65$ & $-2.0$ & $-9.5^{*}$ & $+7.5^{*}$ \\
+$.75$ & $+0.5$ & $-6.3^{*}$ & $+6.8^{*}$ \\
+$.85$ & $-0.5$ & $-3.5^{*}$ & $+3.0^{*}$ \\
+\bottomrule
+\end{tabular}
+\caption{\texttt{qwen3-1.7b}, \texttt{node\_degree}, dedicated sweep, $400$
+graphs per density. $^{*}$: McNemar $p{<}0.05$ (uncorrected).}
+\label{tab:headline-density}
+\end{table}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrr}
+\toprule
+& \multicolumn{2}{c}{\texttt{qwen3-1.7b}} & \multicolumn{2}{c}{\texttt{qwen3-4b}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Cond. & $\Delta d'$ & $\Delta c$ & $\Delta d'$ & $\Delta c$ \\
+\midrule
+components & $-0.36$ $[-0.56, -0.21]$ & $-0.18$ & $+0.07$ $[-0.24, +0.33]$ & $-0.10$ \\
+clustering & $+0.21$ $[+0.03, +0.41]$ & $+0.11$ & $+0.43$ $[+0.12, +0.75]$ & $+0.08$ \\
+rwse       & $+0.07$ $[-0.19, +0.43]$ & $+0.28$ & $-0.38$ $[-0.68, -0.15]$ & $-0.32$ \\
+degree     & $+0.15$ $[-0.05, +0.41]$ & $+0.19$ & $-0.04$ $[-0.33, +0.21]$ & $-0.15$ \\
+filler     & $-0.93$ $[-1.16, -0.71]$ & $-0.46$ & $-0.25$ $[-0.54, +0.00]$ & $-0.25$ \\
+all        & $+0.55$ $[+0.35, +0.77]$ & $+0.27$ & $-0.36$ $[-0.71, -0.11]$ & $-0.31$ \\
+\bottomrule
+\end{tabular}}
+\caption{\texttt{edge\_existence}, main sweep: change in sensitivity $d'$
+and criterion $c$ against \texttt{none}, averaged over the four densities
+(log-linear correction; $95\%$ bootstrap CI for $\Delta d'$). With the hit
+rate at ceiling, $d'$ and $c$ are not separately identifiable.}
+\label{tab:sdt}
+\end{table}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrrrr}
+\toprule
+& \multicolumn{3}{c}{1.7B, acc.\ under \texttt{none} (\%)} & \multicolumn{3}{c}{4B, acc.\ under \texttt{none} (\%)} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+Task & plain & think & think@2048 & plain & think & think@2048 \\
+\midrule
+\texttt{connected\_nodes} & $72.5$ & $78.7$ & $67.2$ & $86.0$ & $95.5$ & $89.0$ \\
+\texttt{cycle\_check}     & $90.7$ & $97.0$ & $38.0$ & $99.0$ & $99.3$ & $62.0$ \\
+\texttt{edge\_count}      & $1.3$  & $15.8$ & $0.0$  & $2.0$  & $20.0$ & $0.0$ \\
+\texttt{edge\_existence}  & $70.5$ & $99.0$ & $97.8$ & $90.5$ & $99.8$ & $99.8$ \\
+\texttt{node\_count}      & $31.5$ & $91.0$ & $86.0$ & $90.2$ & $99.5$ & $94.8$ \\
+\texttt{node\_degree}     & $60.5$ & $76.2$ & $67.7$ & $99.3$ & $97.0$ & $91.2$ \\
+\bottomrule
+\end{tabular}}
+\caption{Budget-matched comparison. Plain arms use $2{,}048$ tokens;
+thinking arms $8{,}192$ (``think'') or rescored at $2{,}048$
+(``think@2048''). Truncated generations are scored incorrect here, so
+values differ from the dropped-pair convention of
+Tables~\ref{tab:main-results-plain} and~\ref{tab:main-think}.}
+\label{tab:budget}
+\end{table}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrr}
+\toprule
+Arm & \texttt{low} & \texttt{base} & \texttt{high} \\
+\midrule
+predicted shift & $-11.5$ & $0.0$ & $+16.7$ \\
+\texttt{qwen3-1.7b}       & $+0.03$ & $+0.28$ & $-0.02$ \\
+\texttt{qwen3-1.7b-think} & $+0.01$ & $+0.04$ & $+0.01$ \\
+\texttt{qwen35-2b}        & $-0.29$ & $-0.26$ & $-0.16$ \\
+\bottomrule
+\end{tabular}
+\caption{Density-prior test on the rewiring corpus: mean paired shift in
+signed \texttt{node\_degree} error, \texttt{clustering} minus \texttt{none}
+(errors clipped at $\pm20$, $200$ graphs per level). ``Predicted'' is the
+shift if answers moved fully to $\bar{C}\,(n-1)$.}
+\label{tab:prior}
+\end{table}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llrrrrrrr}
+\toprule
+Arm & Task & none & comp. & clust. & rwse & degree & filler & all \\
+\midrule
+\multirow{3}{*}{1.7B} & \texttt{node\_count}  & 0.69 & 0.47 & 0.01 & 0.67 & 0.62 & 0.29 & 0.22 \\
+ & \texttt{edge\_count}  & 133.4 & 98.1 & 105.7 & 79.0 & 47.7 & 181.2 & 94.2 \\
+ & \texttt{node\_degree} & 0.94 & 0.91 & 0.78 & 0.91 & 0.67 & 1.27 & 0.91 \\
+\midrule
+\multirow{3}{*}{4B} & \texttt{node\_count}  & 0.10 & 0.01 & 0.01 & 0.01 & 0.02 & 0.01 & 0.00 \\
+ & \texttt{edge\_count}  & 39.2 & 40.1 & 43.4 & 56.0 & 40.4 & 29.3 & 28.1 \\
+ & \texttt{node\_degree} & 0.02 & 0.01 & 0.02 & 0.05 & 0.14 & 0.02 & 0.49 \\
+\bottomrule
+\end{tabular}}
+\caption{Mean absolute error on the integer tasks, plain arms, main sweep
+(non-truncated rows).}
+\label{tab:mae}
+\end{table}
+
+\subsection{Per-cell results}
 
 \input{ci_table.tex}
 
