@@ -1,23 +1,42 @@
 # Plan: rewrite the GraphTalk paper as one precise 8-page ACL paper
 
-> **Handoff document (2026-09-18).** It is written for any later session or agent. It holds
-> the review conclusions (§1–§6) and a digest of everything the exploration agents found
-> (Appendix A–F), so none of it has to be re-derived. The user's answers so far:
-> - one 8-page ACL long paper;
-> - CPU-only analyses on data from **any branch**;
-> - about a week;
-> - keep a single `.tex`.
+> **STATUS (2026-09-18, later the same day): done.** Every §4 analysis step (0-9) ran,
+> all three figures were built, the git logistics of §5 completed, and `paper/talk_like_a_graph.tex`
+> was rewritten as a single 8-page source (`paper/talk_like_a_graph_long.tex`, `LONG.md`
+> and `PARKED.md` are deleted -- their premises no longer held). Body compiles clean at
+> exactly 8 pages through Future Work (`latexmk -pdf` from `paper/`, 0 undefined refs, no
+> overfull box over 1pt); references and the appendix run to page 11. `paper/NUMBERS.md`
+> maps every hand-typed number in the prose to the script that produces it;
+> `paper/make_all.sh` regenerates everything in dependency order. See the final commits on
+> `analysis` (search the log for "Rewrite the paper as a single 8-page ACL source" and the
+> handful of commits immediately before it for the analysis/figure work that fed it).
 >
-> Read Appendix A first if you are new.
+> **What is NOT in the final paper**, on purpose, for page budget or because it was judged
+> not central enough to the core claims -- pick any of these up as a next step if asked to
+> extend the paper rather than starting over:
+> - `paper/density.pdf` (F2, the extended node_degree density continuum, densfull40 +
+>   densfull40hi pooled) is built by `paper/make_figure.py` but not `\includegraphics`'d
+>   anywhere in the final `.tex`. The numeric version of the same claim is Table 6/7 and
+>   the continuum paragraph in Section 5.4.
+> - `paper/appendix_tables.tex` (per-arm, per-task, per-density accuracy; built by
+>   `paper/make_tables.py`) is not `\input` anywhere. Only `ci_table.tex`'s per-cell
+>   summary made it into the Appendix.
+> - The retrieval-position probe (candidate f1: accuracy 1.000 at k<=40, 0.195 at k=640,
+>   0.503 at k=1280) and the ladder/reading-limit screen are not mentioned in the final
+>   text at all -- they support methodology (which arms can be trusted at which context
+>   length) rather than a primer-effect finding, and there wasn't room.
+> - `degfixdeg` (a third clustering replication at varying n/degree, +6.2pp, p=3.5e-12)
+>   is not cited; Table 7 already carries three replications of the headline cell and a
+>   fourth didn't change the conclusion enough to spend the space.
+> - Candidate (a) route-gap-as-predictor and (c) density-vs-magnitude-confound are not
+>   in the paper; (a) was rejected in the original review (Appendix F below) and (c) was
+>   judged a defensive footnote not worth a paragraph.
 >
-> **First steps after approval:**
-> 1. Copy this file into the repo as `docs/paper-revision-handoff.md` (on `analysis`, after
->    the checkout in §5).
-> 2. Add a memory pointer to it.
-> 3. The user runs `/compact`.
-> 4. Execute §4 (analyses) → regenerate tables → rewrite the `.tex` (§3).
+> Original planning material below (§1-§6, Appendix A-F) is kept as a record of the
+> review this rewrite was based on; it describes the *pre-rewrite* state of the paper and
+> is no longer the state of the repo. Read the status block above first.
 >
-> In §4, do step 0 (think-tag check) before step 1 (rescore).
+> Read Appendix A first if you are new to the earlier material.
 
 ## Context
 
