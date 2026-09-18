@@ -65,6 +65,7 @@ PYTHONPATH=. "$PY" paper/make_tables.py
 PYTHONPATH=. "$PY" paper/make_figure.py
 PYTHONPATH=. "$PY" paper/make_figure_f1.py
 PYTHONPATH=. "$PY" paper/make_figure_f3.py
+PYTHONPATH=. "$PY" paper/make_figure_density.py
 
 echo "== build the PDF =="
 ( cd paper && latexmk -pdf -interaction=nonstopmode talk_like_a_graph.tex )

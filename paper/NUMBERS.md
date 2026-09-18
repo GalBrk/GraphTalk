@@ -120,3 +120,10 @@ one top-level key per `--test`:
   counts: `mde_qwen3-*.csv`, null rows (`bh_significant == False`), a cell counted when
   either `mde_note` or `mde_note_negative` is set.
 - Ethics "~200,000 generations": line count of `runs/*.jsonl` (archive excluded).
+
+## Figures added 2026-09-18
+
+- Figure 2 (design schematic): TikZ in the `.tex`, no data.
+- Figure 3 (continuum.pdf) and Figure 4 (headline.pdf): `paper/make_figure_density.py`,
+  paired deltas with 95% bootstrap CIs from the same loaders as `--test continuum`
+  and `analyze_headline_robustness.py`.
