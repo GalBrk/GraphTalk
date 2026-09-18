@@ -18,14 +18,15 @@ import matplotlib.pyplot as plt
 ARMS = ["qwen3-1.7b", "qwen3-1.7b-think", "qwen35-2b"]
 LEVELS = ["low", "base", "high"]
 STYLE = {
-    "none":       ("#444444", "o", "-"),
-    "clustering": ("#1f77b4", "^", "-"),
-    "filler":     ("#999999", "s", "--"),
+    # Same condition colours as make_figure_density.py.
+    "none":       ("#52514e", "o", "-"),
+    "clustering": ("#2a78d6", "^", "-"),
+    "filler":     ("#eb6834", "s", "--"),
 }
 
 
 def main():
-    fig, axes = plt.subplots(1, 3, figsize=(8.5, 2.7), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(3.5, 1.75), sharey=True)
     for ax, arm in zip(axes, ARMS):
         with open(f"rewiring_{arm}.json", encoding="utf-8") as fh:
             records = [r for r in json.load(fh) if r["rung"] == "n40k12"]
@@ -41,14 +42,14 @@ def main():
         for cond, ys in series.items():
             colour, marker, ls = STYLE[cond]
             ax.plot(LEVELS, ys, color=colour, marker=marker, linestyle=ls,
-                    linewidth=1.6, markersize=5, label=cond)
-        ax.set_title(arm, fontsize=9.5)
-        ax.set_xlabel("triangle level", fontsize=8.5)
-        ax.tick_params(labelsize=8)
-        ax.set_ylim(0, 1.0)
+                    linewidth=1.2, markersize=3, label=cond)
+        ax.set_title(arm, fontsize=6.5)
+        ax.set_xlabel("triangle level", fontsize=6)
+        ax.tick_params(labelsize=5.5)
+        ax.set_ylim(0.4, 1.0)
         ax.grid(alpha=0.25, linewidth=0.5)
-    axes[0].set_ylabel("accuracy (node_degree, n=200/level)", fontsize=8)
-    axes[0].legend(fontsize=7.5, loc="lower right", framealpha=0.9)
+    axes[0].set_ylabel("accuracy", fontsize=6)
+    axes[2].legend(fontsize=5.5, loc="lower right", frameon=False)
     fig.tight_layout()
     fig.savefig("paper/rewiring.pdf", bbox_inches="tight")
     print("wrote paper/rewiring.pdf")

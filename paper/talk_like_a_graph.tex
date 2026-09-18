@@ -14,6 +14,8 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{multirow}
+\usepackage{tikz}
+\usetikzlibrary{positioning,fit,arrows.meta}
 \usepackage{float}  % [H] placement, used by the generated appendix tables
 % No geometry override: acl.sty already loads geometry (a4paper, margin=2.5cm)
 % and a second \usepackage is an option clash. ACL venues also treat margin
@@ -147,8 +149,41 @@ toggled through the chat template, from chain-of-thought \emph{prompting}
 \subsection{Primers}
 \label{sec:primers}
 
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+  box/.style={draw=black!55, rounded corners=2pt, align=left,
+              inner sep=3pt, text width=#1}]
+\node[box=3.35cm, fill=blue!7] (primer)
+  {\textbf{Primer} (one condition)\\ none, components, degree,\\
+   clustering, rwse, all, filler};
+\node[box=3.35cm, below=1.2mm of primer] (enc)
+  {\textbf{Graph encoding} (incident)\\ Node 0 is connected to nodes 2, 6, \dots};
+\node[box=3.35cm, below=1.2mm of enc] (q)
+  {\textbf{Question}\\ What is the degree of node 16?};
+\node[draw=black!30, dashed, rounded corners=3pt, inner sep=2pt,
+      fit=(primer)(enc)(q)] (prompt) {};
+\node[box=2.45cm, fill=orange!9, right=7mm of primer] (sc)
+  {\textbf{Shortcut solver}\\ reads the primer only\\ $\Rightarrow$ shortcut bar};
+\node[box=2.45cm, fill=black!5, right=7mm of enc] (llm)
+  {\textbf{Model arm}\\ Qwen3 1.7B / 4B,\\ thinking on / off};
+\node[box=2.45cm, right=7mm of q] (score)
+  {\textbf{Extract and score}\\ paired $\Delta$ vs.\ none};
+\draw[->] (primer.east) -- (sc.west);
+\draw[->] (prompt.east |- llm.west) -- (llm.west);
+\draw[->] (llm.south) -- (score.north);
+\end{tikzpicture}
+\caption{Experimental design. Each prompt joins a primer, the incident
+encoding and the question. The graph-blind shortcut solver reads only the
+primer and sets the bar a primer must exceed; \texttt{filler} controls
+length, \texttt{components} is a minimal-length content control, and
+rewiring (Section~\ref{sec:rewiring}) changes the graph's triangles while
+holding degrees and prompt length fixed.}
+\label{fig:design}
+\end{figure}
+
 A primer is a preamble of factual sentences about a graph's structure,
-prepended to the standard text encoding and the task question (a complete
+prepended to the standard text encoding and the task question (Figure~\ref{fig:design}; a complete
 example appears in Appendix~\ref{sec:appendix-prompt}). A single renderer
 produces all seven conditions, so conditions share sentence framing and
 number formatting and differ only in the facts stated. The exception is
@@ -422,32 +457,9 @@ baseline across levels, $p{=}0.00088$). The cost of added length thus grows
 with task difficulty, in the same direction as the benefit of an
 answer-stating primer (Section~\ref{sec:results-baseline}).
 
-\begin{table}[t]
-\centering
-\small
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{llrr}
-\toprule
-Arm & Cond. & hit rate & false alarm \\
-\midrule
-\multirow{3}{*}{qwen3-1.7b} & none       & 100.0\% & 40.3\% \\
-                            & filler     & 100.0\% & 61.8\% \\
-                            & clustering & 100.0\% & 35.2\% \\
-\midrule
-\multirow{3}{*}{qwen3-4b}   & none       & 99.1\%  & 12.6\% \\
-                            & filler     & 100.0\% & 22.5\% \\
-                            & clustering & 100.0\% & 7.5\% \\
-\bottomrule
-\end{tabular}
-\caption{\texttt{edge\_existence}, $p{=}0.50$: hit rate (correct on gold
-``yes'') and false-alarm rate (``yes'' on gold ``no''). Accuracy changes
-almost entirely through the false-alarm rate.}
-\label{tab:booleanbias}
-\end{table}
-
 The largest \texttt{edge\_existence} effects in
 Table~\ref{tab:main-results-plain} do not reflect more accurate reading of
-the graph. Table~\ref{tab:booleanbias} decomposes accuracy into hit rate and
+the graph. Appendix Table~\ref{tab:booleanbias} decomposes accuracy into hit rate and
 false-alarm rate: the hit rate is $99$--$100\%$ under every condition for
 both arms, so accuracy varies only through false alarms, which
 \texttt{filler} increases ($40.3{\to}61.8\%$ and $12.6{\to}22.5\%$) and
@@ -475,36 +487,18 @@ structural effect on a task with a single possible answer.
 \subsection{Answer-stating primers: route substitution}
 \label{sec:results-baseline}
 
-\begin{table}[t]
+\begin{figure}[t]
 \centering
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrrr}
-\toprule
-Accuracy under & \multicolumn{2}{c}{substitute route} & \multicolumn{2}{c}{no route} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}
-\texttt{none} & cells & $\Delta$ & cells & $\Delta$ \\
-\midrule
-$0.00$--$0.25$ & $24$ & $+6.3$  & $24$  & $-0.7$ \\
-$0.25$--$0.50$ & $6$  & $+8.5$  & $6$   & $+2.0$ \\
-$0.50$--$0.75$ & $6$  & $+15.5$ & $24$  & $+0.4$ \\
-$0.75$--$0.95$ & $11$ & $+4.2$  & $33$  & $-3.9$ \\
-$0.95$--$1.00$ & $34$ & $-9.0$  & $186$ & $-0.4$ \\
-\midrule
-$r(\Delta,\mathrm{baseline})$ & \multicolumn{2}{c}{$-0.417$} & \multicolumn{2}{c}{$-0.050$} \\
-\bottomrule
-\end{tabular}
-\caption{Mean primer effect (percentage points), binned by \texttt{none}
-accuracy on the same (arm, task, density, condition) cell of the main
-sweep, using the $n{=}40$ route split (Table~\ref{tab:shortcut}, bottom).
-Mean baseline is $0.61$ for route cells and $0.85$ for no-route cells, so
-the groups are not baseline-matched; the cross-fitted interaction test in
-the text addresses this.}
-\label{tab:baseline}
-\end{table}
+\includegraphics[width=\columnwidth]{continuum.pdf}
+\caption{Density continuum, \texttt{qwen3-1.7b-think},
+\texttt{node\_degree}: paired effect against \texttt{none} ($400$ graphs
+per density, $95\%$ bootstrap intervals). Lower tick row: accuracy under
+\texttt{none}.}
+\label{fig:continuum}
+\end{figure}
 
 A \emph{cell} is an (arm, task, density, condition) combination with at
-least ten usable pairs. Table~\ref{tab:baseline} splits the $354$
+least ten usable pairs. Appendix Table~\ref{tab:baseline} splits the $354$
 main-sweep cells on non-constant tasks by whether the primer offers a
 substitute route. Route cells gain at low baseline and lose at high
 baseline ($r{=}{-0.417}$, $81$ cells); no-route cells do not
@@ -531,14 +525,12 @@ cannot compute it and harms one that already can) rather than a graded
 dependence that can be detected at intermediate baselines, where our data
 are sparsest (Appendix Table~\ref{tab:robust}).
 
-The density continuum manipulates difficulty instead of observing it.
+The density continuum (Figure~\ref{fig:continuum}) manipulates difficulty instead of observing it.
 Holding the arm (\texttt{qwen3-1.7b-think}) and task (\texttt{node\_degree})
 fixed and raising density from $p{=}.10$ to $.85$ lowers \texttt{none}
 accuracy from $0.95$ to $0.44$, while \texttt{degree}'s benefit rises from
-$+3.1$ to $+34.2$ points ($r{=}{-0.975}$ across levels,
-$p{=}1.9{\times}10^{-4}$) and \texttt{filler}'s cost grows from negligible
-to $14.1$ points. The two effects run in opposite directions and both grow
-as the task becomes harder.
+$+3.1$ to $+34.2$ points ($r{=}{-0.975}$, $p{=}1.9{\times}10^{-4}$) and
+\texttt{filler}'s cost grows to $14.1$ points.
 
 \paragraph{Held-out arms and a second family.}
 \label{sec:results-heldout}
@@ -585,33 +577,20 @@ rate is $2$ of $35$ ($5.7\%$).
 \subsection{Non-answer content: clustering on node\_degree}
 \label{sec:results-clustering}
 
-\begin{table}[t]
+\begin{figure}[t]
 \centering
-\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{tabular}{lrrcr}
-\toprule
-Comparison & $\Delta$ & $n$ & density & $p$ \\
-\midrule
-clust.\ vs.\ none (main)    & $+3.0$ & $400$  & $.10$--$.50$ & $0.26$ \\
-clust.\ vs.\ none                & $+1.9$ & $2800$ & $.10$--$.85$ & $0.022$ \\
-filler vs.\ none                 & $-2.4$ & $2800$ & $.10$--$.85$ & $0.0013$ \\
-clust.\ vs.\ filler              & $+4.3$ & $2800$ & $.10$--$.85$ & $2.4{\times}10^{-8}$ \\
-clust.\ vs.\ none                & $+7.5$ & $400$  & $.35$ & $0.0089$ \\
-clust.\ vs.\ none (new seed) & $+4.2$ & $1600$ & $.10$--$.50$ & $0.00055$ \\
-\bottomrule
-\end{tabular}
-\caption{\texttt{qwen3-1.7b}, \texttt{node\_degree}. All rows except the
-first come from the dedicated $400$-graph-per-density sweep; the last row
-uses newly seeded graphs. Per-density values are in Appendix
-Table~\ref{tab:headline-density}.}
-\label{tab:headline}
-\end{table}
+\includegraphics[width=\columnwidth]{headline.pdf}
+\caption{\texttt{clustering} and \texttt{filler} against \texttt{none} on
+\texttt{node\_degree}, \texttt{qwen3-1.7b}, by density ($400$ graphs per
+density, $95\%$ bootstrap intervals). Pooled comparisons: Appendix
+Table~\ref{tab:headline}.}
+\label{fig:headline}
+\end{figure}
 
 \texttt{clustering} on \texttt{node\_degree} is the only cell in which a
 primer that does not state the answer was followed up. It was selected
 after the main sweep and examined in a dedicated sweep and an
-independent-seed replication (Table~\ref{tab:headline}). Against
+independent-seed replication (Figure~\ref{fig:headline}; Appendix Table~\ref{tab:headline}). Against
 \texttt{none}, the effect is small when pooled over seven densities ($+1.9$
 points, $p{=}0.022$) and significant individually only at $p{=}.35$
 ($+7.5$); it is $+0.3$ and $+3.3$ at the two lowest densities, $+4.3$ at
@@ -636,11 +615,9 @@ and \texttt{qwen3-4b-think} is at ceiling on this task throughout.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{rewiring.pdf}
-\caption{\texttt{node\_degree} accuracy by triangle level and condition
-($200$ graphs per level, $n{=}40$, mean degree $12$). Within each arm, the
-degree sequence, $n$, $m$ and prompt length are identical across levels;
-mean clustering is $0.01$, $0.31$ and $0.73$ from \texttt{low} to
-\texttt{high}.}
+\caption{Rewiring: \texttt{node\_degree} accuracy by triangle level
+($200$ graphs per level; degree sequence and prompt length fixed; mean
+clustering $0.01$, $0.31$, $0.73$).}
 \label{fig:rewiring}
 \end{figure}
 
@@ -706,9 +683,7 @@ negative-control difficulty estimate and node renaming, but it is not
 graded at intermediate baselines, and renaming cannot establish whether the
 model copies or computes. For RQ2, added text is an active treatment whose
 cost exceeds most content effects and grows with difficulty, so a primer
-compared only against \texttt{none} confounds content with length. Third,
-headroom is scarce: thinking saturates most cells, and constant gold
-answers remove two tasks from consideration. For RQ3, one effect of a
+compared only against \texttt{none} confounds content with length. For RQ3, one effect of a
 primer that does not state the answer survives, \texttt{clustering} on
 \texttt{node\_degree}, worth four to seven points at intermediate densities
 for \texttt{qwen3-1.7b} and present in \texttt{qwen3-4b} below ceiling, but
@@ -735,10 +710,9 @@ limitations.
 Structural primers change LLM accuracy on GraphQA mainly by stating the
 answer, which helps only a model that cannot otherwise produce it, and by
 lengthening the prompt, which costs accuracy on harder instances; the one
-surviving effect of non-answer content is small and unexplained. Studies of
-prompt-level graph augmentations should therefore report baseline
-accuracy, a length-matched control and a graph-blind solver, and check for
-constant answers at the evaluated graph size.
+surviving effect of non-answer content is small and unexplained. Evaluations of
+prompt-level graph augmentations should report baseline accuracy, a
+length-matched control and a graph-blind solver.
 
 \section*{Limitations}
 \label{sec:limitations}
@@ -800,6 +774,80 @@ A:
 }
 
 \subsection{Robustness analyses}
+
+\begin{table}[H]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrr}
+\toprule
+Accuracy under & \multicolumn{2}{c}{substitute route} & \multicolumn{2}{c}{no route} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+\texttt{none} & cells & $\Delta$ & cells & $\Delta$ \\
+\midrule
+$0.00$--$0.25$ & $24$ & $+6.3$  & $24$  & $-0.7$ \\
+$0.25$--$0.50$ & $6$  & $+8.5$  & $6$   & $+2.0$ \\
+$0.50$--$0.75$ & $6$  & $+15.5$ & $24$  & $+0.4$ \\
+$0.75$--$0.95$ & $11$ & $+4.2$  & $33$  & $-3.9$ \\
+$0.95$--$1.00$ & $34$ & $-9.0$  & $186$ & $-0.4$ \\
+\midrule
+$r(\Delta,\mathrm{baseline})$ & \multicolumn{2}{c}{$-0.417$} & \multicolumn{2}{c}{$-0.050$} \\
+\bottomrule
+\end{tabular}
+\caption{Mean primer effect (percentage points), binned by \texttt{none}
+accuracy on the same (arm, task, density, condition) cell of the main
+sweep, using the $n{=}40$ route split (Table~\ref{tab:shortcut}, bottom).
+Mean baseline is $0.61$ for route cells and $0.85$ for no-route cells, so
+the groups are not baseline-matched; the cross-fitted interaction test in
+the text addresses this.}
+\label{tab:baseline}
+\end{table}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{lrrcr}
+\toprule
+Comparison & $\Delta$ & $n$ & density & $p$ \\
+\midrule
+clust.\ vs.\ none (main)    & $+3.0$ & $400$  & $.10$--$.50$ & $0.26$ \\
+clust.\ vs.\ none                & $+1.9$ & $2800$ & $.10$--$.85$ & $0.022$ \\
+filler vs.\ none                 & $-2.4$ & $2800$ & $.10$--$.85$ & $0.0013$ \\
+clust.\ vs.\ filler              & $+4.3$ & $2800$ & $.10$--$.85$ & $2.4{\times}10^{-8}$ \\
+clust.\ vs.\ none                & $+7.5$ & $400$  & $.35$ & $0.0089$ \\
+clust.\ vs.\ none (new seed) & $+4.2$ & $1600$ & $.10$--$.50$ & $0.00055$ \\
+\bottomrule
+\end{tabular}
+\caption{\texttt{qwen3-1.7b}, \texttt{node\_degree}. All rows except the
+first come from the dedicated $400$-graph-per-density sweep; the last row
+uses newly seeded graphs. Per-density values are in Appendix
+Table~\ref{tab:headline-density}.}
+\label{tab:headline}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{llrr}
+\toprule
+Arm & Cond. & hit rate & false alarm \\
+\midrule
+\multirow{3}{*}{qwen3-1.7b} & none       & 100.0\% & 40.3\% \\
+                            & filler     & 100.0\% & 61.8\% \\
+                            & clustering & 100.0\% & 35.2\% \\
+\midrule
+\multirow{3}{*}{qwen3-4b}   & none       & 99.1\%  & 12.6\% \\
+                            & filler     & 100.0\% & 22.5\% \\
+                            & clustering & 100.0\% & 7.5\% \\
+\bottomrule
+\end{tabular}
+\caption{\texttt{edge\_existence}, $p{=}0.50$: hit rate (correct on gold
+``yes'') and false-alarm rate (``yes'' on gold ``no''). Accuracy changes
+almost entirely through the false-alarm rate.}
+\label{tab:booleanbias}
+\end{table}
 
 \begin{table}[H]
 \centering
