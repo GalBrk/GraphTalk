@@ -961,3 +961,23 @@ def test_exact_island_skips_graphs_it_cannot_enumerate():
   island = shortcuts.exact_island(big, "cycle_check")
   assert island["rows"] == 0
   assert island["skipped"] == len(big)
+
+
+# --- n=40 shortcut refit (scripts/shortcut_table_n40.py) -------------------
+
+
+def test_generate_n40_corpus_has_the_right_size_and_density():
+  graphs = shortcuts.generate_n40_corpus(20, seed=555_555, density=0.35)
+  assert len(graphs) == 20
+  assert all(g.number_of_nodes() == 40 for g in graphs)
+  max_edges = 40 * 39 / 2
+  mean_density = sum(g.number_of_edges() for g in graphs) / len(graphs) / max_edges
+  assert 0.30 < mean_density < 0.40
+
+
+def test_generate_n40_corpus_fit_and_test_seeds_are_disjoint():
+  fit = shortcuts.generate_n40_corpus(20, seed=555_555, density=0.5)
+  test = shortcuts.generate_n40_corpus(20, seed=777_777, density=0.5)
+  fit_edges = [frozenset(g.edges()) for g in fit]
+  test_edges = [frozenset(g.edges()) for g in test]
+  assert not any(f == t for f in fit_edges for t in test_edges)
