@@ -54,9 +54,10 @@ accuracy $-11.0$ points, $95\%$ CI $[-17.1, -5.7]$), whereas primers that
 do not state it show no such relation. The pattern replicates on eleven
 held-out arms ($0.6$--$14$B, two families) but is not graded at
 intermediate baselines. The only effect of a primer that does not state
-the answer, \texttt{clustering} on \texttt{node\_degree}, is small relative
-to no primer ($+1.9$ points) and confined to intermediate densities; two
-candidate mechanisms for it are not supported.
+the answer, \texttt{clustering} on \texttt{node\_degree}, is small when
+pooled over densities ($+1.9$ points) and concentrated at intermediate
+densities ($+5.9$, replicated on independent graphs); two candidate
+mechanisms for it are not supported.
 \end{abstract}
 
 \begin{figure}[t]
@@ -458,11 +459,16 @@ seven densities, the gain over \texttt{none} is small ($+1.9$ points,
 $p{=}0.022$; replication at $p{\le}.50$: $+4.2$, $p{=}0.00055$). The larger
 pooled gain over \texttt{filler} ($+4.3$) mostly reflects \texttt{filler}'s
 own cost, which accounts for the whole difference at $p{\ge}.65$.
-Against \texttt{filler} it is largest at $p{=}.35$ and $.50$ ($+6.5$ and
-$+6.3$, uncorrected $p{=}0.027$ and $0.022$), but neither survives a Holm
-correction across the $14$ per-density tests, so we treat the effect as
-pooled over intermediate densities rather than located at particular
-ones. \texttt{qwen3-4b}, at ceiling in the main sweep, shows the effect on the
+Against both controls, the effect is concentrated at intermediate
+densities: pooled over $p{=}.35$ and $.50$, \texttt{clustering} exceeds
+\texttt{none} by $+5.9$ points ($95\%$ CI $[2.1, 9.8]$, $p{=}0.0036$) and
+\texttt{filler} by $+6.4$ ($[2.8, 10.0]$, $p{=}0.0012$), while
+\texttt{filler} and \texttt{none} do not differ ($-0.5$), so length does
+not account for it. This range was identified from the dedicated sweep;
+the independent-seed replication, which played no part in choosing it,
+gives $+5.5$ against \texttt{none} over the same two densities ($[1.5,
+9.5]$, $p{=}0.0083$). Per-density estimates are too imprecise to localise
+the effect more finely. \texttt{qwen3-4b}, at ceiling in the main sweep, shows the effect on the
 high-density extension ($+11.3$ against \texttt{none}, $+9.3$ against
 \texttt{filler}, both significant under the global correction); the
 thinking arms do not.
@@ -623,14 +629,54 @@ arm, pooled over condition and density. \textbf{Bold}: above $50\%$.}
 \label{tab:hitcap}
 \end{table}
 
-\begin{figure}[H]
+\begin{table}[H]
 \centering
-\includegraphics[width=\columnwidth]{rewiring.pdf}
-\caption{Rewiring: \texttt{node\_degree} accuracy by triangle level
-($200$ graphs per level; degree sequence and prompt length fixed; mean
-clustering $0.01$, $0.31$, $0.73$).}
-\label{fig:rewiring}
-\end{figure}
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{llrr}
+\toprule
+Arm & Cond. & hit rate & false alarm \\
+\midrule
+\multirow{3}{*}{qwen3-1.7b} & none       & 100.0\% & 40.3\% \\
+                            & filler     & 100.0\% & 61.8\% \\
+                            & clustering & 100.0\% & 35.2\% \\
+\midrule
+\multirow{3}{*}{qwen3-4b}   & none       & 99.1\%  & 12.6\% \\
+                            & filler     & 100.0\% & 22.5\% \\
+                            & clustering & 100.0\% & 7.5\% \\
+\bottomrule
+\end{tabular}
+\caption{\texttt{edge\_existence}, $p{=}0.50$: hit rate (correct on gold
+``yes'') and false-alarm rate (``yes'' on gold ``no''). Accuracy changes
+almost entirely through the false-alarm rate.}
+\label{tab:booleanbias}
+\end{table}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrr}
+\toprule
+& \multicolumn{2}{c}{\texttt{qwen3-1.7b}} & \multicolumn{2}{c}{\texttt{qwen3-4b}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Cond. & $\Delta d'$ & $\Delta c$ & $\Delta d'$ & $\Delta c$ \\
+\midrule
+components & $-0.36$ $[-0.56, -0.21]$ & $-0.18$ & $+0.07$ $[-0.24, +0.33]$ & $-0.10$ \\
+clustering & $+0.21$ $[+0.03, +0.41]$ & $+0.11$ & $+0.43$ $[+0.12, +0.75]$ & $+0.08$ \\
+rwse       & $+0.07$ $[-0.19, +0.43]$ & $+0.28$ & $-0.38$ $[-0.68, -0.15]$ & $-0.32$ \\
+degree     & $+0.15$ $[-0.05, +0.41]$ & $+0.19$ & $-0.04$ $[-0.33, +0.21]$ & $-0.15$ \\
+filler     & $-0.93$ $[-1.16, -0.71]$ & $-0.46$ & $-0.25$ $[-0.54, +0.00]$ & $-0.25$ \\
+all        & $+0.55$ $[+0.35, +0.77]$ & $+0.27$ & $-0.36$ $[-0.71, -0.11]$ & $-0.31$ \\
+\bottomrule
+\end{tabular}}
+\caption{\texttt{edge\_existence}, main sweep: change in sensitivity $d'$
+and criterion $c$ against \texttt{none}, averaged over the four densities
+(log-linear correction; $95\%$ bootstrap CI for $\Delta d'$). With the hit
+rate at ceiling, $d'$ and $c$ are not separately identifiable.}
+\label{tab:sdt}
+\end{table}
 
 \begin{table}[H]
 \centering
@@ -663,52 +709,6 @@ the text addresses this.}
 \begin{table}[H]
 \centering
 \footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{tabular}{lrrcr}
-\toprule
-Comparison & $\Delta$ & $n$ & density & $p$ \\
-\midrule
-clust.\ vs.\ none (main)    & $+3.0$ & $400$  & $.10$--$.50$ & $0.26$ \\
-clust.\ vs.\ none                & $+1.9$ & $2800$ & $.10$--$.85$ & $0.022$ \\
-filler vs.\ none                 & $-2.4$ & $2800$ & $.10$--$.85$ & $0.0013$ \\
-clust.\ vs.\ filler              & $+4.3$ & $2800$ & $.10$--$.85$ & $2.4{\times}10^{-8}$ \\
-clust.\ vs.\ none                & $+7.5$ & $400$  & $.35$ & $0.0089$ \\
-clust.\ vs.\ none (new seed) & $+4.2$ & $1600$ & $.10$--$.50$ & $0.00055$ \\
-\bottomrule
-\end{tabular}
-\caption{\texttt{qwen3-1.7b}, \texttt{node\_degree}. All rows except the
-first come from the dedicated $400$-graph-per-density sweep; the last row
-uses newly seeded graphs. Per-density values are in Appendix
-Table~\ref{tab:headline-density}.}
-\label{tab:headline}
-\end{table}
-
-\begin{table}[H]
-\centering
-\small
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{llrr}
-\toprule
-Arm & Cond. & hit rate & false alarm \\
-\midrule
-\multirow{3}{*}{qwen3-1.7b} & none       & 100.0\% & 40.3\% \\
-                            & filler     & 100.0\% & 61.8\% \\
-                            & clustering & 100.0\% & 35.2\% \\
-\midrule
-\multirow{3}{*}{qwen3-4b}   & none       & 99.1\%  & 12.6\% \\
-                            & filler     & 100.0\% & 22.5\% \\
-                            & clustering & 100.0\% & 7.5\% \\
-\bottomrule
-\end{tabular}
-\caption{\texttt{edge\_existence}, $p{=}0.50$: hit rate (correct on gold
-``yes'') and false-alarm rate (``yes'' on gold ``no''). Accuracy changes
-almost entirely through the false-alarm rate.}
-\label{tab:booleanbias}
-\end{table}
-
-\begin{table}[H]
-\centering
-\footnotesize
 \setlength{\tabcolsep}{2.5pt}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lrrrrl}
@@ -735,6 +735,29 @@ arms.}
 \begin{table}[H]
 \centering
 \footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{lrrcr}
+\toprule
+Comparison & $\Delta$ & $n$ & density & $p$ \\
+\midrule
+clust.\ vs.\ none (main)    & $+3.0$ & $400$  & $.10$--$.50$ & $0.26$ \\
+clust.\ vs.\ none                & $+1.9$ & $2800$ & $.10$--$.85$ & $0.022$ \\
+filler vs.\ none                 & $-2.4$ & $2800$ & $.10$--$.85$ & $0.0013$ \\
+clust.\ vs.\ filler              & $+4.3$ & $2800$ & $.10$--$.85$ & $2.4{\times}10^{-8}$ \\
+clust.\ vs.\ none                & $+7.5$ & $400$  & $.35$ & $0.0089$ \\
+clust.\ vs.\ none (new seed) & $+4.2$ & $1600$ & $.10$--$.50$ & $0.00055$ \\
+\bottomrule
+\end{tabular}
+\caption{\texttt{qwen3-1.7b}, \texttt{node\_degree}. All rows except the
+first come from the dedicated $400$-graph-per-density sweep; the last row
+uses newly seeded graphs. Per-density values are in Appendix
+Table~\ref{tab:headline-density}.}
+\label{tab:headline}
+\end{table}
+
+\begin{table}[H]
+\centering
+\footnotesize
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{lrrr}
 \toprule
@@ -754,30 +777,34 @@ graphs per density. $^{*}$: McNemar $p{<}0.05$ (uncorrected).}
 \label{tab:headline-density}
 \end{table}
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{rewiring.pdf}
+\caption{Rewiring: \texttt{node\_degree} accuracy by triangle level
+($200$ graphs per level; degree sequence and prompt length fixed; mean
+clustering $0.01$, $0.31$, $0.73$).}
+\label{fig:rewiring}
+\end{figure}
+
 \begin{table}[H]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{3pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lrrrr}
+\begin{tabular}{lrrr}
 \toprule
-& \multicolumn{2}{c}{\texttt{qwen3-1.7b}} & \multicolumn{2}{c}{\texttt{qwen3-4b}} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}
-Cond. & $\Delta d'$ & $\Delta c$ & $\Delta d'$ & $\Delta c$ \\
+Arm & \texttt{low} & \texttt{base} & \texttt{high} \\
 \midrule
-components & $-0.36$ $[-0.56, -0.21]$ & $-0.18$ & $+0.07$ $[-0.24, +0.33]$ & $-0.10$ \\
-clustering & $+0.21$ $[+0.03, +0.41]$ & $+0.11$ & $+0.43$ $[+0.12, +0.75]$ & $+0.08$ \\
-rwse       & $+0.07$ $[-0.19, +0.43]$ & $+0.28$ & $-0.38$ $[-0.68, -0.15]$ & $-0.32$ \\
-degree     & $+0.15$ $[-0.05, +0.41]$ & $+0.19$ & $-0.04$ $[-0.33, +0.21]$ & $-0.15$ \\
-filler     & $-0.93$ $[-1.16, -0.71]$ & $-0.46$ & $-0.25$ $[-0.54, +0.00]$ & $-0.25$ \\
-all        & $+0.55$ $[+0.35, +0.77]$ & $+0.27$ & $-0.36$ $[-0.71, -0.11]$ & $-0.31$ \\
+predicted shift & $-11.5$ & $0.0$ & $+16.7$ \\
+\texttt{qwen3-1.7b}       & $+0.03$ & $+0.28$ & $-0.02$ \\
+\texttt{qwen3-1.7b-think} & $+0.01$ & $+0.04$ & $+0.01$ \\
+\texttt{qwen35-2b}        & $-0.29$ & $-0.26$ & $-0.16$ \\
 \bottomrule
-\end{tabular}}
-\caption{\texttt{edge\_existence}, main sweep: change in sensitivity $d'$
-and criterion $c$ against \texttt{none}, averaged over the four densities
-(log-linear correction; $95\%$ bootstrap CI for $\Delta d'$). With the hit
-rate at ceiling, $d'$ and $c$ are not separately identifiable.}
-\label{tab:sdt}
+\end{tabular}
+\caption{Density-prior test on the rewiring corpus: mean paired shift in
+signed \texttt{node\_degree} error, \texttt{clustering} minus \texttt{none}
+(errors clipped at $\pm20$, $200$ graphs per level). ``Predicted'' is the
+shift if answers moved fully to $\bar{C}\,(n-1)$.}
+\label{tab:prior}
 \end{table}
 
 \begin{table}[H]
@@ -805,27 +832,6 @@ thinking arms $8{,}192$ (``think'') or rescored at $2{,}048$
 values differ from the dropped-pair convention of
 Tables~\ref{tab:main-results-plain} and~\ref{tab:main-think}.}
 \label{tab:budget}
-\end{table}
-
-\begin{table}[H]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{lrrr}
-\toprule
-Arm & \texttt{low} & \texttt{base} & \texttt{high} \\
-\midrule
-predicted shift & $-11.5$ & $0.0$ & $+16.7$ \\
-\texttt{qwen3-1.7b}       & $+0.03$ & $+0.28$ & $-0.02$ \\
-\texttt{qwen3-1.7b-think} & $+0.01$ & $+0.04$ & $+0.01$ \\
-\texttt{qwen35-2b}        & $-0.29$ & $-0.26$ & $-0.16$ \\
-\bottomrule
-\end{tabular}
-\caption{Density-prior test on the rewiring corpus: mean paired shift in
-signed \texttt{node\_degree} error, \texttt{clustering} minus \texttt{none}
-(errors clipped at $\pm20$, $200$ graphs per level). ``Predicted'' is the
-shift if answers moved fully to $\bar{C}\,(n-1)$.}
-\label{tab:prior}
 \end{table}
 
 \begin{table}[H]
