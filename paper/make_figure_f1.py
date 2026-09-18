@@ -55,7 +55,7 @@ def main():
 
     route, no_route = route_only(cross), no_route_only(cross)
 
-    fig, (ax_r, ax_n) = plt.subplots(1, 2, figsize=(8, 3.4), sharey=True)
+    fig, (ax_r, ax_n) = plt.subplots(1, 2, figsize=(3.5, 2.0), sharey=True)
     for ax, cells, title in ((ax_r, route, "substitute route"),
                              (ax_n, no_route, "no route")):
         for arm in abl.DENSFULL_ARMS:
@@ -63,7 +63,7 @@ def main():
             if not pts:
                 continue
             ax.scatter([c["baseline"] for c in pts], [c["delta"] for c in pts],
-                       marker=MARKERS[arm], s=14, alpha=0.55, label=arm,
+                       marker=MARKERS[arm], s=4, alpha=0.6, label=arm,
                        edgecolors="none")
         if len(cells) >= 4:
             xs, ys = [c["baseline"] for c in cells], [c["delta"] for c in cells]
@@ -71,22 +71,24 @@ def main():
             r, p = abl.pearson(xs, ys)
             lo, hi = min(xs), max(xs)
             ax.plot([lo, hi], [slope * lo + intercept, slope * hi + intercept],
-                    color="black", linewidth=1.2, zorder=0)
+                    color="black", linewidth=0.9, zorder=0)
             # Each cell appears once per fold direction, so len(cells) double-
             # counts and a Pearson p on it is anticonservative; label unique
             # cells and leave inference to the block bootstrap in the text.
             n_cells = len({(c["arm"], c["task"], c["density"], c["condition"])
                            for c in cells})
-            ax.text(0.03, 0.03, f"r={r:+.2f}  cells={n_cells}",
-                    transform=ax.transAxes, fontsize=7.5, va="bottom")
+            title += f"\n$r$={r:+.2f}, {n_cells} cells"
         ax.axhline(0, color="#bbbbbb", linewidth=0.7, zorder=0)
-        ax.set_title(title, fontsize=10)
-        ax.set_xlabel("cross-fitted baseline accuracy", fontsize=8.5)
-        ax.tick_params(labelsize=7.5)
+        ax.set_title(title, fontsize=6.5)
+        ax.set_xlabel("cross-fitted baseline", fontsize=6)
+        ax.tick_params(labelsize=5.5)
         ax.grid(alpha=0.25, linewidth=0.5)
-    ax_r.set_ylabel("cross-fitted paired delta (pp)", fontsize=8.5)
-    ax_r.legend(fontsize=6.5, loc="upper right", framealpha=0.9)
-    fig.tight_layout()
+    ax_r.set_ylabel(r"paired $\Delta$ (points)", fontsize=6)
+    fig.tight_layout(rect=(0, 0.1, 1, 1))
+    # Below the panels: the route panel is crowded at the top.
+    fig.legend(*ax_r.get_legend_handles_labels(), fontsize=5.5, ncol=4,
+               loc="lower center", frameon=False, handletextpad=0.1,
+               columnspacing=0.8, markerscale=1.8)
     fig.savefig("paper/crossfit.pdf", bbox_inches="tight")
     print("wrote paper/crossfit.pdf")
 
