@@ -1,6 +1,10 @@
-"""Build figure 1: node_degree accuracy vs density, all four arms.
+"""Build figure F2: node_degree accuracy vs density, all four arms.
 
 Reads the scored runs directly so the figure cannot drift from the tables.
+Pools densfull40 (p=0.10-0.50) with densfull40hi (p=0.65-0.85) to cover the
+full 0.10-0.85 continuum plan step "Figures" F2 calls for -- densfull40hi
+only has node_degree and edge_existence, so densities above 0.50 are blank
+for every other task, but node_degree (this figure's task) has both.
 
   PYTHONPATH=. python paper/make_figure.py
 """
@@ -40,7 +44,9 @@ def main():
     for ax, arm in zip(axes, ARMS):
         acc = collections.defaultdict(lambda: [0.0, 0])
         seen = set()
-        for path in sorted(glob.glob(f"runs/{arm}.densfull40.shard*of25.jsonl")):
+        paths = (sorted(glob.glob(f"runs/{arm}.densfull40.shard*of25.jsonl")) +
+                 sorted(glob.glob(f"runs/{arm}.densfull40hi.shard*.jsonl")))
+        for path in paths:
             for line in open(path):
                 if not line.strip():
                     continue
@@ -66,7 +72,7 @@ def main():
         ax.axhline(0.19, color="#bbbbbb", linewidth=0.8, zorder=0)
         ax.set_title(arm, fontsize=9)
         ax.set_xlabel("edge density $p$", fontsize=8)
-        ax.set_xticks([0.1, 0.2, 0.35, 0.5])
+        ax.set_xticks([0.1, 0.2, 0.35, 0.5, 0.65, 0.75, 0.85])
         ax.tick_params(labelsize=7)
         ax.set_ylim(0, 1.03)
         ax.grid(alpha=0.25, linewidth=0.5)
