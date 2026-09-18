@@ -66,18 +66,27 @@ DENSFULL_ARMS = ("qwen3-1.7b", "qwen3-1.7b-think", "qwen3-4b", "qwen3-4b-think")
 
 # Arms held out of the paper's development entirely. The first eight answer
 # the published GraphQA split; the rest answer the 100-graph none/degree probe.
+# Each of the first eight also has a `.rerun` file (filler + edge_existence,
+# rerun after those conditions were reworded) that a single-pattern glob
+# never matches, since it inserts a second `.rerun` segment before `.shard`
+# or before `.jsonl` -- both patterns are listed so those two conditions are
+# no longer silently missing from these arms.
 HELDOUT_GLOBS = {
-    "qwen3-8b": "runs/qwen3-8b.jsonl",
-    "qwen3-8b-think": "runs/qwen3-8b-think.shard*.jsonl",
-    "qwen3-14b": "runs/qwen3-14b.jsonl",
-    "qwen3-14b-think": "runs/qwen3-14b-think.shard*.jsonl",
-    "gemma4-e4b": "runs/gemma4-e4b.jsonl",
-    "gemma4-e4b-think": "runs/gemma4-e4b-think.shard*.jsonl",
-    "gemma4-12b": "runs/gemma4-12b.jsonl",
-    "gemma4-12b-think": "runs/gemma4-12b-think.shard*.jsonl",
-    "qwen3-0.6b": "runs/qwen3-0.6b.probe100*.jsonl",
-    "qwen3-0.6b-think": "runs/qwen3-0.6b-think.probe100*.jsonl",
-    "qwen35-2b": "runs/qwen35-2b.probe100*.jsonl",
+    "qwen3-8b": ["runs/qwen3-8b.jsonl", "runs/qwen3-8b.rerun.jsonl"],
+    "qwen3-8b-think": ["runs/qwen3-8b-think.shard*.jsonl",
+                       "runs/qwen3-8b-think.rerun.shard*.jsonl"],
+    "qwen3-14b": ["runs/qwen3-14b.jsonl", "runs/qwen3-14b.rerun.jsonl"],
+    "qwen3-14b-think": ["runs/qwen3-14b-think.shard*.jsonl",
+                        "runs/qwen3-14b-think.rerun.shard*.jsonl"],
+    "gemma4-e4b": ["runs/gemma4-e4b.jsonl", "runs/gemma4-e4b.rerun.jsonl"],
+    "gemma4-e4b-think": ["runs/gemma4-e4b-think.shard*.jsonl",
+                         "runs/gemma4-e4b-think.rerun.shard*.jsonl"],
+    "gemma4-12b": ["runs/gemma4-12b.jsonl", "runs/gemma4-12b.rerun.jsonl"],
+    "gemma4-12b-think": ["runs/gemma4-12b-think.shard*.jsonl",
+                         "runs/gemma4-12b-think.rerun.shard*.jsonl"],
+    "qwen3-0.6b": ["runs/qwen3-0.6b.probe100*.jsonl"],
+    "qwen3-0.6b-think": ["runs/qwen3-0.6b-think.probe100*.jsonl"],
+    "qwen35-2b": ["runs/qwen35-2b.probe100*.jsonl"],
 }
 
 PARAMS_B = {"qwen3-0.6b": 0.6, "qwen3-1.7b": 1.7, "qwen35-2b": 2.0,
@@ -534,9 +543,9 @@ def test_continuum(args, bars):
 
 def test_heldout(args, bars):
   cells = []
-  for arm, pattern in HELDOUT_GLOBS.items():
-    got = arm_cells(arm, [f"{args.runs}/{os.path.basename(pattern)}"], bars,
-                    by_density=False)
+  for arm, patterns in HELDOUT_GLOBS.items():
+    got = arm_cells(arm, [f"{args.runs}/{os.path.basename(p)}" for p in patterns],
+                    bars, by_density=False)
     for cell in got:
       cell["params"] = PARAMS_B[arm.split("/")[0].removesuffix("-think")]
       cell["think"] = float("-think" in arm)
