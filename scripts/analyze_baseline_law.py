@@ -19,6 +19,14 @@ artifact, and the one that fails.
   4. `--test instrument` the negative control: the baseline on the x-axis is
                          replaced by the OTHER arms' accuracy on the same
                          cell, so it shares no observation with the effect.
+  5. `--test crossfit`   baseline and delta estimated from disjoint halves of
+                         the paired graphs (so the correlation can no longer
+                         be regression to the mean by construction), with a
+                         cluster-bootstrap CI that resamples whole (arm,
+                         task, density) blocks rather than individual cells,
+                         plus a mixed-effects (random intercept per arm)
+                         robustness check. Covers densfull40hi as well as
+                         densfull40, unlike tests 1-4.
 
 Run them all:
 
@@ -32,6 +40,7 @@ are keyed by (arm, task, density, condition).
 import argparse
 import collections
 import glob
+import hashlib
 import json
 import math
 import os
@@ -241,6 +250,104 @@ def _invert(m):
   return [row[n:] for row in a]
 
 
+def _fold(instance_id: str) -> int:
+  """A deterministic 2-way split on instance id, stable across processes.
+
+  Python's builtin `hash()` on a str is randomized per-process (PYTHONHASHSEED)
+  unless disabled, which would make the cross-fit split a coin flip on every
+  invocation rather than a fixed, reproducible partition. `hashlib` is not.
+  """
+  return hashlib.md5(instance_id.encode()).digest()[0] % 2
+
+
+def cells_from_scores_crossfit(scores, control="none", min_pairs=10):
+  """Like `cells_from_scores`, but the baseline and the delta are estimated
+  from disjoint halves of the paired graphs.
+
+  `cells_from_scores` computes both `baseline` (mean of `b`) and `delta`
+  (mean of `v - b`) from the SAME pairs, so a pair with an unusually low `b`
+  pulls the cell toward a low baseline AND toward a high delta by
+  construction -- regression to the mean, not signal. Splitting the paired
+  instance ids into two folds and taking baseline from one, delta from the
+  other, breaks that shared sampling noise. Both fold assignments are
+  reported (baseline from fold A + delta from fold B, and the swap), which
+  doubles k per cell rather than halving it, at the cost of each half being
+  noisier -- the paper reports both this and the naive version side by side
+  rather than picking one.
+  """
+  grouped = collections.defaultdict(dict)
+  for (task, dens, iid, cond), value in scores.items():
+    grouped[(task, dens, cond)][iid] = value
+  out = []
+  for (task, dens, cond), values in sorted(grouped.items(), key=repr):
+    if cond == control:
+      continue
+    base = grouped.get((task, dens, control), {})
+    pairs = [(i, base[i], v) for i, v in values.items()
+             if base.get(i) is not None and v is not None]
+    if len(pairs) < min_pairs:
+      continue
+    fold_a = [(b, v) for i, b, v in pairs if _fold(i) == 0]
+    fold_b = [(b, v) for i, b, v in pairs if _fold(i) == 1]
+    if len(fold_a) < min_pairs // 2 or len(fold_b) < min_pairs // 2:
+      continue
+    for base_fold, delta_fold, tag in ((fold_a, fold_b, "a>b"),
+                                        (fold_b, fold_a, "b>a")):
+      out.append(dict(
+          task=task, density=dens, condition=cond,
+          n=len(base_fold) + len(delta_fold), n_baseline_fold=len(base_fold),
+          n_delta_fold=len(delta_fold), fold=tag,
+          baseline=sum(b for b, _ in base_fold) / len(base_fold),
+          delta=100.0 * sum(v - b for b, v in delta_fold) / len(delta_fold)))
+  return out
+
+
+def cluster_bootstrap_r_slope(cells, block_key, n_boot=2000, seed=0):
+  """Percentile bootstrap CI for r and slope, resampling whole blocks.
+
+  Conditions at the same (arm, task, density) share one `none` sample, so
+  they are correlated observations, not independent cells -- resampling
+  individual cells with replacement would understate the CI by treating
+  them as if they weren't. This resamples at the block level instead: each
+  bootstrap draw keeps every cell in a sampled block together or drops it
+  together.
+  """
+  import random as _random
+
+  blocks = collections.defaultdict(list)
+  for cell in cells:
+    blocks[block_key(cell)].append(cell)
+  keys = list(blocks)
+  rng = _random.Random(seed)
+  rs, slopes = [], []
+  for _ in range(n_boot):
+    sample = []
+    for _ in range(len(keys)):
+      sample.extend(blocks[keys[rng.randrange(len(keys))]])
+    xs = [c["baseline"] for c in sample]
+    ys = [c["delta"] for c in sample]
+    r, _ = pearson(xs, ys)
+    slope, _ = fit_line(xs, ys)
+    if not math.isnan(r):
+      rs.append(r)
+    if not math.isnan(slope):
+      slopes.append(slope)
+  rs.sort()
+  slopes.sort()
+
+  def _pctile(sorted_vals, p):
+    if not sorted_vals:
+      return float("nan")
+    idx = min(len(sorted_vals) - 1, max(0, int(round(p * (len(sorted_vals) - 1)))))
+    return sorted_vals[idx]
+
+  return {
+      "r_ci": (_pctile(rs, 0.025), _pctile(rs, 0.975)),
+      "slope_ci": (_pctile(slopes, 0.025), _pctile(slopes, 0.975)),
+      "n_boot_used": len(rs),
+  }
+
+
 def cells_from_scores(scores, control="none", min_pairs=10):
   """Turn {(task, density, instance_id, condition): score|None} into one
   record per (task, density, condition != control), paired on instance_id
@@ -304,6 +411,15 @@ def score_run(patterns, by_density=True, task_filter=None,
 
 def arm_cells(arm, patterns, bars, **kwargs):
   cells = cells_from_scores(score_run(patterns, **kwargs))
+  for cell in cells:
+    cell["arm"] = arm
+    cell["gain"] = route_gain(bars, cell["task"], cell["condition"])
+    cell["route"] = cell["gain"] > ROUTE_GAIN_THRESHOLD
+  return cells
+
+
+def arm_cells_crossfit(arm, patterns, bars, **kwargs):
+  cells = cells_from_scores_crossfit(score_run(patterns, **kwargs))
   for cell in cells:
     cell["arm"] = arm
     cell["gain"] = route_gain(bars, cell["task"], cell["condition"])
@@ -474,8 +590,88 @@ def test_instrument(args, bars):
         "  arm's own competence, not of the items' difficulty.")
 
 
+def test_crossfit(args, bars):
+  """TEST 5: does the baseline-delta relation survive when baseline and delta
+  are estimated from disjoint graphs, and when the block structure (several
+  conditions sharing one `none` sample) is respected in the CI?
+
+  Runs on densfull40 AND densfull40hi (the plan's "include densfull40hi"),
+  unlike tests 1-4 which predate the high-density extension.
+  """
+  print("\nTEST 5  cross-fitted baseline, cluster-bootstrap CI"
+        " (densfull40 + densfull40hi)")
+  corpora = ("densfull40", "densfull40hi")
+  naive, cross = [], []
+  for arm in DENSFULL_ARMS:
+    for corpus in corpora:
+      patterns = [f"{args.runs}/{arm}.{corpus}.shard*.jsonl"]
+      naive += arm_cells(arm, patterns, bars)
+      cross += arm_cells_crossfit(arm, patterns, bars)
+  if not naive:
+    print("  no densfull40/densfull40hi runs found; skipped")
+    return
+
+  def route_only(cells):
+    return [c for c in cells if c["task"] not in DEGENERATE_TASKS and c["route"]]
+
+  naive_route, cross_route = route_only(naive), route_only(cross)
+  print(f"\n  {'':<32}{'k':>6}  {'r':>8}  {'p':>10}  {'slope':>9}")
+  _describe(naive_route, "naive (shared sample)")
+  _describe(cross_route, "cross-fitted (disjoint halves)")
+
+  if cross_route:
+    boot = cluster_bootstrap_r_slope(
+        cross_route, block_key=lambda c: (c["arm"], c["task"], c["density"]),
+        n_boot=2000, seed=0,
+    )
+    r, p = pearson([c["baseline"] for c in cross_route],
+                   [c["delta"] for c in cross_route])
+    slope, _ = fit_line([c["baseline"] for c in cross_route],
+                         [c["delta"] for c in cross_route])
+    print(f"\n  cross-fitted r={r:+.3f}  95% cluster-bootstrap CI "
+          f"[{boot['r_ci'][0]:+.3f}, {boot['r_ci'][1]:+.3f}]"
+          f"  ({boot['n_boot_used']} of 2000 resamples usable)")
+    print(f"  cross-fitted slope={slope:+.1f}  95% cluster-bootstrap CI "
+          f"[{boot['slope_ci'][0]:+.1f}, {boot['slope_ci'][1]:+.1f}]")
+
+  try:
+    import statsmodels.formula.api as smf
+    import pandas as pd
+  except ImportError:
+    print("\n  (statsmodels/pandas not available; skipping mixed-model check)")
+    return
+
+  df = pd.DataFrame([
+      {"delta": c["delta"], "baseline": c["baseline"], "arm": c["arm"]}
+      for c in cross_route
+  ])
+  if df["arm"].nunique() < 2 or len(df) < 10:
+    print("\n  (too few arms/cells for a mixed model; skipping)")
+    return
+  import warnings
+  with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always")
+    model = smf.mixedlm("delta ~ baseline", df, groups=df["arm"])
+    result = model.fit(method="lbfgs")
+  print("\n  mixed-effects robustness check (delta ~ baseline, random"
+        " intercept per arm):")
+  print(f"    baseline coef {result.params['baseline']:+.2f}  "
+        f"se {result.bse['baseline']:.2f}  "
+        f"p={result.pvalues['baseline']:.3g}")
+  print("  (a fixed-slope OLS pretends every arm's cells are independent;"
+        " this lets each arm keep its own intercept instead.)")
+  if caught:
+    print(f"    caveat: only {df['arm'].nunique()} arms (groups) -- the "
+          f"random-intercept variance is weakly identified with this few "
+          f"clusters ({len(caught)} convergence/singularity warning(s) from "
+          f"statsmodels). Read the coefficient as a consistency check "
+          f"against the OLS slope above, not as an independently powered "
+          f"confirmatory test.")
+
+
 TESTS = {"split": test_split, "continuum": test_continuum,
-         "heldout": test_heldout, "instrument": test_instrument}
+         "heldout": test_heldout, "instrument": test_instrument,
+         "crossfit": test_crossfit}
 
 
 def main():
@@ -489,7 +685,8 @@ def main():
 
   with open(args.shortcuts, encoding="utf-8") as handle:
     bars = json.load(handle)
-  for name in args.test or ["split", "continuum", "heldout", "instrument"]:
+  for name in args.test or ["split", "continuum", "heldout", "instrument",
+                            "crossfit"]:
     TESTS[name](args, bars)
 
 
