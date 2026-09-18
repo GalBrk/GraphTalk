@@ -9,10 +9,13 @@ pins the pairing: McNemar on misaligned arms is not a weaker test, it is a
 different and meaningless one.
 """
 
+import csv
 import importlib.util
 import pathlib
 
 import pytest
+
+from graphtalk import significance
 
 _SCRIPT = (pathlib.Path(__file__).resolve().parents[1]
            / "scripts" / "score_density_sweep.py")
@@ -149,6 +152,40 @@ def test_trend_reports_no_rows_for_a_condition_absent_from_the_range():
   points = [(0.1, index, 0.0, 1.0) for index in range(10)]
   result = score_density_sweep.trend_test(_paired(points), "degree", draws=100)
   assert result["n"] == 0
+
+
+_FAST = {"n_replicates": 20, "n_perm": 50, "n_steps": 3}
+
+
+def test_mde_for_row_clusters_each_pair_independently():
+  """A density-sweep pair is one graph at one density, never repeated -- so
+  each pair is its own cluster, unlike the main sweep's six-tasks-per-graph
+  rows."""
+  control = [0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0]
+  treatment = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+  result = score_density_sweep.mde_for_arms(
+      control, treatment, seed=0, settings=_FAST)
+  expected = significance.minimum_detectable_effect_clustered(
+      control, treatment, list(range(len(control))), initial_hi=0.05,
+      seed=0, **_FAST)
+  assert result == expected
+
+
+def test_write_csv_skips_empty_list(tmp_path):
+  """A family that reduces to nothing on this data (e.g. no trend rows for
+  a single-density input) is a valid, silent outcome, not an error."""
+  path = tmp_path / "out.csv"
+  score_density_sweep.write_csv(str(path), [])
+  assert not path.exists()
+
+
+def test_write_csv_writes_header_and_rows(tmp_path):
+  path = tmp_path / "out.csv"
+  score_density_sweep.write_csv(
+      str(path), [{"a": 1, "b": "x"}, {"a": 2, "b": "y"}])
+  with open(path, newline="") as handle:
+    read_back = list(csv.DictReader(handle))
+  assert read_back == [{"a": "1", "b": "x"}, {"a": "2", "b": "y"}]
 
 
 def test_trend_respects_the_level_filter():

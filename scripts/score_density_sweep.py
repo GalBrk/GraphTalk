@@ -32,6 +32,7 @@ read one thing", rule 2.
 
 import argparse
 import collections
+import csv
 import glob
 import json
 import random
@@ -41,6 +42,12 @@ from graphtalk import scoring
 from graphtalk import significance
 
 CONTROL = "none"
+
+# Same two presets `check_significance.py` offers: a fast approximate default
+# for routine runs, and a slower one for a number meant to be quoted, via
+# --mde.
+_MDE_FAST = {"n_replicates": 50, "n_perm": 200, "n_steps": 5}
+_MDE_FULL = {"n_replicates": 200, "n_perm": 500, "n_steps": 8}
 
 
 def density_of(instance_id: str) -> float | None:
@@ -181,7 +188,41 @@ def trend_test(paired, condition, levels=None, control=CONTROL,
           "n": n}
 
 
-def report(summary, control=CONTROL, trend_max=None, draws=20000) -> None:
+def mde_for_arms(control_hits, treatment_hits, seed, settings) -> dict:
+  """MDE for one pooled/per-level McNemar row, on the paired hit vectors the
+  test itself used.
+
+  No natural clustering unit exists here the way it does in
+  `check_significance.py`'s main sweep (where six tasks share one graph): a
+  density-sweep pair is one graph at one density, contributing exactly one
+  row to this comparison, never repeated -- so each pair is its own
+  cluster.
+  """
+  cluster_ids = list(range(len(control_hits)))
+  return significance.minimum_detectable_effect_clustered(
+      control_hits, treatment_hits, cluster_ids, initial_hi=0.05,
+      seed=seed, **settings,
+  )
+
+
+def write_csv(path: str, rows: list) -> None:
+  """Writes `rows` to `path`, header from the first row's keys.
+
+  Writes nothing (not even a header) for an empty list -- a family that
+  reduces to nothing on this data (e.g. no trend rows for a single-density
+  input) is a valid, silent outcome, not an error to paper over with a
+  headerless file.
+  """
+  if not rows:
+    return
+  with open(path, "w", newline="") as handle:
+    writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
+    writer.writeheader()
+    writer.writerows(rows)
+
+
+def report(summary, control=CONTROL, trend_max=None, draws=20000,
+           mde_settings=None, csv_prefix=None) -> None:
   cells, paired, golds = summary["cells"], summary["paired"], summary["golds"]
   densities = sorted({d for d, _ in cells}, key=lambda d: (d is None, d))
   conditions = sorted({c for _, c in cells})
@@ -228,20 +269,47 @@ def report(summary, control=CONTROL, trend_max=None, draws=20000) -> None:
         continue
       test = scoring.mcnemar(control_hits, treatment_hits)
       delta = (test["c"] - test["b"]) / len(control_hits)
-      out.append((density, condition, len(control_hits), test, delta))
+      out.append((density, condition, len(control_hits), test, delta,
+                   control_hits, treatment_hits))
     return out
 
-  def show(rows, reject) -> None:
-    for (density, condition, n, test, delta), keep in zip(rows, reject):
+  csv_rows = []
+
+  def show(rows, reject, family: str) -> None:
+    for (density, condition, n, test, delta, control_hits,
+         treatment_hits), keep in zip(rows, reject):
       level = "POOLED" if density is None else f"p={density:g}"
       print(f"  {level:<8} {condition:>11} - {control}: n={n:>5} "
             f"win {test['c']:>4} lose {test['b']:>4} delta {delta:+.4f} "
             f"p={test['p_value']:.4f}{'  *' if keep else ''}")
+      mde = None
+      if mde_settings is not None and not keep:
+        row_seed = f"{family}:{level}:{condition}"
+        mde = mde_for_arms(control_hits, treatment_hits, row_seed, mde_settings)
+        print(f"    MDE: delta={mde['delta']} realized={mde['realized_diff']} "
+              f"({mde['note'] or 'ok'})  "
+              f"delta_negative={mde['delta_negative']} "
+              f"realized_negative={mde['realized_diff_negative']} "
+              f"({mde['note_negative'] or 'ok'})")
+      if csv_prefix:
+        csv_rows.append({
+            "family": family, "density": density, "condition": condition,
+            "n": n, "win": test["c"], "lose": test["b"], "delta": delta,
+            "p_value": test["p_value"], "bh_significant": keep,
+            "mde_delta": mde["delta"] if mde else None,
+            "mde_realized_diff": mde["realized_diff"] if mde else None,
+            "mde_note": mde["note"] if mde else None,
+            "mde_delta_negative": mde["delta_negative"] if mde else None,
+            "mde_realized_diff_negative":
+                mde["realized_diff_negative"] if mde else None,
+            "mde_note_negative": mde["note_negative"] if mde else None,
+        })
 
   print(f"\npooled across levels, paired vs {control!r} "
         "(exact McNemar on rows sharing an instance_id):")
   pooled = run(None) if len(densities) > 1 else []
-  show(pooled, significance.benjamini_hochberg([t["p_value"] for *_, t, _ in pooled]))
+  show(pooled, significance.benjamini_hochberg([row[3]["p_value"] for row in pooled]),
+       "pooled")
 
   print("\nper level (descriptive -- these are a family, correct before "
         "quoting any one):")
@@ -251,9 +319,18 @@ def report(summary, control=CONTROL, trend_max=None, draws=20000) -> None:
   # p-value under the threshold on the strength of its own data. The pooled test
   # is the primary and stands on its own; the per-level rows are exploratory.
   show(per_level,
-       significance.benjamini_hochberg([t["p_value"] for *_, t, _ in per_level]))
+       significance.benjamini_hochberg([row[3]["p_value"] for row in per_level]),
+       "per_level")
   if per_level:
     print("  (* = survives Benjamini-Hochberg at q=0.05 within its own family)")
+  if mde_settings is not None:
+    print("  (MDE printed under any row that did not survive BH -- the "
+          "smallest true effect, in each direction, this row's data could "
+          "reliably have detected; fast preset unless --mde was passed)")
+
+  if csv_prefix:
+    write_csv(f"{csv_prefix}.tests.csv", csv_rows)
+    print(f"\nwrote {csv_prefix}.tests.csv")
 
   if len(densities) >= 2:
     print(f"\ntrend in the paired difference vs density "
@@ -295,12 +372,25 @@ def main() -> None:
                            "instrument into a live one drags any slope to zero.")
   parser.add_argument("--draws", type=int, default=20000,
                       help="label permutations for the trend test")
+  parser.add_argument("--mde", action="store_true",
+                      help="full-precision MDE (200/500/8 replicates/perm/"
+                           "steps) instead of the default fast preset "
+                           "(50/200/5) -- use for a number meant to be quoted")
+  parser.add_argument("--no-mde", action="store_true",
+                      help="skip MDE entirely (it only runs on rows that "
+                           "don't survive BH, but the search itself is not "
+                           "free)")
+  parser.add_argument("--csv", default=None,
+                      help="write pooled/per-level test rows to "
+                           "<this>.tests.csv")
   args = parser.parse_args()
 
   records = load(args.responses)
   print(f"{len(records)} rows loaded\n")
   report(summarize(records), control=args.control,
-         trend_max=args.trend_max, draws=args.draws)
+         trend_max=args.trend_max, draws=args.draws,
+         mde_settings=None if args.no_mde else (_MDE_FULL if args.mde else _MDE_FAST),
+         csv_prefix=args.csv)
 
 
 if __name__ == "__main__":
