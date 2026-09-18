@@ -217,7 +217,11 @@ python scripts/measure_real_rows.py                           # re-measures corp
   scorer with `task` as a third grouping key, for a density sweep that (unlike
   every earlier one) covers more than one or two tasks at once -- see
   `docs/primer-effects-and-power.md`'s "full-task, full-condition density
-  sweep" section.
+  sweep" section. The directory holds ~40 further one-off analysis scripts
+  (`analyze_*.py`, `check_*.py`, `validate_*.py`, and similar); each belongs to
+  a specific finding and is referenced from the `docs/*.md` file that reports
+  that finding, rather than listed individually here — grep `docs/` for a
+  script's name before assuming it's undocumented.
 - `cluster/` — `sweep.sbatch` and `README.md`, the authority on how the sweep
   actually runs on the TAU CS cluster (partitions, memory sizing, driver
   incompatibilities, chained-job submission for jobs that exceed the 24h
