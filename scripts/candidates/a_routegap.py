@@ -28,7 +28,7 @@ def load_densfull():
 def load_heldout():
     cells = []
     for arm, globs in abl.HELDOUT_GLOBS.items():
-        cells += abl.arm_cells(arm, [globs], bars, by_density=False)
+        cells += abl.arm_cells(arm, globs, bars, by_density=False)
     return enrich(cells)
 
 def report(cells, name):
