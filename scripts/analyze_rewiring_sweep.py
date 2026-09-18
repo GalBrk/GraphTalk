@@ -103,6 +103,8 @@ def main():
   parser.add_argument("--responses", nargs="+", required=True)
   parser.add_argument("--task", default="node_degree")
   parser.add_argument("--seed", type=int, default=0)
+  parser.add_argument("--json", default=None,
+                      help="also write one record per test, with the BH flag")
   args = parser.parse_args()
 
   scores, capped = load(args.responses, args.task)
@@ -111,7 +113,7 @@ def main():
   models = sorted({k[0] for k in scores})
   rungs = sorted({k[1] for k in scores})
 
-  p_values, labels = [], []
+  p_values, labels, records = [], [], []
 
   for model in models:
     print(f"\n{'='*74}\n{model}\n{'='*74}")
@@ -132,7 +134,10 @@ def main():
                    else "none is flat -- [2] is about primer content")
         print(f"       none low={outcome['control']:.3f} high={outcome['treatment']:.3f} "
               f"delta={outcome['delta']:+.3f} p={outcome['p']:.4f}  -> {verdict}")
-        p_values.append(outcome["p"]); labels.append(f"{model}/{rung}/none-moves")
+        label = f"{model}/{rung}/none-moves"
+        p_values.append(outcome["p"]); labels.append(label)
+        records.append(dict(outcome, label=label, model=model, rung=rung,
+                            level=None, condition="none-moves"))
 
       # --- Question 2 ----------------------------------------------------
       print("   [2] primer effect, per rewiring level")
@@ -149,8 +154,11 @@ def main():
                 f"delta={outcome['delta']:+.3f} "
                 f"CI[{outcome['ci_low']:+.3f},{outcome['ci_high']:+.3f}] "
                 f"p={outcome['p']:.4f} n={outcome['n']}")
+          label = f"{model}/{rung}/{level}/{condition}"
           p_values.append(outcome["p"])
-          labels.append(f"{model}/{rung}/{level}/{condition}")
+          labels.append(label)
+          records.append(dict(outcome, label=label, model=model, rung=rung,
+                              level=level, condition=condition))
 
       dropped = sum(v for k, v in capped.items() if k[0] == model and k[1] == rung)
       if dropped:
@@ -163,6 +171,13 @@ def main():
     print(f"  {len(survivors)} survive:")
     for label in survivors:
       print(f"    {label}")
+    for record, keep in zip(records, flags):
+      record["bh_reject"] = keep
+
+  if args.json:
+    with open(args.json, "w") as fh:
+      json.dump(records, fh, indent=1)
+    print(f"\nwrote {len(records)} test records to {args.json}")
 
 
 if __name__ == "__main__":
