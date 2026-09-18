@@ -21,6 +21,19 @@ from graphtalk import shortcuts
 DENSITIES = (0.10, 0.20, 0.35, 0.50, 0.65, 0.75, 0.85)
 
 
+def flatten(per_density: dict) -> dict:
+  """Mean bar per "task/condition" across densities, for callers (route
+  classification in analyze_baseline_law.py) that key on one flat bar per
+  cell rather than per (task, condition, density). Averaging rather than
+  taking a single density keeps the classification density-independent,
+  the same way the published-split shortcuts.json is graph-size-independent
+  within its own corpus.
+  """
+  keys = {k for bars in per_density.values() for k in bars}
+  return {k: sum(bars.get(k, 0.0) for bars in per_density.values()) / len(per_density)
+          for k in keys}
+
+
 def main(argv=None):
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--graphs", type=int, default=300)
@@ -28,6 +41,11 @@ def main(argv=None):
   parser.add_argument("--test-seed", type=int, default=777_777)
   parser.add_argument("--json", default="shortcuts_n40.json")
   parser.add_argument("--json-rung", type=int, default=3, choices=shortcuts.RUNGS)
+  parser.add_argument("--flat-json", default=None,
+                      help="also write the density-averaged flat table "
+                           "(one bar per task/condition) here, for callers "
+                           "like analyze_baseline_law.py's route split that "
+                           "key on a single bar per cell")
   args = parser.parse_args(argv)
 
   out = {}  # density (str) -> "task/condition" -> shortcut
@@ -54,6 +72,11 @@ def main(argv=None):
     json.dump(out, fh, indent=1)
   print(f"\nwrote {sum(len(v) for v in out.values())} cells "
         f"across {len(out)} densities to {args.json}")
+
+  if args.flat_json:
+    with open(args.flat_json, "w") as fh:
+      json.dump(flatten(out), fh, indent=1, sort_keys=True)
+    print(f"wrote the density-averaged flat table to {args.flat_json}")
 
 
 if __name__ == "__main__":
