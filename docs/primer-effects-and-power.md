@@ -1750,6 +1750,79 @@ PYTHONPATH=. python scripts/score_full_density_sweep.py \
     --shortcuts shortcuts.json
 ```
 
+## The high-density extension (2026-09-16/18): does a primer ever help a thinking model?
+
+Motivated by two things the full-task sweep above left open: `qwen3-4b`'s
+`node_degree` had *no* headroom through p=0.50 (`none` sat at 0.84-1.00), so
+the clustering question couldn't even be asked on that model, and neither
+`-think` arm had shown a single significant positive effect from an
+uncontaminated condition anywhere. `docs/primer-effects-and-power.md`'s own
+prior high-density run (job 866492, `qwen3-1.7b` non-think only, 4
+conditions) already found that pushing density collapses the model toward
+the majority-baseline floor rather than sharpening anything -- so this run
+asks whether that's true of every model, or just the smallest one.
+
+**Design.** Same n=40, all 7 conditions, 100 graphs/cell, but `{0.65, 0.75,
+0.85}` instead of `{0.10, ..., 0.50}`, and narrowed to the two tasks with
+real signal and no truncation risk: `node_degree` and `edge_existence`
+(`edge_count` gets *more* truncation-prone at higher density, not less;
+`cycle_check`/`node_count`/`connected_nodes` were already degenerate or
+ceilinged and higher density doesn't reopen headroom on any of them).
+4,200 prompts (`prompts.densfull40hi.jsonl`), tag `densfull40hi`, all 4
+models, 4,200/4,200 rows each, no duplicates, no failed shards.
+
+**Answer: still no primer improvement on a thinking model, anywhere in the
+tested range.**
+
+- `qwen3-1.7b-think` finally has real headroom on `node_degree` at these
+  densities (`none`: 0.520 / 0.469 / 0.424 -- neither ceilinged nor floored,
+  unlike either extreme seen elsewhere). But the conditions that reach
+  significance there *hurt*: `clustering` -9.8pp (p=0.0065), `filler`
+  -12.6pp (p=0.0003). `degree`/`all` are significant positive (+31.6pp/
+  +22.7pp) but contaminated, as always.
+- `qwen3-4b-think` shows **zero headroom anywhere from p=0.10 to p=0.85** --
+  `none` is 0.96-1.00 on `node_degree` even at p=0.85, `edge_existence` is
+  flat 1.000 throughout. This model does not struggle with n=40 graphs at
+  any ER density short of the degenerate p=1 endpoint. Finding an effect on
+  it with thinking enabled needs the task to get harder some other way
+  (larger n), not more density.
+
+**The high-density push did land a real result, just on a non-thinking
+model.** `qwen3-4b` non-think + `clustering` on `node_degree`: **+11.3pp,
+p<0.0001** -- exactly the cell this extension was built to unlock, since
+`none` only starts leaving ceiling once density is pushed past 0.50 for this
+model. It also *replicates* the `edge_existence` finding from the main
+sweep in an independent density band: `clustering` +5.3pp (p=0.0113) here,
+next to +4.0pp (p=0.0166) at p<=0.50 -- the same clean-bar condition,
+helping the same model on the same task, in two non-overlapping density
+regimes. That's the most robust single effect in this document at this
+point.
+
+`qwen3-1.7b` non-think reproduces the already-known floor-collapse pattern
+with the fuller condition set: `clustering` on `node_degree` flips from
+positive (low density, direction-consistent but n.s. at this sample size)
+to slightly negative and still n.s. at p=0.65-0.85 -- the same inverted-U
+job 866492 found with 4 conditions, now confirmed with 7.
+
+**Where this leaves the original question.** Across every model and every
+density band tested so far, an uncontaminated primer has produced a
+significant *positive* effect exactly twice, both on `qwen3-4b` non-think,
+both on tasks where `none` sits in a genuine mid-range (not ceilinged, not
+floored). Every thinking-arm cell either has no headroom to move (`qwen3-4b-
+think`, always; `qwen3-1.7b-think`, at low-moderate density) or has
+headroom but shows primers *hurting* (`qwen3-1.7b-think` at high density).
+If a primer improvement on a thinking model exists in this design space, it
+is not in {0.10, ..., 0.85} at n=40 -- it would need a harder task, not a
+denser graph.
+
+Reproduce with the same scorer, e.g.:
+
+```bash
+PYTHONPATH=. python scripts/score_full_density_sweep.py \
+    --responses "runs/qwen3-4b.densfull40hi.shard*of11.jsonl" \
+    --shortcuts shortcuts.json
+```
+
 ## Operational notes
 
 - **`--mem=64G` in `sweep.sbatch` is sized for Qwen3-14B's 29.6 GB checkpoint.**
@@ -1805,6 +1878,32 @@ PYTHONPATH=. python scripts/score_full_density_sweep.py \
   `--array` flag at all). Same family of footgun as the `--array=1,2,4` one
   above, worth restating because it is the one-shard case rather than the
   multi-shard case.
+- **`n-102` is still broken (2026-09-16), and it isn't GPU0 this time.**
+  `nvidia-smi` itself cannot query one of its cards:
+  `Unable to determine the device handle for GPU1: 0000:18:00.0: Unknown
+  Error`. A job pointed at it (`--nodelist=n-102`) hung and hit its time
+  limit before `sweep.sbatch`'s own CUDA check ever printed -- worse, the
+  node's other, healthy GPUs were fully allocated to other users' jobs at
+  the time anyway, so excluding it cost nothing. Keep excluding it.
+- **`gpu-h100-killable`'s short queue does not mean free capacity.** Only two
+  nodes exist there (`n-102`, `t-100`); a short-queue check is worthless if
+  the few jobs present are large ones holding whole nodes -- `t-100` showed
+  `AllocTRES=gres/gpu=8` (fully allocated) while its queue depth was in the
+  single digits. Jobs submitted there sat on `ReqNodeNotAvail` for days.
+  Check `scontrol show node` for actual GPU allocation, not `squeue` job
+  counts, before treating a partition as empty.
+- **`studentkillable` (account `gpu-students`) is untested territory, and the
+  first probe was inconclusive rather than negative.** Its nodes are old
+  (`titan_xp` -- Pascal, 12 GB; `geforce_rtx_2080`[_ti] -- Turing, 11 GB),
+  neither with real bf16 tensor-core support, which is a real risk for a
+  bf16-loaded model. But the first smoke test (30 min) never got far enough
+  to test that -- it timed out still warming the page cache, the same
+  slow-NFS-node problem `n-801` has on the main partition. A second attempt
+  with the full 24 h window (the partition's `MaxTime`; the QOS itself sets
+  no separate wall limit, just `MaxSubmitPU=20`, a quota independent of the
+  `gpu-research` account's 100-job cap) did clear warm-up and complete a
+  full shard, so the nodes are at least usable -- generation correctness and
+  throughput there haven't been separately verified yet.
 
 ## Caveats
 
