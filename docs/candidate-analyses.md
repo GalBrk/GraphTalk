@@ -62,6 +62,12 @@ version.
 
 ## (b) Are the `degree`-primer errors copying errors? — ADOPT
 
+**Promoted.** `scripts/candidates/b_copying.py` is superseded by
+`scripts/analyze_error_taxonomy.py` (node_degree_taxonomy), which covers all
+4 arms x 7 conditions instead of the subset below, adds an off-by-k
+breakdown and a primer-position analysis, and has tests. The file here is
+kept for its original numbers below and is no longer run.
+
 **Design.** For every `node_degree` instance in `densfull40`, parse the graph
 and the queried node `k` out of the prompt. For each *wrong* answer, ask
 whether the value the model produced is the degree the primer states for a
@@ -140,6 +146,12 @@ and closes an obvious line of attack on the strongest table in the paper.
 ---
 
 ## (d) Discordant-pair decomposition — ADOPT, WITH CARE
+
+**Promoted.** `scripts/candidates/de_churn_len.py` + `de_report.py` are
+superseded by `scripts/analyze_churn_and_length.py`, a single tested script
+that reproduces the same numbers (verified: 50,876 pairs, 5,239 discordant,
+52.1% of discordant pairs cancel in net). The files here are kept for
+history and are no longer run.
 
 Every reported delta is a net. McNemar already computes the two discordant
 counts; printing them separates "helps a coherent subset" from "randomises
