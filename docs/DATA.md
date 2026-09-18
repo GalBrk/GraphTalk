@@ -499,6 +499,11 @@ These are properties of the data, not of the analysis, so they belong here:
 - **955 main-sweep rows were generated on CPU** before a driver mismatch was
   found — 438 `gemma4-e4b`, 426 `qwen3-14b`, 91 `qwen3-8b`. Greedy decoding means
   they should match GPU output, but this is unverified.
+  **TODO, still open:** regenerate these 955 rows' `instance_id`s on GPU and
+  diff `response` byte-for-byte (or at least post-extraction `predicted`)
+  against the tracked CPU rows. Until that runs, any result that leans on
+  these three arms specifically (rather than on the pooled sweep) should be
+  read with this as an unclosed risk, not a settled caveat.
 - **The two arms used different torch builds**, cu130 for the main sweep and
   cu126 for the thinking arm. Same version, same transformers, greedy throughout.
 - **The `filler` primer and the `edge_existence` question were reworded** in
