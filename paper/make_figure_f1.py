@@ -72,7 +72,12 @@ def main():
             lo, hi = min(xs), max(xs)
             ax.plot([lo, hi], [slope * lo + intercept, slope * hi + intercept],
                     color="black", linewidth=1.2, zorder=0)
-            ax.text(0.03, 0.03, f"r={r:+.2f}  p={p:.2g}  k={len(cells)}",
+            # Each cell appears once per fold direction, so len(cells) double-
+            # counts and a Pearson p on it is anticonservative; label unique
+            # cells and leave inference to the block bootstrap in the text.
+            n_cells = len({(c["arm"], c["task"], c["density"], c["condition"])
+                           for c in cells})
+            ax.text(0.03, 0.03, f"r={r:+.2f}  cells={n_cells}",
                     transform=ax.transAxes, fontsize=7.5, va="bottom")
         ax.axhline(0, color="#bbbbbb", linewidth=0.7, zorder=0)
         ax.set_title(title, fontsize=10)

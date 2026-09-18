@@ -53,6 +53,11 @@ PYTHONPATH=. "$PY" scripts/analyze_rewiring_sweep.py \
     --responses runs/qwen35-2b.rewire_shared.jsonl runs/qwen35-2b.rewire_extra.jsonl \
     --json rewiring_qwen35-2b.json
 
+echo "== review checks: interaction, logit, headline split, SDT, budget, prior, tokens =="
+# --tokenizer needs a local Qwen3 tokenizer.json (Qwen/Qwen3-1.7B on the HF hub);
+# without it the `tokens` check is skipped and the other checks still run.
+PYTHONPATH=. "$PY" scripts/analyze_review_checks.py ${QWEN3_TOKENIZER:+--tokenizer "$QWEN3_TOKENIZER"}
+
 echo "== tables and figures =="
 PYTHONPATH=. "$PY" paper/make_main_table.py
 PYTHONPATH=. "$PY" paper/make_ci_table.py

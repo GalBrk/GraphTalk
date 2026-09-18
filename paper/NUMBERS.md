@@ -94,3 +94,29 @@ every number in Tables 3, 4, and 8-11 comes from those, not from this file.
 - MDE null-cell coverage counts: `mde_qwen3-*.csv` (from
   `scripts/score_full_density_sweep.py --mde --csv`), counted by
   `bh_significant == False` and the `mde_note` column.
+
+## Review checks (added 2026-09-18) -- `review_checks.json`
+
+All from `PYTHONPATH=. python scripts/analyze_review_checks.py [--tokenizer <Qwen3 tokenizer.json>]`,
+one top-level key per `--test`:
+
+- Section 3.1 primer lengths in tokens (8/372/470/510/1,070/1,612; none prompt 2,165): `tokens`.
+- Section 3.3 mean clustering 0.01/0.31/0.73 per rewiring level: `rewiring`.
+- Section 3.4 "three cycle_check cells": `ci_all.json` `p_mcnemar` vs `p_mcnemar_zero`,
+  qwen3-1.7b cycle_check rwse/clustering/all.
+- Section 5.2 MAE (39.2 vs 40.4) and Appendix Table (MAE): `mae` (read from `ci_all.json`).
+- Section 5.3 SDT paragraph and Appendix Table `tab:sdt`: `sdt` (`qwen3-*|densfull40`).
+- Section 5.4 unique cells 117/381, one-direction r, interaction -11.0 [-17.1,-5.7],
+  held-out interaction -24.7 [-109,-3.8] p=0.027: `interaction`.
+  Logit -1.46/-1.35, matched-window rows: `logit`. Appendix Table `tab:robust` = both.
+- Section 5.4 copy errors "12 of 29 / 2 of 35": `error_taxonomy.json`
+  `node_degree_errors["qwen3-4b|degree"|"qwen3-4b|all"]`; 17.3% background and
+  binomial p=.002 from `scripts/candidates/b_copying.py`.
+- Section 5.5 Table 5 rows 2-5 and Appendix Table `tab:headline-density`: `headline`.
+  Row 1 (+3.0, p=0.26): `ci_all.json` `qwen3-1.7b|node_degree|clustering` `p_mcnemar`.
+- Section 5.5 density-prior test and Appendix Table `tab:prior`: `prior["rewiring"]`.
+- Section 5.6 budget-matched rescoring and Appendix Table `tab:budget`: `budget`.
+- Section 5.7 MDE medians (5.6/10.0; 2-3 for losses) and the 10/24, 10/20, 23/33, 33/33
+  counts: `mde_qwen3-*.csv`, null rows (`bh_significant == False`), a cell counted when
+  either `mde_note` or `mde_note_negative` is set.
+- Ethics "~200,000 generations": line count of `runs/*.jsonl` (archive excluded).
