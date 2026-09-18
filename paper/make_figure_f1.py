@@ -8,6 +8,14 @@ route group can't be regression to the mean by construction. Reads the
 scored runs directly, via the same functions the table numbers come from,
 so the figure cannot drift from them.
 
+Route classification uses shortcuts_n40_flat.json (the n=40 refit, mean
+over densities -- scripts/shortcut_table_n40.py), not the published-split
+shortcuts.json: at n=40 edge_existence's `none` baseline is already close
+to every other condition's blind-solver bar (class imbalance alone gets
+most of the way there), so every edge_existence condition reclassifies
+from "route" to "no route" once the bars are refit on the right graph
+size. See docs/paper-revision-handoff.md plan step 2.
+
   PYTHONPATH=. python paper/make_figure_f1.py
 """
 import json
@@ -36,7 +44,7 @@ def no_route_only(cells):
 
 
 def main():
-    with open("shortcuts.json", encoding="utf-8") as fh:
+    with open("shortcuts_n40_flat.json", encoding="utf-8") as fh:
         bars = json.load(fh)
 
     cross = []
