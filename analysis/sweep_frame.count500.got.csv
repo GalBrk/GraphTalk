@@ -717,7 +717,7 @@ cycle_check/356,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,q
 cycle_check/360,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,238,unaffected,False,0.946,736,correct,False
 cycle_check/364,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,785,unaffected,True,0.946,1886,wrong,False
 cycle_check/368,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,541,unaffected,True,0.946,1297,wrong,False
-cycle_check/372,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,No,No,False,True,0.0,0.0,False,False,,True,generator,2048,unaffected,False,0.946,4073,non_terminating,True
+cycle_check/372,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,,,False,False,0.0,0.0,False,False,,True,generator,2048,unaffected,False,0.946,4073,non_terminating,True
 cycle_check/376,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,864,unaffected,True,0.946,2082,wrong,False
 cycle_check/380,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,574,unaffected,True,0.946,1268,correct,False
 cycle_check/384,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,646,unaffected,True,0.946,1572,correct,False
@@ -1396,7 +1396,7 @@ cycle_check/72,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen
 cycle_check/76,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,605,unaffected,True,0.832,2057,correct,False
 cycle_check/80,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,400,unaffected,True,0.832,1116,correct,False
 cycle_check/84,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,802,unaffected,True,0.832,1834,correct,False
-cycle_check/88,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,223,unaffected,True,0.832,778,correct,False
+cycle_check/88,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,,,,False,0.0,0.0,False,False,,False,generator,223,unaffected,True,0.832,778,unparsed,False
 cycle_check/92,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,358,unaffected,True,0.832,1002,correct,False
 cycle_check/96,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,800,unaffected,True,0.832,1857,correct,False
 cycle_check/100,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,379,unaffected,True,0.832,1060,correct,False
@@ -1404,7 +1404,7 @@ cycle_check/104,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwe
 cycle_check/108,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,219,unaffected,False,0.832,872,correct,False
 cycle_check/112,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,205,unaffected,True,0.832,725,correct,False
 cycle_check/116,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,864,unaffected,True,0.832,2143,correct,False
-cycle_check/120,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,261,unaffected,True,0.832,979,correct,False
+cycle_check/120,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,,,,False,0.0,0.0,False,False,,False,generator,261,unaffected,True,0.832,979,unparsed,False
 cycle_check/124,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,462,unaffected,True,0.832,1121,correct,False
 cycle_check/128,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,415,unaffected,True,0.832,1384,correct,False
 cycle_check/132,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,477,unaffected,True,0.832,1291,correct,False
@@ -1418,7 +1418,7 @@ cycle_check/160,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwe
 cycle_check/164,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,447,unaffected,True,0.832,1126,wrong,False
 cycle_check/168,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,290,unaffected,True,0.832,705,correct,False
 cycle_check/172,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,437,unaffected,True,0.832,1218,correct,False
-cycle_check/176,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,No,,True,1.0,1.0,False,False,,False,generator,738,unaffected,True,0.832,1783,correct,False
+cycle_check/176,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,738,unaffected,True,0.832,1783,correct,False
 cycle_check/180,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,574,unaffected,True,0.832,1368,correct,False
 cycle_check/184,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,489,unaffected,True,0.832,1867,correct,False
 cycle_check/188,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,324,unaffected,True,0.832,899,correct,False
@@ -1449,7 +1449,7 @@ cycle_check/284,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwe
 cycle_check/288,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,604,unaffected,True,0.832,1497,correct,False
 cycle_check/292,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,1359,unaffected,True,0.832,3059,correct,True
 cycle_check/296,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,311,unaffected,True,0.832,770,wrong,False
-cycle_check/300,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,298,unaffected,True,0.832,1064,correct,False
+cycle_check/300,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,,,,False,0.0,0.0,False,False,,False,generator,298,unaffected,True,0.832,1064,unparsed,False
 cycle_check/304,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,783,unaffected,True,0.832,2057,correct,False
 cycle_check/308,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,378,unaffected,True,0.832,1185,correct,False
 cycle_check/312,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,513,unaffected,True,0.832,1213,correct,False
@@ -1478,7 +1478,7 @@ cycle_check/400,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwe
 cycle_check/404,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,726,unaffected,True,0.832,2219,correct,False
 cycle_check/408,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,726,unaffected,True,0.832,2489,correct,False
 cycle_check/412,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,274,unaffected,False,0.832,1012,correct,False
-cycle_check/416,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,No,,True,0.0,0.0,False,False,,False,generator,403,unaffected,True,0.832,969,wrong,False
+cycle_check/416,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,403,unaffected,True,0.832,969,wrong,False
 cycle_check/420,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,355,unaffected,True,0.832,926,correct,False
 cycle_check/424,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,490,unaffected,True,0.832,1176,correct,False
 cycle_check/428,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,724,unaffected,True,0.832,2158,correct,False
@@ -2162,7 +2162,7 @@ cycle_check/137,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,q
 cycle_check/141,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,351,unaffected,True,0.946,1263,correct,False
 cycle_check/145,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,491,unaffected,True,0.946,1792,correct,False
 cycle_check/149,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,No,,True,1.0,1.0,False,False,,False,generator,1188,unaffected,True,0.946,3653,correct,True
-cycle_check/153,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,No,,True,1.0,1.0,False,False,,False,generator,753,unaffected,False,0.946,2435,correct,False
+cycle_check/153,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,753,unaffected,False,0.946,2435,correct,False
 cycle_check/157,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,599,unaffected,True,0.946,1559,correct,False
 cycle_check/161,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,595,unaffected,True,0.946,1723,correct,False
 cycle_check/165,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,398,unaffected,True,0.946,1306,correct,False
@@ -2213,7 +2213,7 @@ cycle_check/341,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,q
 cycle_check/345,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,608,unaffected,True,0.946,1458,correct,False
 cycle_check/349,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,548,unaffected,True,0.946,1459,correct,False
 cycle_check/353,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,602,unaffected,True,0.946,1480,correct,False
-cycle_check/357,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,No,No,False,True,0.0,0.0,False,False,,True,generator,2048,unaffected,False,0.946,4533,non_terminating,True
+cycle_check/357,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,,,False,False,0.0,0.0,False,False,,True,generator,2048,unaffected,False,0.946,4533,non_terminating,True
 cycle_check/361,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,937,unaffected,True,0.946,2273,correct,False
 cycle_check/365,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,910,unaffected,True,0.946,2637,correct,False
 cycle_check/369,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,281,unaffected,False,0.946,953,correct,False
@@ -2241,10 +2241,10 @@ cycle_check/453,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,q
 cycle_check/457,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,1000,unaffected,True,0.946,2238,correct,False
 cycle_check/461,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,128,unaffected,True,0.946,500,correct,False
 cycle_check/465,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,360,unaffected,True,0.946,1086,correct,False
-cycle_check/469,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,No,,True,1.0,1.0,False,False,,False,generator,1204,unaffected,True,0.946,4170,correct,True
+cycle_check/469,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,1204,unaffected,True,0.946,4170,correct,True
 cycle_check/473,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,656,unaffected,True,0.946,1511,wrong,False
 cycle_check/477,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,807,unaffected,True,0.946,2081,wrong,False
-cycle_check/481,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,True,True,0.0,0.0,True,False,,True,generator,2048,unaffected,False,0.946,4476,non_terminating,True
+cycle_check/481,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,,,False,False,0.0,0.0,False,False,,True,generator,2048,unaffected,False,0.946,4476,non_terminating,True
 cycle_check/485,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,647,unaffected,True,0.946,2181,correct,False
 cycle_check/489,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,632,unaffected,True,0.946,1571,wrong,False
 cycle_check/493,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,334,unaffected,True,0.946,1141,correct,False
@@ -2989,7 +2989,7 @@ cycle_check/445,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwe
 cycle_check/449,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,536,unaffected,True,0.832,1261,wrong,False
 cycle_check/453,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,440,unaffected,True,0.832,1566,correct,False
 cycle_check/457,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,712,unaffected,True,0.832,1840,correct,False
-cycle_check/461,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,358,unaffected,True,0.832,1209,correct,False
+cycle_check/461,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,,,,False,0.0,0.0,False,False,,False,generator,358,unaffected,True,0.832,1209,unparsed,False
 cycle_check/465,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,1030,unaffected,True,0.832,2812,correct,False
 cycle_check/469,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,553,unaffected,True,0.832,1934,correct,False
 cycle_check/473,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,507,unaffected,True,0.832,1193,wrong,False
@@ -3688,7 +3688,7 @@ cycle_check/242,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,q
 cycle_check/246,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,303,unaffected,True,0.946,964,correct,False
 cycle_check/250,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,150,unaffected,True,0.946,575,correct,False
 cycle_check/254,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,533,unaffected,True,0.946,1300,correct,False
-cycle_check/258,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,No,No,False,True,0.0,0.0,False,False,,True,generator,2048,unaffected,False,0.946,5192,non_terminating,True
+cycle_check/258,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,,,False,False,0.0,0.0,False,False,,True,generator,2048,unaffected,False,0.946,5192,non_terminating,True
 cycle_check/262,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,538,unaffected,True,0.946,1730,correct,False
 cycle_check/266,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,1145,unaffected,True,0.946,3062,correct,False
 cycle_check/270,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,523,unaffected,True,0.946,1702,correct,False
@@ -3709,7 +3709,7 @@ cycle_check/326,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,q
 cycle_check/330,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,549,unaffected,True,0.946,1441,correct,False
 cycle_check/334,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,515,unaffected,True,0.946,1430,correct,False
 cycle_check/338,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,1119,unaffected,True,0.946,3330,correct,True
-cycle_check/342,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,No,,True,1.0,1.0,False,False,,False,generator,422,unaffected,True,0.946,1662,correct,False
+cycle_check/342,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,422,unaffected,True,0.946,1662,correct,False
 cycle_check/346,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,542,unaffected,True,0.946,1614,correct,False
 cycle_check/350,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,373,unaffected,True,0.946,1069,correct,False
 cycle_check/354,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,657,unaffected,True,0.946,1553,wrong,False
@@ -4436,7 +4436,7 @@ cycle_check/234,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwe
 cycle_check/238,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,879,unaffected,True,0.832,1837,correct,False
 cycle_check/242,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,481,unaffected,True,0.832,1316,correct,False
 cycle_check/246,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,324,unaffected,True,0.832,899,correct,False
-cycle_check/250,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,219,unaffected,True,0.832,972,correct,False
+cycle_check/250,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,,,,False,0.0,0.0,False,False,,False,generator,219,unaffected,True,0.832,972,unparsed,False
 cycle_check/254,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,450,unaffected,True,0.832,1103,correct,False
 cycle_check/258,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,422,unaffected,True,0.832,1048,correct,False
 cycle_check/262,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,406,unaffected,True,0.832,1415,correct,False
@@ -4478,7 +4478,7 @@ cycle_check/402,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwe
 cycle_check/406,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,438,unaffected,True,0.832,1515,correct,False
 cycle_check/410,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,557,unaffected,True,0.832,1390,correct,False
 cycle_check/414,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,399,unaffected,True,0.832,1175,correct,False
-cycle_check/418,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,No,,True,1.0,1.0,False,False,,False,generator,477,unaffected,True,0.832,1532,correct,False
+cycle_check/418,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,477,unaffected,True,0.832,1532,correct,False
 cycle_check/422,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,278,unaffected,True,0.832,704,wrong,False
 cycle_check/426,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,441,unaffected,True,0.832,1653,correct,False
 cycle_check/430,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,500,unaffected,True,0.832,1724,correct,False
@@ -5124,7 +5124,7 @@ edge_existence/487,edge_existence,degree,zero_shot,Yes.,qwen3-8b,qwen3-8b,False,
 edge_existence/491,edge_existence,degree,zero_shot,No.,qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,553,revised,True,0.794,1477,correct,False
 edge_existence/495,edge_existence,degree,zero_shot,Yes.,qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,263,revised,True,0.794,921,correct,False
 edge_existence/499,edge_existence,degree,zero_shot,Yes.,qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,354,revised,True,0.794,936,correct,False
-cycle_check/3,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,No,No,False,True,0.0,0.0,False,False,,True,generator,2048,unaffected,False,0.946,4134,non_terminating,True
+cycle_check/3,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,,,False,False,0.0,0.0,False,False,,True,generator,2048,unaffected,False,0.946,4134,non_terminating,True
 cycle_check/7,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,612,unaffected,True,0.946,1687,correct,False
 cycle_check/11,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,633,unaffected,True,0.946,1415,correct,False
 cycle_check/15,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,658,unaffected,True,0.946,1547,correct,False
@@ -5136,7 +5136,7 @@ cycle_check/35,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qw
 cycle_check/39,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,122,unaffected,True,0.946,411,correct,False
 cycle_check/43,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,560,unaffected,True,0.946,1400,correct,False
 cycle_check/47,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,557,unaffected,True,0.946,1594,correct,False
-cycle_check/51,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,No,,True,1.0,1.0,False,False,,False,generator,355,unaffected,True,0.946,1270,correct,False
+cycle_check/51,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,355,unaffected,True,0.946,1270,correct,False
 cycle_check/55,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,536,unaffected,True,0.946,1392,correct,False
 cycle_check/59,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,468,unaffected,True,0.946,1218,correct,False
 cycle_check/63,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,492,unaffected,True,0.946,1209,correct,False
@@ -5162,7 +5162,7 @@ cycle_check/139,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,q
 cycle_check/143,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,658,unaffected,True,0.946,1464,wrong,False
 cycle_check/147,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,537,unaffected,True,0.946,1388,correct,False
 cycle_check/151,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,523,unaffected,True,0.946,1573,correct,False
-cycle_check/155,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,True,True,0.0,0.0,True,False,,True,generator,2048,unaffected,False,0.946,4448,non_terminating,True
+cycle_check/155,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,,,False,False,0.0,0.0,False,False,,True,generator,2048,unaffected,False,0.946,4448,non_terminating,True
 cycle_check/159,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,655,unaffected,True,0.946,1580,correct,False
 cycle_check/163,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,663,unaffected,True,0.946,1949,correct,False
 cycle_check/167,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,434,unaffected,True,0.946,1147,correct,False
@@ -5176,11 +5176,11 @@ cycle_check/195,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,q
 cycle_check/199,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,621,unaffected,True,0.946,1571,correct,False
 cycle_check/203,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,607,unaffected,True,0.946,2187,correct,False
 cycle_check/207,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,970,unaffected,True,0.946,2383,correct,False
-cycle_check/211,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,No,,True,1.0,1.0,False,False,,False,generator,374,unaffected,True,0.946,1194,correct,False
+cycle_check/211,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,374,unaffected,True,0.946,1194,correct,False
 cycle_check/215,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,1153,unaffected,True,0.946,2813,correct,False
 cycle_check/219,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,493,unaffected,True,0.946,1183,correct,False
 cycle_check/223,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,403,unaffected,True,0.946,1220,correct,False
-cycle_check/227,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,True,True,0.0,0.0,True,False,,True,generator,2048,unaffected,False,0.946,4914,non_terminating,True
+cycle_check/227,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,,,False,False,0.0,0.0,False,False,,True,generator,2048,unaffected,False,0.946,4914,non_terminating,True
 cycle_check/231,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,634,unaffected,True,0.946,1803,correct,False
 cycle_check/235,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,874,unaffected,True,0.946,1983,correct,False
 cycle_check/239,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,777,unaffected,True,0.946,2528,correct,False
@@ -5233,7 +5233,7 @@ cycle_check/423,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,q
 cycle_check/427,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,520,unaffected,True,0.946,1220,correct,False
 cycle_check/431,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,381,unaffected,True,0.946,1317,correct,False
 cycle_check/435,cycle_check,degree,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,493,unaffected,True,0.946,1435,correct,False
-cycle_check/439,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,No,,True,1.0,1.0,False,False,,False,generator,1097,unaffected,True,0.946,3299,correct,False
+cycle_check/439,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,1097,unaffected,True,0.946,3299,correct,False
 cycle_check/443,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,630,unaffected,True,0.946,1996,correct,False
 cycle_check/447,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,527,unaffected,True,0.946,1309,correct,False
 cycle_check/451,cycle_check,degree,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,458,unaffected,True,0.946,1175,correct,False
@@ -5883,7 +5883,7 @@ cycle_check/23,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen
 cycle_check/27,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,331,unaffected,True,0.832,1024,correct,False
 cycle_check/31,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,490,unaffected,True,0.832,1390,correct,False
 cycle_check/35,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,442,unaffected,True,0.832,1556,correct,False
-cycle_check/39,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,229,unaffected,True,0.832,843,correct,False
+cycle_check/39,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,,,,False,0.0,0.0,False,False,,False,generator,229,unaffected,True,0.832,843,unparsed,False
 cycle_check/43,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,475,unaffected,True,0.832,1141,correct,False
 cycle_check/47,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,610,unaffected,True,0.832,1516,correct,False
 cycle_check/51,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,496,unaffected,True,0.832,1466,correct,False
@@ -5991,7 +5991,7 @@ cycle_check/455,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwe
 cycle_check/459,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,432,unaffected,True,0.832,998,wrong,False
 cycle_check/463,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,558,unaffected,True,0.832,1803,correct,False
 cycle_check/467,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,580,unaffected,True,0.832,1483,correct,False
-cycle_check/471,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,No,,True,0.0,0.0,False,False,,False,generator,406,unaffected,False,0.832,1153,wrong,False
+cycle_check/471,cycle_check,none,zero_shot,"No, there is no cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,0.0,0.0,False,False,,False,generator,406,unaffected,False,0.832,1153,wrong,False
 cycle_check/475,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,528,unaffected,True,0.832,1456,correct,False
 cycle_check/479,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,470,unaffected,True,0.832,1092,correct,False
 cycle_check/483,cycle_check,none,zero_shot,"Yes, there is a cycle.",qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,672,unaffected,True,0.832,1572,correct,False

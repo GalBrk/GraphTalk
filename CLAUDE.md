@@ -55,8 +55,7 @@ uv run --no-sync pytest -q --ignore=tests/test_hierarchical_model.py \
 ```
 
 Always use `--no-sync` — a plain `uv run` re-syncs to the default dependency set
-and uninstalls the optional `pipeline` extras. That command must report exactly
-**613 passed**; a different number means the env is wrong, not the code.
+and uninstalls the optional `pipeline` extras.
 
 The two ignored files import `statsmodels`, which is **not** installed in either
 `conda_envs/graphtalk` or `conda_envs/graphtalk-cu126` — the only envs this
@@ -131,6 +130,20 @@ and a Benjamini-Hochberg correction — for both main-sweep accuracy and thinkin
 non-termination rate. Pass `--out <path.csv>` to save the printed rows instead of only
 seeing them in the terminal.
 
+Reproduce the baseline-accuracy result the paper's Results section rests on
+(the shortcut-bar split, the density continuum, the held-out arms, and the
+negative control that bounds the claim):
+
+```bash
+PYTHONPATH=. python scripts/analyze_baseline_law.py --shortcuts shortcuts.json
+```
+
+Each of the four tests can be run alone with `--test split|continuum|heldout|
+instrument`. It reads `runs/` directly and needs no frame built first; see
+`docs/primer-effects-and-power.md`'s "Is the primer effect organised by
+baseline accuracy?" section for what each one establishes and for the n=40
+bar correction it applies, which is the part that is easy to get wrong.
+
 Other one-off scripts:
 
 ```bash
@@ -203,7 +216,11 @@ python scripts/measure_real_rows.py                           # re-measures corp
   scorer with `task` as a third grouping key, for a density sweep that (unlike
   every earlier one) covers more than one or two tasks at once -- see
   `docs/primer-effects-and-power.md`'s "full-task, full-condition density
-  sweep" section.
+  sweep" section. The directory holds ~40 further one-off analysis scripts
+  (`analyze_*.py`, `check_*.py`, `validate_*.py`, and similar); each belongs to
+  a specific finding and is referenced from the `docs/*.md` file that reports
+  that finding, rather than listed individually here — grep `docs/` for a
+  script's name before assuming it's undocumented.
 - `cluster/` — `sweep.sbatch` and `README.md`, the authority on how the sweep
   actually runs on the TAU CS cluster (partitions, memory sizing, driver
   incompatibilities, chained-job submission for jobs that exceed the 24h
@@ -215,9 +232,31 @@ python scripts/measure_real_rows.py                           # re-measures corp
   `shortcuts.json` rather than against zero, and against a length-matched
   control rather than `none` — a content-free primer of the same length costs a
   thinking model 11.7 points on dense graphs, which is larger than most measured
-  primer effects. Also `sweep-findings.md` and `docs/plans/`
-  (`shortcut-ceilings.md`, `primer-computation.md`) which explain what the
-  measured numbers mean; read these before interpreting a new sweep result.
+  primer effects. Every other file in `docs/` (and `docs/plans/`), so nothing
+  here is only discoverable by grepping:
+
+  | File | Status | What it's for |
+  |---|---|---|
+  | `DATA.md` | current | Authority on every tracked file's schema, the `(instance_id, condition, style)` pairing key, and per-row caveats (truncated/`hit_cap` rows, CPU- vs GPU-generated rows, the `filler`/`edge_existence` rewording) |
+  | `sweep-findings.md` | retracted | The original 5-19 node analysis; kept for its retractions, not its conclusions |
+  | `rq3-leads.md` | current | CPU-only forensics on the `clustering`/`node_degree` effect (selection artifacts, heterogeneity, error shape, response behaviour); GPU follow-up design lives in `plans/rq3-gpu-tests.md` |
+  | `candidate-analyses.md` | working notes | Six directions considered for the paper, run against existing `runs/` data, each with an adopt/reject verdict |
+  | `difficulty-scaling.md` | current | Four additive eval-pipeline changes (larger synthetic graphs, denser topology, a `reachability` task, an overflow guard) via `--graph-source diverse` |
+  | `features-considered.md` | current | Which graph features were evaluated for the primer (degree, clustering, RWSE, components) and why the rest were rejected, against a four-test selection criterion |
+  | `full-task-density-sweep.md` | current | Full per-task, per-density tables behind the `densfull40` sweep summarized in `primer-effects-and-power.md` |
+  | `ladder-and-rewiring.md` | current | Design notes for the shared `(n, mean_degree)` ladder and the rewiring experiment; read before `ladder-and-retrieval-results.md` |
+  | `ladder-and-retrieval-results.md` | current | First results pass over the ladder design above, plus the reading-limit retrieval probe |
+  | `collaborator-access.md` | current | How a teammate gets at the data and cached models — off-cluster clone vs. reading in place on the TAU cluster |
+  | `paper-revision-handoff.md` | done | Log of rewriting the paper to a single ACL source: what changed, what was cut for page budget, and where to pick it back up |
+  | `plans/primer-computation.md` | executed | Original design for `primers.py`'s statistics and renderer; record of why, not current behaviour — read `graphtalk/primers.py` for that |
+  | `plans/shortcut-ceilings.md` | executed | Original design for `shortcuts.py`'s theorem/heuristic/fitted rules |
+  | `plans/run_improved_tests.md` | partially executed, still live | Phased plan for statistical-power work across GOT/integer sweeps; phases 1-2 landed, later phases are outstanding — follow its instructions rather than treating it as history |
+  | `plans/scale-vs-topology-investigation.md` | done | Investigation into whether a GOT-naming effect's significance flip at n=500 was added power or a real effect shift |
+  | `plans/rq3-gpu-tests.md` | planned, not run | GPU test design for the `clustering` effect (shuffled/reversed-order primers); see `rq3-leads.md` for the CPU findings that motivate it |
+
+  Read `sweep-findings.md` and `docs/plans/` (`shortcut-ceilings.md`,
+  `primer-computation.md`) before interpreting a new sweep result — they
+  explain what the measured numbers mean.
 
 ### Core design invariants
 
@@ -251,7 +290,7 @@ break them:
 
 ### Testing conventions
 
-- 613 tests: vendored generator/encoder/metric tests, primer statistics/renderer/
+- Tests cover: vendored generator/encoder/metric tests, primer statistics/renderer/
   golden-string tests, shortcut-solver tests, prompt-assembly/scoring tests,
   node-naming, analysis, the size/density sweep builders, and the density-sweep
   scorer. A further 24 test

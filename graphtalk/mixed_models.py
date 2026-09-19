@@ -11,11 +11,23 @@ tests do. `docs/sweep-findings.md`'s "Pool the cells" suggestion, actually
 implemented.
 
 **GEE, not a full mixed-effects (subject-specific) GLMM.** A Generalized
-Estimating Equation, grouped on `instance_id`, is the standard
+Estimating Equation, grouped on the graph, is the standard
 population-averaged analogue of what the clustered permutation test already
-targets: repeated measures (six conditions) per graph instance, correlated
-with each other, with no claim about a random-intercept distribution the
-way a true GLMM would need. It's far more tractable to fit reliably at this
+targets: repeated measures (seven conditions x six tasks) per graph,
+correlated with each other, with no claim about a random-intercept
+distribution the way a true GLMM would need.
+
+**Grouped on the graph index, not `instance_id`.** An `instance_id` is
+`"<task>/<index>"`, and the six tasks sharing an index are the *same
+graph* -- identical nodes and edges, byte-identical encoding in
+`prompts.jsonl` -- asked six different questions. Grouping on the full
+string put the seven conditions on one task in a group and treated the same
+graph's other five tasks as unrelated observations, which is both wrong on
+its own terms and a different cluster granularity from
+`scripts/check_significance.py`'s. Since being comparable to that script
+cell-for-cell is this module's entire reason to exist, the two have to
+cluster on the same thing; `check_significance._graph_index` is the shared
+definition. It's far more tractable to fit reliably at this
 data's scale (30-180 clusters, binary outcome) than a subject-specific
 GLMM, which needs numerical integration or a variational approximation to
 fit at all. The subject-specific, partial-pooling-across-models-and-conditions
@@ -53,15 +65,31 @@ what makes this module's output directly diffable against
 `analysis/significance_report.csv` column-for-column
 (`condition, delta, ci_low, ci_high, p_value`).
 
-No multiplicity correction is applied here -- unlike `check_significance.py`,
-which corrects across a condition family via `graphtalk.significance
-.benjamini_hochberg`, this module fits all six conditions *simultaneously*
-in one regression per model, which already adjusts each condition's
+**No multiplicity correction is applied here, and that is a limitation of
+the output, not a property of the fit.** This module used to claim that
+fitting all six conditions simultaneously "already adjusts each condition's
 estimate for the others (it is not six independent tests fished from the
-same pile). Report raw p-values; a caller wanting a BH pass across them can
-still apply `graphtalk.significance.benjamini_hochberg` to the returned
-`p_value` column, but this module's purpose is a cross-check against the
-existing corrected numbers, not a second, independently-corrected pipeline.
+same pile)". That is arithmetically false: `condition` is a saturated
+categorical predictor with no other covariates, so each coefficient is just
+`mean(condition) - mean(none)` and refitting any one condition on its own
+reproduces the joint fit's coefficient to ~13 decimal places. These *are*
+six separate comparisons and carry the full multiplicity burden.
+
+So a caller citing these p-values must apply
+`graphtalk.significance.benjamini_hochberg` to the `p_value` column first,
+in the same family `check_significance.py` would use. Raw p-values are
+returned because the correction depends on which family the caller is
+asking about, not because none is needed.
+
+**And this is a consistency check, not independent corroboration.** With an
+identity link and a saturated predictor, `delta` here is algebraically the
+same raw mean difference `paired_permutation_test_clustered` reports -- the
+two agree to ~1e-14 on every cell, by construction rather than by
+confirmation. The GEE's p-value is also uniformly smaller (48 of 48 cells
+on the last full comparison), since a sandwich-SE Wald test is more
+permissive here than a permutation test. Read agreement as "the pipeline
+computed the effect size correctly", never as a second, independent line of
+evidence for an effect.
 """
 
 import warnings
@@ -70,6 +98,8 @@ import pandas as pd
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from statsmodels.tools.sm_exceptions import DomainWarning
+
+from graphtalk.analysis import graph_index as _graph_index
 
 CONTROL = "none"
 
@@ -105,7 +135,7 @@ def _main_sweep_scope(frame: pd.DataFrame, model: str) -> pd.DataFrame:
 
 def fit_gee_one_model(frame: pd.DataFrame, metric: str = "exact") -> pd.DataFrame:
   """Fits one identity-link binomial GEE of `metric` on `condition`
-  (`none` reference), clustered on `instance_id` via an independence
+  (`none` reference), clustered on the graph via an independence
   working correlation (see the module docstring's "Independence working
   correlation, not exchangeable" section for why).
 
@@ -117,9 +147,14 @@ def fit_gee_one_model(frame: pd.DataFrame, metric: str = "exact") -> pd.DataFram
   Returns one row per non-control condition actually present in `frame`:
   `condition`, `delta` (the identity-link coefficient -- directly a
   probability difference against `none`), `std_err`, `ci_low`, `ci_high`,
-  `p_value`, `n_obs`, `n_groups` (clusters, i.e. distinct `instance_id`
-  values), `converged`. Raises `ValueError` if `frame` has no `none` rows
-  (the reference level `patsy` needs) or is otherwise too small to fit.
+  `p_value`, `n_obs`, `n_groups` (clusters, i.e. distinct graphs), and
+  `converged`. Raises `ValueError` if `frame` has no `none` rows (the
+  reference level `patsy` needs) or is otherwise too small to fit.
+
+  `n_groups` is read back off the fitted model, not counted in pandas
+  beforehand: counted separately it reports what the grouping *should* have
+  been even when the fit never received it, which is exactly the failure a
+  reader would use this column to rule out.
   """
   if frame.empty:
     raise ValueError("fit_gee_one_model got an empty frame")
@@ -132,11 +167,16 @@ def fit_gee_one_model(frame: pd.DataFrame, metric: str = "exact") -> pd.DataFram
   # difference regression" note) -- statsmodels warns about exactly that
   # known, accepted characteristic on every call; filtered here by class
   # rather than blanket-suppressed, so an unrelated warning still surfaces.
+  # The graph, not the "<task>/<index>" instance id -- see the module
+  # docstring. Shares `analysis.graph_index` rather than re-splitting the
+  # string here, so this and `check_significance.py` can't drift apart into
+  # different cluster granularities again.
+  frame = frame.assign(_graph=frame["instance_id"].map(_graph_index))
   with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=DomainWarning)
     model = smf.gee(
         f"{metric} ~ C(condition, Treatment(reference={CONTROL!r}))",
-        groups="instance_id",
+        groups="_graph",
         data=frame,
         family=sm.families.Binomial(link=sm.families.links.Identity()),
         cov_struct=sm.cov_struct.Independence(),
@@ -156,7 +196,10 @@ def fit_gee_one_model(frame: pd.DataFrame, metric: str = "exact") -> pd.DataFram
         "ci_high": conf_int.loc[term, 1],
         "p_value": result.pvalues[term],
         "n_obs": int(result.nobs),
-        "n_groups": frame["instance_id"].nunique(),
+        # Off the fit, not counted in pandas: a separately-counted value
+        # reports the intended grouping even when the model never received
+        # it, so it can't witness that the clustering actually happened.
+        "n_groups": len(result.model.group_labels),
         "converged": bool(result.converged),
     })
   return pd.DataFrame(rows)

@@ -29,8 +29,16 @@ no permissions needed).
 | `<model>.degdensrep.shardNof5.jsonl` | 3200 | an **independent replication** of the `clustering` headline: 4 levels x 400 *fresh* graphs x {`none`, `clustering`}, seed offset 500,000. Its `instance_id`s carry an `/s<seed>/` segment so they can never be pooled with the default-seed corpus |
 | `<model>.densfull40.shardNof25.jsonl` | 16800/arm | the **full-task, full-condition** density sweep: n=40 x {0.10, 0.20, 0.35, 0.50} x all 7 conditions x all 6 tasks x 100 graphs. Built by `scripts/build_size_sweep.py --sizes 40 --densities 0.10 0.20 0.35 0.50 --tasks <all 6> --conditions <all 7> --count 100`, prompt file `../prompts.densfull40.jsonl`. Score with `scripts/score_full_density_sweep.py`, not `score_density_sweep.py` -- the latter pools every task into one cell. All four arms complete: `qwen3-1.7b`, `qwen3-1.7b-think`, `qwen3-4b`, `qwen3-4b-think`. See [../docs/primer-effects-and-power.md](../docs/primer-effects-and-power.md)'s "full-task, full-condition density sweep" section |
 | `<model>.densfull40hi.shardNof{11,25}.jsonl` | 4200/arm | the **high-density extension**: n=40 x {0.65, 0.75, 0.85} x all 7 conditions x {`node_degree`, `edge_existence`} only x 100 graphs. Prompt file `../prompts.densfull40hi.jsonl`. Shard count differs by arm (11-way for the non-think models, 25-way for the `-think` ones -- both coprime with 14 = 2 tasks x 7 conditions, so either works). All four arms complete. See [../docs/primer-effects-and-power.md](../docs/primer-effects-and-power.md)'s "high-density extension" section -- this is where `qwen3-4b`'s `clustering` effect on `node_degree` (+11.3pp, p<0.0001) finally shows up, since `none` has no headroom below p=0.65 on that model |
+| `<model>.ladder_screen.jsonl` | 900/arm | the ladder screen: 18 rungs (`n` x `k̄`) x 50 graphs, `condition=none` only, `task=node_degree` -- locates each model's informative band before any primer or rewiring is spent. See [../docs/ladder-and-rewiring.md](../docs/ladder-and-rewiring.md) |
+| `<model>.retrieval_locate.jsonl` | 1050/arm | the graph-free retrieval probe: 7 statement counts x 3 positions x 2 magnitudes x 25 graphs, `condition=retrieval` only -- locates each model's reading limit, independently of the ladder |
+| `<model>.rewire_shared.jsonl` | 1800/arm | the rewiring stage at the one rung shared across models (`n40k12`): 3 rewiring levels (`low`/`base`/`high`) x {`none`, `clustering`, `filler`} x 200 |
+| `qwen35-2b.rewire_extra.jsonl` | 2700 | the same rewiring design at two extra rungs (`n60k12`, `n60k16`) run only for `qwen35-2b`, which cleared both screens further up the ladder than the other arms |
 | `../prompts.count100.none_degree.jsonl` | 1200 | prompts for the `probe100` arms |
 | `../prompts.edgecount500.clean.jsonl` | 2000 | prompts for the `ec500` arms |
+| `../prompts.ladder_screen.jsonl` | 900 | prompts for the `ladder_screen` arms |
+| `../prompts.retrieval_locate.jsonl` | 1050 | prompts for the `retrieval_locate` arms |
+| `../prompts.rewire_shared.jsonl` | 1800 | prompts for the `rewire_shared` arms |
+| `../prompts.rewire_2b_extra.jsonl` | 2700 | prompts for `qwen35-2b.rewire_extra.jsonl` |
 | `../prompts.jsonl` | 1260 | the prompts these responses answer |
 
 Full schema, field semantics and join keys: **[../docs/DATA.md](../docs/DATA.md)**.
@@ -70,6 +78,23 @@ directory.
 That is why the regeneration is tagged `rerun` and not `redo` -- the exclusion
 matches on the substring `.redo.shard`, so the wrong tag would drop every
 regenerated row from the frame without raising anything.
+
+`ladder_screen`/`retrieval_locate`/`rewire_shared`/`rewire_extra` files are **not**
+excluded the way `archive/`, `.redo.shard`, or `smoke-` are either, and unlike
+`.got.jsonl` they are not caught by any node-naming check -- `graphtalk/analysis.py`
+has no notion of them at all. A plain `runs/*.jsonl` glob into `score_sweep.py`
+groups purely by `(task, style, condition)`, with no check on `instance_id`
+provenance, so `ladder_screen`'s `node_degree`/`none` rows and `rewire_shared`'s/
+`rewire_extra`'s `node_degree`/`clustering` and `node_degree`/`filler` rows
+silently pool into the *same* cells as the primer sweep's own rows under those
+keys -- the ladder/rewiring graphs are a different, smaller population, so this
+would quietly shift those cells' scores. `retrieval_locate` is comparatively
+safe, since its `condition="retrieval"` doesn't collide with any primer sweep
+condition and shows up as its own (visibly odd) cell instead of vanishing into
+one. Score all four families separately, with `scripts/analyze_ladder.py` and
+`scripts/analyze_rewiring_sweep.py` (see
+[../docs/ladder-and-rewiring.md](../docs/ladder-and-rewiring.md)), not with
+`score_sweep.py`.
 
 `.got.jsonl` files are **not** excluded the way `archive/` is -- they are
 part of the sweep, just a different node-naming scheme, so `runs/*.jsonl`

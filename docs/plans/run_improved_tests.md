@@ -36,12 +36,9 @@ below.
 convention (`tests/test_significance.py`, `tests/test_recommend_count.py`,
 etc.). After each phase, run `pytest -q` and report the pass count and any
 failures/regressions before moving to the next phase (compare against the
-project's known baseline: **613 passed** on the merged
-`small-model-suite-and-primer-power` branch, with
-`tests/test_hierarchical_model.py` and `tests/test_mixed_models.py` `--ignore`d
-because neither graphtalk conda env has `statsmodels`/`pymc`. The 572 figure
-this line used to quote predates both that merge and those ignores; compare
-against 613, or a passing run will look like a regression).
+current baseline on `main`, not a hardcoded number here — the count changes
+as tests are added, so a *drop* from that baseline is the regression signal
+to watch for, not a mismatch against any specific figure).
 
 **Effect-size discipline for any new sample-size calculation**: use a
 conservative estimate (the bootstrap CI's lower bound, or an explicitly

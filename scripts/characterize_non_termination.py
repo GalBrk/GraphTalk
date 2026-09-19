@@ -79,8 +79,12 @@ def _missing_instances(frame: pd.DataFrame, sig: pd.DataFrame,
   so this can never disagree with what `n_instances_missing` actually
   counted.
   """
-  main_sweep_raw = frame[~frame["is_think"]]
-  main_sweep = main_sweep_raw[main_sweep_raw["failure_type"] != "non_terminating"]
+  main_sweep_raw = cs.main_sweep_scope(frame)
+  # Same rows: the pipeline no longer drops non-terminating ones (Phase 2
+  # forces them to score as wrong and keeps them), so there is no second,
+  # narrower scope left for this to compare against. Kept as two names
+  # because the callers below read differently, not because they differ.
+  main_sweep = main_sweep_raw
   targets = sig[(sig["bound"] == "excluded") & (sig["n_instances_missing"] > 0)
                 & (sig["group"] != "pooled across all models")]
   rows = []
@@ -89,10 +93,20 @@ def _missing_instances(frame: pd.DataFrame, sig: pd.DataFrame,
     group = main_sweep[main_sweep["model"] == model]
     raw_group = main_sweep_raw[main_sweep_raw["model"] == model]
     _, _, present = cs._paired_values(group, condition, "exact")
-    present_instances = {instance_id for _model, instance_id in present}
-    all_instances = set(raw_group["instance_id"].unique())
-    for instance_id in sorted(all_instances - present_instances):
-      task = instance_id.split("/")[0]
+    # `_paired_values`' cluster id is `(model, graph_index)`, so membership
+    # has to be compared at the graph level -- the unit `n_instances_missing`
+    # itself now counts. Comparing these graph indices against full
+    # `"<task>/<index>"` ids would make the set difference report *every*
+    # instance as missing, silently, with no error to notice.
+    present_graphs = {graph_index for _model, graph_index in present}
+    all_graphs = set(raw_group["instance_id"].map(cs._graph_index).unique())
+    missing_graphs = all_graphs - present_graphs
+    missing_ids = sorted(
+        instance_id for instance_id in raw_group["instance_id"].unique()
+        if cs._graph_index(instance_id) in missing_graphs
+    )
+    for instance_id in missing_ids:
+      task = instance_id.partition("/")[0]
       style_rows = raw_group[raw_group["instance_id"] == instance_id]
       nodes_seen = {
           node_sizes.get((instance_id, cond, style, "integer"))

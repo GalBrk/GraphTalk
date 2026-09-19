@@ -56,11 +56,24 @@ def _load(paths: list[str]) -> list[dict]:
   return score_sweep.score_records(score_sweep.desubstitute_named_responses(rows))
 
 
+# Auxiliary corpora that share a `{model}.*jsonl` prefix with the published
+# split but are a different set of graphs entirely (ladder screening, the
+# retrieval-position probe, the size sweep, the edge-count/confirmatory
+# replications). None of these were part of the 30-graphs/task GoT-vs-integer
+# design, so a glob that doesn't exclude them inflates the "integer" row
+# count against the "got" one and the completeness check below rejects every
+# arm that happens to also have one of these files.
+_AUX_MARKERS = (".ladder_screen.", ".retrieval_locate.", ".size.", ".ec500.",
+               ".count500.", ".cc500.", ".probe100.")
+
+
 def arm_paths(runs: str, model: str) -> tuple[list[str], list[str]]:
-  """(integer paths, got paths) for one arm, excluding archived rows."""
+  """(integer paths, got paths) for one arm, excluding archived rows and
+  auxiliary corpora that are not part of the published-split design."""
   every = glob.glob(os.path.join(runs, f"{model}.*jsonl")) + \
           glob.glob(os.path.join(runs, f"{model}.jsonl"))
-  every = [p for p in set(every) if "archive" not in p and ".redo." not in p]
+  every = [p for p in set(every) if "archive" not in p and ".redo." not in p
+          and not any(marker in p for marker in _AUX_MARKERS)]
   got = sorted(p for p in every if ".got" in p)
   integer = sorted(p for p in every if ".got" not in p)
   return integer, got
@@ -126,8 +139,12 @@ def main() -> None:
   qs = significance.benjamini_hochberg([r[8] for r in results], q=args.q) \
       if results else []
   for (model, n, m, ci, cg, d, lo, hi, p), sig in zip(results, qs):
+    # `lo`/`hi` are `None` where too few pairs disagreed for a percentile
+    # bootstrap to mean anything -- say so rather than printing a
+    # confident-looking interval; see cluster_bootstrap_ci_clustered.
+    interval = "n/a" if lo is None else f"[{lo:+.1%}, {hi:+.1%}]"
     print(f"{model:<20}{n:>7}{m:>7}{ci:>9.1%}{cg:>8.1%}{d:>+8.1%}"
-          f"{f'[{lo:+.1%}, {hi:+.1%}]':>20}{p:>8.4f}{'  *' if sig else '':>4}")
+          f"{interval:>20}{p:>8.4f}{'  *' if sig else '':>4}")
   if skipped:
     print("\nskipped:")
     for model, why in skipped:

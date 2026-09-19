@@ -46,6 +46,7 @@ import networkx as nx
 
 from graphtalk import diverse_corpus
 from graphtalk import graphqa
+from graphtalk import node_naming
 from graphtalk import prompts
 from graphtalk import scoring
 
@@ -60,8 +61,14 @@ DEFAULT_SEED = 20260906
 
 
 def build(sizes, count, conditions, seed, style="zero_shot", densities=None,
-          tasks=TASKS):
+          tasks=TASKS, node_naming_scheme="integer"):
   """Prompts for one graph per (density level, size, index).
+
+  `node_naming_scheme` ("integer" default, or "got") renders the identical
+  graphs/tasks/conditions with GoT character names instead of node integers
+  -- see `graphtalk/node_naming.py`. Only the rendering changes: the seed
+  formula below (and therefore the graphs drawn) is untouched, so an
+  "integer" and a "got" build with the same flags are the same graphs.
 
   `densities=None` is the original size-sweep behaviour: sparsity is drawn
   per graph from U(0, 1), the instance_id carries only the size class, and
@@ -116,6 +123,7 @@ def build(sizes, count, conditions, seed, style="zero_shot", densities=None,
         graph = graphqa.canonical(
             nx.erdos_renyi_graph(size, sparsity, seed=s)
         )
+        name_map = node_naming.build_name_map(graph, node_naming_scheme)
         for task in tasks:
           row = diverse_corpus.make_row(graph, task, random.Random(s))
           for condition in conditions:
@@ -131,8 +139,14 @@ def build(sizes, count, conditions, seed, style="zero_shot", densities=None,
                 "task": task,
                 "condition": condition,
                 "style": style,
-                "prompt": prompts.build_prompt(
-                    graph, condition, row["task_description"], style=style
+                "prompt": (
+                    node_naming.build_named_prompt(
+                        graph, condition, row["task_description"], name_map,
+                        style=style,
+                    ) if name_map is not None else
+                    prompts.build_prompt(
+                        graph, condition, row["task_description"], style=style
+                    )
                 ),
                 "gold": row["gold"],
                 "nodes": graph.number_of_nodes(),
@@ -142,6 +156,8 @@ def build(sizes, count, conditions, seed, style="zero_shot", densities=None,
             if density is not None:
               record["density_class"] = density
               record["density"] = sparsity
+            if node_naming_scheme != "integer":
+              record["node_naming"] = node_naming_scheme
             records.append(record)
   return records
 
@@ -162,6 +178,12 @@ def main() -> None:
                       help=f"default {DEFAULT_SEED}; any other value tags the "
                            "instance_id with /s<seed> so a replication corpus "
                            "can never collide with the scored one")
+  parser.add_argument("--node-naming", default="integer",
+                      choices=node_naming.NAMINGS,
+                      help="'got' renders the identical graphs with "
+                           "Game-of-Thrones names instead of node integers "
+                           "(graphtalk/node_naming.py); tags each row "
+                           "node_naming: 'got'")
   parser.add_argument("--out", default="prompts.sizesweep.jsonl")
   args = parser.parse_args()
 
@@ -170,7 +192,8 @@ def main() -> None:
       parser.error(f"unknown task {task!r}; known: {' '.join(scoring.TASKS)}")
 
   records = build(args.sizes, args.count, args.conditions, args.seed,
-                  densities=args.densities, tasks=tuple(args.tasks))
+                  densities=args.densities, tasks=tuple(args.tasks),
+                  node_naming_scheme=args.node_naming)
   with open(args.out, "w") as handle:
     for record in records:
       handle.write(json.dumps(record) + "\n")

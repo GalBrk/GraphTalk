@@ -330,9 +330,7 @@ def test_non_terminating_rows_are_paired_in_not_dropped():
       "exact": [1.0, 0.0, 0.0, 1.0],
   })
   control, treatment, cluster_ids = cs._paired_values(frame, "degree", "exact")
-  assert cluster_ids == [
-      ("gemma4-12b", "node_count/0"), ("gemma4-12b", "node_count/1"),
-  ]
+  assert cluster_ids == [("gemma4-12b", "0"), ("gemma4-12b", "1")]
   assert control == [1.0, 0.0]
   assert treatment == [0.0, 1.0]
 
@@ -357,10 +355,131 @@ def test_cluster_id_carries_model_preventing_cross_model_merge():
   })
   control, treatment, cluster_ids = cs._paired_values(frame, "degree", "exact")
   assert len(control) == 2
-  assert cluster_ids == [
-      ("gemma4-12b", "node_count/0"), ("qwen3-8b", "node_count/0"),
-  ]
+  assert cluster_ids == [("gemma4-12b", "0"), ("qwen3-8b", "0")]
   assert len(set(cluster_ids)) == 2
+
+
+# --- Fix 3: the cluster id is the graph, not the "<task>/<index>" id -------
+
+
+def test_same_graph_under_different_tasks_is_one_cluster():
+  """The bug this fixes: `node_count/7` and `edge_count/7` are the *same
+  graph* asked two questions, so they must land in one cluster. Keying on
+  the whole `instance_id` put each in its own, which made every cluster a
+  singleton on the real sweep (`n_clusters == n_pairs` on every committed
+  row) -- the clustered permutation test then reduced exactly to the
+  unclustered one and corrected for nothing.
+  """
+  frame = pd.DataFrame({
+      "model": ["gemma4-12b"] * 4,
+      "instance_id": ["node_count/7", "node_count/7",
+                      "edge_count/7", "edge_count/7"],
+      "style": ["zero_shot"] * 4,
+      "node_naming": ["integer"] * 4,
+      "condition": ["none", "degree", "none", "degree"],
+      "exact": [1.0, 0.0, 1.0, 0.0],
+  })
+  _control, _treatment, cluster_ids = cs._paired_values(frame, "degree", "exact")
+  assert cluster_ids == [("gemma4-12b", "7"), ("gemma4-12b", "7")]
+  assert len(set(cluster_ids)) == 1
+
+
+def test_graph_index_refuses_an_instance_id_with_no_task_prefix():
+  """Guarding the silent-failure mode: an id without a `/` would otherwise
+  be used whole as the graph index, quietly restoring one-pair clusters."""
+  assert cs._graph_index("cycle_check/12") == "12"
+  with pytest.raises(ValueError, match="no '<task>/<index>' shape"):
+    cs._graph_index("12")
+
+
+def test_within_graph_icc_is_none_when_every_cluster_is_a_singleton():
+  """Nothing to measure when no graph repeats -- the state the old cluster
+  key put every real row in."""
+  assert cs._within_graph_icc([1.0, 0.0], [0.0, 1.0], [("m", "0"), ("m", "1")]) is None
+
+
+def test_ci_is_suppressed_rather_than_reported_as_zero_width():
+  """The six `[0.000, 0.000]` rows in the superseded report: cells where no
+  pair disagreed at all, so every bootstrap resample returned the same
+  zeros. That prints as a confident null and is nothing of the kind -- the
+  percentile bootstrap simply had nothing to resample.
+  """
+  control = [1.0] * 180
+  treatment = [1.0] * 180
+  result = significance.cluster_bootstrap_ci_clustered(
+      control, treatment, list(range(180)), n_boot=200, seed=1
+  )
+  assert result["n_discordant"] == 0
+  assert result["ci_low"] is None and result["ci_high"] is None
+  assert result["point_estimate"] == 0.0
+
+
+def test_ci_is_suppressed_on_the_two_discordant_pairs_regime():
+  """`gemma4-12b`'s main-sweep cells disagreed on 2 pairs out of 180 and
+  still printed ordinary-looking intervals. Resampling 2 nonzero values
+  describes the resampling, not the population."""
+  control = [1.0] * 180
+  treatment = [0.0, 0.0] + [1.0] * 178
+  result = significance.cluster_bootstrap_ci_clustered(
+      control, treatment, list(range(180)), n_boot=200, seed=1
+  )
+  assert result["n_discordant"] == 2
+  assert result["ci_low"] is None
+
+
+def test_ci_is_still_reported_when_enough_pairs_disagree():
+  """The suppression must not swallow ordinary cells."""
+  control = [1.0] * 100 + [0.0] * 100
+  treatment = [0.0] * 40 + [1.0] * 60 + [1.0] * 40 + [0.0] * 60
+  result = significance.cluster_bootstrap_ci_clustered(
+      control, treatment, list(range(200)), n_boot=500, seed=1
+  )
+  assert result["n_discordant"] >= 10
+  assert result["ci_low"] is not None and result["ci_high"] is not None
+  assert result["ci_low"] < result["ci_high"]
+
+
+def _global_bh_records(p_value: float, n_perm: int, m: int = 100) -> list:
+  """`m` eligible whole-table records whose smallest p-value is `p_value`,
+  the rest well away from any threshold."""
+  return [
+      {"group": f"model{i}", "is_derived_condition": False,
+       "hypothesis_type": None, "n_perm": n_perm,
+       "p_value": p_value if i == 0 else 0.2 + i * 0.005}
+      for i in range(m)
+  ]
+
+
+def test_near_threshold_flags_a_verdict_monte_carlo_noise_decides():
+  """The concrete case this flag exists for. The superseded report's only
+  whole-table-significant row had p = 5/10001 = 0.00049995 against a rank-1-
+  of-100 BH threshold of 0.00050000 -- it cleared by 5e-8, while the
+  p-value's own grid step was 1e-4, 2000x coarser. It reversed under most
+  other seeds. The verdict was a property of the seed, not the data.
+  """
+  records = _global_bh_records(5 / 10001, n_perm=10_000)
+  cs._apply_global_bh(records, 0.05)
+  assert records[0]["bh_significant_global"] is True
+  assert records[0]["near_threshold"] is True
+
+
+def test_near_threshold_is_quiet_when_the_margin_beats_the_noise():
+  """The same cell at the current `--n-perm`: not significant, and not
+  close enough for noise to be what decided it."""
+  records = _global_bh_records(0.002165, n_perm=200_000)
+  cs._apply_global_bh(records, 0.05)
+  assert records[0]["bh_significant_global"] is False
+  assert records[0]["near_threshold"] is False
+
+
+def test_within_graph_icc_is_high_when_pairs_move_together():
+  """Two graphs, three tasks each: within a graph every pair moves the same
+  way, between graphs they move oppositely -- the case clustering exists
+  for, and the ICC should register it."""
+  control = [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
+  treatment = [1.0, 1.0, 1.0, 0.0, 0.0, 0.0]
+  cluster_ids = [("m", "0")] * 3 + [("m", "1")] * 3
+  assert cs._within_graph_icc(control, treatment, cluster_ids) > 0.9
 
 
 def test_high_non_termination_rate_uses_the_pair_level_count():
@@ -377,7 +496,7 @@ def test_high_non_termination_rate_uses_the_pair_level_count():
   n = 10
   raw = pd.DataFrame({
       "model": ["gemma4-12b"] * (2 * n),
-      "instance_id": [f"a{i}" for i in range(n)] * 2,
+      "instance_id": [f"node_count/{i}" for i in range(n)] * 2,
       "style": ["zero_shot"] * (2 * n),
       "node_naming": ["integer"] * (2 * n),
       "condition": ["none"] * n + ["degree"] * n,
@@ -405,7 +524,8 @@ def test_report_n_instances_missing_is_computed_from_data_not_hardcoded():
   """
   raw = pd.DataFrame({
       "model": ["gemma4-12b"] * 5,
-      "instance_id": ["a", "a", "b", "b", "c"],
+      "instance_id": ["node_count/0", "node_count/0", "node_count/1",
+                      "node_count/1", "node_count/2"],
       "style": ["zero_shot"] * 5,
       "node_naming": ["integer"] * 5,
       "condition": ["none", "degree", "none", "degree", "none"],
@@ -436,7 +556,7 @@ def test_report_n_instances_missing_uses_model_instance_pairs_for_pooled_data():
   """
   raw = pd.DataFrame({
       "model": ["gemma4-12b", "gemma4-12b", "qwen3-8b", "qwen3-8b"],
-      "instance_id": ["a", "a", "a", "a"],
+      "instance_id": ["node_count/0"] * 4,
       "style": ["zero_shot"] * 4,
       "node_naming": ["integer"] * 4,
       "condition": ["none", "degree", "none", "degree"],
@@ -961,15 +1081,116 @@ def test_mde_large_effect_converges_to_a_small_delta():
   assert mde["realized_diff_negative"] >= mde["delta_negative"] - 1e-9
 
 
+def test_flip_rates_hold_the_null_exactly_at_delta_zero():
+  """`delta = 0` has to mean "no net effect", not "no movement". The
+  expected difference is `q * up - (1 - q) * down`; the two rates are
+  solved for jointly so that comes out at exactly 0 for *any* control base
+  rate, not only a balanced one.
+  """
+  for base_rate in (0.1, 0.5, 0.9):
+    control = [1.0] * int(100 * base_rate) + [0.0] * (100 - int(100 * base_rate))
+    q = sum(1 for c in control if c < 0.5) / len(control)
+    up, down = significance._flip_rates(control, delta=0.0, disagreement=0.2)
+    assert q * up - (1 - q) * down == pytest.approx(0.0, abs=1e-12)
+    # ...and it is genuine two-way churn, not both rates pinned at zero.
+    assert up > 0 and down > 0
+
+
+def test_flip_rates_reproduce_the_cells_own_disagreement_rate():
+  """The simulated pairs must disagree about as often as the real ones, or
+  the synthetic effect is easier to detect than a real one of the same
+  size -- which is exactly how power came to be overstated."""
+  control = [1.0] * 60 + [0.0] * 40
+  q = 0.4
+  up, down = significance._flip_rates(control, delta=0.05, disagreement=0.25)
+  assert q * up + (1 - q) * down == pytest.approx(0.25)
+  assert q * up - (1 - q) * down == pytest.approx(0.05)
+
+
+def test_flip_rates_degenerate_to_one_sided_when_delta_exceeds_the_churn():
+  """A net shift can't exceed the total movement available, so at that
+  boundary one direction is legitimately 0 -- the monotone case, correct
+  here rather than assumed everywhere."""
+  control = [1.0] * 50 + [0.0] * 50
+  up, down = significance._flip_rates(control, delta=0.4, disagreement=0.05)
+  assert down == pytest.approx(0.0)
+  assert up > 0
+
+
+def test_mde_injection_moves_pairs_in_both_directions():
+  """The defect this replaced: `clip(control + delta)` could only ever turn
+  wrong answers right (at `delta >= 0`) or right ones wrong (at
+  `delta < 0`), never both. Real data does both -- one pooled cell in this
+  project moves 10 pairs up and 21 down -- and a one-signed synthetic
+  effect is far easier for a permutation test to detect than a two-signed
+  mix with the same mean.
+  """
+  rng = random.Random(11)
+  control = [1.0 if rng.random() < 0.7 else 0.0 for _ in range(200)]
+  up, down = significance._flip_rates(control, delta=0.05, disagreement=0.3)
+  probabilities = [up if c < 0.5 else 1.0 - down for c in control]
+  treatment = [1.0 if rng.random() < p else 0.0 for p in probabilities]
+  gains = sum(1 for c, t in zip(control, treatment) if t > c)
+  losses = sum(1 for c, t in zip(control, treatment) if t < c)
+  assert gains > 0 and losses > 0
+
+
+def test_mde_is_larger_than_the_monotone_injector_reported():
+  """The consequence for every published MDE: a two-sided injection is
+  harder to detect, so the smallest reliably-detectable *effect* is larger
+  than the superseded one-sided simulation claimed. Reproduces the old
+  injector inline rather than keeping it in the module.
+
+  Compared on `realized_diff`, not `delta`, and the difference between
+  those two is the whole point. The old injector's nominal `delta` only
+  ever reached the `1 - control_mean` share of rows that could move, so its
+  realized shift was a fraction of its nominal one; the new injector's
+  nominal `delta` *is* the net shift by construction. Comparing the two
+  schemes' nominal deltas would therefore make the old one look
+  conservative when it is the opposite -- the same parameter-versus-
+  realized confusion that inflated `recommend_count.py`'s extrapolation by
+  ~80x. `realized_diff` is the scale both schemes share, and the scale an
+  observed accuracy difference lives on.
+  """
+  n = 80
+  rng = random.Random(5)
+  control = [1.0 if rng.random() < 0.7 else 0.0 for _ in range(n)]
+  treatment = [1.0 if rng.random() < 0.7 else 0.0 for _ in range(n)]
+  cluster_ids = list(range(n))
+  kwargs = dict(initial_hi=0.1, n_replicates=100, n_perm=200, seed=5,
+                direction="positive")
+
+  two_sided = significance.minimum_detectable_effect_clustered(
+      control, treatment, cluster_ids, **kwargs
+  )
+
+  original_flip_rates = significance._flip_rates
+  try:
+    # The old behaviour, expressed in the new plumbing: everything moves
+    # toward `delta`, nothing moves back.
+    significance._flip_rates = lambda c, delta, disagreement: (
+        (max(0.0, delta), 0.0) if delta >= 0 else (0.0, max(0.0, -delta))
+    )
+    one_sided = significance.minimum_detectable_effect_clustered(
+        control, treatment, cluster_ids, **kwargs
+    )
+  finally:
+    significance._flip_rates = original_flip_rates
+
+  assert two_sided["delta"] is not None and one_sided["delta"] is not None
+  # ~2x on this fixture; the audit measured 2-4x across the real cells.
+  assert two_sided["realized_diff"] > 1.5 * one_sided["realized_diff"]
+
+
 def test_mde_near_ceiling_base_rate_needs_a_larger_delta():
   """MDE depends on the row's own noise structure (cluster count, control's
   base rate) -- not on the observed treatment effect, and not on whether
   the *observed* effect happens to be large or small (see the plan's note
   on why "tiny observed effect -> large MDE" was dropped as a test claim;
-  it isn't true). What *is* true: a near-ceiling control has little room
-  for a Bernoulli draw to move (`clip(1 + delta) = 1`, no signal possible
-  from those pairs at all), so reaching the same power needs a larger
-  nominal delta than a mid-range control at the same cluster count.
+  it isn't true). What *is* true: a near-ceiling control has few rows on
+  the side a shift has to move, so `_flip_rates`' required rate saturates
+  at 1.0 and reaching the same power needs a larger nominal delta than a
+  mid-range control at the same cluster count.
   """
   n = 60
   rng_mid = random.Random(3)
@@ -1045,6 +1266,100 @@ def test_mde_direction_positive_matches_default_both():
   # direction="positive" alone must not compute the negative side at all.
   assert positive_only["delta_negative"] is None
   assert positive_only["realized_diff_negative"] is None
+
+
+def test_resample_clusters_default_m_matches_len_clusters():
+  clusters = [[("c0", "t0")], [("c1a", "t1a"), ("c1b", "t1b")]]
+  rng = random.Random(0)
+  items, draw_ids = significance._resample_clusters(clusters, rng)
+  assert len(set(draw_ids)) == len(clusters)
+
+
+def test_resample_clusters_explicit_m_can_exceed_cluster_count():
+  clusters = [[("c0", "t0")], [("c1", "t1")]]
+  rng = random.Random(0)
+  items, draw_ids = significance._resample_clusters(clusters, rng, m=5)
+  assert len(set(draw_ids)) == 5
+  assert len(items) == 5
+
+
+# --- required_n_closed_form / required_sample_size_clustered ---------------
+
+
+def test_required_n_closed_form_matches_hand_computed_value():
+  # 7.84 / 0.1 = 78.4 -> ceil to 79.
+  assert significance.required_n_closed_form(0.1) == 79
+
+
+def test_required_n_closed_form_smaller_delta_needs_more_pairs():
+  small = significance.required_n_closed_form(0.03)
+  large = significance.required_n_closed_form(0.2)
+  assert small > large
+
+
+def test_required_n_closed_form_zero_delta_raises():
+  with pytest.raises(ValueError, match="nonzero"):
+    significance.required_n_closed_form(0.0)
+
+
+def test_required_n_closed_form_sign_does_not_matter():
+  assert significance.required_n_closed_form(0.1) == significance.required_n_closed_form(-0.1)
+
+
+def test_required_sample_size_clustered_no_pairs_returns_none():
+  result = significance.required_sample_size_clustered(
+      [], [], [], target_delta=0.1
+  )
+  assert result["required_n_clusters"] is None
+  assert result["pilot_n_clusters"] == 0
+
+
+def test_required_sample_size_clustered_zero_delta_raises():
+  with pytest.raises(ValueError, match="nonzero"):
+    significance.required_sample_size_clustered(
+        [1.0], [1.0], [0], target_delta=0.0
+    )
+
+
+def test_required_sample_size_clustered_large_effect_converges_to_a_small_n():
+  """A strong, clean effect on a small pilot should need only a modest
+  cluster count to reach 80% power -- not the full max_multiplier ceiling,
+  and not more clusters than a tiny pilot would ever plausibly need."""
+  rng = random.Random(11)
+  n = 20
+  control, treatment, cluster_ids = [], [], []
+  for i in range(n):
+    control.append(1.0 if rng.random() < 0.5 else 0.0)
+    treatment.append(1.0 if rng.random() < 0.5 else 0.0)
+    cluster_ids.append(i)
+  result = significance.required_sample_size_clustered(
+      control, treatment, cluster_ids, target_delta=0.35,
+      n_replicates=50, n_perm=100, seed=11,
+  )
+  assert result["pilot_n_clusters"] == n
+  assert result["required_n_clusters"] is not None
+  assert result["required_n_clusters"] <= n * 8
+  assert result["achieved_power"] >= 0.8
+
+
+def test_required_sample_size_clustered_tiny_effect_needs_more_clusters_than_a_large_one():
+  rng = random.Random(12)
+  n = 20
+  control, treatment, cluster_ids = [], [], []
+  for i in range(n):
+    control.append(1.0 if rng.random() < 0.5 else 0.0)
+    treatment.append(1.0 if rng.random() < 0.5 else 0.0)
+    cluster_ids.append(i)
+  large_effect = significance.required_sample_size_clustered(
+      control, treatment, cluster_ids, target_delta=0.4,
+      n_replicates=50, n_perm=100, seed=12,
+  )
+  tiny_effect = significance.required_sample_size_clustered(
+      control, treatment, cluster_ids, target_delta=0.02,
+      n_replicates=50, n_perm=100, seed=12, max_multiplier=200,
+  )
+  if tiny_effect["required_n_clusters"] is not None and large_effect["required_n_clusters"] is not None:
+    assert tiny_effect["required_n_clusters"] > large_effect["required_n_clusters"]
 
 
 def test_mde_unknown_direction_raises():
