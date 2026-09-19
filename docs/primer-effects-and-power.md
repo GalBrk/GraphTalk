@@ -1076,6 +1076,13 @@ density work at n=40 should stop at 0.50.** The three levels here are worth
 keeping as the boundary measurement -- they are what proves the boundary
 exists -- but they are not places to test a hypothesis.
 
+**Cross-reference to the size sweep.** "Does size break them?" above finds the
+same shape with size instead of density: `node_degree` collapses monotonically
+(1.7B plain: 0.860 -> 0.143 at n=80) while the other three tasks barely move,
+and every arm degrades harder in the plain channel than the thinking one. Size
+and density are independent knobs that produce the same collapse on the same
+task -- neither result explains the other away.
+
 ### The trend test, which is the question that was actually asked
 
 Per-cell significance was never the hypothesis. The driver analysis claims the
