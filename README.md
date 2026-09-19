@@ -22,7 +22,9 @@ level, from the same checkpoint.
 
 `talk_like_a_graph/` is a vendored copy of Google Research's reference
 implementation. See [talk_like_a_graph/UPSTREAM.md](talk_like_a_graph/UPSTREAM.md)
-for the exact upstream commit and our local changes.
+for the exact upstream commit and our local changes. For the fuller map of
+what's on `main` and why — including how the n=40 work relates to the paper's
+own 5-19 node benchmark — see [docs/repo-scope.md](docs/repo-scope.md).
 
 `graphtalk/` is this project's own package: `graphqa.py` recovers a networkx
 graph from a GraphQA row and recomputes its gold answer, `primers.py` holds the
@@ -70,7 +72,7 @@ sbatch cluster/sweep.sbatch gemma4-12b
 
 # 3. score, back on the laptop
 PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500 --json shortcuts.json
-PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.json
+PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v '\.got\.') --shortcuts shortcuts.json
 ```
 
 Step 2 is written as one job per model for readability. On the TAU cluster a
@@ -133,6 +135,14 @@ sets both env vars for you:
 ```bash
 cluster/submit_sweep.sh --node-naming got cluster/sweep.sbatch gemma4-12b
 ```
+
+`scripts/build_size_sweep.py` (the n=40+ density sweep, see
+`docs/repo-scope.md`'s "canonical n=40 experiment") takes the same
+`--node-naming got` flag, for the identical graphs with GoT names instead of
+node integers. `GOT_NAMES` covers 40 characters (20 vendored + 20 added in
+`graphtalk/node_naming.py`, same additive-override pattern as the `Cat` ->
+`Catelyn` fix above) specifically so it reaches every node at that size;
+`build_name_map` still raises past however many names are defined.
 
 Every other `sbatch` flag/positional passes straight through unchanged, so
 this is a drop-in replacement for the word `sbatch` in any of the invocations

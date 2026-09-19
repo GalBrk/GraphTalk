@@ -61,6 +61,20 @@
 # match while --partition is `killable`. To use them, override the partition:
 #   sbatch --partition=gpu-h100-killable --constraint=h100 cluster/sweep.sbatch qwen3-14b
 #
+# The default --constraint below is the 48 GB tier (a6000|l40s|h100), sized for
+# the largest model in graphtalk/models.py (min_vram_gb=48). A model with a
+# smaller min_vram_gb can also run on the Ampere 24 GB tier -- same generation
+# as a6000, bf16 tensor cores, just less VRAM -- which is a much bigger, often
+# much less contended pool (`killable` has 2 a6000 nodes and up to 6 l40s nodes
+# vs. 3 a5000 + 7 geforce_rtx_3090 nodes). Override --constraint (and size
+# --mem down to the checkpoint, not the 64G default) for such a model:
+#   sbatch --constraint="a5000|geforce_rtx_3090|a6000|l40s|h100" --mem=16G \
+#       cluster/sweep.sbatch qwen3-1.7b
+# Deliberately excludes geforce_rtx_2080 and the DGX v100/quadro nodes: Turing
+# and Volta lack bf16 tensor cores, so `device_map="auto"` would place all or
+# part of the model on CPU there -- silently, per the driver check below, not
+# with an error. cluster/run_size_sweep.sh applies this override already.
+#
 # `killable` is preemptible, so this job can be stopped and requeued at any
 # moment. run_sweep.py appends to its output and skips work already present, so a
 # requeue resumes rather than restarting -- which is why --out must be a stable
@@ -87,16 +101,24 @@ if [[ ! -f "$PROMPTS" ]]; then
   exit 1
 fi
 
+# Absolute path for runs directory to ensure correct permissions and storage location
+RUNS_DIR="/home/dcor/avivyossef/inbal/GraphTalk/runs"
+
+TASK_DIR="${GRAPHTALK_TASK_DIR:-}"
+if [[ -n "$TASK_DIR" ]]; then
+  RUNS_DIR="${RUNS_DIR}/${TASK_DIR}"
+fi
+
 # A smoke test writes to its own file. Sharing the sweep's output would make its
 # rows count as done, so a smoke run that revealed a broken chat template would
 # leave twenty bad generations that the full sweep then skips.
-OUT="runs/${MODEL}.jsonl"
+OUT="${RUNS_DIR}/${MODEL}.jsonl"
 EXTRA=()
 if [[ -n "$LIMIT" ]]; then
   # Straight into the archive: a smoke run is never part of the sweep, and
   # runs/archive/ is excluded by directory rather than by the `smoke-` prefix.
-  mkdir -p runs/archive
-  OUT="runs/archive/smoke-${MODEL}.jsonl"
+  mkdir -p "${RUNS_DIR}/archive"
+  OUT="${RUNS_DIR}/archive/smoke-${MODEL}.jsonl"
   EXTRA=(--limit "$LIMIT")
 fi
 
@@ -183,16 +205,33 @@ fi
 # Irrelevant on `killable`, which has no B200, but it rules the env out if this
 # ever moves to gpu-b200.
 GRAPHTALK_ENV="${GRAPHTALK_ENV:-graphtalk}"
-# conda.sh references $PS1, which a non-interactive batch shell never sets --
-# fatal under this script's `set -u` otherwise.
-export PS1="${PS1:-}"
+set +u
 source /home/dcor/galbarak2/anaconda3/etc/profile.d/conda.sh
 conda activate "/home/dcor/galbarak2/conda_envs/${GRAPHTALK_ENV}"
+set -u
 echo "env: $GRAPHTALK_ENV"
 
 # Models are pre-fetched on the login node; compute nodes may have no outbound
 # network, and a job that tries to download blocks until it times out.
-export HF_HOME=/home/dcor/galbarak2/hf_cache
+# Weights come from the lab-shared cache by default: it holds Qwen3-0.6B/1.7B/
+# 3.5-2B/8B/14B and gemma-4-E4B/12B, so nothing needs re-downloading.
+#
+# HF_HOME and HF_HUB_CACHE are set SEPARATELY and that split is load-bearing.
+# Pointing HF_HOME at the shared cache fails: huggingface_hub writes a `token`
+# file at HF_HOME's root, and the shared tree is read-only to everyone but its
+# owner, so every load dies with `PermissionError at .../token`. HF_HOME must
+# therefore be somewhere writable, with only HF_HUB_CACHE aimed at the shared
+# blobs. Benign `Ignoring corrupted tree cache file ... Permission denied`
+# warnings are expected from the same read-only-ness and are not an error.
+#
+# Override either for a checkout with its own weights:
+#   GRAPHTALK_HF_CACHE=/path/to/hub sbatch ... <model>
+#
+# Offline is NOT negotiable: the GPU nodes have no route to huggingface.co, so a
+# cache miss fails on the node after queueing rather than at submit time.
+export HF_HOME="${GRAPHTALK_HF_HOME:-/home/dcor/avivyossef/inbal/GraphTalk/.hf_home}"
+export HF_HUB_CACHE="${GRAPHTALK_HF_CACHE:-/home/dcor/galbarak2/hf_cache/hub}"
+mkdir -p "$HF_HOME"
 export HF_HUB_OFFLINE=1
 # Reclaims fragmented VRAM, which is what pushed the SlidesGen 12B run over the
 # edge on a 48 GB card.
@@ -201,7 +240,7 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 cd "$SLURM_SUBMIT_DIR"
 export PYTHONPATH="$SLURM_SUBMIT_DIR"
 
-mkdir -p runs out
+mkdir -p "$RUNS_DIR" out
 nvidia-smi
 
 # Nothing left to do? Exit before warming. A chain is submitted with more links
@@ -341,11 +380,19 @@ PY
 # `cat` and not python: this has to happen before `import torch`, and the point
 # is the kernel's cache, not anything in the process.
 REPO="$(python -c "from graphtalk import models; print(models.MODELS['$MODEL'].repo_id)")"
-BLOBS="${HF_HOME}/hub/models--${REPO//\//--}/blobs"
+BLOBS="${HF_HUB_CACHE}/models--${REPO//\//--}/blobs"
 echo "warming page cache from $BLOBS"
 WARM_START=$SECONDS
-find "$BLOBS" -type f -size +1M -exec cat {} + > /dev/null
-echo "page cache warmed in $(( (SECONDS - WARM_START) / 60 ))m $(( (SECONDS - WARM_START) % 60 ))s"
+if find "$BLOBS" -type f -size +1M -exec cat {} + > /dev/null; then
+  echo "page cache warmed in $(( (SECONDS - WARM_START) / 60 ))m $(( (SECONDS - WARM_START) % 60 ))s"
+else
+  # `find` needs list (r) permission on $BLOBS to enumerate it; actual
+  # loading below only needs traverse (x) permission to open a file it
+  # already knows the name of via the snapshots/ symlink, so a listing
+  # failure here -- e.g. reading someone else's shared cache -- doesn't
+  # mean loading will fail too. This step is a speed optimization only.
+  echo "page cache warm-up skipped (couldn't list $BLOBS, likely a permissions gap on a shared cache); continuing without it"
+fi
 
 python scripts/run_sweep.py \
   --model "$MODEL" \

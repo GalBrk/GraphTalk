@@ -66,9 +66,17 @@ def _load_node_counts(prompts_path: str) -> pd.DataFrame:
 
 
 def _main_sweep_rows(frame: pd.DataFrame) -> pd.DataFrame:
-  """Same scope as `check_significance.py`'s `excluded`-bound main-sweep
-  report: non-`-think` rows, non-terminating failures dropped."""
-  return frame[(~frame["is_think"]) & (frame["failure_type"] != "non_terminating")]
+  """Same scope as `check_significance.py`'s main-sweep report, taken from
+  that script rather than restated.
+
+  It used to restate it as "non-`-think` rows, non-terminating failures
+  dropped", which stopped being true when Phase 2 started forcing
+  non-terminating rows to score as wrong and keeping them. At the correct
+  scope this script's own headline changes materially -- 7 of 12 cells
+  becomes 11 of 12, and the mean discordant-rate gap widens from
+  0.0185/0.0217 to 0.0226/0.0516 -- so the published version was
+  understating the effect it was built to detect."""
+  return cs.main_sweep_scope(frame)
 
 
 def _near_ceiling_models(frame: pd.DataFrame, threshold: float) -> list:
@@ -101,8 +109,15 @@ def compare_strata(frame: pd.DataFrame, model: str, condition: str,
   control, treatment, cluster_ids = cs._paired_values(cell, condition, "exact")
   if not control:
     return None
-  nodes_by_instance = cell.drop_duplicates("instance_id").set_index("instance_id")["nodes"]
-  node_counts = [nodes_by_instance[instance_id] for _, instance_id in cluster_ids]
+  # Keyed by graph index, matching `cs._paired_values`' cluster id -- which
+  # is `(model, graph_index)`, not `(model, instance_id)`. `nodes` is a
+  # property of the graph, and the six tasks sharing an index share that
+  # graph exactly, so collapsing the task prefix here is a re-keying, not an
+  # approximation. Keying by `instance_id` would now raise `KeyError` on
+  # every lookup.
+  cell_graphs = cell.assign(_graph=cell["instance_id"].map(cs._graph_index))
+  nodes_by_graph = cell_graphs.drop_duplicates("_graph").set_index("_graph")["nodes"]
+  node_counts = [nodes_by_graph[graph_index] for _model, graph_index in cluster_ids]
   median = pd.Series(node_counts).median()
 
   strata = {"small": {"control": [], "treatment": [], "cluster_ids": []},
