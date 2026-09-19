@@ -75,3 +75,9 @@ out/
 # than any tracked prompt file because 1,280 statements of surrounding text is
 # the point of the design rather than an accident of it.
 /prompts.retrieval.jsonl
+
+# The threshold-bisection follow-up to the retrieval probe above: three
+# statement counts (226/452/905) that bisect, in log space, the two collapse
+# boundaries the base probe only bracketed. Regenerable exactly by the command
+# in docs/primer-effects-and-power.md's "What this makes worth running next".
+/prompts.retrieval_threshold.jsonl
