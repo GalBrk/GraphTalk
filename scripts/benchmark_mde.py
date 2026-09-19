@@ -52,14 +52,17 @@ def _paired_values_for_cell(frame: pd.DataFrame, cell: dict):
   `_report` would have passed to `minimum_detectable_effect_clustered` for
   this cell, from raw `sweep_frame.csv` rows -- mirrors
   `scripts/check_significance.py::main`'s scoping (main sweep vs thinking
-  arm, `excluded` bound drops non_terminating rows, `not_applicable` is
-  the thinking arm's own non-termination outcome) plus
-  `_report`'s `_paired_values` call."""
+  arm, the latter carrying its own non-termination outcome) plus
+  `_report`'s `_paired_values` call.
+
+  Main-sweep scoping comes from `cs.main_sweep_scope` rather than being
+  restated here. It used to drop `non_terminating` rows on the `excluded`
+  bound, which stopped matching the pipeline when Phase 2 began forcing
+  those rows to score as wrong and keeping them -- so this benchmarked the
+  MDE machinery against a different row set than the one it certifies."""
   metric = "exact" if cell["arm"] == "main_sweep" else "non_terminating"
   if cell["arm"] == "main_sweep":
-    scoped = frame[~frame["is_think"]]
-    if cell["bound"] == "excluded":
-      scoped = scoped[scoped["failure_type"] != "non_terminating"]
+    scoped = cs.main_sweep_scope(frame)
   else:
     scoped = frame[frame["is_think"]]
   if cell["group"] != "pooled across all models":

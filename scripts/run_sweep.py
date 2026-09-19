@@ -147,15 +147,29 @@ def main() -> None:
         # batch size 1 should be equivalent, but this path is the one
         # every row on disk so far was generated with, so it stays the
         # default rather than being replaced by an unvalidated one.
-        completions = [hf_backend.generate(
-            tokenizer, model, batch[0]["prompt"], budget, spec.chat_kwargs,
-            spec.max_context_tokens,
-        )]
+        try:
+          completions = [hf_backend.generate(
+              tokenizer, model, batch[0]["prompt"], budget, spec.chat_kwargs,
+              spec.max_context_tokens,
+          )]
+        except hf_backend.PromptOverflowError:
+          # A config/build problem (this prompt was never going to fit in
+          # this model's context window), not a modeled phenomenon -- record
+          # it on the row and move on rather than losing every remaining
+          # generation in the job to one oversized prompt.
+          completions = [None]
       else:
-        completions = hf_backend.generate_batch(
-            tokenizer, model, [r["prompt"] for r in batch], budget,
-            spec.chat_kwargs, spec.max_context_tokens,
-        )
+        try:
+          completions = hf_backend.generate_batch(
+              tokenizer, model, [r["prompt"] for r in batch], budget,
+              spec.chat_kwargs, spec.max_context_tokens,
+          )
+        except hf_backend.PromptOverflowError:
+          # The check runs once against the batch's longest prompt before any
+          # row's generation starts, so a raise here means no completions at
+          # all came back -- every member of this batch is marked, not just
+          # the one that was actually oversized.
+          completions = [None] * len(batch)
       for record, completion in zip(batch, completions):
         # `n_new_tokens`/`hit_cap` are new as of the prompt-rewording re-run; rows
         # generated before it do not carry them, so anything reading these must
@@ -168,9 +182,10 @@ def main() -> None:
             "style": record["style"],
             "gold": record["gold"],
             "model": args.model,
-            "response": completion.text,
-            "n_new_tokens": completion.n_new_tokens,
-            "hit_cap": completion.hit_cap,
+            "response": completion.text if completion else None,
+            "n_new_tokens": completion.n_new_tokens if completion else 0,
+            "hit_cap": completion.hit_cap if completion else False,
+            "overflow": completion is None,
         }
         # The prompt file's node-naming scheme has to travel with the response.
         # Everything downstream keys off this field on the *response* row --

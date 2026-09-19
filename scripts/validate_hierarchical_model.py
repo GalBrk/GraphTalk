@@ -44,6 +44,7 @@ import numpy as np
 import pandas as pd
 
 from graphtalk import hierarchical_model as hm
+from scripts import check_significance as cs
 
 
 def _synthetic_frame(control_rate, treatment_rate, n, seed, model):
@@ -179,7 +180,11 @@ def check_real_data(frame_path: str, draws: int, tune: int, seed: int) -> None:
         "pure-Python fallback (see graphtalk/hierarchical_model.py). "
         "Pass --draws/--tune to reduce for a quicker, lower-confidence check.")
   frame = pd.read_csv(frame_path)
-  main_sweep = frame[(~frame["is_think"]) & (frame["failure_type"] != "non_terminating")]
+  # `cs.main_sweep_scope`, not a local filter: the local one dropped
+  # non_terminating rows and so stopped matching the pipeline this is
+  # supposed to be validating once Phase 2 began keeping them (forced to
+  # score as wrong) rather than excluding them.
+  main_sweep = cs.main_sweep_scope(frame)
   trace, index = hm.fit(main_sweep, draws=draws, tune=tune, chains=2, seed=seed,
                          progressbar=True)
   result = hm.fit_summary(trace, index)
