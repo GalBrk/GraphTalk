@@ -49,8 +49,7 @@ default `~/.cache/pip` would eat most of the 6 GB home quota.
 `pip install -e` works normally here; the `PYTHONPATH=.` prefix in the top-level
 README is a macOS-only workaround for a broken editable install. Verify with
 `pytest -q --ignore=tests/test_hierarchical_model.py
---ignore=tests/test_mixed_models.py`, which must report **613 passed** — a
-different number means the env is wrong, not the code. The two ignores are
+--ignore=tests/test_mixed_models.py`. The two ignores are
 required, not tidiness: those files import `statsmodels`/`pymc`, which neither
 `conda_envs/graphtalk` nor `conda_envs/graphtalk-cu126` has, and a missing
 import at module scope aborts *collection* so a bare `pytest -q` reports zero
@@ -86,7 +85,7 @@ python scripts/build_prompts.py --count 30      # writes 1260 prompts
 sbatch --exclude=n-801 --mem=32G cluster/sweep.sbatch qwen3-8b
 
 # stage 3, on the login node
-python scripts/score_sweep.py --responses runs/*.jsonl
+python scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v '\.got\.')
 ```
 
 Smoke-test first. Passing a second argument runs that many generations and
@@ -182,6 +181,28 @@ this file). The wrapper builds `prompts_got.jsonl` right there, before
 rebuilding (`load_rows()`'s cache makes that safe -- see `README.md#node-naming`).
 Omit `--node-naming` (or pass `--node-naming integer`) for the plain scheme;
 nothing else about the wrapper's behavior changes.
+
+### Running the ladder/rewiring sweep
+
+The graph-structure ladder and the degree-preserving rewiring experiment
+(`docs/ladder-and-rewiring.md`) have their own driver, `cluster/run_ladder.sh`,
+rather than going through `sweep.sbatch` by hand:
+
+```bash
+cluster/run_ladder.sh              # submits the probe + ladder-screen stages, both arms
+cluster/run_ladder.sh --dry-run    # print what would submit; build and submit nothing
+STAGES=ladder MODELS=qwen3-1.7b cluster/run_ladder.sh   # one stage, one model
+```
+
+It builds `prompts.retrieval_locate.jsonl` / `prompts.ladder_screen.jsonl` if
+they don't already exist, sizes each model's GPU tier and `--mem` itself (see
+`tier_for()` in the script), and submits one job per model per stage --
+writing to `runs/<model>.retrieval_locate.jsonl` / `runs/<model>.ladder_screen.jsonl`
+(see `runs/README.md`). The rewiring stage is deliberately **not** included in
+the default run (`STAGES` defaults to `probe ladder`); it needs a rewire
+prompt file built separately with `scripts/build_ladder.py --stage rewire`,
+restricted to the rungs that cleared both screens for the models being run --
+read `docs/ladder-and-rewiring.md` before spending GPU time on it.
 
 ## Warm the page cache, or the job dies loading
 
@@ -525,6 +546,27 @@ them and add links to the chain rather than assuming three is enough.
   ```
 
   It queues longer; the partition was 8 jobs deep when last checked.
+
+- **Widen the pool for a small model.** `sweep.sbatch`'s default
+  `--constraint` (`a6000|l40s|h100`) is the 48 GB tier, sized for the sweep's
+  largest model. A model with `min_vram_gb <= 24` (e.g. `qwen3-1.7b`) also
+  fits the Ampere 24 GB tier -- a5000 and geforce_rtx_3090, same bf16 tensor
+  cores as a6000, just less VRAM -- which roughly triples the node pool and is
+  often far less contended than l40s/a6000 (checked 2026-09-08: every l40s in
+  `killable` was fully allocated, `gres/gpu=8/8`, while a5000/geforce_rtx_3090
+  had dozens of idle GPUs). Also size `--mem` down to the checkpoint rather
+  than keeping the 64G default meant for a 28 GB one:
+
+  ```bash
+  sbatch --constraint="a5000|geforce_rtx_3090|a6000|l40s|h100" --mem=16G \
+      cluster/sweep.sbatch qwen3-1.7b
+  ```
+
+  Deliberately excludes `geforce_rtx_2080` and the DGX `v100`/`quadro` nodes:
+  Turing and Volta have no bf16 tensor cores, so `device_map="auto"` would
+  silently place all or part of the model on CPU there rather than erroring —
+  the same failure shape as the pre-580-driver nodes above, just from a
+  different cause.
 
 ## Preemption
 

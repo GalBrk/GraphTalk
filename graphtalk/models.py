@@ -85,6 +85,9 @@ MODELS = {
                   "AutoModelForImageTextToText", 24),
         ModelSpec("gemma4-12b", "google/gemma-4-12B-it", "gemma4", "12B",
                   "AutoModelForImageTextToText", 48),
+        ModelSpec("qwen3-1.7b", "Qwen/Qwen3-1.7B", "qwen3", "1.7B",
+                  "AutoModelForCausalLM", 8,
+                  {"enable_thinking": False}, {"zero_shot": 8192}, 32768),
         ModelSpec("qwen3-8b", "Qwen/Qwen3-8B", "qwen3", "8B",
                   "AutoModelForCausalLM", 24,
                   {"enable_thinking": False}),
@@ -121,9 +124,13 @@ MODELS = {
         # separately from a wrong one -- read the parse rate before reading the
         # accuracy, because at this size the two failure modes are easy to
         # confuse and only one of them is about primers.
+        # Weights come from the lab-shared cache rather than a fresh download
+        # for the shared difficulty ladder (docs/ladder-and-rewiring.md) -- see
+        # cluster/sweep.sbatch's GRAPHTALK_HF_HOME.
         ModelSpec("qwen3-0.6b", "Qwen/Qwen3-0.6B", "qwen3", "0.6B",
                   "AutoModelForCausalLM", 4,
-                  {"enable_thinking": False}),
+                  {"enable_thinking": False},
+                  max_context_tokens=32768),
 
         # The middle rung. `qwen3-0.6b`'s probe left two of six tasks unusable
         # for opposite reasons: `edge_count` floored at 0.08 in the plain arm,
@@ -136,8 +143,26 @@ MODELS = {
         # ladder and the cheapest test of whether clearing that limit restores
         # `node_count` as an interpretable cell while keeping the headroom that
         # made the 0.6B worth running.
+        # Own budget and context cap rather than the module defaults: this key
+        # is sized for the 20/40/80-node sweep and the difficulty ladder (up to
+        # ~4x the node count the default zero-shot budget was set for), so it
+        # needs more headroom than the other plain specs -- measured, not
+        # guessed.
         ModelSpec("qwen3-1.7b", "Qwen/Qwen3-1.7B", "qwen3", "1.7B",
                   "AutoModelForCausalLM", 8,
+                  {"enable_thinking": False}, {"zero_shot": 8192}, 32768),
+
+        # The next rung up the same within-family ladder (0.6B -> 1.7B -> 4B ->
+        # 8B -> 14B), rather than jumping straight to 8B where the headroom is
+        # already gone on five of six tasks. Same loader and chat setup as every
+        # other Qwen3 spec above -- unlike `qwen35-2b` below, this is still the
+        # Qwen3 architecture, so it costs no cross-generation confound.
+        #
+        # ~8 GB of bf16 weights (4.02B params, verified via the HF API).
+        # `min_vram_gb` is an estimate scaled from the 1.7B/8B specs' measured
+        # figures, not yet measured on this cluster the way those are.
+        ModelSpec("qwen3-4b", "Qwen/Qwen3-4B", "qwen3", "4B",
+                  "AutoModelForCausalLM", 16,
                   {"enable_thinking": False}),
 
         # The next rung up the same within-family ladder (0.6B -> 1.7B -> 4B ->
@@ -174,7 +199,8 @@ MODELS = {
         # position is where that convention would start to be ambiguous.
         ModelSpec("qwen35-2b", "Qwen/Qwen3.5-2B", "qwen35", "2B",
                   "AutoModelForImageTextToText", 12,
-                  {"enable_thinking": False}),
+                  {"enable_thinking": False},
+                  max_context_tokens=32768),
 
         # The thinking arm. Same checkpoints, same prompt file, same instances --
         # the only difference is that the model is allowed its native reasoning
@@ -186,6 +212,13 @@ MODELS = {
         # the two arms in a file nothing could unmix afterwards.
         #
         # THINK_MAX_NEW_TOKENS is measured, not guessed; see below.
+        # Own override rather than the shared THINK_MAX_NEW_TOKENS: this key
+        # is sized for the 20/40/80-node sweep (up to ~4x the node count the
+        # 8192 placeholder was set for), so it needs more headroom than the
+        # other -think specs without changing their still-unmeasured budget.
+        ModelSpec("qwen3-1.7b-think", "Qwen/Qwen3-1.7B", "qwen3", "1.7B",
+                  "AutoModelForCausalLM", 8,
+                  {"enable_thinking": True}, {"zero_shot": 16384}, 32768),
         ModelSpec("gemma4-e4b-think", "google/gemma-4-E4B-it", "gemma4", "E4B",
                   "AutoModelForImageTextToText", 24,
                   {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
@@ -213,16 +246,24 @@ MODELS = {
         # missing data. Filter on `hit_cap` before comparing anything here.
         ModelSpec("qwen3-0.6b-think", "Qwen/Qwen3-0.6B", "qwen3", "0.6B",
                   "AutoModelForCausalLM", 4,
-                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
+                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS, 32768),
+        # Own budget and context cap rather than the shared THINK_MAX_NEW_TOKENS:
+        # this key is sized for the 20/40/80-node sweep and the difficulty
+        # ladder (up to ~4x the node count the 8192 placeholder was set for),
+        # so it needs more headroom than the other -think specs, without
+        # changing their still-unmeasured shared budget.
         ModelSpec("qwen3-1.7b-think", "Qwen/Qwen3-1.7B", "qwen3", "1.7B",
                   "AutoModelForCausalLM", 8,
+                  {"enable_thinking": True}, {"zero_shot": 16384}, 32768),
+        ModelSpec("qwen3-4b-think", "Qwen/Qwen3-4B", "qwen3", "4B",
+                  "AutoModelForCausalLM", 16,
                   {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
         ModelSpec("qwen3-4b-think", "Qwen/Qwen3-4B", "qwen3", "4B",
                   "AutoModelForCausalLM", 16,
                   {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
         ModelSpec("qwen35-2b-think", "Qwen/Qwen3.5-2B", "qwen35", "2B",
                   "AutoModelForImageTextToText", 12,
-                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
+                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS, 32768),
     )
 }
 

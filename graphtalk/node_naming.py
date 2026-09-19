@@ -51,6 +51,17 @@ GOT_NAMES: dict[int, str] = name_dictionaries.create_name_dict(None, "got")
 # mention, which is a safe miss, not a reintroduction of the collision this
 # closes.
 GOT_NAMES[1] = "Catelyn"
+# The vendored list only has 20 names, one per published-corpus node (capped
+# at 19). The n=40 density sweep (`scripts/build_size_sweep.py --sizes 40`)
+# needs a name for every node, so 20 more distinct characters are added here
+# the same way -- an additive override on `GOT_NAMES`, not an edit to the
+# vendored list, and checked against the existing 20 for collisions.
+GOT_NAMES.update({
+    20: "Tyrion", 21: "Brienne", 22: "Davos", 23: "Varys", 24: "Tormund",
+    25: "Podrick", 26: "Missandei", 27: "Margaery", 28: "Loras", 29: "Oberyn",
+    30: "Ellaria", 31: "Melisandre", 32: "Gendry", 33: "Meera", 34: "Jojen",
+    35: "Ygritte", 36: "Grenn", 37: "Samwell", 38: "Gilly", 39: "Shireen",
+})
 
 NAMINGS = ("integer", "got")
 

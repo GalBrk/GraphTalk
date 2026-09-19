@@ -7,25 +7,46 @@ should be, and only where scaling up is actually affordable.
 permutation/binomial-style test, the minimum detectable effect at a fixed
 power target scales asymptotically as `MDE ~ 1/sqrt(N)` (N = cluster
 count). So if the current sweep's `minimum_detectable_effect_clustered`
-found `mde_delta` at `n_clusters` clusters, and a cell's own *observed*
-`delta` is smaller in magnitude than that (true for every non-significant
-row, by construction -- if `|delta| >= mde_delta` the row would already be
-significant), the sample size needed to make `delta` itself detectable at
-80% power is approximately:
+found a minimum detectable effect at `n_clusters` clusters, and a cell's
+own *observed* `delta` is smaller in magnitude than that (true for every
+non-significant row, by construction -- if `|delta| >= mde` the row would
+already be significant), the sample size needed to make `delta` itself
+detectable at 80% power is approximately:
 
-    n_clusters_needed = n_clusters * (mde_delta / delta) ** 2
+    n_clusters_needed = n_clusters * (mde / delta) ** 2
+
+**`mde` here is `mde_realized_diff`, not `mde_delta`, and the difference
+is not cosmetic.** Those two columns are in different units.
+`mde_delta` is the *parameter* the MDE search swept;
+`mde_realized_diff` is the accuracy difference that parameter actually
+produced on the row's own data, which is the scale `delta` -- an observed
+accuracy difference -- also lives on. They diverge sharply near the
+ceiling: a control at 89% accuracy has only 11% of its rows able to move,
+so a swept parameter of 0.40 realizes about 0.40 * 0.11 = 0.044.
+Dividing the parameter by the realized difference and squaring inflated
+this extrapolation by `(1 / headroom) ** 2` -- measured at 53-163x on
+every positive-`delta` cell, against 0.96-1.26x on the negative ones
+(a harmful shift moves the *large* correct share, so almost no inflation).
+The one-directional error made every "the primer helps" hypothesis look
+unaffordable and every "the primer hurts" one look cheap, and produced a
+515-graph recommendation for `qwen3-8b`/`degree` (GOT) -- a cell already
+at p=0.0018 with the 30 graphs on disk.
 
 This reuses Track 1's already-computed MDE rather than running a new
 simulation -- it is a closed-form extrapolation of it, not a
 re-derivation. `scripts/validate_recommend_count.py` checks the
 extrapolation's accuracy against a real bootstrap-based power simulation
 at the recommended size, for a handful of cells, before trusting it
-further.
+further. Its `--max-n-clusters-target` cap must stay above the largest
+real recommendation, or the validation only ever exercises the direction
+that was never broken -- which is exactly how the units error survived a
+"conservative in every cell checked" verdict.
 
 Positive-direction `delta` (the condition helps) is checked against
-`mde_delta`; negative-direction `delta` (the condition hurts) against
-`mde_delta_negative` -- matching the sign of the effect actually observed,
-not always the positive-direction MDE. A cell is skipped (not extrapolated)
+`mde_realized_diff`; negative-direction `delta` (the condition hurts)
+against `mde_realized_diff_negative` -- matching the sign of the effect
+actually observed, not always the positive direction. A cell is skipped
+(not extrapolated)
 when: it's already **globally** significant (`bh_significant_global` --
 nothing to add data for; see the note on family-significant-only cells
 below), its observed `delta` is exactly zero (no effect to extrapolate
@@ -110,9 +131,14 @@ def _mde_for_family_significant_cell(
   when given, scopes `cell_frame` to that one task before pairing --
   the same scoping `_report_exact_per_task` applies to its own permutation
   test, so the MDE and the effect it's sized against are computed on the
-  same data. Returns `None` if the cell has no paired rows at all
-  (shouldn't happen for a cell the report already scored, but checked
-  rather than assumed).
+  same data.
+
+  Returns the **realized** difference, not the swept parameter -- the same
+  scale `mde_realized_diff` carries in the report and the only scale
+  `recommend`'s ratio against an observed `delta` is meaningful on; see the
+  module docstring. `None` if the cell has no paired rows at all (shouldn't
+  happen for a cell the report already scored, but checked rather than
+  assumed) or if the search didn't converge in the requested direction.
   """
   cell_frame = frame[(frame["model_family"] == model) & (~frame["is_think"])]
   if task is not None:
@@ -123,14 +149,24 @@ def _mde_for_family_significant_cell(
   ci = significance.cluster_bootstrap_ci_clustered(
       control, treatment, cluster_ids, n_boot=1000, seed=seed,
   )
-  ci_width = ci["ci_high"] - ci["ci_low"]
+  # `None` when too few pairs disagree for a percentile bootstrap; the MDE
+  # search only uses this as a starting point for its geometric expansion,
+  # so falling back to its own floor is harmless.
+  ci_width = ci["ci_high"] - ci["ci_low"] if ci["ci_low"] is not None else 0.0
   direction = "positive" if delta > 0 else "negative"
   result = significance.minimum_detectable_effect_clustered(
       control, treatment, cluster_ids, initial_hi=max(0.05, ci_width),
       direction=direction, n_replicates=_MDE_REPLICATES, n_perm=_MDE_N_PERM,
       n_steps=_MDE_N_STEPS, seed=seed,
   )
-  return result["delta"] if delta > 0 else result["delta_negative"]
+  # `realized_diff` is `None`-guarded via its own `delta`: the search
+  # reports a realized value even when it failed to converge ("MDE exceeds
+  # 1.0"), and extrapolating from a non-converged search would invent a
+  # recommendation out of a bound the data never reached.
+  if delta > 0:
+    return result["realized_diff"] if result["delta"] is not None else None
+  return (result["realized_diff_negative"]
+          if result["delta_negative"] is not None else None)
 
 
 def recommend(
@@ -221,8 +257,20 @@ def recommend(
           frame, r["group"], r["condition"], r["delta"],
       )
     else:
-      mde = r["mde_delta"] if r["delta"] > 0 else r["mde_delta_negative"]
-    if pd.isna(mde):
+      # `mde_realized_diff`, not `mde_delta` -- the realized column is on
+      # the same scale as `delta`, the swept-parameter column is not; see
+      # the module docstring. Still gated on the *parameter* column being
+      # present, since that is what carries "the search converged": a
+      # non-converged search ("MDE exceeds 1.0") leaves `mde_delta` null
+      # but still reports the realized value it reached, and extrapolating
+      # from that would invent a recommendation from a bound the data never
+      # actually reached.
+      if r["delta"] > 0:
+        mde = r["mde_realized_diff"] if pd.notna(r["mde_delta"]) else None
+      else:
+        mde = (r["mde_realized_diff_negative"]
+               if pd.notna(r["mde_delta_negative"]) else None)
+    if mde is None or pd.isna(mde):
       rows.append({**base, "skip_reason": "MDE did not converge at the "
                    "current sample size (near-ceiling/near-floor)"})
       continue

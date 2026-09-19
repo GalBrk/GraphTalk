@@ -117,11 +117,79 @@ def test_delta_matches_naive_mean_difference_multi_condition():
 # --- fit diagnostics ----------------------------------------------------------
 
 
-def test_n_groups_counts_distinct_instances_not_rows():
+def test_n_groups_counts_distinct_graphs_not_rows():
   frame = _synthetic_frame(control_rate=0.5, treatment_rate=0.5, n=25, seed=6)
   result = mixed_models.fit_gee_one_model(frame)
   assert result.iloc[0]["n_groups"] == 25
   assert result.iloc[0]["n_obs"] == 50
+
+
+def test_the_six_tasks_on_one_graph_are_one_group():
+  """`node_count/7` and `edge_count/7` are the same graph asked two
+  questions, so they belong in one GEE group. Grouping on the whole
+  `instance_id` split them, which both misstates the correlation structure
+  and puts this module at a different cluster granularity from
+  `check_significance.py` -- the one thing it exists to be comparable to.
+  """
+  rng = random.Random(23)
+  rows = []
+  for task in ("node_count", "edge_count", "cycle_check"):
+    for i in range(10):
+      for condition in ("none", "treat"):
+        rows.append({"model": "m", "instance_id": f"{task}/{i}",
+                     "condition": condition,
+                     "exact": 1.0 if rng.random() < 0.5 else 0.0})
+  result = mixed_models.fit_gee_one_model(pd.DataFrame(rows))
+  # 30 distinct instance_ids, but only 10 distinct graphs.
+  assert result.iloc[0]["n_obs"] == 60
+  assert result.iloc[0]["n_groups"] == 10
+
+
+def _within_graph_correlated_frame(n_graphs=40, n_tasks=6, seed=17):
+  """Rows with *genuine* within-graph correlation: each graph is either
+  easy (both conditions almost always right) or hard (almost always
+  wrong), and every task on that graph inherits it.
+
+  Every other fixture in this file draws each row independently, so there
+  is no correlation for the grouping to account for and the module's tests
+  pass whether or not it accounts for any. This is the fixture that can
+  tell the difference.
+  """
+  rng = random.Random(seed)
+  rows = []
+  for graph in range(n_graphs):
+    easy = rng.random() < 0.5
+    rate = 0.95 if easy else 0.05
+    for task in range(n_tasks):
+      for condition in ("none", "treat"):
+        rows.append({
+            "model": "m", "instance_id": f"task{task}/{graph}",
+            "condition": condition,
+            "exact": 1.0 if rng.random() < rate else 0.0,
+        })
+  return pd.DataFrame(rows)
+
+
+def test_grouping_actually_changes_the_standard_error_on_correlated_data():
+  """The regression guard the audit asked for. Deleting the grouping used
+  to leave all 12 tests green, because no fixture had any correlation to
+  lose. Here it must matter: with rows sharing a graph moving together, a
+  fit that treats each row as its own cluster reports a materially
+  different (over-confident) sandwich standard error than one that
+  clusters correctly. If this test ever passes with the grouping removed,
+  the cross-check has stopped cross-checking.
+  """
+  frame = _within_graph_correlated_frame()
+  clustered = mixed_models.fit_gee_one_model(frame).iloc[0]
+
+  ungrouped = frame.assign(instance_id=[f"task/{i}" for i in range(len(frame))])
+  unclustered = mixed_models.fit_gee_one_model(ungrouped).iloc[0]
+
+  assert clustered["n_groups"] == 40
+  assert unclustered["n_groups"] == len(frame)
+  # Same point estimate either way (saturated design), different variance.
+  assert clustered["delta"] == pytest.approx(unclustered["delta"], abs=1e-9)
+  assert clustered["std_err"] != pytest.approx(unclustered["std_err"], rel=0.05)
 
 
 def test_converged_is_reported_true_on_well_behaved_data():
