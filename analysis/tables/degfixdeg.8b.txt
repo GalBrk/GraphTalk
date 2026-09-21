@@ -1,0 +1,49 @@
+blind bar (best constant answer, per cell):
+  size=20   p=0.421   d~8    modal gold    '8'  bar 0.203  (n=800)
+  size=40   p=0.205   d~8    modal gold    '9'  bar 0.145  (n=800)
+  size=80   p=0.101   d~8    modal gold    '8'  bar 0.152  (n=800)
+  size=160  p=0.05    d~8    modal gold    '7'  bar 0.163  (n=800)
+  size=20   p=0.842   d~16   modal gold   '16'  bar 0.270  (n=800)
+  size=40   p=0.41    d~16   modal gold   '15'  bar 0.128  (n=800)
+  size=80   p=0.203   d~16   modal gold   '17'  bar 0.115  (n=800)
+  size=160  p=0.101   d~16   modal gold   '16'  bar 0.135  (n=800)
+
+mean score by cell x condition (hit_cap dropped):
+  size   p       d~      clustering         none
+  20     0.421   8           1.000        0.998
+  40     0.205   8           0.995        0.995
+  80     0.101   8           0.958        0.965
+  160    0.05    8           0.870        0.897
+  20     0.842   16          0.983        0.985
+  40     0.41    16          0.985        0.975
+  80     0.203   16          0.877        0.895
+  160    0.101   16          0.762        0.802
+
+capped rows dropped, by cell x condition:
+  size   p       d~      clustering         none
+  20     0.421   8               0            0
+  40     0.205   8               0            0
+  80     0.101   8               0            0
+  160    0.05    8               0            0
+  20     0.842   16              0            0
+  40     0.41    16              0            0
+  80     0.203   16              0            0
+  160    0.101   16              0            0
+
+pooled across every cell, paired vs 'none' (exact McNemar on rows sharing an instance_id):
+  POOLED                      clustering - none: n= 3200 win  117 lose  150 delta -0.0103 p=0.0500  *
+
+pooled per mean-degree block:
+  d~8 pooled                  clustering - none: n= 1600 win   36 lose   49 delta -0.0081 p=0.1928
+  d~16 pooled                 clustering - none: n= 1600 win   81 lose  101 delta -0.0125 p=0.1588
+
+per cell (descriptive -- these are a family, correct before quoting any one):
+  size=20 p=0.421 (d~8)       clustering - none: n=  400 win    1 lose    0 delta +0.0025 p=1.0000
+  size=40 p=0.205 (d~8)       clustering - none: n=  400 win    1 lose    1 delta +0.0000 p=1.0000
+  size=80 p=0.101 (d~8)       clustering - none: n=  400 win   10 lose   13 delta -0.0075 p=0.6776
+  size=160 p=0.05 (d~8)       clustering - none: n=  400 win   24 lose   35 delta -0.0275 p=0.1925
+  size=20 p=0.842 (d~16)      clustering - none: n=  400 win    2 lose    3 delta -0.0025 p=1.0000
+  size=40 p=0.41 (d~16)       clustering - none: n=  400 win    6 lose    2 delta +0.0100 p=0.2891
+  size=80 p=0.203 (d~16)      clustering - none: n=  400 win   30 lose   37 delta -0.0175 p=0.4638
+  size=160 p=0.101 (d~16)     clustering - none: n=  400 win   43 lose   59 delta -0.0400 p=0.1371
+  (* = survives Benjamini-Hochberg at q=0.05 within its own family)

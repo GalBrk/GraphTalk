@@ -1,0 +1,22 @@
+
+==============================================================================
+qwen3-1.7b
+
+  edge_count / zero_shot   baseline 3.4% (always '12')  -- degenerate, no useful constant
+    condition        acc   exact  parsed  shortcut  McNemar p  vs control
+    clustering    22.4%  22.4% 100.0%         -      0.716  -5 net (121 discordant)
+    components    21.2%  21.2% 100.0%         -      0.343  -11 net (111 discordant)
+    none          23.4%  23.4% 100.0%         -             
+    rwse          18.8%  18.8% 100.0%         -      0.036  -23 net (111 discordant)
+
+==============================================================================
+qwen3-8b
+
+  edge_count / zero_shot   baseline 3.4% (always '12')  -- degenerate, no useful constant
+    condition        acc   exact  parsed  shortcut  McNemar p  vs control
+    clustering    55.2%  55.2% 100.0%         -      0.009  +24 net (78 discordant)
+    components    51.2%  51.2% 100.0%         -      0.410  +8 net (72 discordant)
+    none          50.0%  50.0% 100.0%         -             
+    rwse          36.7%  36.7% 100.0%         -      0.000  -65 net (113 discordant)
+
+0/3984 responses could not be parsed
