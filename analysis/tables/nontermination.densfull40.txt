@@ -1,0 +1,11 @@
+=== non-termination: degree vs none, qwen3-1.7b-think (all tasks) ===
+  n=2400  rate under degree=19.2%  rate under none=15.8%  delta=+3.4pp  p=2.35e-06
+
+=== non-termination: degree vs none, qwen3-1.7b-think (outside edge_count) ===
+  n=2000  rate under degree=6.9%  rate under none=2.6%  delta=+4.3pp  p=9.18e-11
+
+  137 non-terminating generations under degree (outside edge_count), of which 7 also fail under none (130 new failures attributable to the primer)
+
+=== recovery under thinking: qwen3-4b degree failures, re-scored for qwen3-4b-think ===
+  qwen3-4b gets 29 instances wrong under degree/node_degree
+  qwen3-4b-think (same primer, same instances): 29 of 29 correct
