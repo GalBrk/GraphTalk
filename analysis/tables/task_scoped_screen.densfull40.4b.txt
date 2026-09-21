@@ -1,0 +1,33 @@
+classifying cells from refit bars: shortcuts_n40_flat.json
+wrote 30 rows to analysis/tables/task_scoped_screen.densfull40.4b.csv
+
+17 cell(s) with p <= 0.1, split by shortcut_flag (bars: shortcuts_n40_flat.json):
+
+shortcut_flag == 'none' -- real graph-reasoning candidates (7):
+
+  model         condition   task                 n    delta        p  shortcut_flag  ceiling(treat/none)
+  qwen3-4b      components  connected_nodes    400   +0.092   0.0001  none           0.00/0.00
+  qwen3-4b      filler      connected_nodes    400   -0.125   0.0001  none           0.00/0.00
+  qwen3-4b      rwse        edge_existence     400   -0.100   0.0001  none           0.55/0.74
+  qwen3-4b      filler      edge_existence     400   -0.070   0.0003  none           0.74/0.74
+  qwen3-4b      degree      edge_existence     400   -0.048   0.0094  none           0.75/0.74
+  qwen3-4b      clustering  edge_existence     400   +0.040   0.0167  none           0.73/0.74
+  qwen3-4b      rwse        edge_count         400   -0.015   0.0711  none           0.03/0.03
+
+shortcut_flag in ('shortcut', 'partial') -- arithmetic/lookup execution-reliability candidates, NOT graph-reasoning evidence (3):
+
+  model         condition   task                 n    delta        p  shortcut_flag  ceiling(treat/none)
+  qwen3-4b      degree      edge_count         400   +0.273   0.0001  shortcut       1.00/0.03
+  qwen3-4b      degree      node_degree        400   -0.065   0.0001  shortcut       1.00/0.14
+  qwen3-4b      rwse        node_degree        400   -0.022   0.0221  partial        0.21/0.14
+
+shortcut_flag == 'degenerate' -- the CONTROL's own bar is >= 0.99, so a graph-blind program already scores ~100% with no primer; not evidence either way (7):
+
+  model         condition   task                 n    delta        p  shortcut_flag  ceiling(treat/none)
+  qwen3-4b      filler      node_count         400   +0.092   0.0001  degenerate     1.00/1.00
+  qwen3-4b      clustering  node_count         400   +0.087   0.0001  degenerate     1.00/1.00
+  qwen3-4b      components  node_count         400   +0.090   0.0001  degenerate     1.00/1.00
+  qwen3-4b      degree      node_count         400   +0.080   0.0001  degenerate     1.00/1.00
+  qwen3-4b      rwse        node_count         400   +0.092   0.0001  degenerate     1.00/1.00
+  qwen3-4b      degree      cycle_check        400   -0.022   0.0343  degenerate     1.00/1.00
+  qwen3-4b      components  cycle_check        400   -0.020   0.0777  degenerate     1.00/1.00
