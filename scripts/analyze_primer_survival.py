@@ -18,14 +18,33 @@ This script fixes the rule and writes it down. Four outputs, all in
                                  from it.
   primer_effects_pooled.csv      the same pooled over densities within a design
                                  (`lo` = p 0.10-0.50, `hi` = p 0.65-0.85).
-  primer_vs_filler.csv           uncontaminated primers tested against `filler`
-                                 rather than `none`, on mid-range cells only.
-                                 This is the length-controlled comparison
-                                 `docs/primer-effects-and-power.md` says to use
-                                 and which no other script computes.
+  primer_vs_filler.csv           every primer tested against `filler` rather
+                                 than `none`. This is the length-controlled
+                                 comparison `docs/primer-effects-and-power.md`
+                                 says to use and which no other script computes.
+  primer_decomposition.csv       both baselines side by side, per cell:
+                                 length_cost = filler - none, content_gain =
+                                 condition - filler, net = condition - none,
+                                 each with its own paired p. See below.
   primer_survival.csv            the verdict per (task, condition): BOTH, ONE,
                                  NEITHER, CONFLICT, or UNTESTABLE, with the
                                  reason.
+
+**Two baselines, because they answer two different questions.** Against `none`
+a primer is judged on its net effect -- what a user would actually get by
+switching the prompt. But a primer is longer than `none`, and length alone
+costs accuracy, so a net zero can mean "no effect" or it can mean "a real
+content gain exactly cancelled by a real length cost". `filler` separates them:
+it is content-free and length-matched to `clustering` within 3.3%, so
+
+    net (cond - none)  =  length_cost (filler - none)  +  content_gain (cond - filler)
+
+`primer_decomposition.csv` reports all three terms with their own paired tests,
+so a cell can be read as "does the information help?" (content_gain) and "does
+it survive the characters it costs?" (net) at once. Neither term alone answers
+the project's question. Note `filler` is only length-matched to `clustering`;
+for `components` (39 chars) and `rwse` (2,951) the length term is
+approximate, and `length_matched_to_condition` flags which is which.
 
 **Headroom is the precondition for every verdict here.** A cell where `none`
 already scores ~1.00 cannot show a primer effect, and reporting its null as a
@@ -305,29 +324,76 @@ def main(argv=None):
   with_bh(per_density, lambda r: (r["arm"], r["design"], r["task"], r.get("density")))
   with_bh(pooled, lambda r: (r["arm"], r["design"], r["task"]))
 
-  # The length-controlled comparison: clean primers against `filler`, on cells
-  # where `none` left room. Selection is on `none`, never on the treatment.
-  control_acc = {(r["arm"], r["design"], r["task"], r["density"]): r["control_acc"]
-                 for r in per_density}
+  # The length-controlled comparison: every primer against `filler`. Every cell
+  # is kept and `mid_range` is a column rather than a filter, so a reader can
+  # restrict to cells with headroom without the script having silently done it.
+  none_acc = {(r["arm"], r["design"], r["task"], r["density"]): r["control_acc"]
+              for r in per_density}
   for arm in ARMS:
     for design in DESIGNS:
       for task in tasks:
-        for condition in UNCONTAMINATED:
+        for condition in CONDITIONS:
+          if condition == LENGTH_CONTROL:
+            continue
           for density in densities:
-            base = control_acc.get((arm, design, task, density))
-            if base is None or not MID_RANGE[0] <= base <= MID_RANGE[1]:
-              continue
             row = compare(hits, arm, design, task, LENGTH_CONTROL, condition, density)
-            if row:
-              row["density"] = density
-              row["none_acc"] = base
-              vs_filler.append(row)
-  with_bh(vs_filler, lambda r: "all")  # one family: this is a single question
+            if not row:
+              continue
+            base = none_acc.get((arm, design, task, density))
+            row["density"] = density
+            row["none_acc"] = base
+            row["mid_range"] = (base is not None
+                                and MID_RANGE[0] <= base <= MID_RANGE[1])
+            row["contaminated"] = condition not in UNCONTAMINATED
+            vs_filler.append(row)
+  with_bh(vs_filler, lambda r: (r["arm"], r["design"], r["task"], r["density"]))
+
+  # Both baselines side by side, with the length/content decomposition.
+  by_none = {(r["arm"], r["design"], r["task"], r["density"], r["condition"]): r
+             for r in per_density}
+  by_filler = {(r["arm"], r["design"], r["task"], r["density"], r["condition"]): r
+               for r in vs_filler}
+  decomposition = []
+  for key, net in by_none.items():
+    if net["condition"] == LENGTH_CONTROL:
+      continue
+    arm, design, task, density, condition = key
+    content = by_filler.get(key)
+    length = by_none.get((arm, design, task, density, LENGTH_CONTROL))
+    if content is None or length is None:
+      continue
+    decomposition.append({
+        "arm": arm, "design": design, "task": task, "density": density,
+        "condition": condition,
+        "contaminated": condition not in UNCONTAMINATED,
+        # `filler` matches `clustering`'s length to 3.3%; for the others the
+        # length term is only approximate. Say so rather than imply otherwise.
+        "length_matched_to_condition": condition == "clustering",
+        "mid_range": content["mid_range"],
+        "n": net["n"],
+        "none_acc": net["control_acc"],
+        "filler_acc": length["condition_acc"],
+        "condition_acc": net["condition_acc"],
+        "length_cost_pp": length["delta_pp"],
+        "length_cost_p": length["p_value"],
+        "content_gain_pp": content["delta_pp"],
+        "content_gain_p": content["p_value"],
+        "net_pp": net["delta_pp"],
+        "net_p": net["p_value"],
+        # The question the decomposition exists to answer.
+        "content_outweighs_length": net["delta_pp"] > 0,
+        # BH carried over from the source tables; each term is corrected within
+        # its own family, and re-correcting the joined row would double-count.
+        "length_cost_bh": length["bh_significant"],
+        "content_gain_bh": content["bh_significant"],
+        "net_bh": net["bh_significant"],
+    })
 
   print("writing tables ...")
   write_csv(os.path.join(args.out_dir, "primer_effects_by_density.csv"), per_density)
   write_csv(os.path.join(args.out_dir, "primer_effects_pooled.csv"), pooled)
   write_csv(os.path.join(args.out_dir, "primer_vs_filler.csv"), vs_filler)
+  write_csv(os.path.join(args.out_dir, "primer_decomposition.csv"), decomposition)
   survival = verdict(per_density, pooled)
   write_csv(os.path.join(args.out_dir, "primer_survival.csv"), survival)
 
@@ -338,6 +404,7 @@ def main(argv=None):
       "mid_range": list(MID_RANGE), "min_cell": MIN_CELL,
       "capped_rows": "dropped", "connected_nodes_metric": "exact match (F1 binarized at 1.0)",
       "rows_scored": kept, "rows_dropped_hit_cap": capped,
+      "baselines": {"none": "net effect", "filler": "content effect, length held"},
       "input_files": sorted(inputs),
   }
   path = os.path.join(args.out_dir, "primer_survival_manifest.json")
@@ -354,6 +421,19 @@ def main(argv=None):
   print("\nverdicts, uncontaminated primers only:")
   for (family, call), n in sorted(clean.items()):
     print(f"  {family:6} {call:12} {n:>4}")
+
+  print("\nlength vs content, uncontaminated primers on mid-range cells:")
+  print(f"  {'arm':18} {'cells':>5} {'length cost':>12} {'content gain':>13} "
+        f"{'net':>8}  (mean pp)")
+  for arm in ARMS:
+    sub = [r for r in decomposition
+           if r["arm"] == arm and r["mid_range"] and not r["contaminated"]]
+    if not sub:
+      print(f"  {arm:18} {0:>5}  (no mid-range cell -- untested arm)")
+      continue
+    mean = lambda k: sum(r[k] for r in sub) / len(sub)
+    print(f"  {arm:18} {len(sub):>5} {mean('length_cost_pp'):>+12.1f} "
+          f"{mean('content_gain_pp'):>+13.1f} {mean('net_pp'):>+8.1f}")
   return 0
 
 
