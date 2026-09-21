@@ -1,5 +1,5 @@
 {
- "git_sha": "bcad3e71c1af968bc86f20b9014f673b7624dfcb",
+ "git_sha": "87befccbd74d64cc83fff99a5383df75e5bb65d6",
  "script": "scripts/analyze_primer_survival.py",
  "arms": [
   "qwen3-1.7b",
@@ -37,6 +37,10 @@
  "connected_nodes_metric": "exact match (F1 binarized at 1.0)",
  "rows_scored": 78539,
  "rows_dropped_hit_cap": 5463,
+ "baselines": {
+  "none": "net effect",
+  "filler": "content effect, length held"
+ },
  "input_files": [
   "runs\\qwen3-1.7b-think.densfull40.shard0of25.jsonl",
   "runs\\qwen3-1.7b-think.densfull40.shard10of25.jsonl",
