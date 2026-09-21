@@ -1,0 +1,6 @@
+family,density,condition,n,win,lose,delta,p_value,bh_significant,mde_delta,mde_realized_diff,mde_note,mde_delta_negative,mde_realized_diff_negative,mde_note_negative
+pooled,,clustering,1600,223,155,0.0425,0.0005513852114239874,True,,,,,,
+per_level,0.1,clustering,400,18,10,0.02,0.1849333420395851,False,0.045312500000000006,0.0397,,-0.03906250000000001,-0.04,
+per_level,0.2,clustering,400,50,34,0.04,0.10113634213880453,False,0.065625,0.0675,,-0.065625,-0.06645,
+per_level,0.35,clustering,400,77,59,0.045,0.14463646515752107,False,0.08125000000000002,0.0816,,-0.07812500000000001,-0.08085,
+per_level,0.5,clustering,400,78,52,0.065,0.027944840955287754,False,0.07812500000000001,0.08025,,-0.08125000000000002,-0.08205,
