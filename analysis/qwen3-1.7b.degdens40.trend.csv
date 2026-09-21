@@ -1,0 +1,3 @@
+range,condition,slope,p_value,n,bh_significant
+all levels,clustering,0.11326530612244902,0.14909254537273137,1600,False
+all levels,components,-0.14761904761904765,0.021798910054497276,1600,True
