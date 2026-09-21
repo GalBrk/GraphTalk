@@ -1,0 +1,94 @@
+family,design,task,condition,verdict,reason,contaminated,small_arm,small_delta_pp,small_significant,small_had_headroom,large_arm,large_delta_pp,large_significant,large_had_headroom
+plain,lo,connected_nodes,components,ONE,significant on qwen3-4b; qwen3-1.7b had headroom and did not show it,False,qwen3-1.7b,0.75,False,True,qwen3-4b,9.25,True,True
+plain,lo,connected_nodes,clustering,NEITHER,"headroom on at least one size, significant on neither",False,qwen3-1.7b,1.25,False,True,qwen3-4b,1.0,False,True
+plain,lo,connected_nodes,rwse,NEITHER,"headroom on at least one size, significant on neither",False,qwen3-1.7b,1.0,False,True,qwen3-4b,0.0,False,True
+plain,lo,connected_nodes,degree,NEITHER,"headroom on at least one size, significant on neither",True,qwen3-1.7b,3.5,False,True,qwen3-4b,-3.0,False,True
+plain,lo,connected_nodes,filler,BOTH,significant and same sign on both sizes,True,qwen3-1.7b,-6.25,True,True,qwen3-4b,-12.5,True,True
+plain,lo,connected_nodes,all,NEITHER,"headroom on at least one size, significant on neither",True,qwen3-1.7b,2.01,False,True,qwen3-4b,-2.75,False,True
+plain,lo,cycle_check,components,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b,-0.58,False,False,qwen3-4b,-1.28,False,False
+plain,lo,cycle_check,clustering,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b,0.28,False,False,qwen3-4b,0.25,False,False
+plain,lo,cycle_check,rwse,UNTESTABLE,significant on qwen3-1.7b; qwen3-4b never left ceiling/floor,False,qwen3-1.7b,-7.54,True,False,qwen3-4b,0.26,False,False
+plain,lo,cycle_check,degree,UNTESTABLE,significant on qwen3-1.7b; qwen3-4b never left ceiling/floor,True,qwen3-1.7b,-12.62,True,False,qwen3-4b,-1.53,False,False
+plain,lo,cycle_check,filler,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b,0.29,False,False,qwen3-4b,-0.26,False,False
+plain,lo,cycle_check,all,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b,-1.1,False,False,qwen3-4b,-0.51,False,False
+plain,lo,edge_count,components,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b,-1.42,False,False,qwen3-4b,-1.26,False,False
+plain,lo,edge_count,clustering,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b,-0.42,False,False,qwen3-4b,-1.25,False,False
+plain,lo,edge_count,rwse,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b,-0.84,False,False,qwen3-4b,-1.51,False,False
+plain,lo,edge_count,degree,UNTESTABLE,significant on qwen3-4b; qwen3-1.7b never left ceiling/floor,True,qwen3-1.7b,3.95,False,False,qwen3-4b,27.74,True,False
+plain,lo,edge_count,filler,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b,-0.45,False,False,qwen3-4b,1.25,False,False
+plain,lo,edge_count,all,UNTESTABLE,significant on qwen3-4b; qwen3-1.7b never left ceiling/floor,True,qwen3-1.7b,2.37,False,False,qwen3-4b,3.78,True,False
+plain,lo,edge_existence,components,ONE,significant on qwen3-1.7b; qwen3-4b had headroom and did not show it,False,qwen3-1.7b,-8.25,True,True,qwen3-4b,-2.75,False,True
+plain,hi,edge_existence,components,NEITHER,"headroom on at least one size, significant on neither",False,qwen3-1.7b,-1.0,False,True,qwen3-4b,-3.34,False,True
+plain,lo,edge_existence,clustering,ONE,significant on qwen3-4b; qwen3-1.7b had headroom and did not show it,False,qwen3-1.7b,3.75,False,True,qwen3-4b,4.0,True,True
+plain,hi,edge_existence,clustering,ONE,significant on qwen3-4b; qwen3-1.7b had headroom and did not show it,False,qwen3-1.7b,1.33,False,True,qwen3-4b,5.33,True,True
+plain,lo,edge_existence,rwse,ONE,significant on qwen3-4b; qwen3-1.7b had headroom and did not show it,False,qwen3-1.7b,5.26,False,True,qwen3-4b,-10.0,True,True
+plain,hi,edge_existence,rwse,NEITHER,"headroom on at least one size, significant on neither",False,qwen3-1.7b,1.0,False,True,qwen3-4b,-0.67,False,True
+plain,lo,edge_existence,degree,ONE,significant on qwen3-4b; qwen3-1.7b had headroom and did not show it,True,qwen3-1.7b,4.0,False,True,qwen3-4b,-4.27,True,True
+plain,hi,edge_existence,degree,NEITHER,"headroom on at least one size, significant on neither",True,qwen3-1.7b,3.38,False,True,qwen3-4b,-3.01,False,True
+plain,lo,edge_existence,filler,BOTH,significant and same sign on both sizes,True,qwen3-1.7b,-15.75,True,True,qwen3-4b,-7.0,True,True
+plain,hi,edge_existence,filler,ONE,significant on qwen3-4b; qwen3-1.7b had headroom and did not show it,True,qwen3-1.7b,-1.33,False,True,qwen3-4b,-6.33,True,True
+plain,lo,edge_existence,all,CONFLICT,"significant on both sizes, opposite signs",True,qwen3-1.7b,11.5,True,True,qwen3-4b,-9.77,True,True
+plain,hi,edge_existence,all,ONE,significant on qwen3-1.7b; qwen3-4b had headroom and did not show it,True,qwen3-1.7b,6.67,True,True,qwen3-4b,-2.01,False,True
+plain,lo,node_count,components,BOTH,significant and same sign on both sizes,False,qwen3-1.7b,21.25,True,False,qwen3-4b,9.0,True,True
+plain,lo,node_count,clustering,BOTH,significant and same sign on both sizes,False,qwen3-1.7b,67.25,True,False,qwen3-4b,8.75,True,True
+plain,lo,node_count,rwse,UNTESTABLE,significant on qwen3-4b; qwen3-1.7b never left ceiling/floor,False,qwen3-1.7b,2.0,False,False,qwen3-4b,9.25,True,True
+plain,lo,node_count,degree,BOTH,significant and same sign on both sizes,True,qwen3-1.7b,6.75,True,False,qwen3-4b,8.0,True,True
+plain,lo,node_count,filler,BOTH,significant and same sign on both sizes,True,qwen3-1.7b,39.75,True,False,qwen3-4b,9.25,True,True
+plain,lo,node_count,all,BOTH,significant and same sign on both sizes,True,qwen3-1.7b,47.0,True,False,qwen3-4b,9.75,True,True
+plain,lo,node_degree,components,NEITHER,"headroom on at least one size, significant on neither",False,qwen3-1.7b,1.75,False,True,qwen3-4b,0.25,False,True
+plain,hi,node_degree,components,NEITHER,"headroom on at least one size, significant on neither",False,qwen3-1.7b,0.33,False,True,qwen3-4b,-1.0,False,True
+plain,lo,node_degree,clustering,NEITHER,"headroom on at least one size, significant on neither",False,qwen3-1.7b,3.0,False,True,qwen3-4b,-0.5,False,True
+plain,hi,node_degree,clustering,ONE,significant on qwen3-4b; qwen3-1.7b had headroom and did not show it,False,qwen3-1.7b,-3.34,False,True,qwen3-4b,11.33,True,True
+plain,lo,node_degree,rwse,ONE,significant on qwen3-4b; qwen3-1.7b had headroom and did not show it,False,qwen3-1.7b,4.01,False,True,qwen3-4b,-2.25,True,True
+plain,hi,node_degree,rwse,CONFLICT,"significant on both sizes, opposite signs",False,qwen3-1.7b,-5.35,True,True,qwen3-4b,7.67,True,True
+plain,lo,node_degree,degree,CONFLICT,"significant on both sizes, opposite signs",True,qwen3-1.7b,7.5,True,True,qwen3-4b,-6.5,True,True
+plain,hi,node_degree,degree,ONE,significant on qwen3-4b; qwen3-1.7b had headroom and did not show it,True,qwen3-1.7b,0.33,False,True,qwen3-4b,9.33,True,True
+plain,lo,node_degree,filler,NEITHER,"headroom on at least one size, significant on neither",True,qwen3-1.7b,-0.5,False,True,qwen3-4b,-0.5,False,True
+plain,hi,node_degree,filler,ONE,significant on qwen3-1.7b; qwen3-4b had headroom and did not show it,True,qwen3-1.7b,-5.35,True,True,qwen3-4b,2.0,False,True
+plain,lo,node_degree,all,CONFLICT,"significant on both sizes, opposite signs",True,qwen3-1.7b,10.25,True,True,qwen3-4b,-8.0,True,True
+plain,hi,node_degree,all,ONE,significant on qwen3-4b; qwen3-1.7b had headroom and did not show it,True,qwen3-1.7b,2.68,False,True,qwen3-4b,-21.33,True,True
+think,lo,connected_nodes,components,NEITHER,"headroom on at least one size, significant on neither",False,qwen3-1.7b-think,2.81,False,True,qwen3-4b-think,0.53,False,False
+think,lo,connected_nodes,clustering,NEITHER,"headroom on at least one size, significant on neither",False,qwen3-1.7b-think,1.52,False,True,qwen3-4b-think,0.0,False,False
+think,lo,connected_nodes,rwse,NEITHER,"headroom on at least one size, significant on neither",False,qwen3-1.7b-think,-0.25,False,True,qwen3-4b-think,0.0,False,False
+think,lo,connected_nodes,degree,UNTESTABLE,significant on qwen3-1.7b-think; qwen3-4b-think never left ceiling/floor,True,qwen3-1.7b-think,7.44,True,True,qwen3-4b-think,0.0,False,False
+think,lo,connected_nodes,filler,NEITHER,"headroom on at least one size, significant on neither",True,qwen3-1.7b-think,2.03,False,True,qwen3-4b-think,0.79,False,False
+think,lo,connected_nodes,all,UNTESTABLE,significant on qwen3-1.7b-think; qwen3-4b-think never left ceiling/floor,True,qwen3-1.7b-think,6.12,True,True,qwen3-4b-think,-0.53,False,False
+think,lo,cycle_check,components,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b-think,0.0,False,False,qwen3-4b-think,0.0,False,False
+think,lo,cycle_check,clustering,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b-think,0.0,False,False,qwen3-4b-think,0.0,False,False
+think,lo,cycle_check,rwse,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b-think,0.0,False,False,qwen3-4b-think,0.0,False,False
+think,lo,cycle_check,degree,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b-think,-0.68,False,False,qwen3-4b-think,-0.8,False,False
+think,lo,cycle_check,filler,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b-think,0.0,False,False,qwen3-4b-think,0.0,False,False
+think,lo,cycle_check,all,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b-think,0.0,False,False,qwen3-4b-think,0.0,False,False
+think,lo,edge_count,components,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b-think,,False,False,qwen3-4b-think,1.67,False,False
+think,lo,edge_count,clustering,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b-think,,False,False,qwen3-4b-think,1.69,False,False
+think,lo,edge_count,filler,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b-think,,False,False,qwen3-4b-think,-2.0,False,False
+think,lo,edge_existence,components,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b-think,-0.75,False,False,qwen3-4b-think,0.0,False,False
+think,hi,edge_existence,components,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b-think,0.0,False,False,qwen3-4b-think,0.67,False,False
+think,lo,edge_existence,clustering,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b-think,-1.01,False,False,qwen3-4b-think,0.0,False,False
+think,hi,edge_existence,clustering,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b-think,-0.33,False,False,qwen3-4b-think,0.67,False,False
+think,lo,edge_existence,rwse,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b-think,-1.26,False,False,qwen3-4b-think,0.0,False,False
+think,hi,edge_existence,rwse,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b-think,0.33,False,False,qwen3-4b-think,0.33,False,False
+think,lo,edge_existence,degree,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b-think,-2.27,False,False,qwen3-4b-think,0.0,False,False
+think,hi,edge_existence,degree,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b-think,-0.67,False,False,qwen3-4b-think,0.67,False,False
+think,lo,edge_existence,filler,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b-think,-0.75,False,False,qwen3-4b-think,0.0,False,False
+think,hi,edge_existence,filler,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b-think,-0.67,False,False,qwen3-4b-think,0.67,False,False
+think,lo,edge_existence,all,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b-think,-2.01,False,False,qwen3-4b-think,0.0,False,False
+think,hi,edge_existence,all,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b-think,-0.67,False,False,qwen3-4b-think,0.33,False,False
+think,lo,node_count,components,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b-think,0.88,False,False,qwen3-4b-think,0.0,False,False
+think,lo,node_count,clustering,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b-think,1.36,False,False,qwen3-4b-think,0.5,False,False
+think,lo,node_count,rwse,NO_HEADROOM,no mid-range cell on either size,False,qwen3-1.7b-think,1.36,False,False,qwen3-4b-think,0.5,False,False
+think,lo,node_count,degree,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b-think,0.83,False,False,qwen3-4b-think,0.5,False,False
+think,lo,node_count,filler,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b-think,1.36,False,False,qwen3-4b-think,0.5,False,False
+think,lo,node_count,all,NO_HEADROOM,no mid-range cell on either size,True,qwen3-1.7b-think,1.36,False,False,qwen3-4b-think,0.5,False,False
+think,lo,node_degree,components,NEITHER,"headroom on at least one size, significant on neither",False,qwen3-1.7b-think,-1.01,False,True,qwen3-4b-think,-0.26,False,False
+think,hi,node_degree,components,NEITHER,"headroom on at least one size, significant on neither",False,qwen3-1.7b-think,-1.72,False,True,qwen3-4b-think,-1.35,False,False
+think,lo,node_degree,clustering,NEITHER,"headroom on at least one size, significant on neither",False,qwen3-1.7b-think,1.01,False,True,qwen3-4b-think,-0.26,False,False
+think,hi,node_degree,clustering,UNTESTABLE,significant on qwen3-1.7b-think; qwen3-4b-think never left ceiling/floor,False,qwen3-1.7b-think,-9.83,True,True,qwen3-4b-think,-0.67,False,False
+think,lo,node_degree,rwse,ONE,significant on qwen3-4b-think; qwen3-1.7b-think had headroom and did not show it,False,qwen3-1.7b-think,2.54,False,True,qwen3-4b-think,-2.1,True,False
+think,hi,node_degree,rwse,NEITHER,"headroom on at least one size, significant on neither",False,qwen3-1.7b-think,-4.76,False,True,qwen3-4b-think,0.0,False,False
+think,lo,node_degree,degree,UNTESTABLE,significant on qwen3-1.7b-think; qwen3-4b-think never left ceiling/floor,True,qwen3-1.7b-think,11.7,True,True,qwen3-4b-think,0.0,False,False
+think,hi,node_degree,degree,UNTESTABLE,significant on qwen3-1.7b-think; qwen3-4b-think never left ceiling/floor,True,qwen3-1.7b-think,31.56,True,True,qwen3-4b-think,-0.34,False,False
+think,lo,node_degree,filler,NEITHER,"headroom on at least one size, significant on neither",True,qwen3-1.7b-think,-3.54,False,True,qwen3-4b-think,0.0,False,False
+think,hi,node_degree,filler,UNTESTABLE,significant on qwen3-1.7b-think; qwen3-4b-think never left ceiling/floor,True,qwen3-1.7b-think,-12.63,True,True,qwen3-4b-think,-0.33,False,False
+think,lo,node_degree,all,UNTESTABLE,significant on qwen3-1.7b-think; qwen3-4b-think never left ceiling/floor,True,qwen3-1.7b-think,11.62,True,True,qwen3-4b-think,-0.78,False,False
+think,hi,node_degree,all,UNTESTABLE,significant on qwen3-1.7b-think; qwen3-4b-think never left ceiling/floor,True,qwen3-1.7b-think,22.68,True,True,qwen3-4b-think,1.01,False,False
