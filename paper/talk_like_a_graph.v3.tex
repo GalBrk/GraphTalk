@@ -205,8 +205,9 @@ that carries the answer is worth about $+16$ points on average; genuine side
 information is worth $+2$ to $+4$. Above $0.90$ both are indistinguishable
 from zero ($-1.4$ and $-0.8$). Per primer, inside the window, only
 \texttt{all} ($+5.3$), \texttt{clustering} ($+2.9$) and \texttt{rwse}
-($+2.2$) are worth anything as side information; \texttt{components} is
-$-0.3$.
+($+2.2$) are worth anything as side information; \texttt{components} averages
+$-0.3$, and its one large effect turns out not to be content at all
+(Section~\ref{sec:results-behaviour}).
 
 \paragraph{Leakage is real but far from complete.} Where the graph-blind
 solver scores $1.00$ --- the primer determines the answer outright --- the
@@ -279,7 +280,7 @@ format permits is a cheap guess that is right most of the time --- and raw
 accuracy rewards it while balanced accuracy does not
 (Figure~\ref{fig:balanced}).
 
-\subsection{Two effects that do not survive their controls}
+\subsection{Position and composition}
 \label{sec:results-limits}
 
 \paragraph{Position inside the primer.} The primer lists nodes in id order, so
@@ -313,7 +314,7 @@ $[0.74, 1.20]$. The bundle delivers what its best component delivers.
 
 Structural primers move GraphQA accuracy mainly by supplying the answer, and
 only where the model is not already producing it. Where a primer determines
-the answer it is worth $+11$ to $+13$ points inside the difficulty window and
+the answer it is worth about $+16$ points inside the difficulty window and
 nothing above it; genuine structural side information is worth $+2$ to $+4$
 inside that window and nothing outside it. What the primer does, visible in
 the generated text, is offer a second procedure that the model takes: on
