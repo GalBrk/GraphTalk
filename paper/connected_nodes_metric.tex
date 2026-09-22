@@ -1,0 +1,14 @@
+\begin{table}[t]\centering\small
+\begin{tabular}{lrrrrrrrr}
+\toprule
+& \multicolumn{2}{c}{$p{=}0.1$} & \multicolumn{2}{c}{$p{=}0.2$} & \multicolumn{2}{c}{$p{=}0.35$} & \multicolumn{2}{c}{$p{=}0.5$} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+Arm & F1 & exact & F1 & exact & F1 & exact & F1 & exact \\
+\midrule
+\texttt{qwen3-1.7b} & $0.970$ & $0.920$ & $0.987$ & $0.910$ & $0.969$ & $0.590$ & $0.963$ & $0.480$ \\
+\texttt{qwen3-4b} & $0.985$ & $0.930$ & $0.986$ & $0.880$ & $0.985$ & $0.840$ & $0.993$ & $0.790$ \\
+\bottomrule
+\end{tabular}
+\caption{\texttt{connected\_nodes} under \texttt{none}: set-F1, the task's default metric, against exact match. F1 stays at $0.96$--$0.99$ everywhere while exact match falls by $44$ points for \texttt{qwen3-1.7b}, so the task looks ceilinged under F1 and is not.}
+\label{tab:cnmetric}
+\end{table}

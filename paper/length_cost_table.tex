@@ -1,0 +1,22 @@
+\begin{table}[t]\centering\small
+\begin{tabular}{lrrr}
+\toprule
+\multicolumn{4}{l}{\emph{(a) length cost (\texttt{filler}$-$\texttt{none}) by task}} \\
+Task & cells & mean & range \\
+\midrule
+\texttt{edge\_existence} & $11$ & $-9.1$ & $[-32.0, -1.0]$ \\
+\texttt{connected\_nodes} & $7$ & $-6.3$ & $[-14.0, +3.1]$ \\
+\texttt{node\_degree} & $11$ & $-4.3$ & $[-17.2, +4.0]$ \\
+\texttt{node\_count} & $1$ & $+31.0$ & $[+31.0, +31.0]$ \\
+\midrule
+\multicolumn{4}{l}{\emph{(b) content gain (cond.$-$\texttt{filler}) by arm}} \\
+Cond. & \multicolumn{3}{c}{\texttt{1.7b} / \texttt{1.7b-think} / \texttt{4b}} \\
+\midrule
+\texttt{components} & \multicolumn{2}{c}{$+5.7$ / $+6.8$ / $+5.5$} \\
+\texttt{clustering} & \multicolumn{2}{c}{$+10.9$ / $+2.6$ / $+11.6$} \\
+\texttt{rwse} & \multicolumn{2}{c}{$+11.3$ / $+5.6$ / $+5.2$} \\
+\bottomrule
+\end{tabular}
+\caption{Mid-range cells. (a) The cost of added text is task-specific, not a per-token rate, and changes sign within tasks, so it cannot be transferred across them. \texttt{node\_count} rests on a single cell and is a constant-gold task; it is shown for completeness only. (b) Only \texttt{components} holds its content gain across arms; the ranking of the other two reverses between \texttt{1.7b} and \texttt{4b}, so no single ordering of primers by length survives disaggregation.}
+\label{tab:lengthcost}
+\end{table}
