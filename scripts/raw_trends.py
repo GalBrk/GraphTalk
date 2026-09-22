@@ -604,23 +604,51 @@ def print_additivity(add, boots=2000):
     print("  %s  n=%d" % (label, len(sub)))
     print("    all / sum(parts)   %5.2f [%.2f, %.2f]" % med(sub.ratio))
     print("    all / largest part %5.2f [%.2f, %.2f]" % med(sub.ratio_max))
-  # A median ratio below 1 is not by itself evidence of sub-additivity: the
-  # ratio is a quotient of noisy quantities, and under exact additivity plus
-  # sampling noise its median is already biased downward. Simulate that null --
-  # recentre every cell on exact additivity, keep its own noise scale and the
-  # same >=4pt screen -- and read the observed value against it.
-  se = ((a.d_all_hi - a.d_all_lo) / 3.92).fillna(0.05)
+  # The median ratio is not testable against 1. Cells enter on |sum| >= 4pts,
+  # the denominator is noisy, and selecting on a noisy quantity inflates it, so
+  # the estimator sits below 1 under exact additivity. A null must draw BOTH
+  # sides around a common centre and screen on the DRAWN denominator -- screening
+  # on the observed one returns 1 by construction and tests nothing.
+  se = ((a.d_all_hi - a.d_all_lo) / 3.92).abs().fillna(0.05).to_numpy()
   obs = (a.d_all / a.sum_parts).median()
-  sim = []
-  for _ in range(boots):
-    drawn = a.sum_parts + rng.normal(0, se.abs().to_numpy())
-    keep = (100 * a.sum_parts).abs() >= 4.0
-    sim.append((drawn[keep] / a.sum_parts[keep]).median())
-  sim = np.asarray(sim)
-  print("    matched null (exact additivity + this noise): median ratio "
-        "%.2f [%.2f, %.2f]; observed %.2f, p=%.3f"
-        % (np.median(sim), np.percentile(sim, 2.5), np.percentile(sim, 97.5),
-           obs, (sim <= obs).mean()))
+  # sum_parts adds three contrasts that all share the `none` arm; sqrt(3) x the
+  # bundle's own SE is the conservative (positively correlated) end of its range.
+  se_sum = np.sqrt(3.0) * se
+  for label, theta in (
+      ("plug-in", a.d_all.to_numpy()),
+      ("shrunk", a.d_all.to_numpy() * float(np.clip(
+          1 - np.mean(se ** 2) / max(np.var(a.d_all.to_numpy()), 1e-9), 0, 1)))):
+    sim = []
+    for _ in range(boots):
+      drawn_sum = theta + rng.normal(0, se_sum)
+      drawn_all = theta + rng.normal(0, se)
+      keep = np.abs(100 * drawn_sum) >= 4.0
+      if keep.sum() > 5:
+        sim.append(np.median(drawn_all[keep] / drawn_sum[keep]))
+    sim = np.asarray(sim)
+    print("    null under exact additivity (%s centre): median ratio "
+          "%.2f [%.2f, %.2f]; observed %.2f, p=%.3f"
+          % (label, np.median(sim), np.percentile(sim, 2.5),
+             np.percentile(sim, 97.5), obs, (sim <= obs).mean()))
+
+  # The claim that does not need a screen or a ratio: over EVERY cell, how far
+  # short of its parts does the bundle fall, measured in the parts' direction?
+  full = add[add.density.isin(DENS4) & ~add.task.isin(CONST_GOLD)]
+  sign = np.sign(full.sum_parts.to_numpy())
+  sign[sign == 0] = 1.0
+  short = 100 * sign * (full.sum_parts.to_numpy() - full.d_all.to_numpy())
+  bs = np.array([np.mean(rng.choice(short, len(short))) for _ in range(boots)])
+  print("    no screen, no ratio: bundle falls %.1f pts [%.1f, %.1f] short of "
+        "its parts in %d of %d cells (sign test p=%.1e)"
+        % (short.mean(), np.percentile(bs, 2.5), np.percentile(bs, 97.5),
+           int((short > 0).sum()), len(short),
+           stats.binomtest(int((short > 0).sum()), len(short), 0.5).pvalue))
+  for task in sorted(full.task.unique()):
+    sub = short[(full.task == task).to_numpy()]
+    b = np.array([np.mean(rng.choice(sub, len(sub))) for _ in range(boots)])
+    print("      %-16s %+6.2f [%+6.2f, %+6.2f]  n=%d"
+          % (task, sub.mean(), np.percentile(b, 2.5), np.percentile(b, 97.5),
+             len(sub)))
 
   # Dilution predicts one shrink factor; report each side rather than assume it.
   for label, m in (("parts help", a.sum_parts > 0), ("parts hurt", a.sum_parts < 0)):
