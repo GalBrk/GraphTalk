@@ -47,8 +47,8 @@ things a primer can do: determine the answer by itself, which a graph-blind
 solver detects, and add text, whose cost we fit across five conditions
 spanning $37$ to $4{,}691$ characters. Length turns out to be close to free
 (a length term of $-0.3$ points per thousand characters, positive in $8$ of
-$16$ cells). Content that determines the answer is not: it is worth $+11$ to
-$+13$ points where the model is failing and nothing where it is not, and on
+$16$ cells). Content that determines the answer is not: it is worth about
+$+16$ points where the model is failing and nothing where it is not, and on
 \texttt{node\_degree} it costs \texttt{qwen3-4b} $12$ points at $p{=}.50$
 while gaining it $27$ at $p{=}.85$ --- same arm, same task, same primer, the
 sign following the accuracy the cell already had. The generated text shows
@@ -80,7 +80,7 @@ by being there: added context is reported to degrade reasoning on its own
 graph-blind solver that reads the primer text and never the graph, which says
 for each condition whether the primer determines the answer by itself; and the
 second by fitting the effect on primer length across five conditions spanning
-$37$ to $4{,}706$ characters, rather than trusting a single matched control.
+$37$ to $4{,}691$ characters, rather than trusting a single matched control.
 
 Both separations change the conclusion. Length is close to free: fitted within
 each (arm, task), the length term averages $-0.3$ points per thousand
@@ -247,10 +247,20 @@ shortcut --- sum the degrees, divide by two --- and the rest enumerate edges.
 Under \texttt{degree}, which lists all $40$ degrees, $100\%$ state it, and
 truncation falls from $29\%$ to $20\%$. At $p{=}.10$ the switch runs $67\%$ to
 $99\%$. That gain is density-robust rather than a pooled average hiding one
-cell: $+22, +30, +24, +33$ across the four main densities. The other robust
-gain we measure is \texttt{components} on
-\texttt{qwen3-4b}/\texttt{connected\_nodes}, at $+7, +11, +10, +9$, and it
-costs $37$ characters.
+cell: $+22, +30, +24, +33$ across the four main densities.
+
+The other robust gain we measure is not information transfer at all.
+\texttt{components} on \texttt{qwen3-4b}/\texttt{connected\_nodes} runs
+$+7, +11, +10, +9$ from a $37$-character preamble --- but at $n{=}40$ every
+Erd\H{o}s--R\'enyi graph at $p\ge.20$ is connected, so at three of those four
+densities the primer emits the same sentence about all $100$ graphs, and the
+gain is larger there than at $p{=}.10$, where $52$ of $100$ graphs have more
+than one component and the string actually varies. Whatever that preamble
+buys, it is not graph-specific content. The same account covers the largest
+primer effects in the sweep: on \texttt{node\_count}, whose gold answer is
+always $40$, interposing almost any text between the encoder's ``nodes
+$0,\dots,39$'' preamble and the question interrupts an off-by-one that
+otherwise costs \texttt{qwen3-1.7b} $68.5\%$ of its answers.
 
 The direction of the length change is task-specific, so neither ``primers make
 responses longer'' nor its converse holds. On
@@ -289,6 +299,10 @@ primer.
 \paragraph{Bundling.} \texttt{all} renders three primers together and is no
 shorter than their sum, yet across the $41$ cells where the parts do anything
 it delivers a median $0.50$ of what they are worth separately $[0.29, 0.71]$.
+A ratio of two noisy quantities is biased downward, so we simulate the matched
+null --- every cell recentred on exact additivity, keeping its own noise scale
+and the same screen --- which gives a median of $1.00$ $[0.92, 1.08]$ against
+the observed $0.50$ ($p<0.001$).
 On the $19$ cells where no single part dominates --- the only cells that
 separate dilution from selection --- the ratio to the \emph{sum} is $0.52$
 $[0.40, 0.71]$ while the ratio to the \emph{largest single part} is $1.00$

@@ -85,9 +85,23 @@ stricter claims than the body carried.
 | 19 | `v3_window_table` input twice | appendix duplicate removed |
 | 20 | Three appendix tables overran the column (10 overfull boxes) | wrapped in `\resizebox` |
 
-## Open — round 3
+## Round 3 — closed
+
+| # | issue | resolution |
+|---|---|---|
+| 21 | Traceability sweep | `paper/NUMBERS.md` v3 section rewritten: every body figure maps to a CSV column and the command that writes it |
+| 22 | Unified `4,706`/`4,691` for the same quantity, and `+11 to +13`/`+16` between abstract and body | both unified |
+| 23 | **`components` is a constant string at p≥.20.** Every n=40 ER graph at p≥.20 is connected (verified: 0 of 100 have >1 component at .20/.35/.50; 52 of 100 at .10), yet the gain there (+11, +10, +9) exceeds the gain where the string varies (+7.0) | the paper now states that this gain is not graph-specific content, and links it to the `node_count` off-by-one that any interposed text interrupts |
+| 24 | Additivity shortfall untested against a null; a ratio of noisy quantities is biased downward | matched-null simulation added to `print_additivity`: exact additivity plus the observed per-cell noise gives 1.00 [0.92, 1.08] against an observed 0.50, p<0.001 |
+
+Review items 2.1–2.5, 2.10–2.16 of `docs/paper-v3-review-fixes.md` targeted
+sections the rewrite removed, or were resolved by it: the −11.0 interaction is
+gone, §5.4 is rebuilt on the tested difference, the leakage is named in the
+abstract, and the shortcut bar is compared against model accuracy for the first
+time.
+
+## Open — round 4
 
 | # | issue |
 |---|---|
-| 21 | Traceability sweep: every numeral in the body must map to a script and a CSV in `paper/NUMBERS.md`; not yet done for the window, recovery and length-term figures |
-| 22 | `docs/paper-v3-review-fixes.md` P1 items 2.6–2.16 not yet triaged against the rewritten body (several may no longer apply, since the sections they target were cut) |
+| 25 | Language and coherence read-through of the assembled body: check that the argument runs cleanly from leakage → window → within-arm flip → behaviour → limits, with no residue of the earlier framing |
