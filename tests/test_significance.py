@@ -1681,3 +1681,98 @@ def test_report_exact_per_task_no_paired_rows_does_not_crash():
       frame, "qwen3-8b", "edge_count", _default_args(), "main_sweep", records
   )
   assert records == []
+
+
+def test_mde_refuses_a_graded_outcome_instead_of_returning_its_floor():
+  """`connected_nodes` is scored with set-F1, so its hit vector holds graded
+  values (52 distinct, mean 0.97 on the real n=40 cells). The injector is
+  Bernoulli end to end -- it splits `control` at 0.5 for `q` and draws
+  `treatment*` as 0/1 -- so a graded control is compared against a 0/1 draw
+  and `realized_diff` is pinned near `-mean(control)` whatever `delta` is.
+  The search read that as "detected" at every step and bisected to
+  `initial_hi / 2**n_steps`, which is what put `0.0001953125` next to a
+  realized effect of `-0.10` in three committed tables.
+  """
+  control = [0.0, 0.4, 0.71, 0.97, 1.0] * 20
+  treatment = [1.0, 0.0, 1.0, 0.5, 1.0] * 20
+  result = significance.minimum_detectable_effect_clustered(
+      control, treatment, list(range(100)), initial_hi=0.05,
+      n_replicates=5, n_perm=20, n_steps=3, seed=1,
+  )
+  assert result["delta"] is None
+  assert result["realized_diff"] is None
+  assert "non-binary" in result["note"]
+
+
+def test_mde_still_answers_for_binary_outcomes():
+  """The refusal must not swallow the five exact-match tasks, which are the
+  reason this function exists. Ints and floats both count as binary."""
+  control = ([1.0] * 60 + [0.0] * 40) * 2
+  treatment = ([1.0] * 50 + [0.0] * 50) * 2
+  for cast in (float, int):
+    result = significance.minimum_detectable_effect_clustered(
+        [cast(v) for v in control], [cast(v) for v in treatment],
+        list(range(200)), initial_hi=0.05,
+        n_replicates=5, n_perm=20, n_steps=3, seed=1,
+    )
+    assert result["note"] is None or "non-binary" not in result["note"]
+    assert result["delta"] is not None
+
+
+def test_exact_paired_ci_matches_closed_form_clopper_pearson():
+  """At an all-in-one-direction split the bound has a closed form.
+
+  With `c == k` the upper Clopper-Pearson bound on `theta` solves
+  `(1 - theta)**k == alpha/2`, so the mapped interval is checkable without
+  trusting the bisection.
+  """
+  for k in (5, 10, 37):
+    result = significance.exact_paired_ci(b=0, c=k, n_pairs=k)
+    assert result["ci_high"] == 1.0          # c == k, theta bound is 1
+    theta_lo = (0.025) ** (1 / k)            # solves theta**k == alpha/2
+    assert abs(result["ci_low"] - (2 * theta_lo - 1)) < 1e-9
+
+
+def test_exact_paired_ci_is_symmetric_and_contains_the_point_estimate():
+  mirror = significance.exact_paired_ci(9, 3, 380)
+  direct = significance.exact_paired_ci(3, 9, 380)
+  assert abs(direct["ci_low"] + mirror["ci_high"]) < 1e-12
+  assert abs(direct["ci_high"] + mirror["ci_low"]) < 1e-12
+  for b, c in [(0, 1), (1, 0), (2, 3), (5, 5), (1, 11), (20, 4), (50, 60)]:
+    result = significance.exact_paired_ci(b, c, 380)
+    point = (c - b) / 380
+    assert result["ci_low"] - 1e-12 <= point <= result["ci_high"] + 1e-12
+
+
+def test_exact_paired_ci_reports_no_interval_width_without_discordant_pairs():
+  """`n_discordant` is what a caller renders; the zero width is not a claim.
+
+  Conditional on nothing disagreeing there is no direction to bound, so the
+  interval is a point. `paper/make_ci_table.py` prints "n/a" off the count
+  rather than a zero-width 95% interval, which reads as a confident null.
+  """
+  assert significance.exact_paired_ci(0, 0, 380) == {
+      "ci_low": 0.0, "ci_high": 0.0, "n_discordant": 0}
+
+
+def test_exact_paired_ci_does_not_overclaim_where_the_bootstrap_did():
+  """The five cells the bootstrap wrongly separated from zero.
+
+  Each is a real `ci_all.json` cell: a handful of disagreements out of ~370,
+  where the percentile bootstrap returned an interval excluding zero (its
+  measured false-positive rate is 6.25% at 5 discordant pairs and 6.58% at
+  8, against a nominal 5%). The exact interval covers zero at all five.
+  """
+  # (b, c, n_pairs) read back from the cells themselves. The first is the
+  # four `qwen3-1.7b-think|node_count` cells, where all five disagreements
+  # point one way and the bootstrap returned [+0.27, +2.71]; the exact test
+  # still cannot reject, since 2*(1/2)**5 = 0.0625 > 0.05. The second is
+  # `qwen3-4b|edge_count|rwse`, where the bootstrap returned [-3.02, -0.25].
+  for b, c, n in [(0, 5, 369), (7, 1, 398)]:
+    result = significance.exact_paired_ci(b, c, n)
+    assert result["ci_low"] <= 0 <= result["ci_high"], (b, c, n, result)
+
+  # ...while a split lopsided enough for the exact test to resolve does
+  # separate from zero, so the guard above is not vacuous.
+  decisive = significance.exact_paired_ci(0, 8, 398)
+  assert decisive["ci_low"] > 0, decisive

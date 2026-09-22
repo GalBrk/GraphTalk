@@ -84,14 +84,27 @@ for arm in ARMS:
                 continue
             perm = significance.paired_permutation_test(
                 drop_ctrl, drop_treat, n_perm=10000, seed=0)
-            ci = significance.cluster_bootstrap_ci(
-                drop_ctrl, drop_treat, n_boot=10000, seed=0)
+            # Exact conditional interval, not a percentile bootstrap. These
+            # are paired binary outcomes, so the difference takes only three
+            # values and a bootstrap's endpoints land on a coarse lattice:
+            # simulated at this `n` with no true effect, its nominal 95%
+            # interval wrongly excluded zero 11.70% of the time at 4
+            # discordant pairs and 7.07% at 11, non-monotonically, so no
+            # minimum-discordant threshold repairs it. It also over-claimed
+            # on five real cells here. `exact_paired_ci` conditions on the
+            # discordant count instead and is at or below nominal at every
+            # count; it reuses `mc`'s `b`/`c`, so the interval and the
+            # McNemar p-value below now come from the same two numbers.
             mc = scoring.mcnemar(drop_ctrl, drop_treat)
+            ci = significance.exact_paired_ci(
+                mc["b"], mc["c"], len(drop_ctrl))
+            scale = lambda v: None if v is None else v * 100
             mcz = scoring.mcnemar(zero_ctrl, zero_treat)
             out[f"{arm}|{t}|{c}"] = {
                 "n_drop": len(drop_ctrl),
                 "delta_drop": (sum(drop_treat) - sum(drop_ctrl)) / len(drop_ctrl) * 100,
-                "ci": [ci["ci_low"] * 100, ci["ci_high"] * 100],
+                "ci": [scale(ci["ci_low"]), scale(ci["ci_high"])],
+                "n_discordant": ci["n_discordant"],
                 "p_perm": perm["p_value"],
                 "p_mcnemar": mc["p_value"],
                 "n_zero": len(zero_ctrl),
