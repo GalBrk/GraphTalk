@@ -54,13 +54,14 @@ procedure the model runs. Given a list of degrees, the share of responses
 that sum them and halve rises from $7\%$ to $100\%$; where the primer
 states the answer, the median response collapses from $273$ to $34$ tokens
 and accuracy falls from $99$ to $87$. Accuracy then depends on where in the
-$40$-line primer the queried node sits, by up to $21.6$ points. Added text
-is itself an active treatment, costing up to $15.7$ points with no content
-at all, and bundling three primers recovers a median $0.44$ of what they
-are worth separately. Two measurement choices decide several of these
-results: on \texttt{edge\_existence}, raw accuracy rises from $54\%$ to
-$86\%$ with density while balanced accuracy falls to chance, because the
-model answers ``yes'' to $98$--$99\%$ of pairs.
+$40$-line primer the queried node sits, by up to $21.6$ points; and
+bundling three primers into one recovers a median $0.44$ of what they are
+worth separately, losing gains and damage alike. Reading any of this
+requires two controls that are not usually applied: a length-matched
+content-free preamble, which is itself worth up to $15.7$ points, and
+balanced accuracy on the boolean task, where raw accuracy rises with
+density while the model converges on answering ``yes'' to $98$--$99\%$ of
+pairs.
 \end{abstract}
 
 
@@ -86,15 +87,17 @@ or one whose task has a majority class large enough to score well by itself
 --- leaves no room for any primer effect to appear, or credits one that is
 not there.
 
-We ask what a primer does, and the section headings of
-Section~\ref{sec:results} are the questions in order. What do these
-accuracy numbers measure, once a shifting majority class and a generation
-budget are accounted for? What makes these tasks hard at a fixed graph
-size? Does added text change accuracy on its own? Which primer moves which
-task? What does the primer change in the model's response --- how much it
-writes, and which procedure it states? Where in the primer does it read?
-Do primers combine? And which of the answers hold across model arms and
-corpora?
+We ask what a primer does, and the headings of
+Section~\ref{sec:results} are the questions in order. Which primer moves
+which task? What does the primer change in the model's response --- how
+much it writes, and which procedure it states? Where in the primer does it
+read? Do primers combine? And which of the answers hold across model arms
+and corpora? Section~\ref{sec:results-measurement} comes first and is
+prerequisite rather than a result: at $n{=}40$ two of the six tasks have a
+majority class that scores well by itself, one is bounded by the generation
+budget, and a content-free preamble of matched length is already worth up
+to $15.7$ points, so what counts as a primer effect has to be fixed before
+any of it can be read.
 
 Two contributions support the answers. The first is the four controls of
 Figure~\ref{fig:design} applied jointly --- a graph-blind shortcut solver
@@ -350,140 +353,89 @@ answer set and sits at $0.93$--$1.00$ in every cell, while exact match on
 the same responses spans $0.48$--$0.92$. We report exact match throughout.
 On \texttt{edge\_existence} we report balanced accuracy alongside accuracy,
 because the share of node pairs that are joined rises from $10\%$ to $85\%$
-across our density range (Section~\ref{sec:results-difficulty}).
+across our density range (Section~\ref{sec:results-measurement}).
 
 \section{Results}
 \label{sec:results}
 
-\subsection{What do these accuracy numbers measure?}
+\subsection{What these tasks and scores measure}
 \label{sec:results-measurement}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{v3_fig_balanced_accuracy.pdf}
-\caption{\texttt{edge\_existence} under \texttt{none},
-\texttt{qwen3-1.7b}. Accuracy falls to $54\%$ at $p{=}.50$ and then rises
-again to $86\%$ at $p{=}.85$, which reads as a recovery. Balanced accuracy
-over the same responses does not recover: it reaches chance at $p{=}.65$
-and stays there, because the model answers ``yes'' to $98$--$99\%$ of
-pairs while $66$--$85\%$ of them really are edges.}
-\label{fig:balanced}
-\end{figure}
+A primer can only move accuracy where accuracy can move, and on two of the
+six tasks the score moves for reasons that have nothing to do with the
+primer. This section fixes what the numbers in the rest of the paper mean.
 
-\paragraph{Accuracy on \texttt{edge\_existence} tracks the class prior, not
-the task.} The share of node pairs that are joined rises with density, from
-$10\%$ at $p{=}.10$ to $85\%$ at $p{=}.85$, so a constant answer earns a
-score that changes with density. Under \texttt{none}, \texttt{qwen3-1.7b}
-scores $89, 73, 66, 54, 68, 77, 86$ across the seven levels --- a decline
-and then an apparent recovery. Balanced accuracy over the same responses
-runs $93.9, 83.5, 75.4, 55.8, 52.9, 52.1, 53.3$: the recovery is entirely
-the prior. Above $p{=}.50$ the model answers ``yes'' to $98$--$99\%$ of
-pairs, and a model that always says yes scores $66$--$85\%$ there. The
-same split holds on \texttt{qwen3-4b}, less severely
-(raw $96$ to $96$, balanced $97.8$ down to $89.4$). We therefore report
-balanced accuracy alongside accuracy on this task, and read no gain above
-$p{=}.50$ as evidence about graph reading (Figure~\ref{fig:balanced}).
+\paragraph{Accuracy on \texttt{edge\_existence} tracks the class prior.}
+The share of node pairs that are joined rises with density, from $10\%$ at
+$p{=}.10$ to $85\%$ at $p{=}.85$, so a constant answer earns a score that
+changes with density. Under \texttt{none}, \texttt{qwen3-1.7b} scores
+$89, 73, 66, 54, 68, 77, 86$ across the seven levels --- a decline and then
+an apparent recovery. Balanced accuracy over the same responses runs
+$93.9, 83.5, 75.4, 55.8, 52.9, 52.1, 53.3$: the recovery is entirely the
+prior. Above $p{=}.50$ the model answers ``yes'' to $98$--$99\%$ of pairs,
+and always saying yes scores $66$--$85\%$ there. The same split holds on
+\texttt{qwen3-4b}, less severely (raw $96$ to $96$, balanced $97.8$ to
+$89.4$). We read no gain above $p{=}.50$ as evidence about graph reading
+(Appendix Figure~\ref{fig:balanced}).
 
-\paragraph{Truncation is an outcome, not a missing value.} A generation that
-reaches the output budget has produced a wrong answer, but scoring it wrong
-and dropping it measure different things, and on some cells the difference
-is the result. \texttt{qwen3-1.7b} reaches the budget on $22.4\%$ of
-\texttt{edge\_count} generations and $6.1\%$ of \texttt{cycle\_check}; the
-thinking arms reach it on $81.0\%$ and $62.3\%$ of \texttt{edge\_count}.
-On \texttt{cycle\_check}, whose answer is ``yes'' for all $400$ graphs,
-\texttt{qwen3-1.7b} scores $0.997$ on the generations that terminate and
-$0.923$ counting the rest as wrong. Paired differences below drop a pair
-when either side truncated, as the least favourable convention for the
-primer; per-cell truncation rates are in Table~\ref{tab:hitcap}.
+\paragraph{Two tasks have no label distribution at all.} At $n{=}40$ every
+one of the $400$ graphs contains a cycle and has $40$ nodes, so
+\texttt{cycle\_check} and \texttt{node\_count} have a majority-class
+baseline of $1.000$. \texttt{cycle\_check} is uninformative here.
+\texttt{node\_count} is worse: \texttt{qwen3-1.7b} scores $0.315$, because
+$68.5\%$ of its answers read the encoder's ``nodes $0,\dots,39$'' preamble
+as the count. Almost any interposed text interrupts that off-by-one, which
+is what the large primer gains on this task measure.
 
-\paragraph{A primer is read against two baselines, never against zero.}
-\texttt{filler} is length-matched and states nothing about the graph, and
-it is not a null: it costs \texttt{qwen3-1.7b} $15.7$ points on
-\texttt{edge\_existence} and \texttt{qwen3-4b} $12.5$ on
-\texttt{connected\_nodes}. A content effect smaller than that is not a
-content effect. Every difference below is reported against \texttt{none}
-(Table~\ref{tab:main}) and against \texttt{filler}
-(Table~\ref{tab:main}), and the two disagree often enough that neither
-alone is sufficient.
+\paragraph{Truncation is an outcome, not a missing value.}
+\texttt{qwen3-1.7b} reaches the output budget on $22.4\%$ of
+\texttt{edge\_count} generations; the thinking arms reach it on $81.0\%$
+and $62.3\%$. It decides scores elsewhere too: on \texttt{cycle\_check},
+whose answer is ``yes'' for all $400$ graphs, \texttt{qwen3-1.7b} scores
+$0.997$ on the generations that terminate and $0.923$ counting the rest as
+wrong. Paired differences below drop a pair when either side truncated, the
+least favourable convention for the primer; rates are in
+Table~\ref{tab:hitcap}.
 
-\subsection{What makes these tasks hard?}
-\label{sec:results-difficulty}
-
-A primer can only move accuracy where accuracy can move. Four things set
-that room at $n{=}40$, and none of them is the size of the graph.
-
-\paragraph{The size of the answer, not the size of the graph.} A sweep that
-holds mean degree at $\approx 8$ or $\approx 16$ while $n$ ranges over
-$\{20,40,80,160\}$ separates two factors that a density sweep confounds
-(Appendix Table~\ref{tab:degfixdeg}). Growing $n$ eightfold at
-$\bar{d}{\approx}8$
-costs \texttt{qwen3-1.7b} $29$ points and saturates after $n{=}80$;
-doubling $\bar{d}$ costs $33$--$42$ points at \emph{every} $n$. The same
-grid puts \texttt{qwen3-8b} at $0.998$--$0.802$ throughout, so scale
-removes the headroom before graph size exhausts it.
-
-\paragraph{The required output operation, with the graph held fixed.} The
-corpus seeds one graph per (density, index) and serves every task from it,
-so \texttt{node\_degree}, \texttt{connected\_nodes} and
+\paragraph{Difficulty is set by the answer, not the graph.} Holding mean
+degree fixed while $n$ ranges over $\{20,40,80,160\}$, growing $n$
+eightfold costs \texttt{qwen3-1.7b} $29$ points while doubling $\bar{d}$
+costs $33$--$42$ at \emph{every} $n$ (Appendix
+Table~\ref{tab:degfixdeg}). The sharper version is available within the
+main sweep, because one graph per (density, index) serves every task:
+\texttt{node\_degree}, \texttt{connected\_nodes} and
 \texttt{edge\_existence} ask about the \emph{same node of the same graph}
-and differ only in what the answer has to be: a count, the set itself, or a
-boolean. Under \texttt{none} at $p{=}.50$, \texttt{qwen3-1.7b} scores
-$0.30$ counting, $0.48$ reproducing the set and $0.54$ answering the
-boolean, and at $p{=}.35$ it is $0.41, 0.59, 0.66$ --- counting a
-neighbour set is harder than writing it out. \texttt{qwen3-4b} reverses the
-first two ($0.99$ against $0.79$ at $p{=}.50$). The output operation is
-therefore a difficulty driver in its own right, measured with graph,
-density and target identity all controlled, but which operation is harder
+and differ only in whether the answer is a count, a set or a boolean. Under
+\texttt{none} at $p{=}.50$, \texttt{qwen3-1.7b} scores $0.30$, $0.48$ and
+$0.54$ on the three; at $p{=}.35$, $0.41$, $0.59$ and $0.66$. Counting a
+neighbour set is harder than writing it out --- and \texttt{qwen3-4b}
+reverses that ordering ($0.99$ against $0.79$ at $p{=}.50$), so the
+required output operation is a difficulty driver in its own right, with
+graph, density and target all controlled, but which operation is harder
 depends on the model.
 
-\paragraph{The output budget, on tasks that require enumeration.} On
-\texttt{edge\_count} under \texttt{none} the plain arms almost never answer
-exactly --- \texttt{qwen3-4b} is exact on $8$ of $400$ with a median
-relative error of $10.9\%$ and never truncates, \texttt{qwen3-1.7b} exact
-on $5$ with $28.5\%$ over the $70\%$ of its generations that terminate ---
-while the thinking arms are exact on $86\%$ and $98\%$ of the generations
-that terminate and truncate on $82\%$ and $80\%$ of all of them. The task
-is not beyond the plain arms' competence; without an explicit serial count
-they substitute an estimate, and with one they run out of budget.
-
-\paragraph{The label distribution, which two tasks do not have.} At $n{=}40$
-every one of the $400$ Erd\H{o}s--R\'enyi graphs contains a cycle and every
-one has $40$ nodes, so \texttt{cycle\_check} and \texttt{node\_count} both
-have a majority-class baseline of $1.000$: a constant answer is a perfect
-answer. \texttt{cycle\_check} is consequently uninformative here.
-\texttt{node\_count} is worse than uninformative: \texttt{qwen3-1.7b}
-scores $0.315$ against that baseline of $1.000$, because $68.5\%$ of its
-answers read the encoder's ``nodes $0,\dots,39$'' preamble as the count.
-Almost any interposed text interrupts that off-by-one, which is what the
-large primer gains on this task measure.
-
-\subsection{Does added text change accuracy on its own?}
-\label{sec:results-length}
-
-\texttt{filler} significantly reduces accuracy on
-\texttt{connected\_nodes} and \texttt{edge\_existence} in both plain arms,
-even though it states no fact about the graph. The cost is not a flat
-charge for tokens. It differs by task by a factor of two
-(Appendix Table~\ref{tab:lengthcost}a), and within a
-task it is not monotone in density: on
-\texttt{qwen3-1.7b}/\texttt{edge\_existence} it runs $-5$, $-20$, $-32$,
-$-6$, $-2$, $-1$, $-1$ from $p{=}.10$ to $.85$, largest in the middle of
-the range and gone where the task collapses toward a constant
-answer. Whether it tracks difficulty depends on the arm: correlating the
-cost with accuracy under \texttt{none} gives $+0.55$ for
+\paragraph{Added text is an active treatment on its own.} \texttt{filler}
+is length-matched and states nothing about the graph, and it is not a null:
+it significantly reduces accuracy on \texttt{connected\_nodes} and
+\texttt{edge\_existence} in both plain arms. The cost is not a flat charge
+for tokens. It differs by task by a factor of two (Appendix
+Table~\ref{tab:lengthcost}a); within a task it is not monotone in density,
+running $-5$, $-20$, $-32$, $-6$, $-2$, $-1$, $-1$ from $p{=}.10$ to $.85$
+on \texttt{qwen3-1.7b}/\texttt{edge\_existence}, largest in the middle and
+gone where the task collapses toward a constant answer; and it changes sign
+\emph{within} every task but the constant-gold \texttt{node\_count}, so
+there is no per-token rate to quote and no transferring an estimate from
+one task to another. Whether it tracks difficulty depends on the arm:
+correlated with accuracy under \texttt{none} it gives $+0.55$ for
 \texttt{qwen3-1.7b-think}, $-0.09$ for \texttt{qwen3-1.7b} and $-0.44$ for
-\texttt{qwen3-4b}, so the relation the dedicated \texttt{node\_degree}
-sweep shows on the thinking arm ($r{=}{+}0.95$ over its seven densities;
-$6.3$ points pooled, $p{<}10^{-4}$) is absent on one plain arm and reversed
-on the other. The cost also changes sign \emph{within} every task except
-the constant-gold \texttt{node\_count}, so it cannot be estimated on one
-task and applied to another and there is no per-token rate to quote.
+\texttt{qwen3-4b}. Every difference below is therefore reported against
+\texttt{filler} as well as against \texttt{none}.
 
-The \texttt{edge\_existence} effects are not changes in how the graph is
-read. The hit rate stays at $98$--$100\%$ under every condition, so
-accuracy moves only through the false-alarm rate, which \texttt{filler}
-raises and \texttt{clustering} lowers. With hits at ceiling, sensitivity
-and criterion cannot be separated
+On \texttt{edge\_existence} these are shifts in response bias rather than
+in how the graph is read: the hit rate stays at $98$--$100\%$ under every
+condition, so accuracy moves only through the false-alarm rate, which
+\texttt{filler} raises and \texttt{clustering} lowers. With hits at
+ceiling, sensitivity and criterion cannot be separated
 \citep{macmillan2005detection,hautus1995corrections} (Appendix
 Tables~\ref{tab:booleanbias} and~\ref{tab:sdt}).
 
@@ -548,6 +500,16 @@ Accuracy alone cannot say what a primer did. The generated text can, and it
 shows the primer changing which procedure the model runs and how much work
 it does, in directions that differ by task.
 
+\paragraph{Before the primer, \texttt{edge\_count} is budget-bound.} Under
+\texttt{none} the plain arms almost never answer
+exactly --- \texttt{qwen3-4b} is exact on $8$ of $400$ with a median
+relative error of $10.9\%$ and never truncates, \texttt{qwen3-1.7b} exact
+on $5$ with $28.5\%$ over the $70\%$ of its generations that terminate ---
+while the thinking arms are exact on $86\%$ and $98\%$ of the generations
+that terminate and truncate on $82\%$ and $80\%$ of all of them. The task
+is not beyond the plain arms' competence; without an explicit serial count
+they substitute an estimate, and with one they run out of budget.
+
 \paragraph{On \texttt{edge\_count} the primer replaces the method.} Under
 \texttt{none} at $p{=}.50$, $7\%$ of \texttt{qwen3-1.7b}'s responses state
 the handshake shortcut --- sum the degrees and divide by two --- and the
@@ -585,7 +547,8 @@ general statements (Appendix Table~\ref{tab:behaviour}).
 On \texttt{edge\_existence} beyond $p{=}.50$, \texttt{qwen3-1.7b}'s
 responses shorten sharply and converge on the majority answer: it replies
 ``yes'' to $98$--$99\%$ of pairs and its balanced accuracy sits at chance
-(Figure~\ref{fig:balanced}). Neither prompt length nor task difficulty
+(Appendix Figure~\ref{fig:balanced}). Neither prompt length nor task
+difficulty
 triggers this. A ladder that raises $n$ at fixed mean degree makes the
 prompt longer and the task harder without producing it, and the collapse
 appears on the task whose answer space is a single token while the
@@ -805,6 +768,18 @@ A:
 
 \subsection{Response behaviour}
 \label{sec:appendix-behaviour}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{v3_fig_balanced_accuracy.pdf}
+\caption{\texttt{edge\_existence} under \texttt{none},
+\texttt{qwen3-1.7b}. Accuracy falls to $54\%$ at $p{=}.50$ and then rises
+again to $86\%$ at $p{=}.85$, which reads as a recovery. Balanced accuracy
+over the same responses does not recover: it reaches chance at $p{=}.65$
+and stays there, because the model answers ``yes'' to $98$--$99\%$ of
+pairs while $66$--$85\%$ of them really are edges.}
+\label{fig:balanced}
+\end{figure}
+
 
 \input{v3_behaviour_table.tex}
 
