@@ -9,7 +9,6 @@ must not add a third collision.
   tab:additivity  `all` against the sum of its parts (body)
   tab:pertask     per-task accuracy and both deltas, all four arms (appendix)
   tab:behaviour   response length, strategy markers, truncation (appendix)
-  tab:relevance   matched vs mismatched primer/task pairs (appendix)
 
 Reads csv2/raw-trends/ only. frame.csv is the per-response frame that
 scripts/build_raw_frame.py rebuilds from runs/ (and whose golds it verifies
@@ -492,5 +491,4 @@ if __name__ == "__main__":
     additivity()
     per_task(frame)
     behaviour()
-    relevance()
     headroom()

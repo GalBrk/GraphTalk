@@ -138,8 +138,21 @@ Also checked: the body contains no process narration — no reference to
 `docs/`, CSV files, scripts, review history or earlier versions — so it reads
 as findings rather than as the path taken to them.
 
+## Round 6 — closed
+
+Audit of the appendix against the body: does every float support a claim the
+paper still makes?
+
+| # | issue | resolution |
+|---|---|---|
+| 29 | Nine appendix floats were orphaned, all supporting sections the rewrite removed (budget-matched thinking, MAE, signal detection, the `clustering` headline and its density table, rewiring, the density prior, the published-split bars, relevance matching) | dropped, with the `degfixdeg` and `published_ceiling` inputs |
+| 30 | `tab:budget` carried two figures that do not reproduce: `qwen3-1.7b`/`cycle_check` read 90.7 against 92.2 from the frame, and `qwen3-4b` 99.0 against 99.8 | dropped with the table; no surviving float reports them |
+| 31 | Eight surviving floats had no reference from the body | each now referenced from the claim it supports |
+| 32 | `make_v3_tables.py` still generated `v3_relevance_table.tex`, which nothing inputs | generator call removed |
+
 ## Status
 
-All verifiers green at round 5: `make_v3.sh` exit 0, body ends page 5,
+All verifiers green at round 6: `make_v3.sh` exit 0, body ends page 5,
 0 undefined references, 0 overfull boxes, 19 tests pass, every body numeral
-mapped in `paper/NUMBERS.md`, all four arms reported.
+mapped in `paper/NUMBERS.md`, all four arms reported, and no float
+generated, input or referenced without the other two.
