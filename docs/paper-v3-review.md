@@ -100,8 +100,24 @@ gone, §5.4 is rebuilt on the tested difference, the leakage is named in the
 abstract, and the shortcut bar is compared against model accuracy for the first
 time.
 
-## Open — round 4
+## Round 4 — closed
 
-| # | issue |
-|---|---|
-| 25 | Language and coherence read-through of the assembled body: check that the argument runs cleanly from leakage → window → within-arm flip → behaviour → limits, with no residue of the earlier framing |
+Coherence read-through of the assembled body.
+
+| # | issue | resolution |
+|---|---|---|
+| 25 | Conclusion still carried `+11 to +13` where abstract and body say `+16` | unified |
+| 26 | §4.4 headed "Two effects that do not survive their controls", but bundling *does* survive its matched null | retitled "Position and composition" |
+| 27 | §4.1 reports `components` at −0.3 while §4.3 reports it at +7…+9, which reads as a contradiction | forward reference added; the two are a mean over cells and one arm's format effect |
+
+A cross-document sweep confirms one value per quantity: `+16` (4 sites),
+`0.50`, `172`, `324`, `4,691` (3 sites), `6 of 48`, `0.746`; and no
+occurrences of the superseded `+11 to 13`, `0.44` or `4,706`. The only
+remaining instance of "content-free" is the sentence stating that `filler` is
+not content-free.
+
+## Status
+
+All verifiers green at round 4: `make_v3.sh` exit 0, body ends page 5,
+0 undefined references, 0 overfull boxes, 19 tests pass, every body numeral
+mapped in `paper/NUMBERS.md`.
