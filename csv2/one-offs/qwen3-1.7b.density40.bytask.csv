@@ -1,0 +1,3 @@
+task,condition,n,win,lose,delta,p_value,bh_significant,mde_delta,mde_realized_diff,mde_note,mde_delta_negative,mde_realized_diff_negative,mde_note_negative
+connected_nodes,degree,600,0,10,-0.016666666666666666,0.001953125,True,,,,,,
+node_degree,degree,599,71,38,0.05509181969949917,0.0020331695313091317,True,,,,,,

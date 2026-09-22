@@ -1,0 +1,13 @@
+task,condition,n,win,lose,delta,p_value,bh_significant,mde_delta,mde_realized_diff,mde_note,mde_delta_negative,mde_realized_diff_negative,mde_note_negative
+edge_existence,all,300,5,5,0.0,1.0,False,,0.0164,MDE exceeds 1.0 at this power target,-0.0296875,-0.0302,
+edge_existence,clustering,300,4,3,0.0033333333333333335,1.0,False,,0.017066666666666667,MDE exceeds 1.0 at this power target,-0.025,-0.025333333333333333,
+edge_existence,components,300,3,1,0.006666666666666667,0.625,False,,0.017133333333333334,MDE exceeds 1.0 at this power target,-0.025,-0.0266,
+edge_existence,degree,300,3,3,0.0,1.0,False,,0.018533333333333332,MDE exceeds 1.0 at this power target,-0.025,-0.025133333333333334,
+edge_existence,none,300,4,2,0.006666666666666667,0.6875,False,,0.016933333333333335,MDE exceeds 1.0 at this power target,-0.026562500000000003,-0.028,
+edge_existence,rwse,300,4,1,0.01,0.375,False,,0.01633333333333333,MDE exceeds 1.0 at this power target,-0.028125,-0.024733333333333333,
+node_degree,all,293,126,22,0.35494880546075086,6.485282938356566e-19,True,,,,,,
+node_degree,clustering,297,49,40,0.030303030303030304,0.39657015814551616,False,0.09375,0.09494949494949495,,-0.08750000000000001,-0.08457912457912457,
+node_degree,components,292,67,34,0.11301369863013698,0.0013318251141996125,True,,,,,,
+node_degree,degree,267,130,13,0.43820224719101125,1.9040449764300312e-25,True,,,,,,
+node_degree,none,293,68,31,0.12627986348122866,0.00025534608649658137,True,,,,,,
+node_degree,rwse,297,56,32,0.08080808080808081,0.01375038573850291,True,,,,,,
