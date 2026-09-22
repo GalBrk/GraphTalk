@@ -35,7 +35,7 @@ echo "== build the PDF =="
 
 echo
 echo "== page budget =="
-# The ACL body limit is 8 pages. The body ENDS where Limitations begins, so
+# Target: a 5-page body. The body ENDS where Limitations begins, so
 # that is the label to check -- grepping where the Conclusion *starts* reports
 # "page 8" and passes while the Conclusion itself spills onto page 9.
 body_end=$(grep -o 'newlabel{sec:limitations}{{[0-9.]*}{[0-9]*}' \
@@ -45,10 +45,10 @@ if [ -z "$body_end" ]; then
     exit 1
 fi
 echo "  body ends on page $body_end (the Limitations heading)"
-if [ "$body_end" -gt 8 ]; then
-    echo "  FAIL: body runs past the 8-page ACL limit."
+if [ "$body_end" -gt 5 ]; then
+    echo "  FAIL: body runs past the 5-page target."
     exit 1
 fi
-echo "  OK: within the 8-page body limit."
+echo "  OK: within the 5-page body target."
 
 echo "done."

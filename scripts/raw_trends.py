@@ -16,6 +16,8 @@ Questions:
   mechanism    Q4     serial position (with its control), yes-bias, error shape
   composition  Q6     relevance matching and additivity of `all` vs its parts
   moderators   Q7     primer x thinking interaction, full p=0.1..0.85 curve
+  headroom     Q8     where a primer stops helping and starts hurting,
+                      bucketed by the accuracy the task had without it
   markers             stratified sample for hand-validating the regex markers
 
 Statistical conventions, all forced by what the data turned out to be:
@@ -54,6 +56,10 @@ DENS4 = DENS[:4]
 # Gold is the same for every graph at n=40, so a shift on these need not be
 # graph reading, and a ratio against a ceiling-bound part-sum is uninformative.
 CONST_GOLD = {"node_count", "cycle_check"}
+# Baseline-accuracy bands for the headroom crossover. The edges are round
+# numbers chosen before the counts were looked at, not fitted to them.
+HEADROOM_BANDS = [0, 20, 50, 80, 95, 100.01]
+HEADROOM_LABELS = ["<20", "20-50", "50-80", "80-95", ">95"]
 
 # Tasks whose gold is a single constant at n=40 -- `node_count` is always 40 and
 # `cycle_check` is always "Yes". A deficit from 100% there measures distraction,
@@ -573,6 +579,60 @@ def print_additivity(add, boots=2000):
 # Q7 -- moderators
 # --------------------------------------------------------------------------
 
+def q_headroom(eff):
+  """Where does a primer stop helping and start hurting?
+
+  One row per (arm, task, density, primer), carrying the effect against both
+  baselines and the accuracy the task had under `none` in that cell. The
+  baseline is what bounds the effect, so it is the variable to bucket on.
+
+  Two rules make the count mean something. Constant-gold tasks are excluded,
+  since at n=40 `node_count` and `cycle_check` have a majority-class baseline
+  of 1.0 and a shift there is distraction rather than graph reading. And a
+  primer is only credited with helping when it beats `none` -- beating
+  `filler` alone can mean nothing more than that `filler` is expensive, which
+  on this sweep it often is.
+  """
+  base = eff[eff.condition == "none"][["arm", "task", "density", "acc"]]
+  base = base.rename(columns={"acc": "base_acc"})
+  p = eff[~eff.condition.isin(["none", "filler"])
+          & ~eff.task.isin(CONSTANT_GOLD)]
+  p = p.merge(base, on=["arm", "task", "density"], how="inner")
+  p = p[p.n >= 100].copy()
+  p["delta_vs_none_pts"] = 100 * p.vs_none_delta
+  p["delta_vs_filler_pts"] = 100 * p.vs_filler_delta
+  p["base_acc_pts"] = 100 * p.base_acc
+  p["sig_vs_none"] = (p.vs_none_q < 0.05).astype(int)
+  p["sig_vs_filler"] = (p.vs_filler_q < 0.05).astype(int)
+  # A content effect has to clear both baselines in the same direction.
+  p["content_effect"] = (
+      p.sig_vs_none & p.sig_vs_filler
+      & (np.sign(p.delta_vs_none_pts) == np.sign(p.delta_vs_filler_pts))
+  ).astype(int)
+  p["band"] = pd.cut(p.base_acc_pts, HEADROOM_BANDS,
+                     labels=HEADROOM_LABELS, include_lowest=True)
+  return p[["arm", "task", "density", "condition", "n", "base_acc_pts",
+            "band", "delta_vs_none_pts", "delta_vs_filler_pts",
+            "sig_vs_none", "sig_vs_filler", "content_effect"]]
+
+
+def print_headroom(h):
+  """The crossover: help below it, harm above it."""
+  s = h[h.sig_vs_none == 1]
+  print("  significant against `none`: %d cells (%d help, %d harm)"
+        % (len(s), int((s.delta_vs_none_pts > 0).sum()),
+           int((s.delta_vs_none_pts < 0).sum())))
+  print("  %-8s %5s %6s %6s %8s" % ("band", "n", "help", "harm", "median"))
+  for band in HEADROOM_LABELS:
+    b = s[s.band == band]
+    if b.empty:
+      continue
+    print("  %-8s %5d %6d %6d %+8.1f"
+          % (band, len(b), int((b.delta_vs_none_pts > 0).sum()),
+             int((b.delta_vs_none_pts < 0).sum()),
+             b.delta_vs_none_pts.median()))
+
+
 def q_moderators(eff):
   """Primer x thinking interaction, and the 7-level density curve."""
   rows = []
@@ -640,7 +700,8 @@ def main():
   ap.add_argument("--frame", default=FRAME)
   ap.add_argument("--question", default="all",
                   choices=["all", "effects", "difficulty", "behaviour",
-                           "mechanism", "composition", "moderators", "markers"])
+                           "mechanism", "composition", "moderators", "headroom",
+                           "markers"])
   args = ap.parse_args()
 
   df = load(args.frame)
