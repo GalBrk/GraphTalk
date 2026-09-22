@@ -54,8 +54,8 @@ while gaining it $27$ at $p{=}.85$ --- same arm, same task, same primer, the
 sign following the accuracy the cell already had. The generated text shows
 why: the model stops counting and starts looking up, its median response
 falling from $273$ tokens to $34$. Structural side information that does not
-determine the answer is worth $+2$ to $+4$ points in the same window and
-nothing outside it, and more than half the cells of a standard sweep sit above
+determine the answer is worth $+2$ to $+4$ points on average in the same
+window --- by primer, from $-0.3$ to $+5.3$ --- and nothing outside it, and more than half the cells of a standard sweep sit above
 $0.90$ accuracy, where neither can show anything.
 \end{abstract}
 
@@ -239,8 +239,10 @@ and the gap between the two is where the arms differ most.
 The cleanest demonstration needs no comparison across arms. On
 \texttt{node\_degree}, \texttt{qwen3-4b} and the \texttt{degree} primer, which
 prints the queried node's degree verbatim, the effect tracks the baseline
-across the seven densities: $-6, -1, -7, -12$ where the arm scores $99$--$100$
-without the primer, then $-6$ at $82$, $+7$ at $50$ and $+27$ at $33$. Same
+across the seven densities: $-6, -1, -7$ and $-12$ at $p{=}.10$ to $.50$,
+where the arm scores $99$--$100$ without the primer, then $-6$ at $p{=}.65$
+(baseline $82$), $+7$ at $p{=}.75$ (baseline $50$) and $+27$ at $p{=}.85$
+(baseline $33$). Same
 arm, same task, same primer; the sign flips as the task gets hard enough for
 the model to need it.
 
@@ -264,8 +266,8 @@ truncation falls from $29\%$ to $20\%$. At $p{=}.10$ the switch runs $67\%$ to
 $99\%$. That gain is density-robust rather than a pooled average hiding one
 cell: $+22, +30, +24, +33$ across the four main densities.
 
-The other robust gain we measure is not information transfer at all.
-\texttt{components} on \texttt{qwen3-4b}/\texttt{connected\_nodes} runs
+The other robust gain we measure is not information transfer at all. The
+\texttt{components} primer on \texttt{qwen3-4b}/\texttt{connected\_nodes} runs
 $+7, +11, +10, +9$ from a $37$-character preamble --- but at $n{=}40$ every
 Erd\H{o}s--R\'enyi graph at $p\ge.20$ is connected, so at three of those four
 densities the primer emits the same sentence about all $100$ graphs, and the
@@ -371,7 +373,8 @@ comparable across them.
 
 Three limits bear on the behavioural results specifically. The procedure a
 response states is identified by a single surface pattern over free text
-(\texttt{divided by 2}, \texttt{sum of the degrees}, \texttt{handshak});
+(\texttt{divided by 2}, \texttt{sum of the degrees}, and \texttt{handshak}
+as a prefix for \emph{handshake} and \emph{handshaking});
 it is not hand-labelled, and a model may use a procedure it does not
 narrate, so those shares are the rate at which a response \emph{says} it
 took the arithmetic route rather than the rate at which it did. Position within the primer is confounded with node identity, and
@@ -432,18 +435,6 @@ A:
 
 \subsection{Response behaviour}
 \label{sec:appendix-behaviour}
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\columnwidth]{v3_fig_balanced_accuracy.pdf}
-\caption{\texttt{edge\_existence} under \texttt{none},
-\texttt{qwen3-1.7b}. Accuracy falls to $54\%$ at $p{=}.50$ and then rises
-again to $86\%$ at $p{=}.85$, which reads as a recovery. Balanced accuracy
-over the same responses does not recover: it reaches chance at $p{=}.65$
-and stays there, because the model answers ``yes'' to $98$--$99\%$ of
-pairs while $66$--$85\%$ of them really are edges.}
-\label{fig:balanced}
-\end{figure}
-
 
 \input{v3_behaviour_table.tex}
 
