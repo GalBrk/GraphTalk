@@ -572,26 +572,49 @@ flatter but not flat.}
 \end{figure}
 
 If a primer is being retrieved from rather than reasoned over, accuracy
-should depend on \emph{where} in the $40$ lines the queried node sits.
-It does (Figure~\ref{fig:serial}). On \texttt{qwen3-1.7b-think} under
-\texttt{degree}, accuracy runs
-$91.2, 82.0, 86.2, 73.3$ across line-number quartiles, a first-to-last drop
-of $17.9$ points ($p{=}2\times10^{-5}$); under \texttt{all} it is
-$91.2, 79.1, 79.3, 69.6$, a drop of $21.6$ ($p{=}10^{-6}$). On
-\texttt{qwen3-4b} under \texttt{degree} the drop is $9.5$ points
-($p{=}0.014$) against $0.4$ under \texttt{none} ($p{=}0.79$).
+should depend on \emph{where} in the $40$ lines the queried node sits. It
+does, and the dependence is large. We fit correctness on the target's line
+number and report the slope as points from the first line to the last, with
+a percentile bootstrap interval over the $\approx700$ items in each cell;
+quartile means are in Figure~\ref{fig:serial}. On
+\texttt{qwen3-1.7b-think}, \texttt{all} loses $24.3$ points
+$[-33.5, -15.2]$ from the top of the primer to the bottom and
+\texttt{degree} loses $18.7$ $[-27.7, -9.7]$; on \texttt{qwen3-4b},
+\texttt{degree} loses $12.1$ $[-22.3, -3.0]$. For comparison, the whole
+effect of the \texttt{degree} primer on that arm is $-6.0$ points. Where in
+the primer the answer sits matters more than whether the primer is there.
 
-The controls bound how much of this is retrieval. The primer's line order
-is node-id order, so position is confounded with node identity, and a
-gradient present without a primer would not be a retrieval effect. Under
-\texttt{none} the gradient is $5.6$ points on
-\texttt{qwen3-1.7b-think} ($p{=}0.10$) and $0.4$ on \texttt{qwen3-4b}
-($p{=}0.79$) --- flat. But \texttt{filler} gives $12.1$ points on
-\texttt{qwen3-1.7b-think} ($p{=}0.006$), and \texttt{filler} contains no
-per-node value to retrieve. Position therefore matters most where a value
-must be found, and the answer-stating primers show much the steepest
-gradients, but a length-matched control on one arm produces a gradient of
-its own, so the effect is not exclusively retrieval from the primer.
+\paragraph{Node identity does not explain it.} Position and node id are the
+same variable here, because the primer lists nodes in id order, so the
+finding would collapse if later-numbered nodes were simply harder nodes.
+They are not: over the $19{,}600$ \texttt{node\_degree} items, a node's id
+correlates $+0.019$ with its degree and $+0.020$ with its clustering
+coefficient. Erd\H{o}s--R\'enyi ids are assigned before edges are drawn, so
+the $40$th line of the primer describes a node no harder than the first.
+
+\paragraph{But retrieval does not explain all of it either.} Two cells rule
+that out. \texttt{rwse} on \texttt{qwen3-1.7b} has the steepest slope we
+measure, $-19.3$ $[-31.5, -7.3]$, and it never prints the queried degree;
+and \texttt{filler} on \texttt{qwen3-1.7b-think} loses $16.4$ points
+$[-29.0, -4.0]$ while containing no per-node content whatsoever. A
+preamble that says nothing about any node still makes the model worse at
+nodes described late in it. Averaged over the four arms the ordering is in
+the expected direction --- $-12.3$ points for the primers that state the
+answer, $-5.1$ for per-node primers that do not, $-2.8$ for the controls
+--- and under \texttt{none} no arm has an interval excluding zero. So
+position costs most where there is a value to find, but the cost is not
+only the cost of finding it.
+
+What we cannot say from this design is which cost it is. The slope is
+consistent with retrieval failing further into a list, with a general
+degradation over prompt position that any long preamble induces, or with
+both; separating them needs a primer whose line order is shuffled away from
+node-id order, which we did not run. Two further limits: the four quartiles
+are too coarse to distinguish monotone decay from a lost-in-the-middle
+shape, and the slope does not grow monotonically with density
+($-9, -12, -24, -24, -12, -33, -18$ across the seven levels for
+\texttt{degree} on \texttt{qwen3-1.7b-think}), so we do not claim it scales
+with how much there is to search.
 
 \subsection{Do primers combine?}
 \label{sec:results-composition}
