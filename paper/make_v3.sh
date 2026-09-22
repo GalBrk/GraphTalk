@@ -39,7 +39,7 @@ echo "== page budget =="
 # that is the label to check -- grepping where the Conclusion *starts* reports
 # "page 8" and passes while the Conclusion itself spills onto page 9.
 body_end=$(grep -o 'newlabel{sec:limitations}{{[0-9.]*}{[0-9]*}' \
-    paper/talk_like_a_graph.v3.aux | sed 's/.*}{//')
+    paper/talk_like_a_graph.v3.aux | sed 's/.*}{//; s/}//')
 if [ -z "$body_end" ]; then
     echo "  FAIL: sec:limitations label not found; page budget unchecked."
     exit 1
