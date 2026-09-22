@@ -359,14 +359,30 @@ def q_serial_position(df):
   beside `degree`. A slope under `degree` and a flat curve under `none` is
   retrieval position; a slope everywhere is node-id difficulty and the finding
   is dropped.
+
+  Two statistics per cell, because the buckets alone mislead. The quartile
+  columns show the shape; `slope_pts` is an OLS fit of correctness on line
+  number, rescaled to points from the first line to the last, which uses all
+  700 items rather than quartiles of ~175 and comes with a bootstrap interval.
+  Read `slope_lo`/`slope_hi`: several bucket gradients that look clean have
+  intervals straddling zero.
+
+  The id-magnitude confound is also testable directly, and `print_serial`
+  reports it: in an Erdos-Renyi graph a node's id carries no information about
+  its degree, so if corr(target_id, target_degree) is ~0 then "later nodes are
+  harder nodes" is not available as an explanation.
   """
   rows = []
   buckets = [(0, 9), (10, 19), (20, 29), (30, 39)]
+  rng = np.random.default_rng(20260906)
   for arm in ARMS:
     for task in ("node_degree", "connected_nodes"):
       for cond in CONDS:
         cell = df[(df.arm == arm) & (df.task == task) & (df.condition == cond)]
         cell = cell[pd.to_numeric(cell["target_id"], errors="coerce").notna()]
+        # A capped generation is a wrong answer for a reason unrelated to where
+        # the node sits, so it is dropped rather than scored against position.
+        cell = cell[cell["hit_cap"] == 0]
         if len(cell) < 100:
           continue
         tid = pd.to_numeric(cell["target_id"], errors="coerce")
@@ -379,8 +395,53 @@ def q_serial_position(df):
         rec["rho_position"] = rho
         rec["p_position"] = p
         rec["first10_minus_last10"] = rec["acc_0_9"] - rec["acc_30_39"]
+        rec["slope_pts"], rec["slope_lo"], rec["slope_hi"] = _id_slope(
+            tid.to_numpy(float), cell["exact"].to_numpy(float), rng)
         rows.append(rec)
   return pd.DataFrame(rows)
+
+
+def print_id_confound(df):
+  """Is a node's position in the primer confounded with how hard that node is?
+
+  Position and node id are the same variable here, so the whole serial-position
+  finding collapses if later-numbered nodes are intrinsically harder. In an
+  Erdos-Renyi graph they should not be: ids are assigned before edges are drawn.
+  This prints the check rather than asserting it, because a non-zero value would
+  not be a bug -- it would mean the finding has to be dropped.
+  """
+  nd = df[(df.task == "node_degree")]
+  tid = pd.to_numeric(nd["target_id"], errors="coerce")
+  deg = pd.to_numeric(nd["target_degree"], errors="coerce")
+  clu = pd.to_numeric(nd["target_clustering"], errors="coerce")
+  ok = tid.notna() & deg.notna()
+  print("  id/difficulty confound over %d items:" % int(ok.sum()))
+  print("    corr(target_id, target_degree)     = %+.4f" % tid[ok].corr(deg[ok]))
+  print("    corr(target_id, target_clustering) = %+.4f"
+        % tid[ok].corr(clu[ok]))
+
+
+def _id_slope(tid, exact, rng, boots=1000):
+  """OLS slope of correctness on line number, in points from line 0 to line 39.
+
+  Returns (slope, lo, hi) with a percentile bootstrap interval. A cell with no
+  variation in correctness has no slope to report, so it yields NaN rather than
+  a spurious zero.
+  """
+  if len(tid) < 50 or exact.std() == 0:
+    return np.nan, np.nan, np.nan
+  span = 39.0
+  point = np.polyfit(tid, exact, 1)[0] * span * 100
+  boot = []
+  for _ in range(boots):
+    i = rng.integers(0, len(tid), len(tid))
+    if exact[i].std() == 0:
+      continue
+    boot.append(np.polyfit(tid[i], exact[i], 1)[0] * span * 100)
+  if not boot:
+    return point, np.nan, np.nan
+  lo, hi = np.percentile(boot, [2.5, 97.5])
+  return point, lo, hi
 
 
 def q_error_shape(df):
@@ -545,6 +606,7 @@ def main():
 
   if want in ("all", "mechanism"):
     print("\n[Q4] mechanism")
+    print_id_confound(df)
     save(q_serial_position(df), "serial_position.csv")
     save(q_error_shape(df), "error_shape.csv")
 

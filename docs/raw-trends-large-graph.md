@@ -255,24 +255,43 @@ failure). Behaviourally, the same cell is where reasoning length collapses
 34-token lookup.**
 
 The primer lists nodes in id order, so the target's id *is* its line number.
-Accuracy by position (first-10 minus last-10, pts):
+Slope of correctness on line number, as points lost from the first line to the
+40th, with a bootstrap 95% CI over ~700 items per cell (`slope_pts` in
+`serial_position.csv`; bolded where the interval excludes zero). **All seven
+conditions are shown** — an earlier version of this table omitted `rwse`, which
+turns out to matter:
 
-| arm | `none` | `filler` | `clustering` | `degree` | `all` |
-|---|---|---|---|---|---|
-| 4b | +0.4 (p=.79) | −5.3 (p=.29) | −4.7 (p=.32) | **+9.5 (p=.014)** | +11.1 |
-| 1.7b | −5.4 (p=.61) | +2.2 (p=.38) | +2.5 (p=.43) | +7.6 (p=.09) | **+12.8 (p=.003)** |
-| 1.7b-think | +5.6 (p=.10) | +12.1 (p=.006) | +6.1 (p=.11) | **+17.9 (p<.0001)** | **+21.6 (p<.0001)** |
+| arm | `none` | `filler` | `components` | `clustering` | `rwse` | `degree` | `all` |
+|---|---|---|---|---|---|---|---|
+| 1.7b | +3.7 | −4.7 | −4.1 | −4.5 | **−19.3** | −10.1 | **−18.4** |
+| 4b | −1.3 | +5.3 | −1.5 | +4.4 | 0.0 | **−12.1** | −10.6 |
+| 1.7b-think | −8.7 | **−16.4** | −1.7 | −9.1 | −7.2 | **−18.7** | **−24.3** |
+| 4b-think | −2.1 | +0.4 | −1.8 | −0.9 | **−4.2** | **−2.8** | −1.5 |
 
-**The control is the point.** Position is confounded with node id, so the same
-bucketing is run on conditions with no answer to retrieve. `clustering` has the
-identical 40-line per-node format and identical length — and shows no slope.
-`none` is flat. Only the conditions that *state the answer* decay steeply and
-monotonically with position. The decay is therefore retrieval of the answer, not a
-generic long-preamble effect.
+**Node identity is ruled out.** Position and node id are the same variable, so
+the finding collapses if late-numbered nodes are harder nodes. They are not: over
+19,600 `node_degree` items, `corr(target_id, target_degree) = +0.019` and
+`corr(target_id, target_clustering) = +0.020`. ER ids are assigned before edges
+are drawn.
 
-Caveat kept in view: the controls are not perfectly flat — 1.7b dips mid-list and
-recovers, and `filler` on 1.7b-think slopes +12.1. The claim is about steepness
-and monotonicity, not about zero slope in the controls.
+**Retrieval is not ruled in.** The ordering by primer kind is in the expected
+direction — mean slope −12.3 for conditions that state the answer, −5.1 for
+per-node primers that do not, −2.8 for the controls — and no `none` cell has an
+interval excluding zero. But two cells break the clean story:
+
+- `rwse` on 1.7b has the **steepest slope in the whole table** (−19.3) and never
+  prints the queried degree.
+- `filler` on 1.7b-think loses 16.4 points and contains *no per-node content at
+  all*. A preamble that says nothing about any node still costs accuracy on nodes
+  described late in it.
+
+So position costs most where there is a value to find, but the cost is not only
+the cost of finding it. Separating "retrieval fails further down a list" from
+"any long preamble degrades with position" needs a shuffled-order primer, which
+was not run. Two further limits: four quartiles cannot distinguish monotone decay
+from a lost-in-the-middle shape, and the slope does not grow monotonically with
+density (−9, −12, −24, −24, −12, −33, −18 across the seven levels for `degree` on
+1.7b-think), so it should not be described as scaling with search length.
 
 ### M3 — They shift response bias, and raw accuracy can hide a total collapse
 
