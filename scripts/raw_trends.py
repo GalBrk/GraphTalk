@@ -548,8 +548,13 @@ def q_composition(eff):
         if not np.isnan(parts).any() and "all" in dn:
           total = float(np.sum(parts))
           biggest = max(parts, key=abs)
+          # `all`'s own bootstrap interval, carried through so the matched null
+          # can use each cell's real noise scale rather than one global guess.
+          arow = cell[cell.condition == "all"]
           add.append({
               "arm": arm, "task": task, "density": dens,
+              "d_all_lo": float(arow.vs_none_lo.iloc[0]) if len(arow) else np.nan,
+              "d_all_hi": float(arow.vs_none_hi.iloc[0]) if len(arow) else np.nan,
               "d_degree": parts[0], "d_clustering": parts[1], "d_rwse": parts[2],
               "sum_parts": total, "d_all": dn["all"],
               "gap": dn["all"] - total,
@@ -599,6 +604,24 @@ def print_additivity(add, boots=2000):
     print("  %s  n=%d" % (label, len(sub)))
     print("    all / sum(parts)   %5.2f [%.2f, %.2f]" % med(sub.ratio))
     print("    all / largest part %5.2f [%.2f, %.2f]" % med(sub.ratio_max))
+  # A median ratio below 1 is not by itself evidence of sub-additivity: the
+  # ratio is a quotient of noisy quantities, and under exact additivity plus
+  # sampling noise its median is already biased downward. Simulate that null --
+  # recentre every cell on exact additivity, keep its own noise scale and the
+  # same >=4pt screen -- and read the observed value against it.
+  se = ((a.d_all_hi - a.d_all_lo) / 3.92).fillna(0.05)
+  obs = (a.d_all / a.sum_parts).median()
+  sim = []
+  for _ in range(boots):
+    drawn = a.sum_parts + rng.normal(0, se.abs().to_numpy())
+    keep = (100 * a.sum_parts).abs() >= 4.0
+    sim.append((drawn[keep] / a.sum_parts[keep]).median())
+  sim = np.asarray(sim)
+  print("    matched null (exact additivity + this noise): median ratio "
+        "%.2f [%.2f, %.2f]; observed %.2f, p=%.3f"
+        % (np.median(sim), np.percentile(sim, 2.5), np.percentile(sim, 97.5),
+           obs, (sim <= obs).mean()))
+
   # Dilution predicts one shrink factor; report each side rather than assume it.
   for label, m in (("parts help", a.sum_parts > 0), ("parts hurt", a.sum_parts < 0)):
     x, y = a.sum_parts[m].to_numpy(), a.d_all[m].to_numpy()

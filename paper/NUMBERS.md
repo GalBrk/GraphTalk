@@ -6,37 +6,47 @@ traces to one of these commands.
 
 ## v3 (current paper)
 
-Every number in the Results sections of `talk_like_a_graph.v3.tex` comes
-from `csv2/raw-trends/`, rebuilt from raw `runs/` by:
+Every number in the body of `talk_like_a_graph.v3.tex` traces to a column of
+`csv2/raw-trends/`, which is rebuilt from the raw generations by:
 
 ```bash
-PYTHONPATH=. python scripts/build_raw_frame.py            # -> frame.csv
+PYTHONPATH=. python scripts/build_raw_frame.py            # runs/ -> frame.csv
 PYTHONPATH=. python scripts/raw_trends.py --question all  # -> the rest
+PYTHONPATH=. python scripts/analyze_primer_window.py --tex paper/v3_window_table.tex
 ```
 
-| Section | Numbers | Source |
+`build_raw_frame.py` regenerates every graph from its `instance_id` and aborts
+if a regenerated gold answer disagrees with the stored one, so a clean run is
+also a check that the frame matches the generations.
+
+| Body figure | Source | Command |
 |---|---|---|
-| Measurement | raw vs balanced accuracy, predicted-yes rate, hit rate | `edge_existence_balanced.csv` |
-| Measurement | truncation rates, `cycle_check` scored two ways | `frame.csv` (`hit_cap`, `exact`) |
-| Difficulty | output-operation contrast (count / list / boolean, same node) | `output_operation.csv` |
-| Difficulty | `edge_count` exactness and relative error, `node_count` off-by-one | `frame.csv`, `error_shape.csv` |
-| Difficulty | fixed-mean-degree grid | `scripts/score_fixed_degree_sweep.py` (inherited) |
-| Length | `filler` cost by task and density, sign changes within task | `effects.csv` (`vs_none_delta`) |
-| Effects | every delta, fix/break counts, significance | `effects.csv`; table by `paper/make_v3_tables.py` |
-| Effects | relevance matching, matched vs mismatched | `relevance.csv` |
-| Behaviour | median tokens, strategy-marker share, truncation | `behaviour.csv`, `strategy_vs_accuracy.csv` |
-| Behaviour | the capitulation controls | `ladder_length_vs_difficulty.csv` |
-| Retrieval | position quartiles, gradients, p-values | `serial_position.csv` |
-| Composition | parts vs bundle, the 0.29-0.71 weighting range | `additivity.csv` |
+| primer lengths 37 / 891 / 1,629 / 2,949 / 4,691, and 1,829 for `filler` | `frame.csv`, mean `primer_chars` by condition | `--question all` |
+| length term −0.3 pts per 1,000 chars, positive in 8 of 16 cells | `effects.csv` × `frame.csv`, fitted within each (arm, task) over the five content primers | `analyze_primer_window.py` |
+| shortcut bars: 18 of 42 at exactly 1.000, highest of the rest 0.746; `filler` scores 1.00 on `node_count` | `shortcuts_n40_flat.json` | `scripts/shortcut_table_n40.py` |
+| 84,000 generations; 99.84% parse; 133 unparsed, 128 of them `cycle_check` | `frame.csv` (`parsed`, `task`, `hit_cap`) | `--question all` |
+| decoding budgets 8,192 and 2,048 | `runs/*.jsonl` (`hit_cap`, `n_new_tokens`) | read from the generations |
+| set-F1 0.93–1.00 against exact match 0.48–0.92 on `connected_nodes` | `effects.csv` (`f1`, `acc`) | `--question effects` |
+| balanced accuracy, predicted-yes rate, the 98–99% yes rate | `edge_existence_balanced.csv` | `--question effects` |
+| 324 side-information cells, 172 (53%) above 0.90 | printed summary + `v3_window_table.tex` | `analyze_primer_window.py` |
+| band means: +16 answer-carrying, +2 to +4 side information, −1.4 / −0.8 above 0.90 | same | same |
+| per-primer side-information means +5.3, +2.9, +2.2, −0.3 | same | same |
+| recovered fraction 0.006 to 0.99 where the bar is 1.00 | same, "what does the model recover" block | same |
+| `qwen3-4b`/`node_degree`/`degree` profile −6, −1, −7, −12, −6, +7, +27 | `effects.csv` (`vs_none_delta` by density) | `--question effects` |
+| 13 items broken against 1 fixed at p=.50 | `effects.csv` (`vs_none_broke`, `vs_none_fixed`) | `--question effects` |
+| response lengths 273 / 34 / 266, 206 / 352, 233 / 94 | `behaviour.csv` (`median_tokens`) | `--question behaviour` |
+| sum-of-degrees 7%→100% and 67%→99%; truncation 29%→20% | `behaviour.csv` (`uses_degree_sum`, `hit_cap_rate`) | `--question behaviour` |
+| density profiles +22/+30/+24/+33 and +7/+11/+10/+9 | `effects.csv` (`vs_none_delta`) | `--question effects` |
+| serial position 24.3 [−33.5, −15.2]; control +25.0; 6 of 48 distinguishable | `serial_position.csv` (`slope_pts`, `slope_vs_none`, `svn_lo`, `svn_hi`) | `--question mechanism` |
+| id/difficulty correlations +0.019 and +0.020 over 19,600 items | printed by `print_id_confound` | `--question mechanism` |
+| additivity 0.50 [0.29, 0.71]; 0.52 and 1.00 [0.74, 1.20] on 19 cells | `additivity.csv` (`ratio`, `ratio_max`, `max_share`) | `--question composition` |
+| headroom crossover counts (quoted in `docs/`, table in the appendix) | `headroom.csv` | `--question headroom` |
+| approximately 217,000 generations (Ethics) | line count of `runs/*.jsonl`, archive excluded | — |
 
-The supporting subsection (cross-fitted interaction, `clustering`
-replication, rewiring, budget-matched thinking comparison, MDEs) is
-inherited from v2 unchanged; its sources are the v1 entries below.
-
-Floats: `v3_main_table.tex`, `v3_additivity_table.tex`,
-`v3_pertask_tables.tex`, `v3_behaviour_table.tex` and
-`v3_relevance_table.tex` are written by `paper/make_v3_tables.py`;
-`v3_fig_*.pdf` by `scripts/raw_trends_figures.py`.
+Body floats: `v3_main_table.tex` and the appendix `v3_*` tables come from
+`paper/make_v3_tables.py`; `v3_window_table.tex` from
+`scripts/analyze_primer_window.py`; `v3_fig_*.pdf` from
+`scripts/raw_trends_figures.py --format pdf`.
 
 ## v1 (superseded, retained for the inherited floats)
 
