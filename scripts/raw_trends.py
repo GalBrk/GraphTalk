@@ -409,6 +409,16 @@ def q_serial_position(df):
         rec["first10_minus_last10"] = rec["acc_0_9"] - rec["acc_30_39"]
         rec["slope_pts"], rec["slope_lo"], rec["slope_hi"] = _id_slope(
             tid.to_numpy(float), cell["exact"].to_numpy(float), rng)
+        # A slope that merely differs from zero is not evidence the primer did
+        # anything: `none` carries no primer and slopes too on some cells. The
+        # testable quantity is this condition's slope MINUS its own control's.
+        ctrl = df[(df.arm == arm) & (df.task == task)
+                  & (df.condition == "none") & (df.hit_cap == 0)]
+        ctrl = ctrl[pd.to_numeric(ctrl["target_id"], errors="coerce").notna()]
+        rec["slope_vs_none"], rec["svn_lo"], rec["svn_hi"] = _slope_diff(
+            tid.to_numpy(float), cell["exact"].to_numpy(float),
+            pd.to_numeric(ctrl["target_id"], errors="coerce").to_numpy(float),
+            ctrl["exact"].to_numpy(float), rng)
         rows.append(rec)
   return pd.DataFrame(rows)
 
@@ -431,6 +441,34 @@ def print_id_confound(df):
   print("    corr(target_id, target_degree)     = %+.4f" % tid[ok].corr(deg[ok]))
   print("    corr(target_id, target_clustering) = %+.4f"
         % tid[ok].corr(clu[ok]))
+
+
+def _slope_diff(tid_c, exact_c, tid_n, exact_n, rng, boots=1000):
+  """(condition slope - control slope) in points, with a bootstrap interval.
+
+  Both arms are resampled independently, since they are different generations
+  over the same graphs and the pairing is not on the response.
+  """
+  if min(len(tid_c), len(tid_n)) < 50:
+    return np.nan, np.nan, np.nan
+  if exact_c.std() == 0 and exact_n.std() == 0:
+    return np.nan, np.nan, np.nan
+  span = 39.0 * 100
+
+  def fit(x, y):
+    return np.polyfit(x, y, 1)[0] * span
+
+  point = fit(tid_c, exact_c) - fit(tid_n, exact_n)
+  boot = []
+  for _ in range(boots):
+    i = rng.integers(0, len(tid_c), len(tid_c))
+    j = rng.integers(0, len(tid_n), len(tid_n))
+    if exact_c[i].std() == 0 or exact_n[j].std() == 0:
+      continue
+    boot.append(fit(tid_c[i], exact_c[i]) - fit(tid_n[j], exact_n[j]))
+  if not boot:
+    return point, np.nan, np.nan
+  return point, np.percentile(boot, 2.5), np.percentile(boot, 97.5)
 
 
 def _id_slope(tid, exact, rng, boots=1000):
@@ -731,7 +769,15 @@ def main():
   if want in ("all", "mechanism"):
     print("\n[Q4] mechanism")
     print_id_confound(df)
-    save(q_serial_position(df), "serial_position.csv")
+    sp = q_serial_position(df)
+    live = sp[sp.svn_lo.notna() & sp.svn_hi.notna() & (sp.condition != "none")]
+    beats = live[(live.svn_lo > 0) | (live.svn_hi < 0)]
+    print("  gradients distinguishable from their own `none` control: "
+          "%d of %d" % (len(beats), len(live)))
+    for task, g in live.groupby("task"):
+      b = g[(g.svn_lo > 0) | (g.svn_hi < 0)]
+      print("    %-16s %d of %d" % (task, len(b), len(g)))
+    save(sp, "serial_position.csv")
     save(q_error_shape(df), "error_shape.csv")
 
   if want in ("all", "composition"):
@@ -744,6 +790,20 @@ def main():
   if want in ("all", "moderators"):
     print("\n[Q7] moderators")
     save(q_moderators(eff_dropped), "moderators.csv")
+
+  if want in ("all", "headroom"):
+    print("\n[Q8] headroom -- where a primer stops helping")
+    # Both truncation policies, because the crossover is the paper's organising
+    # claim and it should not depend on how a capped generation is scored.
+    # Primary: capped scored wrong, which keeps every cell. Robustness: capped
+    # pairs dropped, which is what the main table uses but costs the
+    # thinking-arm `edge_count` cells to the n>=100 gate.
+    h = q_headroom(eff)
+    print("  [capped scored wrong]")
+    print_headroom(h)
+    print("  [capped pairs dropped]")
+    print_headroom(q_headroom(eff_dropped))
+    save(h, "headroom.csv")
 
   if want in ("all", "markers"):
     print("\n[markers] hand-validation sample")

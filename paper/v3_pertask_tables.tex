@@ -3,6 +3,7 @@
 \centering
 \small
 \setlength{\tabcolsep}{3.4pt}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lrrrrrrr}
 \toprule
 Arm & none & filler & comp. & clust. & rwse & degree & all \\
@@ -12,7 +13,7 @@ Arm & none & filler & comp. & clust. & rwse & degree & all \\
 1.7b-t & 98.6 & $+1.4$ & $+0.9$ & $+1.4$ & $+1.4$ & $+0.8$ & $+1.4$ \\
 4b-t & 99.5 & $+0.5$ & $+0.0$ & $+0.5$ & $+0.5$ & $+0.5$ & $+0.5$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{\texttt{node\_count}, main sweep, pooled over $p \in \{0.10, 0.20, 0.35, 0.50\}$. The \texttt{none} column is exact-match accuracy (\%); the rest are paired differences against it in percentage points, truncated generations excluded pairwise. Gold is constant at $n{=}40$ on this task, so a shift need not reflect graph reading. \textbf{Bold}: exact McNemar, Benjamini--Hochberg within the arm, $q=0.05$.}
 \label{tab:pertask-nodecount}
 \end{table}
@@ -20,6 +21,7 @@ Arm & none & filler & comp. & clust. & rwse & degree & all \\
 \centering
 \small
 \setlength{\tabcolsep}{3.4pt}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lrrrrrrr}
 \toprule
 Arm & none & filler & comp. & clust. & rwse & degree & all \\
@@ -29,7 +31,7 @@ Arm & none & filler & comp. & clust. & rwse & degree & all \\
 1.7b-t & 100.0 & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $-0.7$ & $+0.0$ \\
 4b-t & 100.0 & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $-0.8$ & $+0.0$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{\texttt{cycle\_check}, main sweep, pooled over $p \in \{0.10, 0.20, 0.35, 0.50\}$. The \texttt{none} column is exact-match accuracy (\%); the rest are paired differences against it in percentage points, truncated generations excluded pairwise. Gold is constant at $n{=}40$ on this task, so a shift need not reflect graph reading. \textbf{Bold}: exact McNemar, Benjamini--Hochberg within the arm, $q=0.05$.}
 \label{tab:pertask-cyclecheck}
 \end{table}
@@ -37,6 +39,7 @@ Arm & none & filler & comp. & clust. & rwse & degree & all \\
 \centering
 \small
 \setlength{\tabcolsep}{3.4pt}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lrrrrrrr}
 \toprule
 Arm & none & filler & comp. & clust. & rwse & degree & all \\
@@ -46,7 +49,7 @@ Arm & none & filler & comp. & clust. & rwse & degree & all \\
 1.7b-t & 99.2 & $-0.8$ & $-0.8$ & $-1.0$ & $-1.3$ & $-2.3$ & $-2.0$ \\
 4b-t & 100.0 & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{\texttt{edge\_existence}, main sweep, pooled over $p \in \{0.10, 0.20, 0.35, 0.50\}$. The \texttt{none} column is exact-match accuracy (\%); the rest are paired differences against it in percentage points, truncated generations excluded pairwise. \textbf{Bold}: exact McNemar, Benjamini--Hochberg within the arm, $q=0.05$.}
 \label{tab:pertask-edgeexistence}
 \end{table}
@@ -54,6 +57,7 @@ Arm & none & filler & comp. & clust. & rwse & degree & all \\
 \centering
 \small
 \setlength{\tabcolsep}{3.4pt}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lrrrrrrr}
 \toprule
 Arm & none & filler & comp. & clust. & rwse & degree & all \\
@@ -63,7 +67,7 @@ Arm & none & filler & comp. & clust. & rwse & degree & all \\
 1.7b-t & 76.8 & $-3.5$ & $-1.0$ & $+1.0$ & $+2.5$ & $\mathbf{+11.7}$ & $\mathbf{+11.6}$ \\
 4b-t & 99.7 & $+0.0$ & $-0.3$ & $-0.3$ & $\mathbf{-2.1}$ & $+0.0$ & $-0.8$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{\texttt{node\_degree}, main sweep, pooled over $p \in \{0.10, 0.20, 0.35, 0.50\}$. The \texttt{none} column is exact-match accuracy (\%); the rest are paired differences against it in percentage points, truncated generations excluded pairwise. \textbf{Bold}: exact McNemar, Benjamini--Hochberg within the arm, $q=0.05$.}
 \label{tab:pertask-nodedegree}
 \end{table}
@@ -71,6 +75,7 @@ Arm & none & filler & comp. & clust. & rwse & degree & all \\
 \centering
 \small
 \setlength{\tabcolsep}{3.4pt}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lrrrrrrr}
 \toprule
 Arm & none & filler & comp. & clust. & rwse & degree & all \\
@@ -80,7 +85,7 @@ Arm & none & filler & comp. & clust. & rwse & degree & all \\
 1.7b-t & 79.7 & $+2.0$ & $+2.8$ & $+1.5$ & $-0.3$ & $\mathbf{+7.4}$ & $\mathbf{+6.1}$ \\
 4b-t & 98.7 & $+0.8$ & $+0.5$ & $+0.0$ & $+0.0$ & $+0.0$ & $-0.5$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{\texttt{connected\_nodes}, main sweep, pooled over $p \in \{0.10, 0.20, 0.35, 0.50\}$. The \texttt{none} column is exact-match accuracy (\%); the rest are paired differences against it in percentage points, truncated generations excluded pairwise. \textbf{Bold}: exact McNemar, Benjamini--Hochberg within the arm, $q=0.05$.}
 \label{tab:pertask-connectednodes}
 \end{table}
@@ -88,6 +93,7 @@ Arm & none & filler & comp. & clust. & rwse & degree & all \\
 \centering
 \small
 \setlength{\tabcolsep}{3.4pt}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lrrrrrrr}
 \toprule
 Arm & none & filler & comp. & clust. & rwse & degree & all \\
@@ -97,7 +103,7 @@ Arm & none & filler & comp. & clust. & rwse & degree & all \\
 1.7b-t & 86.3 & $+3.4$ & $+7.4$ & $-8.7$ & $-4.0$ & $\mathbf{-61.5}$ & $-8.3$ \\
 4b-t & 97.6 & $-2.0$ & $+1.7$ & $+1.7$ & $+0.0$ & $\mathbf{-23.5}$ & $\mathbf{-41.5}$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{\texttt{edge\_count}, main sweep, pooled over $p \in \{0.10, 0.20, 0.35, 0.50\}$. The \texttt{none} column is exact-match accuracy (\%); the rest are paired differences against it in percentage points, truncated generations excluded pairwise. \textbf{Bold}: exact McNemar, Benjamini--Hochberg within the arm, $q=0.05$.}
 \label{tab:pertask-edgecount}
 \end{table}

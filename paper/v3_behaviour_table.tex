@@ -3,6 +3,7 @@
 \centering
 \small
 \setlength{\tabcolsep}{3.6pt}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{llrrrr}
 \toprule
 Arm / task & & none & filler & degree & all \\
@@ -27,7 +28,7 @@ Arm / task & & none & filler & degree & all \\
  & \% sum-of-deg. & 0\% & 0\% & 0\% & 0\% \\
  & \% truncated & 0\% & 0\% & 0\% & 0\% \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{Response behaviour at $p{=}0.50$. Median new tokens is computed over generations that terminated, since a capped response is truncated at the budget rather than long, and is reported as \mbox{--} where more than $20\%$ of generations truncated, because the surviving median is then a sample of the short responses; read the truncation row for those cells. ``sum-of-deg.'' is the share of responses that state the handshake shortcut (sum the degrees, divide by two) rather than enumerating edges. The primer moves length in both directions depending on the task, and on \texttt{edge\_count} it replaces the method outright.}
 \label{tab:behaviour}
 \end{table}
