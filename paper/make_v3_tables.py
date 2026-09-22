@@ -226,12 +226,15 @@ def additivity():
               r"gives a ratio of means that the largest cells dominate; "
               r"weighted the other ways the estimate runs from $0.29$ to "
               r"$0.71$, so it bounds a tendency and is not a coefficient. "
-              r"Either way the bundle delivers well under the sum of its "
-              r"parts, and the shortfall is the same whether the parts help "
-              r"or hurt, which is what dilution rather than interference "
-              r"would predict. \texttt{edge\_count} is the extreme case: "
-              r"there the bundle keeps almost nothing and in two arms moves "
-              r"against its parts.}",
+              r"The bootstrap interval on the per-cell median is "
+              r"$[0.33, 0.63]$, which excludes $1$: the bundle delivers "
+              r"reliably less than the sum of its parts. Against the "
+              r"\emph{largest} single part instead, the median is $0.80$ "
+              r"$[0.56, 1.08]$, which does not exclude $1$ "
+              r"(Section~\ref{sec:results-composition}). "
+              r"\texttt{edge\_count} is the extreme case: there the bundle "
+              r"keeps almost nothing and in two arms moves against its "
+              r"parts.}",
               r"\label{tab:additivity}", r"\end{table}"]
     write("v3_additivity_table.tex", lines)
 

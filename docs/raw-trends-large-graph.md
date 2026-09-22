@@ -443,7 +443,41 @@ The per-cell median is the one to use. It is stable across effect magnitudes
 (0.43 / 0.33 / 0.48 in the [4,8), [8,15) and [15,100) point bands), so it is not
 small-denominator noise; the 0.71 is a ratio of means that the largest cells
 dominate. The defensible claim is **"the bundle falls well short of the sum of
-its parts, by roughly half"**, not a rate.
+its parts, by roughly half"**, not a rate. Bootstrapping the per-cell median
+gives [0.33, 0.63], which excludes 1, so sub-additivity itself is solid: 31 of
+the 48 cells have `all` moving with its parts but by less.
+
+### Is it a diluted sum, or just the largest part?
+
+Two accounts fit a shortfall — dilution (every part shrinks because the useful
+sentence is buried) or **one-part-wins** (the model gets one primer's worth out
+of three and the rest is inert). They only differ where no single part dominates
+the sum, since otherwise "largest part" and "sum of parts" are the same number.
+Restricting to the 27 cells where the parts genuinely share the effect
+(`max_share` < 0.75 in `additivity.csv`):
+
+| comparison | median | 95% CI | excludes 1? |
+|---|---|---|---|
+| `all` ÷ sum of parts | 0.44 | [0.33, 0.63] | **yes** |
+| `all` ÷ largest single part | 0.80 | [0.56, 1.08] | no |
+
+So `all` is reliably below the sum and **statistically indistinguishable from
+whichever single component does the most work**. One-part-wins is the better
+supported reading.
+
+The symmetry argument for dilution does *not* hold up. Fitting `all` on the
+part-sum through the origin gives **0.30 [0.08, 0.58]** where the parts help and
+**0.48 [0.40, 0.60]** where they hurt — overlapping, so these data establish
+neither that the factor differs nor that it is the same. An earlier version of
+this section claimed the shrink was symmetric on the strength of two cells at
+0.90 and 0.93, which are the two most symmetric cells in the table.
+
+Limits: in 10 of 48 cells `all` moves *against* its parts (mostly `edge_count`);
+and the design has **no pairwise conditions**, so nothing interpolates between
+one primer and three. Separating "uses the most useful sentence" from "uses
+whichever it reads first" needs `degree`+`clustering`-style bundles, or a
+permuted-order `all`, neither of which was run. `all` is not shorter than its
+parts (4,706 chars vs 5,484 summed), so nothing is lost to make room.
 
 | arm / task (p=0.5) | degree | clustering | rwse | Σ parts | `all` |
 |---|---|---|---|---|---|
