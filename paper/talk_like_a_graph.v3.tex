@@ -209,6 +209,19 @@ from zero ($-1.4$ and $-0.8$). Per primer, inside the window, only
 $-0.3$, and its one large effect turns out not to be content at all
 (Section~\ref{sec:results-behaviour}).
 
+\paragraph{Thinking mode closes the window.} The window is a property of the
+arm as much as of the task. Turning thinking on raises the median baseline
+from $56.5$ to $79.0$ on the 1.7B checkpoint and from $87.0$ to $97.0$ on the
+4B one, which removes the cells a primer could have moved: of $110$ cells per
+arm, $60$ lie in the $0.25$--$0.90$ window for \texttt{qwen3-1.7b} and only
+$15$ for \texttt{qwen3-4b-think}. Within whatever window each arm has left, no
+primer is best twice --- \texttt{all} is the best of the five on
+\texttt{qwen3-1.7b} ($+9.8$) and the worst on both 4B arms ($-9.5$, $-13.0$);
+\texttt{degree} leads on \texttt{qwen3-1.7b-think} ($+12.3$),
+\texttt{clustering} on \texttt{qwen3-4b} ($+7.3$) and \texttt{components} on
+\texttt{qwen3-4b-think} ($+27.7$). A primer selected on one arm does not
+transfer to another.
+
 \paragraph{Leakage is real but far from complete.} Where the graph-blind
 solver scores $1.00$ --- the primer determines the answer outright --- the
 model still has to find it, and mostly does not. On \texttt{node\_degree} the
@@ -344,9 +357,11 @@ main sweep and the high-density extension, so truncation rates are not
 comparable across them.
 
 Three limits bear on the behavioural results specifically. The procedure a
-response states is identified by regular expressions over free text,
-hand-validated on a stratified sample, and a model may use a procedure it does
-not narrate. Position within the primer is confounded with node identity, and
+response states is identified by a single surface pattern over free text
+(\texttt{divided by 2}, \texttt{sum of the degrees}, \texttt{handshak});
+it is not hand-labelled, and a model may use a procedure it does not
+narrate, so those shares are the rate at which a response \emph{says} it
+took the arithmetic route rather than the rate at which it did. Position within the primer is confounded with node identity, and
 the conditions available as controls carry the same positional structure, which
 is why we report that effect as unattributed. And the response-length collapse
 is attributed to the answer format by eliminating prompt length and difficulty,
