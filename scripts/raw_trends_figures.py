@@ -2,7 +2,12 @@
 
   PYTHONPATH=. python scripts/raw_trends_figures.py
 
-Writes PNGs to analysis/raw-trends/.
+Writes PNGs to analysis/raw-trends/. The paper build (paper/make_v3.sh) reuses
+the same figures as vector PDFs under a prefix, taking only the four it embeds,
+so paper/ does not accumulate orphan floats:
+
+  PYTHONPATH=. python scripts/raw_trends_figures.py --format pdf \
+      --outdir paper --prefix v3_ --only balanced_accuracy,serial_position,...
 
 Colour follows the job, not taste:
   * signed effects (help/hurt) are a POLARITY job -> diverging blue<->red with a
@@ -13,6 +18,7 @@ Colour follows the job, not taste:
 No dual axes anywhere; two measures of different scale get two panels.
 """
 
+import argparse
 import os
 
 import matplotlib
@@ -24,6 +30,9 @@ from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 
 OUT = "analysis/raw-trends"
 CSV = "csv2/raw-trends"
+_FORMAT = "png"
+_PREFIX = ""
+_ONLY = frozenset()  # empty means "every figure"
 
 INK = "#0b0b0b"
 INK2 = "#52514e"
@@ -83,8 +92,14 @@ def _fig(nrows, ncols, w, h):
 
 
 def _save(fig, name):
+  stem = name[:-4] if name.endswith(".png") else name
+  # `--only` filters here rather than in main() so every caller stays a plain
+  # one-liner; drawing a figure we discard costs a fraction of a second.
+  if _ONLY and stem.removeprefix("fig_") not in _ONLY:
+    plt.close(fig)
+    return
   os.makedirs(OUT, exist_ok=True)
-  path = os.path.join(OUT, name)
+  path = os.path.join(OUT, _PREFIX + stem + "." + _FORMAT)
   fig.savefig(path, dpi=160, bbox_inches="tight", facecolor=SURFACE)
   plt.close(fig)
   print("  ->", path)
@@ -403,4 +418,15 @@ def main():
 
 
 if __name__ == "__main__":
+  ap = argparse.ArgumentParser(description=__doc__)
+  ap.add_argument("--format", default="png", choices=["png", "pdf", "svg"])
+  ap.add_argument("--outdir", default=OUT)
+  ap.add_argument("--prefix", default="",
+                  help="prepended to every filename, e.g. v3_")
+  ap.add_argument("--only", default="",
+                  help="comma-separated figure names without the fig_ prefix; "
+                       "default writes all of them")
+  args = ap.parse_args()
+  _FORMAT, OUT, _PREFIX = args.format, args.outdir, args.prefix
+  _ONLY = frozenset(x.strip() for x in args.only.split(",") if x.strip())
   main()
