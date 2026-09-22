@@ -619,24 +619,47 @@ with how much there is to search.
 \subsection{Do primers combine?}
 \label{sec:results-composition}
 
-\input{v3_additivity_table.tex}
-
 \texttt{all} renders \texttt{degree}, \texttt{clustering} and
 \texttt{rwse} in one primer, so the parts and the bundle are both measured
-on the same graphs. Bundling is lossy: across the $48$ cells where the
-parts do anything, the bundle delivers a median $0.44$ of their sum
-(Table~\ref{tab:additivity}). How lossy depends on how cells are weighted
---- the estimate runs from $0.29$ to $0.71$ --- so what the data support is
-that the bundle falls well short of its parts, not a coefficient. The
-shortfall is the same whether the parts help or hurt:
-\texttt{qwen3-1.7b}/\texttt{edge\_existence} keeps $0.90$ of a $+12.8$ gain
-and \texttt{qwen3-4b}/\texttt{edge\_existence} keeps $0.93$ of a $-10.8$
-loss. That symmetry is what dilution of a useful sentence among irrelevant
-ones would predict and not what interference would.
-\texttt{edge\_count} is the exception: there the bundle keeps $0.15$ of a
-$+24.5$ gain on \texttt{qwen3-4b} and moves against its parts on two
-thinking arms. It is also the task whose gain depends on a single stated
-procedure, which the bundle buries.
+on the same graphs, and \texttt{all} is not shorter than its parts
+($4{,}706$ characters against $5{,}484$ summed), so nothing is dropped to
+make room. Over the $48$ cells where the parts do anything, $31$ have
+\texttt{all} moving the same way as their sum but by less. The median
+ratio is $0.44$, with a bootstrap interval of $[0.33, 0.63]$ that excludes
+$1$: bundling reliably loses most of what the parts are worth
+(Appendix Table~\ref{tab:additivity}).
+
+\paragraph{The bundle is closer to one part than to three.} Two accounts
+fit a shortfall. Under dilution the useful sentence is buried among
+irrelevant ones and every part shrinks; under the alternative the model
+gets one primer's worth out of the three and the rest is inert. These
+differ only where no single part dominates the sum, since otherwise
+``largest part'' and ``sum of parts'' are the same number. On the $27$
+cells where the parts genuinely share the effect, the ratio to the
+\emph{sum} is $0.44$ $[0.33, 0.63]$, excluding $1$, while the ratio to the
+\emph{largest single part} is $0.80$ $[0.56, 1.08]$, which does not exclude
+$1$. What \texttt{all} delivers is statistically indistinguishable from
+whichever of its three components does the most work on that cell, and
+reliably less than their sum.
+
+\paragraph{The shrink is not measurably symmetric.} A pure dilution account
+also predicts one shrink factor regardless of sign. Fitting \texttt{all} on
+the part-sum through the origin gives $0.30$ $[0.08, 0.58]$ where the parts
+help and $0.48$ $[0.40, 0.60]$ where they hurt. The intervals overlap, so
+these data establish neither that the factor differs nor that it is the
+same, and we do not read the symmetry either way.
+
+Two limits bound all of this. In $10$ of the $48$ cells \texttt{all} moves
+\emph{against} its parts rather than with them, so the shrunk-sum picture
+is a tendency across cells and not a rule within them;
+\texttt{edge\_count} supplies most of these, and it is also the task whose
+gain rests on a single stated procedure that the bundle buries. And the
+design contains no pairwise conditions --- no \texttt{degree}$+$%
+\texttt{clustering}, no \texttt{degree}$+$\texttt{rwse} --- so nothing
+interpolates between one primer and three. Distinguishing ``the model uses
+the most useful sentence'' from ``the model uses whichever sentence it
+happens to read first'' needs those conditions, or a bundle whose order is
+permuted, neither of which we ran.
 
 \subsection{What holds across arms and corpora?}
 \label{sec:results-supporting}
@@ -805,6 +828,8 @@ pairs while $66$--$85\%$ of them really are edges.}
 
 
 \input{v3_behaviour_table.tex}
+
+\input{v3_additivity_table.tex}
 
 \input{v3_relevance_table.tex}
 

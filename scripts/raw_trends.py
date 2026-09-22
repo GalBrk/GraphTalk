@@ -48,6 +48,12 @@ CONDS = ["none", "filler", "degree", "clustering", "rwse", "components", "all"]
 PRIMERS = [c for c in CONDS if c != "none"]
 ARMS = ["qwen3-1.7b", "qwen3-1.7b-think", "qwen3-4b", "qwen3-4b-think"]
 DENS = ["0.1", "0.2", "0.35", "0.5", "0.65", "0.75", "0.85"]
+# The four levels every task was run at; .65/.75/.85 cover two tasks only, so
+# pooling them in would make a cross-task summary mean different things per row.
+DENS4 = DENS[:4]
+# Gold is the same for every graph at n=40, so a shift on these need not be
+# graph reading, and a ratio against a ceiling-bound part-sum is uninformative.
+CONST_GOLD = {"node_count", "cycle_check"}
 
 # Tasks whose gold is a single constant at n=40 -- `node_count` is always 40 and
 # `cycle_check` is always "Yes". A deficit from 100% there measures distraction,
@@ -496,15 +502,71 @@ def q_composition(eff):
           })
         parts = [dn.get(c, np.nan) for c in ("degree", "clustering", "rwse")]
         if not np.isnan(parts).any() and "all" in dn:
+          total = float(np.sum(parts))
+          biggest = max(parts, key=abs)
           add.append({
               "arm": arm, "task": task, "density": dens,
               "d_degree": parts[0], "d_clustering": parts[1], "d_rwse": parts[2],
-              "sum_parts": float(np.sum(parts)), "d_all": dn["all"],
-              "gap": dn["all"] - float(np.sum(parts)),
-              "ratio": (dn["all"] / np.sum(parts)
-                        if abs(np.sum(parts)) > 0.02 else np.nan),
+              "sum_parts": total, "d_all": dn["all"],
+              "gap": dn["all"] - total,
+              "ratio": dn["all"] / total if abs(total) > 0.02 else np.nan,
+              # The rival account to "the bundle is a diluted sum" is "the
+              # bundle is whichever single primer does the most" -- so carry
+              # the largest part and the ratio against it too.
+              "max_part": biggest,
+              "ratio_max": (dn["all"] / biggest
+                            if abs(biggest) > 0.02 else np.nan),
+              # When one part carries nearly all of the sum the two accounts
+              # predict the same number, so only cells below this share can
+              # tell them apart.
+              "max_share": (abs(biggest) / abs(total)
+                            if abs(total) > 0.02 else np.nan),
           })
   return pd.DataFrame(rel), pd.DataFrame(add)
+
+
+def print_additivity(add, boots=2000):
+  """Is the bundle a shrunk sum of its parts, or just its largest part?
+
+  Both ratios are reported with a bootstrap interval on the median. The
+  discriminating cells are the ones where no single part dominates: when
+  `max_share` is near 1 the sum and the largest part are the same number and
+  the comparison is vacuous.
+  """
+  rng = np.random.default_rng(20260906)
+  a = add[add.density.isin(DENS4) & ~add.task.isin(CONST_GOLD)]
+  a = a[(100 * a.sum_parts).abs() >= 4.0]
+
+  def med(v):
+    v = np.asarray(v.dropna(), dtype=float)
+    if len(v) < 5:
+      return (np.nan,) * 3
+    b = [np.median(v[rng.integers(0, len(v), len(v))]) for _ in range(boots)]
+    return np.median(v), np.percentile(b, 2.5), np.percentile(b, 97.5)
+
+  same = (np.sign(a.d_all) == np.sign(a.sum_parts)) & \
+         (a.d_all.abs() < a.sum_parts.abs())
+  flip = np.sign(a.d_all) != np.sign(a.sum_parts)
+  print("  additivity over %d cells: %d sub-additive, %d sign-flipped"
+        % (len(a), int(same.sum()), int(flip.sum())))
+  for label, sub in (("all cells", a),
+                     ("parts share the effect (max < 75% of sum)",
+                      a[a.max_share < 0.75])):
+    print("  %s  n=%d" % (label, len(sub)))
+    print("    all / sum(parts)   %5.2f [%.2f, %.2f]" % med(sub.ratio))
+    print("    all / largest part %5.2f [%.2f, %.2f]" % med(sub.ratio_max))
+  # Dilution predicts one shrink factor; report each side rather than assume it.
+  for label, m in (("parts help", a.sum_parts > 0), ("parts hurt", a.sum_parts < 0)):
+    x, y = a.sum_parts[m].to_numpy(), a.d_all[m].to_numpy()
+    if len(x) < 5:
+      continue
+    k = (x * y).sum() / (x * x).sum()
+    bs = []
+    for _ in range(boots):
+      i = rng.integers(0, len(x), len(x))
+      bs.append((x[i] * y[i]).sum() / (x[i] * x[i]).sum())
+    print("    slope, %s (n=%d): %.2f [%.2f, %.2f]"
+          % (label, len(x), k, np.percentile(bs, 2.5), np.percentile(bs, 97.5)))
 
 
 # --------------------------------------------------------------------------
@@ -613,6 +675,7 @@ def main():
   if want in ("all", "composition"):
     print("\n[Q6] composition")
     rel, add = q_composition(eff)
+    print_additivity(add)
     save(rel, "relevance.csv")
     save(add, "additivity.csv")
 
