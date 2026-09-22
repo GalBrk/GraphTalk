@@ -710,7 +710,7 @@ def main():
   want = args.question
 
   eff = eff_dropped = None
-  if want in ("all", "effects", "composition", "moderators"):
+  if want in ("all", "effects", "composition", "moderators", "headroom"):
     print("\n[Q1/Q2] effects")
     eff = q_effects(df)
     eff_dropped = q_effects(df, drop_capped=True)
