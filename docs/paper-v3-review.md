@@ -116,8 +116,30 @@ occurrences of the superseded `+11 to 13`, `0.44` or `4,706`. The only
 remaining instance of "content-free" is the sentence stating that `filler` is
 not content-free.
 
+## Round 5 — closed
+
+Audit against the brief rather than against the prose: does the paper say
+which primers help and harm, for which task *and which arm*, on what terms,
+and where the limit is?
+
+| # | issue | resolution |
+|---|---|---|
+| 28 | The body leaned on the two plain arms; the thinking arms appeared only in passing | per-arm paragraph added, with `print_per_arm` in `raw_trends.py` so it is reproducible |
+
+The audit produced a result the paper did not have. **Thinking mode closes the
+window**: median baseline rises 56.5 → 79.0 on the 1.7B checkpoint and
+87.0 → 97.0 on the 4B one, leaving 60 of 110 cells in the 0.25–0.90 window for
+`qwen3-1.7b` and only 15 for `qwen3-4b-think`. And **no primer is best twice**
+— `all` leads on `qwen3-1.7b` (+9.8) and is worst on both 4B arms (−9.5,
+−13.0); `degree` leads on `qwen3-1.7b-think`, `clustering` on `qwen3-4b`,
+`components` on `qwen3-4b-think`. A primer chosen on one arm does not transfer.
+
+Also checked: the body contains no process narration — no reference to
+`docs/`, CSV files, scripts, review history or earlier versions — so it reads
+as findings rather than as the path taken to them.
+
 ## Status
 
-All verifiers green at round 4: `make_v3.sh` exit 0, body ends page 5,
+All verifiers green at round 5: `make_v3.sh` exit 0, body ends page 5,
 0 undefined references, 0 overfull boxes, 19 tests pass, every body numeral
-mapped in `paper/NUMBERS.md`.
+mapped in `paper/NUMBERS.md`, all four arms reported.
