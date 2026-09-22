@@ -100,3 +100,13 @@ paper/*.fdb_latexmk
 paper/*.fls
 paper/*.log
 paper/*.out
+
+# Local holding pen for superseded data files. Everything in here has a
+# verified replacement (see archive/README.md for the check that was run on
+# each); it is kept only so a number in a doc can be traced back to the file
+# that produced it, and so a deletion is reversible without a trip through
+# git history. Deliberately NOT tracked: the tracked originals are already
+# recoverable from git, and shipping a second copy of known-wrong data to
+# every clone is the worst of both. Delete the directory once you stop
+# reaching for it.
+archive/

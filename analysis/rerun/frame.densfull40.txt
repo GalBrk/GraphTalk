@@ -1,0 +1,53 @@
+wrote 67202 rows to analysis/rerun/frame.densfull40.csv (node_naming: integer)
+
+=== Objective 1: Zeroshot / none baseline ===
+  -- main sweep --
+    qwen3-1.7b           primary= 58.6%  exact= 54.5%  parsed= 99.0%  n=2400
+    qwen3-4b             primary= 80.0%  exact= 77.8%  parsed=100.0%  n=2400
+  -- thinking arm --
+    qwen3-1.7b-think     primary= 79.4%  exact= 76.3%  parsed=100.0%  n=2400
+    qwen3-4b-think       primary= 85.3%  exact= 85.2%  parsed=100.0%  n=2400
+
+=== Objective 2: cross-condition comparison (primary metric, mean over tasks) ===
+condition           all  clustering  components  degree  filler   none   rwse
+model                                                                        
+qwen3-1.7b        0.712       0.723       0.612   0.594   0.628  0.586  0.603
+qwen3-1.7b-think  0.833       0.808       0.780   0.770   0.806  0.794  0.807
+qwen3-4b          0.789       0.818       0.807   0.834   0.800  0.800  0.790
+qwen3-4b-think    0.854       0.895       0.889   0.864   0.880  0.853  0.868
+
+=== Objective 3: thinking-arm non-termination ===
+  by model:
+                     n      rate  count
+model                                  
+qwen3-1.7b-think  2582  0.153690  16800
+qwen3-4b-think    1960  0.116667  16800
+  by task:
+                    n      rate  count
+task                                  
+connected_nodes   120  0.021429   5600
+cycle_check       235  0.041964   5600
+edge_count       4010  0.716071   5600
+edge_existence     27  0.004821   5600
+node_count         74  0.013214   5600
+node_degree        76  0.013571   5600
+  by condition:
+              n      rate  count
+condition                       
+all         554  0.115417   4800
+clustering  590  0.122917   4800
+components  667  0.138958   4800
+degree      733  0.152708   4800
+filler      618  0.128750   4800
+none        725  0.151042   4800
+rwse        655  0.136458   4800
+
+  613 additional rows flagged by the length-outlier heuristic beyond the 4542 ground-truth rows -- UNVALIDATED, inspect before trusting.
+
+=== Objective 5: failure_type breakdown ===
+failure_type      non_terminating  unparsed  wrong  correct
+model                                                      
+qwen3-1.7b                    801         1   5979    10021
+qwen3-1.7b-think             2582         0   1218    13000
+qwen3-4b                       48         0   3590    13162
+qwen3-4b-think               1960         0    218    14622

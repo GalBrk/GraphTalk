@@ -1,0 +1,37 @@
+done qwen3-1.7b connected_nodes
+done qwen3-1.7b cycle_check
+done qwen3-1.7b edge_count
+done qwen3-1.7b edge_existence
+done qwen3-1.7b node_count
+done qwen3-1.7b node_degree
+done qwen3-1.7b-think connected_nodes
+done qwen3-1.7b-think cycle_check
+done qwen3-1.7b-think edge_count
+done qwen3-1.7b-think edge_existence
+done qwen3-1.7b-think node_count
+done qwen3-1.7b-think node_degree
+done qwen3-4b connected_nodes
+done qwen3-4b cycle_check
+done qwen3-4b edge_count
+done qwen3-4b edge_existence
+done qwen3-4b node_count
+done qwen3-4b node_degree
+done qwen3-4b-think connected_nodes
+done qwen3-4b-think cycle_check
+done qwen3-4b-think edge_count
+done qwen3-4b-think edge_existence
+done qwen3-4b-think node_count
+done qwen3-4b-think node_degree
+
+wrote 384 comparisons to analysis/rerun/vs_controls.densfull40.json
+
+cells that beat BOTH none and filler, surviving the GLOBAL BH: 9 of 144
+  qwen3-1.7b         edge_existence   all          vs none: +11.5 (p=0.0001)  vs filler: +27.2 (p=0.0001)
+  qwen3-1.7b         node_count       clustering   vs none: +67.2 (p=0.0001)  vs filler: +27.5 (p=0.0001)
+  qwen3-1.7b         node_count       all          vs none: +47.0 (p=0.0001)  vs filler: +7.2 (p=0.0082)
+  qwen3-1.7b         node_degree      degree       vs none: +7.5 (p=0.0018)  vs filler: +8.0 (p=0.0009)
+  qwen3-1.7b         node_degree      all          vs none: +10.2 (p=0.0003)  vs filler: +10.8 (p=0.0004)
+  qwen3-1.7b-think   node_degree      degree       vs none: +11.7 (p=0.0001)  vs filler: +14.6 (p=0.0001)
+  qwen3-1.7b-think   node_degree      all          vs none: +11.6 (p=0.0001)  vs filler: +15.1 (p=0.0001)
+  qwen3-4b           connected_nodes  components   vs none: +9.2 (p=0.0001)  vs filler: +21.8 (p=0.0001)
+  qwen3-4b           edge_count       degree       vs none: +27.7 (p=0.0001)  vs filler: +26.5 (p=0.0001)

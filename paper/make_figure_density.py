@@ -1,11 +1,17 @@
-"""Build the two density figures: the clustering headline split by density
-(paper/headline.pdf) and the degree/filler density continuum
-(paper/continuum.pdf).
+"""Build the density figure (paper/effects.pdf): the degree/filler continuum
+above the clustering/filler headline, stacked on a shared density axis.
 
-Both are paired differences against `none` with 95% percentile-bootstrap
-intervals over graphs. They read the scored runs through the same loaders
-the tables use (analyze_headline_robustness, analyze_baseline_law), so the
-figures cannot drift from the numbers in the text.
+Both panels are paired differences against `none` with 95% percentile-
+bootstrap intervals over graphs, on node_degree, over the same seven
+densities -- which is why they share an x axis. Stacking them aligns the
+two effects density by density: the answer-stating primer (a) climbs
+monotonically as the task gets harder, the non-answer primer (b) peaks in
+the middle and is roughly four times smaller, which is why the panels keep
+separate y scales.
+
+They read the scored runs through the same loaders the tables use
+(analyze_headline_robustness, analyze_baseline_law), so the figures cannot
+drift from the numbers in the text.
 
   PYTHONPATH=. python paper/make_figure_density.py
 """
@@ -65,11 +71,10 @@ def _series(ax, xs, points, cond, offset, end_label=True):
                 fontsize=7, color=INK, va="center")
 
 
-def headline():
+def headline(ax):
   scores = {**ahr._load(ahr.MAIN_GLOBS), **ahr._load(ahr.FILLER_GLOB)}
   levels = sorted({abl.density_of(i) for i, _ in scores})
   xs = list(range(len(levels)))
-  fig, ax = plt.subplots(figsize=(3.4, 2.15))
   for cond, off in (("clustering", -0.08), ("filler", 0.08)):
     pts = []
     for lv in levels:
@@ -77,18 +82,16 @@ def headline():
                if c == "none" and abl.density_of(i) == lv and (i, cond) in scores]
       lo, hi = boot_ci(diffs)
       pts.append((100 * sum(diffs) / len(diffs), lo, hi))
-    _series(ax, xs, pts, cond, off, end_label=False)
+    _series(ax, xs, pts, cond, off)
   _style(ax, xs, [f"{p:.2f}".lstrip("0") for p in levels])
-  ax.set_xlim(-0.4, len(levels) - 0.6)
+  ax.set_xlim(-0.4, len(levels) + 0.35)
   ax.set_xlabel("edge density $p$", fontsize=7.5, color=MUTED)
-  ax.set_ylabel("$\\Delta$ vs. none (points)", fontsize=7.5, color=MUTED)
-  ax.legend(fontsize=6.5, loc="lower left", frameon=False)
-  fig.tight_layout()
-  fig.savefig("paper/headline.pdf", bbox_inches="tight")
-  print("wrote paper/headline.pdf")
+  ax.set_title("(b) clustering, qwen3-1.7b", fontsize=7.5, color=INK,
+               loc="left", pad=3)
+  return levels
 
 
-def continuum():
+def continuum(ax):
   arm = "qwen3-1.7b-think"
   scores = abl.score_run(abl.CONTINUUM_GLOBS[arm], task_filter="node_degree",
                          skip_replication_seed=True)
@@ -100,7 +103,6 @@ def continuum():
             if c == "none" and d == lv and v is not None]
     none_acc[lv] = sum(vals) / len(vals)
   xs = list(range(len(levels)))
-  fig, ax = plt.subplots(figsize=(3.4, 2.15))
   for cond, off in (("degree", -0.08), ("filler", 0.08)):
     pts = []
     for lv in levels:
@@ -109,16 +111,36 @@ def continuum():
       lo, hi = boot_ci(diffs)
       pts.append((100 * sum(diffs) / len(diffs), lo, hi))
     _series(ax, xs, pts, cond, off)
-  _style(ax, xs, [f"{p:.2f}".lstrip("0") + f"\n{none_acc[p]:.2f}" for p in levels])
-  ax.set_xlim(-0.4, len(levels) - 0.1)
-  ax.set_xlabel("edge density $p$ / accuracy under none", fontsize=7.5, color=MUTED)
-  ax.set_ylabel("$\\Delta$ vs. none (points)", fontsize=7.5, color=MUTED)
-  ax.legend(fontsize=6.5, loc="upper left", frameon=False)
-  fig.tight_layout()
-  fig.savefig("paper/continuum.pdf", bbox_inches="tight")
-  print("wrote paper/continuum.pdf")
+  _style(ax, xs, [f"{p:.2f}".lstrip("0") for p in levels])
+  ax.set_xlim(-0.4, len(levels) + 0.35)
+  ax.set_title("(a) degree, qwen3-1.7b-think", fontsize=7.5, color=INK,
+               loc="left", pad=12)
+  # Baseline accuracy rides the top axis rather than a second tick row under
+  # the density labels: the shared bottom axis belongs to both arms, this
+  # arm's accuracies do not.
+  top = ax.secondary_xaxis("top")
+  top.set_xticks(xs)
+  top.set_xticklabels([f"{none_acc[p]:.2f}" for p in levels], fontsize=6,
+                      color=MUTED)
+  top.tick_params(length=0, pad=1)
+  top.set_xlabel("accuracy under none", fontsize=6.5, color=MUTED, labelpad=1)
+  for side in ("top",):
+    top.spines[side].set_visible(False)
+  return levels
+
+
+def main():
+  fig, (ax_top, ax_bot) = plt.subplots(2, 1, figsize=(3.4, 3.3), sharex=True)
+  continuum(ax_top)
+  headline(ax_bot)
+  ax_top.tick_params(axis="x", labelbottom=False)
+  ax_top.set_xlabel("")
+  for ax in (ax_top, ax_bot):
+    ax.set_ylabel("$\\Delta$ vs. none (points)", fontsize=7.5, color=MUTED)
+  fig.tight_layout(h_pad=1.4)
+  fig.savefig("paper/effects.pdf", bbox_inches="tight")
+  print("wrote paper/effects.pdf")
 
 
 if __name__ == "__main__":
-  headline()
-  continuum()
+  main()
