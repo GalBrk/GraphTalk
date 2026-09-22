@@ -677,6 +677,27 @@ def q_headroom(eff):
             "sig_vs_none", "sig_vs_filler", "content_effect"]]
 
 
+def print_per_arm(h):
+  """Per arm: how much room is left, and which primer is worth most in it.
+
+  The window is a property of the arm, not only of the task: turning thinking
+  on raises the baseline and so removes the cells a primer could have moved.
+  """
+  print("  %-18s %8s %8s %-28s" % ("arm", "med.base", "in window", "best / worst primer"))
+  for arm in ARMS:
+    a = h[h.arm == arm]
+    if a.empty:
+      continue
+    win = a[(a.base_acc_pts >= 25) & (a.base_acc_pts <= 90)]
+    g = win.groupby("condition").delta_vs_none_pts.agg(["mean", "size"])
+    g = g[g["size"] >= 3].sort_values("mean", ascending=False)
+    label = ("%s %+.1f / %s %+.1f"
+             % (g.index[0], g["mean"].iloc[0], g.index[-1], g["mean"].iloc[-1])
+             if len(g) >= 2 else "--")
+    print("  %-18s %8.1f %5d/%-4d %-28s"
+          % (arm, a.base_acc_pts.median(), len(win), len(a), label))
+
+
 def print_headroom(h):
   """The crossover: help below it, harm above it."""
   s = h[h.sig_vs_none == 1]
@@ -826,6 +847,8 @@ def main():
     print_headroom(h)
     print("  [capped pairs dropped]")
     print_headroom(q_headroom(eff_dropped))
+    print("  [per arm]")
+    print_per_arm(h)
     save(h, "headroom.csv")
 
   if want in ("all", "markers"):
