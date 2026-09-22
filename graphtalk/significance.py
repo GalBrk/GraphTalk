@@ -254,6 +254,89 @@ def cluster_bootstrap_ci_clustered(
           "n_clusters": m, "n_discordant": n_discordant}
 
 
+def _binom_tail_ge(x: int, n: int, p: float) -> float:
+  """P(X >= x) for X ~ Binomial(n, p). Increasing in `p`."""
+  return sum(math.comb(n, i) * p ** i * (1 - p) ** (n - i)
+             for i in range(x, n + 1))
+
+
+def _binom_tail_le(x: int, n: int, p: float) -> float:
+  """P(X <= x) for X ~ Binomial(n, p). Decreasing in `p`."""
+  return sum(math.comb(n, i) * p ** i * (1 - p) ** (n - i)
+             for i in range(0, x + 1))
+
+
+def _invert_monotone(fn, target: float, iters: int = 200) -> float:
+  """The `p` in [0, 1] where the monotone `fn(p)` crosses `target`.
+
+  200 halvings drive the bracket below double precision, so the answer is
+  exact to the representation rather than to a tolerance picked here.
+  """
+  lo, hi = 0.0, 1.0
+  increasing = fn(1.0) > fn(0.0)
+  for _ in range(iters):
+    mid = (lo + hi) / 2
+    if (fn(mid) < target) == increasing:
+      lo = mid
+    else:
+      hi = mid
+  return (lo + hi) / 2
+
+
+def exact_paired_ci(b: int, c: int, n_pairs: int, alpha: float = 0.05) -> dict:
+  """Exact conditional CI for the paired difference `(c - b) / n_pairs`.
+
+  `b` and `c` are the discordant counts in the two directions -- the same
+  quantities `scoring.mcnemar` tests, `b` where the control was right and
+  the treatment wrong, `c` the reverse. `n_pairs` counts every pair,
+  concordant ones included, so the interval lands on the same scale as the
+  point estimate a caller reports.
+
+  **Prefer this to `cluster_bootstrap_ci` for paired binary outcomes.** That
+  function resamples a difference taking only the three values -1, 0 and +1,
+  so its percentile endpoints fall on a coarse lattice and its error rate
+  misses nominal *non-monotonically*: simulated at n=380 with no true
+  effect, a nominal 95% interval wrongly excluded zero 11.70% of the time at
+  4 discordant pairs, 2.00% at 10, and 7.07% at 11. Because the misbehaviour
+  does not decay with the count, no minimum-discordant threshold repairs it
+  -- a cut at 10 suppresses cells at 6, 7, 9 and 10 that are conservative
+  while still admitting 11.
+
+  Conditioning removes the problem instead of thresholding it. Given
+  `k = b + c` discordant pairs, `c ~ Binomial(k, theta)` and the null is
+  `theta = 1/2`; a Clopper-Pearson interval on `theta` inverts the exact
+  binomial test, so coverage is at least nominal at every `k` by
+  construction, discreteness making it conservative rather than liberal. The
+  same simulation puts this at or below 3.92% everywhere, and identical to
+  the bootstrap at the counts where the bootstrap behaves. Mapping back,
+  `delta = (k / n_pairs) * (2 * theta - 1)`.
+
+  It is also the interval matching the test already used everywhere here:
+  `scoring.mcnemar` is the exact binomial McNemar test on the same `b` and
+  `c`. Pairing an exact test with a bootstrap interval was a mismatch.
+
+  Hand-rolled rather than `scipy.stats.beta.ppf` because this module stays
+  scipy-free (see `pyproject.toml`); it agrees with scipy to 1.3e-16 across
+  every `(b, c)` with `b + c <= 28`.
+
+  With no discordant pairs the interval is `[0.0, 0.0]`: conditional on
+  nothing having disagreed there is no direction to bound. That is a fact
+  about this sample, not about the population, which is why `n_discordant`
+  is returned for the caller to render instead of a zero-width interval.
+  """
+  k = b + c
+  if k == 0:
+    return {"ci_low": 0.0, "ci_high": 0.0, "n_discordant": 0}
+  lo_theta = (0.0 if c == 0 else
+              _invert_monotone(lambda p: _binom_tail_ge(c, k, p), alpha / 2))
+  hi_theta = (1.0 if c == k else
+              _invert_monotone(lambda p: _binom_tail_le(c, k, p), alpha / 2))
+  scale = k / n_pairs
+  return {"ci_low": scale * (2 * lo_theta - 1),
+          "ci_high": scale * (2 * hi_theta - 1),
+          "n_discordant": k}
+
+
 def _flip_rates(control, delta: float, disagreement: float) -> tuple:
   """The pair of per-row flip probabilities that inject a net shift of
   `delta` into `control` while keeping the simulated disagreement rate at
@@ -441,6 +524,28 @@ def minimum_detectable_effect_clustered(
         "note": "no paired rows",
         "delta_negative": None, "realized_diff_negative": None,
         "note_negative": "no paired rows" if direction != "positive" else None,
+    }
+
+  # The injector is binary end to end: `_flip_rates` splits `control` at 0.5
+  # to get `q`, and `treatment*` comes back as a fresh Bernoulli 0/1 draw. Fed
+  # a graded metric -- `connected_nodes` set-F1, whose control vector holds 52
+  # distinct values averaging 0.97 -- it compares that 0/1 draw against
+  # untouched floats, so `realized_diff` is pinned near `-mean(control)` for
+  # every candidate `delta`. The search reads that as "detected" at each step
+  # and bisects to its floor, reporting an MDE of `initial_hi / 2**n_steps`
+  # with a large *negative* realized effect: a number that looks like a
+  # precise answer and is pure artifact. Refuse rather than return it; a
+  # caller that wants an MDE on a graded metric must binarize first and say
+  # where it put the threshold.
+  if any(v not in (0, 1) for v in control) or any(
+      v not in (0, 1) for v in treatment):
+    note = ("non-binary outcome: this MDE simulates Bernoulli draws and "
+            "cannot describe a graded metric -- binarize before calling")
+    return {
+        "delta": None, "realized_diff": None, "power_target": power_target,
+        "note": note,
+        "delta_negative": None, "realized_diff_negative": None,
+        "note_negative": note if direction != "positive" else None,
     }
 
   by_cluster: dict = {}

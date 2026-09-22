@@ -115,7 +115,19 @@ def mde_for_arms(control_hits, treatment_hits, seed, settings) -> dict:
   A full-task density sweep pair is one graph at one density under one
   task, contributing exactly one row here, never repeated -- so each pair
   is its own cluster, unlike the main sweep's six-tasks-per-graph rows.
+
+  Graded scores are binarized to exact-match first. `connected_nodes` is the
+  only task here scored with set-F1, and the MDE simulator is Bernoulli end
+  to end (see `minimum_detectable_effect_clustered`, which now refuses a
+  non-binary vector rather than returning the floor artifact it used to).
+  The threshold is `>= 0.9999` -- "recovered the whole set", the same one
+  `scripts/analyze_primer_survival.py` applies for the same reason -- and it
+  makes the MDE a *stricter* question than the McNemar above it, which still
+  scores partial credit. The returned number therefore answers "how large an
+  effect on fully-correct answers could this cell have seen", not "on F1".
   """
+  control_hits = [1.0 if v >= 0.9999 else 0.0 for v in control_hits]
+  treatment_hits = [1.0 if v >= 0.9999 else 0.0 for v in treatment_hits]
   cluster_ids = list(range(len(control_hits)))
   return significance.minimum_detectable_effect_clustered(
       control_hits, treatment_hits, cluster_ids, initial_hi=0.05,
