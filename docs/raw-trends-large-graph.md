@@ -373,27 +373,58 @@ robustness-to-distraction number next to the response length that produced it.
 
 ## Q6 — Which primer, and do primers add up?
 
-### Relevance matching — a good rule with one instructive exception
+### Relevance matching — it organises the largest effects and predicts little else
 
-| primer | matched task | effect |
-|---|---|---|
-| `degree` | `edge_count` (sum/2) | **+26** |
-| `components` | `connected_nodes` | **+22** |
-| `clustering` | `edge_existence` (triadic closure) | **+11** |
-| `degree` | `node_degree` (stated verbatim) | **−14 / −41** |
+Effects vs `filler`, averaged over p = 0.1–0.5, **broken out by arm** — averaging
+over arms hides the reversal that matters:
 
-Relevance predicts the sign in three of four matched pairs. The exception is the
-*most* relevant pairing of all — the primer literally contains the answer — and
-M2 explains it: maximal relevance invites a lookup, and the lookup is less
-reliable than the count it replaced. **Relevance determines whether the model will
-use the primer; it does not determine whether using it helps.**
+| primer / matched task | 1.7b | 4b | 1.7b-t | 4b-t |
+|---|---|---|---|---|
+| `clustering` / `edge_existence` | **+19.5** | +11.0 | −0.2 | +0.0 |
+| `components` / `connected_nodes` | +7.0 | **+21.7** | +0.2 | −0.8 |
+| `degree` / `edge_count` | +3.5 | **+26.0** | −5.5 | −3.5 |
+| `degree` / `node_degree` (stated verbatim) | +8.0 | **−6.0** | +15.2 | +0.5 |
+| *mismatched, mean over all pairs* | *+8.1* | *+2.0* | *+1.5* | *−0.3* |
 
-### Additivity — bundling keeps about a third
+The three largest effects in the sweep are all matched pairs, so relevance does
+organise the top of the distribution. But it is neither sufficient nor necessary:
+
+- **Mismatched content is worth +8.1 points on `qwen3-1.7b`** — more than two of
+  the four matched pairs manage on that arm. Any content beats a content-free
+  preamble there.
+- **The fourth matched pair reverses with model size**: `degree` on `node_degree`,
+  the *most* relevant pairing of all, gains 8 points on 1.7b and loses 6 on 4b.
+  M2 accounts for the 4b side — maximal relevance invites a lookup, and the lookup
+  is less reliable than the count it replaced — but the pairing itself does not
+  predict which side a given arm lands on.
+
+**Relevance determines whether the model will use the primer; it does not
+determine whether using it helps, and on a weak model it is not needed for a gain
+at all.**
+
+### Additivity — bundling loses most of what the parts are worth
 
 ![additivity](../analysis/raw-trends/fig_additivity.png)
 
-`all` = `degree` + `clustering` + `rwse` in one primer. Across 71 cells with a
-meaningful part-sum, the **median ratio of `all` to the sum of its parts is 0.37**.
+`all` = `degree` + `clustering` + `rwse` in one primer. Across the 48 cells with a
+part-sum of at least 4 points, constant-gold tasks excluded, the **median ratio of
+`all` to the sum of its parts is 0.44**.
+
+How large the shortfall is depends on how cells are weighted, and the spread is
+wide enough that no single figure should be quoted as a coefficient:
+
+| weighting | ratio |
+|---|---|
+| median over (arm, task, density) cells, \|parts\| ≥ 4 pts, non-constant-gold | **0.44** |
+| median over all cells, \|parts\| ≥ 2 pts | 0.37 |
+| averaged over the four densities first, then median over (arm, task) | 0.71 |
+| ratio of the summed effects | 0.29 |
+
+The per-cell median is the one to use. It is stable across effect magnitudes
+(0.43 / 0.33 / 0.48 in the [4,8), [8,15) and [15,100) point bands), so it is not
+small-denominator noise; the 0.71 is a ratio of means that the largest cells
+dominate. The defensible claim is **"the bundle falls well short of the sum of
+its parts, by roughly half"**, not a rate.
 
 | arm / task (p=0.5) | degree | clustering | rwse | Σ parts | `all` |
 |---|---|---|---|---|---|
@@ -401,11 +432,11 @@ meaningful part-sum, the **median ratio of `all` to the sum of its parts is 0.37
 | 1.7b `edge_existence` | +24 | +13 | +13 | **+50** | **+26** |
 | 4b `edge_existence` | −16 | +4 | −23 | **−35** | **−17** |
 
-Gains *and* damage are both roughly halved, which favours dilution — the useful
-sentence buried among irrelevant ones — over active interference. Caveat: where
-the part-sum exceeds the available headroom (e.g. `node_count` cells summing to
-+124) the ratio is ceiling-bound and not informative; the 0.37 median is over all
-qualifying cells and should be read as a tendency, not a coefficient.
+Gains *and* damage are both cut by about the same factor, which favours dilution
+— the useful sentence buried among irrelevant ones — over active interference.
+Caveat: where the part-sum exceeds the available headroom (e.g. `node_count`
+cells summing to +124) the ratio is ceiling-bound and not informative, which is
+why constant-gold tasks are excluded above.
 
 ---
 
@@ -505,9 +536,11 @@ Recorded because they were believed mid-analysis and are wrong:
 - **"Counting a neighbour set is harder than reproducing it" — retracted as a
   general claim.** True for `qwen3-1.7b` (−11 to −18), reversed for `qwen3-4b`
   (+11 to +20). See Q3b.
-- **"`all` gives about half of its parts" — revised to about a third** (0.37
-  median) once all 71 qualifying cells were used rather than three hand-picked
-  ones.
+- **"`all` gives a fixed fraction of its parts" — no such coefficient exists.**
+  The ratio runs 0.29–0.71 depending purely on how cells are weighted (per-cell
+  median vs. ratio of means vs. averaging densities first). The per-cell median,
+  0.44 over 48 cells, is the one to quote because it is stable across effect
+  magnitudes; the supportable claim is "well short of its parts", not a rate.
 - **The `uses_degree_sum` marker passed** validation 13/13 and is the only text
   marker any claim here rests on.
 

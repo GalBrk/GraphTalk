@@ -95,7 +95,9 @@
   table{border-collapse:collapse; width:100%; font-size:13.5px; margin-top:14px}
   th,td{text-align:left; padding:7px 10px; border-bottom:1px solid var(--line)}
   th{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.08em;
-     text-transform:uppercase; color:var(--muted); font-weight:500}
+     text-transform:uppercase; color:var(--muted); font-weight:500; white-space:nowrap}
+  thead tr:first-child th[colspan]{border-bottom:1px solid var(--line-2); color:var(--ink)}
+  #bigtable td:first-child{white-space:nowrap}
   td.num{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; text-align:right}
   .pos{color:var(--pos)} .neg{color:var(--neg)}
   footer{margin-top:64px; padding-top:20px; border-top:1px solid var(--line);
@@ -115,16 +117,18 @@
     <div class="fact"><b>840</b><span>cells, all n=100</span></div>
     <div class="fact"><b>700</b><span>graphs regenerated</span></div>
     <div class="fact"><b>0</b><span>gold mismatches</span></div>
-    <div class="fact"><b>0.37</b><span>of parts survive bundling</span></div>
+    <div class="fact"><b>0.44</b><span>of parts survive bundling</span></div>
   </div>
 
   <section>
     <p class="eyebrow">The headline</p>
-    <h2>Primers don&rsquo;t improve graph reasoning. They swap one procedure for another.</h2>
-    <p>Where the primer hands the model a shortcut it can execute reliably, accuracy jumps.
-    Where it hands the model a shortcut it executes <em>badly</em> &mdash; looking up one line in a
-    forty-line list &mdash; accuracy falls, even though the primer contains the exact answer.
-    The three panels below are the evidence.</p>
+    <h2>A primer&rsquo;s effect depends on the baseline, the density and the model &mdash;
+    and reverses across all three.</h2>
+    <p>The same primer that costs <span class="mono">qwen3-4b</span> ten points on
+    <code>node_degree</code> at p=0.65 gains it twenty-four at p=0.85. The same condition reads
+    &minus;6.0 against a bare prompt and +0.7 against a length-matched one. A primer that states
+    the answer word for word lowers accuracy by twelve points, and how far down the primer that
+    answer sits predicts whether the model gets it.</p>
   </section>
 
   <hr class="rule">
@@ -243,6 +247,38 @@
   </section>
 
   <section>
+    <p class="eyebrow">The numbers</p>
+    <h2>Every condition, every model, both baselines</h2>
+    <p>Exact match, with the paired difference against <code>none</code> and against
+    <code>filler</code>. <span class="mono">*</span> marks q&nbsp;&lt;&nbsp;0.05 after
+    Benjamini&ndash;Hochberg correction within the (model, task) family. Each cell is
+    100 graphs; pooled rows average the density levels the task was run at.</p>
+
+    <div class="controls">
+      <div class="ctl">
+        <label for="tb-task">Task</label>
+        <div class="seg" id="tb-task" role="group"></div>
+      </div>
+      <div class="ctl">
+        <label for="tb-dens">Density</label>
+        <div class="seg" id="tb-dens" role="group"></div>
+      </div>
+    </div>
+
+    <figure>
+      <div class="scroll"><table id="bigtable"></table></div>
+      <figcaption id="tb-cap"></figcaption>
+    </figure>
+
+    <div class="note"><b>The two baselines disagree in sign, often.</b> Switch to
+    <code>edge_existence</code> and read the 4B columns: <code>rwse</code> is
+    &minus;6.0 against <code>none</code> but +0.7 against <code>filler</code>. A
+    content-free preamble is not inert &mdash; it moves accuracy by up to 39.8 points on
+    its own &mdash; so a difference taken against a bare prompt sums the effect of
+    having a preamble with the effect of what it says.</div>
+  </section>
+
+  <section>
     <p class="eyebrow">Q4 &middot; why the small model gives up</p>
     <h2>Capitulation, and what actually triggers it</h2>
     <p>Above p=0.5 the 1.7B model stops producing reasoning on <code>edge_existence</code>
@@ -286,8 +322,10 @@
             <td>Hand-validation: 20/20 matches cite the <em>edge list</em>, not the primer. Marker renamed <code>narrates_neighbors</code>; claim dropped.</td></tr>
         <tr><td>&ldquo;Counting neighbours is harder than listing them&rdquo;</td>
             <td>True for 1.7b (&minus;11 to &minus;18), reversed for 4b (+11 to +20). Not a general ordering.</td></tr>
-        <tr><td>&ldquo;<code>all</code> keeps about half its parts&rdquo;</td>
-            <td>Revised to ~a third (0.37 median) once all 71 qualifying cells were used instead of three.</td></tr>
+        <tr><td>&ldquo;<code>all</code> keeps a fixed share of its parts&rdquo;</td>
+            <td>No stable coefficient exists. The ratio runs 0.29&ndash;0.71 depending purely on how cells
+            are weighted; the per-cell median (0.44, n=48, stable across effect magnitudes) is the one
+            to quote, and only as &ldquo;well short of its parts&rdquo;.</td></tr>
         <tr><td>&ldquo;The strategy switch explains the gain&rdquo;</td>
             <td>Median accuracy gap between switchers and non-switchers: +0.0 over 23 cells.</td></tr>
       </tbody>
@@ -538,6 +576,63 @@
     });
   }
 
+  /* ---------- the full data table ---------- */
+  var tbTask="edge_existence", tbDens="all";
+  var SHORT={"qwen3-1.7b":"1.7B","qwen3-4b":"4B",
+             "qwen3-1.7b-think":"1.7B-think","qwen3-4b-think":"4B-think"};
+  function drawTable(){
+    var t=document.getElementById("bigtable"); clear(t);
+    var rowsFor=function(c){
+      return D.effects.filter(function(r){
+        return r.t===tbTask && r.c===c && (tbDens==="all"||r.d===tbDens);});
+    };
+    var mean=function(a,f){
+      var v=a.map(f).filter(function(x){return x!=null && !isNaN(x);});
+      return v.length? v.reduce(function(s,x){return s+x;},0)/v.length : null;};
+    var thead=document.createElement("thead");
+    var h1=document.createElement("tr");
+    h1.innerHTML='<th rowspan="2">condition</th>'+ARMS.map(function(a){
+      return '<th colspan="3" style="text-align:center">'+SHORT[a]+'</th>';}).join("");
+    var h2=document.createElement("tr");
+    h2.innerHTML=ARMS.map(function(){
+      return '<th style="text-align:right">acc</th>'+
+             '<th style="text-align:right">vs none</th>'+
+             '<th style="text-align:right">vs filler</th>';}).join("");
+    thead.appendChild(h1); thead.appendChild(h2); t.appendChild(thead);
+    var tb=document.createElement("tbody");
+    ALLC.forEach(function(c){
+      var tr=document.createElement("tr");
+      var html='<td class="mono">'+c+'</td>';
+      ARMS.forEach(function(a){
+        var rs=rowsFor(c).filter(function(r){return r.a===a;});
+        if(!rs.length){ html+='<td class="num">&ndash;</td>'.repeat(3); return; }
+        var acc=mean(rs,function(r){return r.acc;});
+        html+='<td class="num">'+(acc==null?"&ndash;":(acc*100).toFixed(1))+'</td>';
+        [["dvn","q"],["dvf","q"]].forEach(function(spec,i){
+          var base=i?"filler":"none";
+          if(c===base){ html+='<td class="num">&ndash;</td>'; return; }
+          var v=mean(rs,function(r){return r[spec[0]];});
+          if(v==null){ html+='<td class="num">&ndash;</td>'; return; }
+          var sig=rs.some(function(r){return r.q!=null && r.q<0.05;});
+          var cls=v>0.0005?"pos":(v<-0.0005?"neg":"");
+          html+='<td class="num '+cls+'">'+(v>=0?"+":"")+(v*100).toFixed(1)+
+                (sig?"*":"")+'</td>';
+        });
+      });
+      tr.innerHTML=html;
+      if(c==="none"||c==="filler") tr.style.background="var(--surface-2)";
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    var constant = (tbTask==="node_count"||tbTask==="cycle_check");
+    document.getElementById("tb-cap").textContent =
+      tbTask+", "+(tbDens==="all"?"pooled over density":"p="+tbDens)+
+      ". Control rows are shaded."+
+      (constant? " This task has a constant gold answer at 40 nodes ("+
+        (tbTask==="node_count"?"always 40":"always yes")+
+        "), so a shortfall measures distraction rather than graph reasoning." : "");
+  }
+
   /* ---------- capitulation ---------- */
   function drawCapit(){
     var svg=document.getElementById("capit"); clear(svg);
@@ -592,6 +687,10 @@
     leg.appendChild(s2);
   }
 
+  segmented("tb-task", TASKS.map(function(t){return {key:t,label:t};}), tbTask,
+    function(v){tbTask=v; drawTable();});
+  segmented("tb-dens", [{key:"all",label:"pooled"}].concat(DENS.map(function(d){
+    return {key:d,label:d};})), tbDens, function(v){tbDens=v; drawTable();});
   segmented("hm-arm", ARMS.map(plain), hmArm, function(v){hmArm=v; drawHeatmap();});
   segmented("hm-dens", [{key:"all",label:"all"}].concat(DENS.map(function(d){
     return {key:d,label:d};})), hmDens, function(v){hmDens=v; drawHeatmap();});
@@ -599,6 +698,6 @@
     function(v){dcTask=v; drawCurve();});
   segmented("dc-arm", ARMS.map(plain), dcArm, function(v){dcArm=v; drawCurve();});
 
-  drawHeatmap(); drawCurve(); drawSerial(); drawCollapse(); drawCapit();
+  drawHeatmap(); drawCurve(); drawSerial(); drawCollapse(); drawCapit(); drawTable();
 })();
 </script>
