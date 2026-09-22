@@ -5,7 +5,7 @@ something other than primer content, usually without failing loudly.
 
 Everything here is measured, not assumed; the source job or script is named for
 each number. Screens come from `graphtalk/cell_screen.py`, accuracies from
-`analysis/ladder_matrix.limited.csv`, reading limits from the retrieval probe
+`csv2/ladder-retrieval/ladder_matrix.limited.csv`, reading limits from the retrieval probe
 (jobs 873209-873246).
 
 ## 1. `n >= 40` -- enough distinct degree values

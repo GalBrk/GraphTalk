@@ -186,7 +186,7 @@ Re-measured over all 8 `runs/qwen3-1.7b*node_degree_n*.jsonl` files, 28 cells pe
 - **think:** per-cell median 964–2,771, per-cell p90 1,619–5,707, plus **5 rows at exactly
   16,384**. Those runaways are **non-termination, not length-scaling** — the repo tracks
   this separately via `scripts/characterize_non_termination.py` and
-  `analysis/non_termination_sample.csv` [CORRECTED: there is no
+  `csv2/sweep-small-graph/non_termination_sample.csv` [CORRECTED: there is no
   `non_terminating_manifest.json` anywhere in the repo].
 
 **Implication [CORRECTED].** 8,192 is still heavily over-provisioned for plain, but the
@@ -521,7 +521,7 @@ script named in §7.
 
 **Corrected** — plain-arm uncapped max is 2,433, not 790, which invalidates the proposed
 2,048 plain budget (§3, Finding 4); the chars/4 undercount floor is 1.7x, not 2.5x;
-`non_terminating_manifest.json` does not exist (`analysis/non_termination_sample.csv`
+`non_terminating_manifest.json` does not exist (`csv2/sweep-small-graph/non_termination_sample.csv`
 does); the tokenizer is `Qwen2Tokenizer`, not the Fast variant.
 
 **Newly found** — the env is not writable and is missing `statsmodels`/`scipy`/`arviz`,

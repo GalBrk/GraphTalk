@@ -116,7 +116,7 @@ Analysis:
 
 ```bash
 PYTHONPATH=. python scripts/analyze_ladder.py --responses 'runs/*.ladder_screen.jsonl' \
-    --reading-limits qwen3-1.7b=<from probe> --out analysis/ladder_matrix.csv
+    --reading-limits qwen3-1.7b=<from probe> --out csv2/ladder-retrieval/ladder_matrix.csv
 PYTHONPATH=. python scripts/analyze_rewiring_sweep.py --responses 'runs/*.rewire.jsonl'
 ```
 

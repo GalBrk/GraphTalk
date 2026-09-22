@@ -1,7 +1,7 @@
 """Does the qwen3-8b/degree (GOT) primer effect concentrate on particular
 structural features, and which task actually drives it at n=500 --
 `edge_count` (as originally reported at n=30, +35.7pp) or `node_degree` (as
-the n=500 MAE breakdown in `analysis/significance_report.count500.got.csv`
+the n=500 MAE breakdown in `csv2/sweep-small-graph/significance_report.count500.got.csv`
 suggests: node_degree MAE p=0.0144 clears the bar, edge_count MAE p=0.0504
 narrowly misses)?
 
@@ -10,7 +10,7 @@ Reuses the exact functions the headline result itself was computed with --
 cluster_ids extraction and `graphtalk.significance
 .paired_permutation_test_clustered`/`cluster_bootstrap_ci_clustered` for
 every stratum's effect size -- so "driver analysis" numbers are directly
-comparable, unit for unit, to `analysis/significance_report.count500.got.csv`
+comparable, unit for unit, to `csv2/sweep-small-graph/significance_report.count500.got.csv`
 rather than a bespoke metric. Structural features come from
 `scripts/extract_graph_topology.py`'s output, joined on the numeric suffix of
 `instance_id` (every task shares the same graph at a given index -- see that
@@ -26,35 +26,16 @@ discipline), not asserted as a second confirmed finding from the same data
 that produced it.
 
     PYTHONPATH=. .venv/Scripts/python.exe scripts/analyze_topology_drivers.py \
-        --frame analysis/sweep_frame.count500.got.csv \
-        --features analysis/topology_features.csv \
+        --frame csv2/sweep-small-graph/sweep_frame.count500.got.csv \
+        --features csv2/sweep-small-graph/topology_features.csv \
         --model qwen3-8b --condition degree
 """
 
 import argparse
-import re
-
 import pandas as pd
 
 from graphtalk import significance
 from scripts import check_significance as cs
-
-_INSTANCE_INDEX_RE = re.compile(r"/(\d+)$")
-
-
-def _instance_index(instance_id: str) -> int:
-  """Matches `build_prompts.py`'s `f"{task}/{index}"` naming, the same
-  pattern `scripts/check_old_vs_new_subsample.py` and
-  `scripts/diff_shared_instances.py` already use."""
-  match = _INSTANCE_INDEX_RE.search(str(instance_id))
-  if not match:
-    raise ValueError(f"instance_id {instance_id!r} doesn't end in /<index>")
-  return int(match.group(1))
-
-
-def _task(instance_id: str) -> str:
-  return str(instance_id).split("/", 1)[0]
-
 
 def _run(label, control, treatment, cluster_ids, n_perm, n_boot, seed) -> dict | None:
   if not control:
@@ -76,7 +57,8 @@ def _run(label, control, treatment, cluster_ids, n_perm, n_boot, seed) -> dict |
   }
   print(
       f"  {label:<26} n={result['n_clusters']:>5}  delta={result['delta']:+.4f}  "
-      f"95% CI=[{result['ci_low']:+.4f}, {result['ci_high']:+.4f}]  "
+      f"95% CI="
+      f"{cs._format_ci(result['ci_low'], result['ci_high'], boot['n_discordant'])}  "
       f"p={result['p_value']:.4f}"
   )
   return result
@@ -84,8 +66,8 @@ def _run(label, control, treatment, cluster_ids, n_perm, n_boot, seed) -> dict |
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--frame", default="analysis/sweep_frame.count500.got.csv")
-  parser.add_argument("--features", default="analysis/topology_features.csv")
+  parser.add_argument("--frame", default="csv2/sweep-small-graph/sweep_frame.count500.got.csv")
+  parser.add_argument("--features", default="csv2/sweep-small-graph/topology_features.csv")
   parser.add_argument("--model", default="qwen3-8b")
   parser.add_argument("--condition", default="degree")
   parser.add_argument("--metric", default="exact")
@@ -124,9 +106,13 @@ def main() -> None:
     raise SystemExit("no paired rows found")
 
   topo = pd.read_csv(args.features).set_index("index")
-  instance_ids = [iid for _, iid in cluster_ids]
-  indices = [_instance_index(iid) for iid in instance_ids]
-  tasks = [_task(iid) for iid in instance_ids]
+  # `_paired_values`'s cluster id is `(model, graph_index)` -- the graph
+  # number is already the join key `topo` is indexed on. The task is *not*
+  # recoverable from it (one graph serves all six tasks, which is the whole
+  # point of that cluster unit), so it comes from `_paired_tasks`, which
+  # repeats the same inner join and lines up element-for-element.
+  indices = [int(graph_index) for _, graph_index in cluster_ids]
+  tasks = cs._paired_tasks(frame, args.condition, args.metric)
 
   # Tercile bins computed once on the 500-graph population (not on the
   # 3000-pair sample, which would just repeat each graph's value 6x).

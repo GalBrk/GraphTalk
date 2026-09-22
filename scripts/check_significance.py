@@ -174,7 +174,7 @@ one even if it were there":
   `bh_significant is True` (nothing to explain), or `--no-mde` was passed.
 
   PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
-      --frame analysis/sweep_frame.csv
+      --frame csv2/sweep-small-graph/sweep_frame.csv
 
 **`--metric`**: `both` (default) runs `exact` (accuracy vs. `none`, pooled
 across tasks, main sweep + thinking arm) and `mae` (mean absolute error
@@ -226,7 +226,7 @@ opposite sign convention from `exact`'s "higher is better", so this flip
 keeps a positive number meaning "helped" in both modes.
 
   PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
-      --frame analysis/sweep_frame.csv --metric mae
+      --frame csv2/sweep-small-graph/sweep_frame.csv --metric mae
 
 **`--confirmatory-config`**: an optional JSON file naming the (arm, model,
 condition, metric) cells decided *before a sweep's results are seen* to be
@@ -1170,7 +1170,7 @@ def _apply_filter(frame: pd.DataFrame, filter_expr: str | None) -> pd.DataFrame:
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--frame", default="analysis/sweep_frame.csv")
+  parser.add_argument("--frame", default="csv2/sweep-small-graph/sweep_frame.csv")
   parser.add_argument("--metric", choices=("exact", "mae", "both"), default="both",
                        help="'both' (default): runs 'exact' (accuracy-vs-none, "
                             "pooled across tasks, main sweep + thinking arm) "

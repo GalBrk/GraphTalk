@@ -9,7 +9,7 @@ excluded by directory, so a plain `runs/*.jsonl` glob does not reach them.
   PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py \
       --responses runs/*.jsonl --shortcuts shortcuts.json \
       --truncated-keys analysis/truncated_keys.json \
-      --out analysis/sweep_frame.csv
+      --out csv2/sweep-small-graph/sweep_frame.csv
 
 The written CSV is the input `scripts/sample_failures.py` reads back in to
 pull the manual-inspection sample (objective 4) without re-scoring.
@@ -20,7 +20,7 @@ desubstituted back to integers before scoring, same as `score_sweep.py`'s own
 an integer run and a `.got.` run in one glob raises rather than silently
 pooling them under the same `(instance_id, condition, style, model)` key
 (see `graphtalk.analysis.infer_node_naming`). `--out` left unset picks
-`analysis/sweep_frame.csv` for `integer` or `analysis/sweep_frame.got.csv`
+`csv2/sweep-small-graph/sweep_frame.csv` for `integer` or `csv2/sweep-small-graph/sweep_frame.got.csv`
 for `got` automatically.
 """
 
@@ -103,7 +103,7 @@ def main() -> None:
                        help="optional analysis/truncated_keys.json for the "
                             "ground-truth non_terminating column")
   parser.add_argument("--out", default=None,
-                       help="default analysis/sweep_frame.csv, or "
+                       help="default csv2/sweep-small-graph/sweep_frame.csv, or "
                             "analysis/sweep_frame.<scheme>.csv for a "
                             "non-integer node_naming scheme -- see "
                             "README.md#node-naming")
@@ -126,7 +126,7 @@ def main() -> None:
   )
 
   frame = analysis.build_frame(records, truncated_keys, shortcuts_by_cell)
-  out = args.out or analysis.tagged_path("analysis/sweep_frame.csv", scheme)
+  out = args.out or analysis.tagged_path("csv2/sweep-small-graph/sweep_frame.csv", scheme)
   frame.to_csv(out, index=False)
   print(f"wrote {len(frame)} rows to {out} (node_naming: {scheme})")
 

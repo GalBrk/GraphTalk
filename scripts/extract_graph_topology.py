@@ -32,7 +32,7 @@ because this script is run against 500 rows, more than any prior run of
 that check covered).
 
     PYTHONPATH=. .venv/Scripts/python.exe scripts/extract_graph_topology.py \
-        --count 500 --out analysis/topology_features.csv
+        --count 500 --out csv2/sweep-small-graph/topology_features.csv
 """
 
 import argparse
@@ -144,7 +144,7 @@ def main() -> None:
                            "assumption this script's join depends on; pass "
                            "'' to skip")
   parser.add_argument("--cache-dir", default=mrr.DEFAULT_CACHE)
-  parser.add_argument("--out", default="analysis/topology_features.csv")
+  parser.add_argument("--out", default="csv2/sweep-small-graph/topology_features.csv")
   args = parser.parse_args()
 
   rows = mrr.load_rows(args.config, args.split, args.count, args.cache_dir)

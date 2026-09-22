@@ -22,8 +22,8 @@ and this script is built to tell them apart:
      and outcomes still differ, this is the remaining explanation.
 
     PYTHONPATH=. .venv/bin/python scripts/diff_shared_instances.py \
-        --old-frame analysis/sweep_frame.got.csv \
-        --new-frame analysis/sweep_frame.count500.got.csv \
+        --old-frame csv2/sweep-small-graph/sweep_frame.got.csv \
+        --new-frame csv2/sweep-small-graph/sweep_frame.count500.got.csv \
         --model qwen3-8b --condition degree \
         --old-prompts prompts_got.jsonl \
         --new-prompts prompts_got.count500.jsonl
@@ -85,8 +85,8 @@ def _load_prompts(path: str | None) -> dict[str, str]:
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--old-frame", default="analysis/sweep_frame.got.csv")
-  parser.add_argument("--new-frame", default="analysis/sweep_frame.count500.got.csv")
+  parser.add_argument("--old-frame", default="csv2/sweep-small-graph/sweep_frame.got.csv")
+  parser.add_argument("--new-frame", default="csv2/sweep-small-graph/sweep_frame.count500.got.csv")
   parser.add_argument("--model", default="qwen3-8b")
   parser.add_argument("--condition", default="degree")
   parser.add_argument("--metric", default="exact")

@@ -8,7 +8,7 @@ script, the same way `scripts/validate_hierarchical_model.py` and
 checks.
 
 Samples real non-significant main-sweep `excluded`-bound cells from
-`analysis/sweep_frame.csv` + `analysis/significance_report.csv` (rows
+`csv2/sweep-small-graph/sweep_frame.csv` + `analysis/significance_report.csv` (rows
 where an MDE would actually be computed by `check_significance.py --mde`),
 re-derives each cell's `(control, treatment, cluster_ids)` the same way
 `scripts/check_significance.py::_report` does, and runs
@@ -72,7 +72,7 @@ def _paired_values_for_cell(frame: pd.DataFrame, cell: dict):
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--frame", default="analysis/sweep_frame.csv")
+  parser.add_argument("--frame", default="csv2/sweep-small-graph/sweep_frame.csv")
   parser.add_argument("--report", default="analysis/significance_report.csv")
   parser.add_argument("--n-cells", type=int, default=10)
   parser.add_argument("--seed", type=int, default=1234)

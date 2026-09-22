@@ -12,7 +12,7 @@ scheme's files simply matches nothing for those rows, rather than joining in
 the wrong text. `--frame` must carry a single scheme -- raises otherwise.
 
   PYTHONPATH=. .venv/bin/python scripts/sample_failures.py \
-      --frame analysis/sweep_frame.csv --responses runs/*.jsonl \
+      --frame csv2/sweep-small-graph/sweep_frame.csv --responses runs/*.jsonl \
       --prompts prompts.jsonl prompts_zero_shot.jsonl \
       --out analysis/failure_sample.csv
 """

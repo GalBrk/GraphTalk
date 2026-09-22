@@ -25,7 +25,7 @@ whole feature list, consistent with the project's existing FDR convention
 uncorrected multiple-testing surface.
 
     PYTHONPATH=. .venv/Scripts/python.exe scripts/compare_old_vs_new_topology.py \
-        --features analysis/topology_features.csv --split-at 30
+        --features csv2/sweep-small-graph/topology_features.csv --split-at 30
 """
 
 import argparse
@@ -170,7 +170,7 @@ def maybe_plot(frame: pd.DataFrame, split_at: int, out_dir: str) -> None:
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--features", default="analysis/topology_features.csv")
+  parser.add_argument("--features", default="csv2/sweep-small-graph/topology_features.csv")
   parser.add_argument("--split-at", type=int, default=30)
   parser.add_argument("--n-perm", type=int, default=10_000)
   parser.add_argument("--seed", type=int, default=0)

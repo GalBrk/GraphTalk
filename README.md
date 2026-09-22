@@ -167,11 +167,11 @@ scheme:
 ```bash
 PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py \
     --responses runs/gemma4-12b.jsonl --shortcuts shortcuts.json
-# -> analysis/sweep_frame.csv
+# -> csv2/sweep-small-graph/sweep_frame.csv
 
 PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py \
     --responses runs/gemma4-12b.got.jsonl --shortcuts shortcuts.json
-# -> analysis/sweep_frame.got.csv
+# -> csv2/sweep-small-graph/sweep_frame.got.csv
 ```
 
 Each `--out` left unset lands at its own scheme-tagged filename automatically

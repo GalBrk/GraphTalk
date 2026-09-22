@@ -1,7 +1,7 @@
 # Run plan: improving statistical power across GOT and integer sweeps
 
 > **Status: partially executed.** Phases 1 and 2 have landed --
-> `analysis/task_scoped_screen.csv`, `analysis/task_scoped_screen.got.csv` and
+> `csv2/sweep-small-graph/task_scoped_screen.csv`, `csv2/sweep-small-graph/task_scoped_screen.got.csv` and
 > `analysis/task_scoped_screen_comparison.md` are on disk, as are four
 > `analysis/confirmatory_*.json` pre-registrations. Later phases have no
 > artifacts, so treat them as outstanding. This document is still live: follow
@@ -98,14 +98,14 @@ spot-checked.
    trivial regardless of primer." Document which tasks were excluded and
    why.
 3. Write `scripts/task_scoped_screen.py`: for every `(model, condition,
-   task)` combination in `analysis/sweep_frame.got.csv` (excluding the
+   task)` combination in `csv2/sweep-small-graph/sweep_frame.got.csv` (excluding the
    `all` condition as a screened cell, since it isn't independent
    evidence, and the shortcut-ceiling tasks from step 2), run the same
    `paired_permutation_test_clustered` / `cluster_bootstrap_ci_clustered`
    primitives `check_significance.py` and `task_breakdown.py` already use
    (reuse `check_significance.py`'s `_paired_values`, don't reimplement
    pairing logic). Output one row per cell to
-   `analysis/task_scoped_screen.got.csv`: model, condition, task,
+   `csv2/sweep-small-graph/task_scoped_screen.got.csv`: model, condition, task,
    n_clusters, delta, ci_low, ci_high, p_value, and a `shortcut_flag`
    column populated from step 1's audit.
 4. Sort/flag cells with p < 0.10 (screening threshold, deliberately looser
@@ -158,7 +158,7 @@ question, and it's answerable with data already on disk.
 **Implementation.** Run `task_scoped_screen.py` (from Phase 1, it should
 already support this via a `--node-naming` flag or by defaulting to
 processing whichever frame it's pointed at) against
-`analysis/sweep_frame.csv` (the integer-naming frame), producing
+`csv2/sweep-small-graph/sweep_frame.csv` (the integer-naming frame), producing
 `analysis/task_scoped_screen.integer.csv`. Then write a small comparison
 (script or a short markdown table appended to
 `analysis/task_scoped_screen_comparison.md`) joining the two schemes' `p <

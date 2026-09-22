@@ -202,7 +202,7 @@ outright: every answer is 8, `maj_base` = **1.000**.
 
 ### Why this must be generated, not sliced from existing data
 
-`scripts/extract_graph_topology.py` and `analysis/topology_drivers_report*.csv` already stratify
+`scripts/extract_graph_topology.py` and `csv2/sweep-small-graph/topology_drivers_report*.csv` already stratify
 post-hoc on topology features (degree_std low/mid/high → +0.168/+0.319/+0.473; density
 low/mid/high → +0.231/+0.348/+0.386). That analysis is what produced the "density drives
 difficulty" claim job 871262 later falsified. In a natural ER corpus these features are all

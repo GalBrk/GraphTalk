@@ -28,11 +28,11 @@ Read the three lines side by side:
 
 This is a diagnostic split, not a new formal hypothesis test: no BH
 correction is applied here, and the result is not meant to replace
-`bh_significant_global` in analysis/significance_report.count500.got.csv --
+`bh_significant_global` in csv2/sweep-small-graph/significance_report.count500.got.csv --
 only to explain it.
 
     PYTHONPATH=. .venv/bin/python scripts/check_old_vs_new_subsample.py \
-        --frame analysis/sweep_frame.count500.got.csv \
+        --frame csv2/sweep-small-graph/sweep_frame.count500.got.csv \
         --model qwen3-8b --condition degree
 """
 
@@ -72,7 +72,11 @@ def _run(label: str, frame: pd.DataFrame, condition: str, metric: str,
   boot = significance.cluster_bootstrap_ci_clustered(
       control, treatment, cluster_ids, n_boot=n_boot, seed=f"{seed}:{label}"
   )
-  task_lo, task_hi = cs._task_delta_range(control, treatment, cluster_ids)
+  # `_paired_tasks`, not `cluster_ids`: the cluster id is `(model,
+  # graph_index)`, so passing it here grouped by graph number instead of by
+  # task -- silently, since `"7".split("/")[0]` is just `"7"`.
+  task_lo, task_hi = cs._task_delta_range(
+      control, treatment, cs._paired_tasks(frame, condition, metric))
   result = {
       "label": label,
       "n_clusters": perm["n_clusters"],
@@ -99,7 +103,7 @@ def _ci_overlap(a: dict, b: dict) -> bool:
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--frame", default="analysis/sweep_frame.count500.got.csv")
+  parser.add_argument("--frame", default="csv2/sweep-small-graph/sweep_frame.count500.got.csv")
   parser.add_argument("--model", default="qwen3-8b")
   parser.add_argument("--condition", default="degree")
   parser.add_argument("--metric", default="exact")

@@ -121,7 +121,7 @@ underpowered at 30 pairs/cell — see `docs/sweep-findings.md`). Needs the `anal
 ```bash
 PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py --responses runs/*.jsonl \
     --shortcuts shortcuts.json --truncated-keys analysis/truncated_keys.json
-PYTHONPATH=. .venv/bin/python scripts/check_significance.py --frame analysis/sweep_frame.csv
+PYTHONPATH=. .venv/bin/python scripts/check_significance.py --frame csv2/sweep-small-graph/sweep_frame.csv
 ```
 
 `check_significance.py` pools pairs across task and style per (model, condition) instead of

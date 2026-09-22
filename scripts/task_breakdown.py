@@ -33,8 +33,8 @@ already-established pooled effect lives, not to run a new independent
 hypothesis test at a finer grain.
 
     PYTHONPATH=. .venv/bin/python scripts/task_breakdown.py \
-        --frame analysis/sweep_frame.count500.got.csv \
-        --old-frame analysis/sweep_frame.got.csv \
+        --frame csv2/sweep-small-graph/sweep_frame.count500.got.csv \
+        --old-frame csv2/sweep-small-graph/sweep_frame.got.csv \
         --model qwen3-8b --condition degree
 """
 
@@ -67,6 +67,7 @@ def _exact_breakdown(model_scope: pd.DataFrame, condition: str, n_perm: int,
         "n_clusters": perm["n_clusters"],
         "delta": boot["point_estimate"],
         "ci_low": boot["ci_low"], "ci_high": boot["ci_high"],
+        "n_discordant": boot["n_discordant"],
         "p_value": perm["p_value"],
     })
   return rows
@@ -97,11 +98,16 @@ def _mae_breakdown(full_scope: pd.DataFrame, model: str, condition: str,
     # mae_delta = control - treatment (lower error is better); flip the
     # underlying treatment-control sign so positive means "helped" here
     # too, matching _report_mae's own convention.
+    # Sign flip, `None`-safe: `cluster_bootstrap_ci_clustered` suppresses the
+    # interval when too few pairs disagree, and a suppressed interval stays
+    # suppressed rather than crashing on unary minus.
+    flip = lambda v: None if v is None else -v
     rows.append({
         "task": task, "metric": "mae",
         "n_clusters": perm["n_clusters"],
         "delta": -boot["point_estimate"],
-        "ci_low": -boot["ci_high"], "ci_high": -boot["ci_low"],
+        "ci_low": flip(boot["ci_high"]), "ci_high": flip(boot["ci_low"]),
+        "n_discordant": boot["n_discordant"],
         "p_value": perm["p_value"],
     })
   return rows
@@ -115,8 +121,9 @@ def _print_table(label: str, rows: list[dict]) -> None:
   print(f"    {'task':<16}{'metric':<8}{'n':>6}{'delta':>10}{'95% CI':>24}{'p':>9}")
   for r in rows:
     flag = "  *" if r["p_value"] < 0.05 else ""
+    ci = cs._format_ci(r["ci_low"], r["ci_high"], r["n_discordant"])
     print(f"    {r['task']:<16}{r['metric']:<8}{r['n_clusters']:>6}"
-          f"{r['delta']:>+10.4f}   [{r['ci_low']:>+.4f}, {r['ci_high']:>+.4f}]"
+          f"{r['delta']:>+10.4f}   {ci:>21}"
           f"{r['p_value']:>9.4f}{flag}")
 
 
@@ -138,7 +145,7 @@ def _run(path: str, label: str, model: str, condition: str, node_naming: str,
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--frame", default="analysis/sweep_frame.count500.got.csv")
+  parser.add_argument("--frame", default="csv2/sweep-small-graph/sweep_frame.count500.got.csv")
   parser.add_argument("--old-frame", default=None,
                       help="optional: the tracked --count 30 report's frame, "
                            "for a side-by-side comparison of the per-task "
