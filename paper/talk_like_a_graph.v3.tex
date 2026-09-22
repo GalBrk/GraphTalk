@@ -311,17 +311,29 @@ against its own \texttt{none} control, only $6$ of $48$ are distinguishable.
 Position within the prompt moves accuracy; we cannot attribute it to the
 primer.
 
-\paragraph{Bundling.} \texttt{all} renders three primers together and is no
-shorter than their sum, yet across the $41$ cells where the parts do anything
-it delivers a median $0.50$ of what they are worth separately $[0.29, 0.71]$.
-A ratio of two noisy quantities is biased downward, so we simulate the matched
-null --- every cell recentred on exact additivity, keeping its own noise scale
-and the same screen --- which gives a median of $1.00$ $[0.92, 1.08]$ against
-the observed $0.50$ ($p<0.001$).
-On the $19$ cells where no single part dominates --- the only cells that
-separate dilution from selection --- the ratio to the \emph{sum} is $0.52$
-$[0.40, 0.71]$ while the ratio to the \emph{largest single part} is $1.00$
-$[0.74, 1.20]$. The bundle delivers what its best component delivers (Appendix Table~\ref{tab:additivity}).
+\paragraph{Bundling.} \texttt{all} renders three primers together, at $86\%$
+of their separate length ($4{,}691$ characters against $5{,}469$ summed), so
+it carries every feature value they do. It does not carry their effect.
+Over all $59$ (arm, task, density) cells, with no screen and no ratio, the
+bundle falls $5.3$ points short of the sum of its parts $[2.8, 8.4]$,
+in $44$ of the $59$ (sign test $p{=}2\times10^{-4}$), and three of the four
+tasks exclude zero on their own: \texttt{connected\_nodes} $+4.8$ $[2.2,
+7.4]$, \texttt{edge\_existence} $+4.8$ $[1.1, 8.9]$ and \texttt{node\_degree}
+$+3.6$ $[1.7, 5.6]$, with \texttt{edge\_count} $+9.6$ $[-2.7, 23.7]$ too
+noisy to call. The shortfall is therefore a property of bundling and not of
+one task.
+
+Its size is not identified. Regressing the bundle on the part-sum through
+the origin gives $0.47$ over all tasks, $0.56$ without \texttt{edge\_count}
+and $0.68$ on \texttt{node\_degree} alone, so ``about half'' would be an
+\texttt{edge\_count} artifact. The per-cell median ratio, $0.50$ $[0.29,
+0.71]$ over the $41$ cells whose parts sum to at least $4$ points, agrees in
+direction but cannot be read against $1$: those cells enter on a noisy
+denominator, and selecting on a noisy quantity inflates it, so under exact
+additivity that estimator already returns $0.66$--$0.72$ depending on where
+the true effects are centred, against which the observed value gives
+$p{=}0.017$ to $0.063$. We report the shortfall in points and draw no
+coefficient from the ratio (Appendix Table~\ref{tab:additivity}).
 
 \section{Conclusion}
 \label{sec:conclusion}
