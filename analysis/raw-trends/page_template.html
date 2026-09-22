@@ -1,0 +1,604 @@
+<title>Primer Effects at 40 Nodes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#fbfbfa; --surface:#ffffff; --surface-2:#f4f4f1;
+    --ink:#14161a; --ink-2:#4a4d54; --muted:#767980;
+    --line:#e4e4e0; --line-2:#d2d2cc;
+    --accent:#1c5cab; --accent-soft:#e8f0fb;
+    --pos:#256abf; --pos-deep:#0d366b; --neg:#d03b3b; --neg-deep:#7d1f1f;
+    --zero:#eeedea; --warn:#8a6a12; --warn-bg:#fbf3dd;
+    --shadow:0 1px 2px rgba(20,22,26,.05);
+  }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+    --ground:#131412; --surface:#1c1d1b; --surface-2:#232421;
+    --ink:#f3f3ef; --ink-2:#c6c6be; --muted:#94948c;
+    --line:#2e2f2c; --line-2:#3c3d39;
+    --accent:#6ba3e8; --accent-soft:#1a2939;
+    --pos:#3987e5; --pos-deep:#9ec5f4; --neg:#e36a6a; --neg-deep:#f0a5a5;
+    --zero:#2a2b28; --warn:#e0be6a; --warn-bg:#2b2618;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#131412; --surface:#1c1d1b; --surface-2:#232421;
+    --ink:#f3f3ef; --ink-2:#c6c6be; --muted:#94948c;
+    --line:#2e2f2c; --line-2:#3c3d39;
+    --accent:#6ba3e8; --accent-soft:#1a2939;
+    --pos:#3987e5; --pos-deep:#9ec5f4; --neg:#e36a6a; --neg-deep:#f0a5a5;
+    --zero:#2a2b28; --warn:#e0be6a; --warn-bg:#2b2618;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+  }
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground); color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:15px; line-height:1.6; margin:0;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding-inline:20px; padding-block:40px 72px}
+  h1,h2,h3{font-family:"Newsreader",Georgia,serif; font-weight:500; text-wrap:balance; margin:0}
+  h1{font-size:clamp(30px,5vw,44px); line-height:1.12; letter-spacing:-.01em}
+  h2{font-size:clamp(22px,3.2vw,29px); line-height:1.2; margin-top:8px}
+  h3{font-size:19px; line-height:1.3}
+  .eyebrow{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 10px
+  }
+  .lede{font-size:17px; color:var(--ink-2); max-width:62ch; margin:14px 0 0}
+  p{margin:12px 0; max-width:66ch}
+  code,.mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.9em}
+  code{background:var(--surface-2); padding:1px 5px; border-radius:3px}
+  section{margin-top:56px}
+  .rule{height:1px; background:var(--line); border:0; margin:0}
+
+  .facts{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px;
+         background:var(--line); border:1px solid var(--line); margin-top:28px}
+  .fact{background:var(--surface); padding:14px 16px}
+  .fact b{display:block; font-family:"IBM Plex Mono",monospace; font-size:21px;
+          font-weight:500; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+  .fact span{font-size:12px; color:var(--muted)}
+
+  .controls{display:flex; flex-wrap:wrap; gap:10px 22px; align-items:flex-end;
+            padding:14px 16px; background:var(--surface); border:1px solid var(--line);
+            border-radius:6px; margin:20px 0 22px}
+  .ctl{display:flex; flex-direction:column; gap:5px}
+  .ctl label{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em;
+             text-transform:uppercase; color:var(--muted)}
+  .seg{display:flex; flex-wrap:wrap; gap:4px}
+  .seg button{
+    font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-2);
+    background:var(--surface-2); border:1px solid var(--line); border-radius:4px;
+    padding:5px 10px; cursor:pointer; transition:background .12s,color .12s,border-color .12s;
+  }
+  .seg button:hover{border-color:var(--line-2)}
+  .seg button[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
+  :root[data-theme="dark"] .seg button[aria-pressed="true"],
+  .seg button[aria-pressed="true"]{color:#fff}
+  .seg button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+  figure{margin:0; background:var(--surface); border:1px solid var(--line);
+         border-radius:6px; padding:18px 16px; box-shadow:var(--shadow)}
+  figcaption{font-size:13px; color:var(--muted); margin-top:12px; max-width:70ch}
+  .scroll{overflow-x:auto}
+  svg{display:block; max-width:100%; height:auto}
+  .tick{font-family:"IBM Plex Mono",monospace; font-size:10px; fill:var(--muted)}
+  .cellnum{font-family:"IBM Plex Mono",monospace; font-size:10.5px; font-variant-numeric:tabular-nums}
+  .axis{stroke:var(--line-2); stroke-width:1}
+  .grid{stroke:var(--line); stroke-width:1}
+
+  .note{background:var(--warn-bg); border-left:3px solid var(--warn); padding:12px 15px;
+        margin:18px 0; font-size:14px; color:var(--ink-2); border-radius:0 4px 4px 0}
+  .note b{color:var(--ink)}
+  .legend{display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:12px;
+          font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--ink-2)}
+  .legend i{display:inline-block; width:16px; height:3px; border-radius:2px;
+            margin-right:6px; vertical-align:middle}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; margin-top:14px}
+  th,td{text-align:left; padding:7px 10px; border-bottom:1px solid var(--line)}
+  th{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.08em;
+     text-transform:uppercase; color:var(--muted); font-weight:500}
+  td.num{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; text-align:right}
+  .pos{color:var(--pos)} .neg{color:var(--neg)}
+  footer{margin-top:64px; padding-top:20px; border-top:1px solid var(--line);
+         font-size:13px; color:var(--muted)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">GraphQA &middot; 40-node Erd&#337;s&#8211;R&#233;nyi sweep &middot; 84,000 responses</p>
+  <h1>Primer Effects at 40 Nodes</h1>
+  <p class="lede">Does a short preamble of factual sentences about each node help a language
+  model answer questions about a graph? Rebuilt from the raw generations &mdash; four Qwen3 arms,
+  six tasks, seven primer conditions, seven densities, 700 graphs.</p>
+
+  <div class="facts">
+    <div class="fact"><b>84,000</b><span>scored responses</span></div>
+    <div class="fact"><b>840</b><span>cells, all n=100</span></div>
+    <div class="fact"><b>700</b><span>graphs regenerated</span></div>
+    <div class="fact"><b>0</b><span>gold mismatches</span></div>
+    <div class="fact"><b>0.37</b><span>of parts survive bundling</span></div>
+  </div>
+
+  <section>
+    <p class="eyebrow">The headline</p>
+    <h2>Primers don&rsquo;t improve graph reasoning. They swap one procedure for another.</h2>
+    <p>Where the primer hands the model a shortcut it can execute reliably, accuracy jumps.
+    Where it hands the model a shortcut it executes <em>badly</em> &mdash; looking up one line in a
+    forty-line list &mdash; accuracy falls, even though the primer contains the exact answer.
+    The three panels below are the evidence.</p>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <p class="eyebrow">Q1 / Q2 &middot; where each primer helps and hurts</p>
+    <h2>Effect by task and condition</h2>
+    <p>Each cell is the effect of that primer against <code>filler</code> &mdash; a content-free
+    preamble of the same length &mdash; so what you see is the effect of the <em>content</em>,
+    not of having a preamble at all.</p>
+
+    <div class="controls">
+      <div class="ctl">
+        <label for="hm-arm">Model arm</label>
+        <div class="seg" id="hm-arm" role="group"></div>
+      </div>
+      <div class="ctl">
+        <label for="hm-dens">Edge probability</label>
+        <div class="seg" id="hm-dens" role="group"></div>
+      </div>
+    </div>
+
+    <figure>
+      <div class="scroll"><svg id="heatmap" role="img" aria-label="Primer effect heatmap"></svg></div>
+      <div class="legend">
+        <span><i style="background:var(--pos-deep)"></i>primer helps</span>
+        <span><i style="background:var(--zero)"></i>no effect</span>
+        <span><i style="background:var(--neg-deep)"></i>primer hurts</span>
+      </div>
+      <figcaption id="hm-cap"></figcaption>
+    </figure>
+
+    <div class="note"><b>Read <code>node_count</code> and <code>cycle_check</code> differently.</b>
+    At 40 nodes their answer is always the same (&ldquo;40&rdquo;, &ldquo;Yes&rdquo;), so a
+    deficit there measures <em>distraction</em> &mdash; the primer pushing the model off an answer
+    it would otherwise get for free &mdash; not graph reasoning.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Q7 &middot; the full density range</p>
+    <h2>Where the effect lives</h2>
+    <p>Only <code>node_degree</code> and <code>edge_existence</code> were run past p=0.5, and that
+    extension changes the conclusions: on the thinking arm the <code>degree</code> primer&rsquo;s
+    benefit <em>grows</em> all the way to +53 points, while on the plain 4B model it flips sign
+    around p=0.75.</p>
+
+    <div class="controls">
+      <div class="ctl">
+        <label for="dc-task">Task</label>
+        <div class="seg" id="dc-task" role="group"></div>
+      </div>
+      <div class="ctl">
+        <label for="dc-arm">Model arm</label>
+        <div class="seg" id="dc-arm" role="group"></div>
+      </div>
+    </div>
+
+    <figure>
+      <div class="scroll"><svg id="curve" role="img" aria-label="Primer effect against density"></svg></div>
+      <div class="legend" id="dc-legend"></div>
+      <figcaption id="dc-cap"></figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <p class="eyebrow">Q4 &middot; mechanism</p>
+    <h2>The primer is retrieved, not reasoned over</h2>
+    <p>On <code>node_degree</code> the <code>degree</code> primer states the answer word for word.
+    The primer lists nodes in id order, so the queried node&rsquo;s id <em>is</em> its line number.
+    If the model were reading the fact, position would not matter. It does.</p>
+
+    <figure>
+      <div class="scroll"><svg id="serial" role="img" aria-label="Accuracy by position in the primer"></svg></div>
+      <div class="legend" id="sp-legend"></div>
+      <figcaption>Solid lines state the answer in the primer; dashed lines are controls with the
+      same 40-line, one-sentence-per-node format and no answer to retrieve. Only the solid lines
+      fall steeply and monotonically with position. Free y-axis per panel &mdash; compare shape,
+      not height.</figcaption>
+    </figure>
+
+    <div class="note"><b>The control is the finding.</b> <code>clustering</code> has the identical
+    length and format but contains no answer, and it shows no slope. So the decay is retrieval of
+    the answer specifically, not a generic cost of a long preamble. The controls are not perfectly
+    flat, though &mdash; <code>filler</code> on 1.7b-think slopes +12.1 points &mdash; so the claim
+    is about steepness and monotonicity, not a zero slope.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Q4 &middot; the correction that matters most</p>
+    <h2>A recovery that is really a collapse</h2>
+    <p>On <code>edge_existence</code>, raw accuracy for <span class="mono">qwen3-1.7b</span>
+    appears to recover above p=0.5. It does not. The share of pairs that genuinely are edges rises
+    with density, and the model simply starts answering &ldquo;yes&rdquo; to almost everything.</p>
+
+    <figure>
+      <div class="scroll"><svg id="collapse" role="img" aria-label="Raw versus balanced accuracy"></svg></div>
+      <div class="legend">
+        <span><i style="background:var(--pos)"></i>raw accuracy</span>
+        <span><i style="background:var(--neg)"></i>balanced accuracy</span>
+        <span><i style="background:var(--muted)"></i>share of pairs answered &ldquo;yes&rdquo;</span>
+      </div>
+      <figcaption>Balanced accuracy is the mean of recall on edges and on non-edges, so it is
+      immune to the shifting class balance. At p&ge;0.65 it sits at chance while raw accuracy
+      reads 68&ndash;86%.</figcaption>
+    </figure>
+
+    <table>
+      <thead><tr><th>p</th><th>pairs that are edges</th><th>raw acc</th><th>balanced acc</th>
+      <th>recall on non-edges</th><th>says &ldquo;yes&rdquo;</th></tr></thead>
+      <tbody id="collapse-rows"></tbody>
+    </table>
+    <p style="font-size:13.5px;color:var(--muted);margin-top:10px">
+      Every error is a false positive: recall on real edges stays at ~100% in every cell.
+      <span class="mono">qwen3-4b</span> does not collapse this way (balanced 83&ndash;92), so this
+      is a small-model failure, not an artifact of the task.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Q4 &middot; why the small model gives up</p>
+    <h2>Capitulation, and what actually triggers it</h2>
+    <p>Above p=0.5 the 1.7B model stops producing reasoning on <code>edge_existence</code>
+    &mdash; 238 tokens down to 48 &mdash; and emits a bare &ldquo;yes&rdquo;. The obvious
+    explanations are that the prompt got too long or the task got too hard. Both are wrong.</p>
+
+    <figure>
+      <div class="scroll"><svg id="capit" role="img" aria-label="Response length by task and by prompt length"></svg></div>
+      <div class="legend" id="cap-legend"></div>
+      <figcaption>Left: the same graphs, the same model, the same densities &mdash; only the
+      required answer differs. Right: the (n, k) ladder holds mean degree at 8 while the prompt
+      grows from 160 to 1,200 edges.</figcaption>
+    </figure>
+
+    <p>On the right, a prompt 7.5&times; longer at <em>fixed</em> difficulty never collapses
+    &mdash; token counts drift <em>up</em>. Holding prompt length fixed instead (640 edges) and
+    varying difficulty costs the 1.7B model 34 points, and the harder cell uses
+    <em>more</em> tokens, not fewer. Neither knob produces the quit.</p>
+
+    <p>What does is the <strong>shape of the answer</strong>. On the identical graphs where the
+    model bails on the yes/no question, it keeps working on the integer question &mdash; 268&ndash;287
+    tokens &mdash; and fails honestly at 5&ndash;8%. A binary question offers a degenerate escape;
+    an integer question does not.</p>
+
+    <div class="note"><b>And the bail is nearly optimal.</b> Answering &ldquo;yes&rdquo; to every
+    pair at p=0.85 scores 86%, because 85% of pairs really are edges. That is the best available
+    strategy once the task is out of reach &mdash; which is exactly why raw accuracy rewards it
+    and balanced accuracy exposes it. A capitulated model also scores as a <em>perfect</em>
+    ignorer of irrelevant primers, since it has stopped reading the prompt at all. Read any
+    robustness number next to the response length that produced it.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">What did not survive</p>
+    <h2>Retractions</h2>
+    <p>Recorded because they were believed during the analysis and turned out to be wrong.</p>
+    <table>
+      <thead><tr><th>Claim</th><th>What killed it</th></tr></thead>
+      <tbody>
+        <tr><td>&ldquo;Primer citation rises 0&nbsp;&rarr;&nbsp;35% under <code>all</code>&rdquo;</td>
+            <td>Hand-validation: 20/20 matches cite the <em>edge list</em>, not the primer. Marker renamed <code>narrates_neighbors</code>; claim dropped.</td></tr>
+        <tr><td>&ldquo;Counting neighbours is harder than listing them&rdquo;</td>
+            <td>True for 1.7b (&minus;11 to &minus;18), reversed for 4b (+11 to +20). Not a general ordering.</td></tr>
+        <tr><td>&ldquo;<code>all</code> keeps about half its parts&rdquo;</td>
+            <td>Revised to ~a third (0.37 median) once all 71 qualifying cells were used instead of three.</td></tr>
+        <tr><td>&ldquo;The strategy switch explains the gain&rdquo;</td>
+            <td>Median accuracy gap between switchers and non-switchers: +0.0 over 23 cells.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>
+    Rebuilt from <code>runs/*.jsonl</code> with <code>scripts/build_raw_frame.py</code> and
+    <code>scripts/raw_trends.py</code>. Every graph regenerated from its <code>instance_id</code>
+    and checked against the recorded gold answer &mdash; 84,000 of 84,000 matched. Full write-up in
+    <code>docs/raw-trends-large-graph.md</code>.
+  </footer>
+</div>
+
+<script id="payload" type="application/json">__DATA__</script>
+<script>
+(function(){
+  "use strict";
+  var D = JSON.parse(document.getElementById("payload").textContent);
+  var ARMS = ["qwen3-1.7b","qwen3-4b","qwen3-1.7b-think","qwen3-4b-think"];
+  var TASKS = ["node_count","cycle_check","edge_existence","node_degree","connected_nodes","edge_count"];
+  var CONDS = ["degree","clustering","rwse","components","all"];
+  var ALLC = ["none","filler","degree","clustering","rwse","components","all"];
+  var DENS = ["0.1","0.2","0.35","0.5","0.65","0.75","0.85"];
+  var HUE = {none:"#767980",filler:"#a6a69e",degree:"#256abf",clustering:"#eb6834",
+             rwse:"#1baf7a",components:"#eda100",all:"#4a3aa7"};
+  var SVGNS = "http://www.w3.org/2000/svg";
+
+  function el(n,a,t){var e=document.createElementNS(SVGNS,n);
+    for(var k in a) e.setAttribute(k,a[k]);
+    if(t!=null) e.textContent=t; return e;}
+  function clear(n){while(n.firstChild) n.removeChild(n.firstChild);}
+  function pct(v){return v==null?"":(v*100).toFixed(0);}
+  function sgn(v){return (v>0?"+":"")+(v*100).toFixed(0);}
+
+  // diverging scale, gray at zero, symmetric at +/-30 pts
+  function divColor(v){
+    if(v==null) return "var(--zero)";
+    var t = Math.max(-1,Math.min(1, v/0.30));
+    var stops = t>=0
+      ? [[238,237,234],[134,182,239],[37,106,191],[13,54,107]]
+      : [[238,237,234],[239,154,153],[208,59,59],[125,31,31]];
+    var a = Math.abs(t)*3, i = Math.min(2,Math.floor(a)), f = a-i;
+    var c0=stops[i], c1=stops[i+1];
+    return "rgb("+[0,1,2].map(function(j){
+      return Math.round(c0[j]+(c1[j]-c0[j])*f);}).join(",")+")";
+  }
+
+  function segmented(host, items, initial, onPick){
+    var node = document.getElementById(host);
+    clear(node);
+    items.forEach(function(v){
+      var b=document.createElement("button");
+      b.type="button"; b.textContent=v.label; b.setAttribute("aria-pressed", v.key===initial);
+      b.addEventListener("click",function(){
+        Array.prototype.forEach.call(node.children,function(o){o.setAttribute("aria-pressed","false");});
+        b.setAttribute("aria-pressed","true"); onPick(v.key);
+      });
+      node.appendChild(b);
+    });
+  }
+  var plain=function(a){return {key:a,label:a.replace("qwen3-","")};};
+
+  /* ---------- heatmap ---------- */
+  var hmArm="qwen3-4b", hmDens="all";
+  function drawHeatmap(){
+    var svg=document.getElementById("heatmap"); clear(svg);
+    var L=128, T=16, cw=104, ch=40, W=L+cw*CONDS.length+14, H=T+ch*TASKS.length+40;
+    svg.setAttribute("viewBox","0 0 "+W+" "+H);
+    svg.setAttribute("width",W); svg.setAttribute("height",H);
+    CONDS.forEach(function(c,j){
+      svg.appendChild(el("text",{x:L+cw*j+cw/2,y:H-16,"text-anchor":"middle","class":"tick"},c));
+    });
+    TASKS.forEach(function(t,i){
+      svg.appendChild(el("text",{x:L-10,y:T+ch*i+ch/2+4,"text-anchor":"end","class":"tick"},t));
+      CONDS.forEach(function(c,j){
+        var rows=D.effects.filter(function(r){
+          return r.a===hmArm && r.t===t && r.c===c && (hmDens==="all"||r.d===hmDens) && r.dvf!=null;});
+        var v = rows.length ? rows.reduce(function(s,r){return s+r.dvf;},0)/rows.length : null;
+        var x=L+cw*j, y=T+ch*i;
+        svg.appendChild(el("rect",{x:x+1,y:y+1,width:cw-2,height:ch-2,
+          fill:divColor(v), rx:2}));
+        if(v!=null){
+          var strong = Math.abs(v)>0.16;
+          svg.appendChild(el("text",{x:x+cw/2,y:y+ch/2+4,"text-anchor":"middle",
+            "class":"cellnum", fill: strong?"#ffffff":"var(--ink)"}, sgn(v)));
+        } else {
+          svg.appendChild(el("text",{x:x+cw/2,y:y+ch/2+4,"text-anchor":"middle",
+            "class":"cellnum", fill:"var(--muted)"},"–"));
+        }
+      });
+    });
+    document.getElementById("hm-cap").textContent =
+      "Effect in percentage points against the length-matched filler control, "+
+      (hmDens==="all" ? "averaged over every density level" : "at p="+hmDens)+
+      ", for "+hmArm.replace("qwen3-","")+". A dash means the task was not run at that density.";
+  }
+
+  /* ---------- density curve ---------- */
+  var dcTask="node_degree", dcArm="qwen3-1.7b-think";
+  function drawCurve(){
+    var svg=document.getElementById("curve"); clear(svg);
+    var L=52,R=18,T=16,B=42, W=760, H=330, iw=W-L-R, ih=H-T-B;
+    svg.setAttribute("viewBox","0 0 "+W+" "+H); svg.setAttribute("width",W); svg.setAttribute("height",H);
+    var lo=-55, hi=60;
+    var Y=function(v){return T+ih-(v*100-lo)/(hi-lo)*ih;};
+    var X=function(i){return L+(DENS.length<2?0:i/(DENS.length-1)*iw);};
+    for(var g=-40;g<=60;g+=20){
+      var yy=Y(g/100);
+      svg.appendChild(el("line",{x1:L,y1:yy,x2:L+iw,y2:yy,"class":"grid"}));
+      svg.appendChild(el("text",{x:L-8,y:yy+3.5,"text-anchor":"end","class":"tick"},(g>0?"+":"")+g));
+    }
+    svg.appendChild(el("line",{x1:L,y1:Y(0),x2:L+iw,y2:Y(0),"class":"axis","stroke-width":1.4}));
+    DENS.forEach(function(d,i){
+      svg.appendChild(el("text",{x:X(i),y:H-18,"text-anchor":"middle","class":"tick"},d));
+    });
+    svg.appendChild(el("text",{x:L+iw/2,y:H-3,"text-anchor":"middle","class":"tick"},"edge probability p"));
+    svg.appendChild(el("text",{x:12,y:T+ih/2,"class":"tick","text-anchor":"middle",
+      transform:"rotate(-90 12 "+(T+ih/2)+")"},"effect vs filler (pts)"));
+
+    var leg=document.getElementById("dc-legend"); leg.innerHTML="";
+    CONDS.forEach(function(c){
+      var pts=[];
+      DENS.forEach(function(d,i){
+        var r=D.effects.filter(function(x){
+          return x.a===dcArm&&x.t===dcTask&&x.d===d&&x.c===c;})[0];
+        if(r&&r.dvf!=null) pts.push([X(i),Y(r.dvf)]);
+      });
+      if(!pts.length) return;
+      svg.appendChild(el("path",{d:pts.map(function(p,i){return (i?"L":"M")+p[0]+" "+p[1];}).join(" "),
+        fill:"none", stroke:HUE[c], "stroke-width":2.2, "stroke-linejoin":"round","stroke-linecap":"round"}));
+      pts.forEach(function(p){
+        svg.appendChild(el("circle",{cx:p[0],cy:p[1],r:4,fill:HUE[c],
+          stroke:"var(--surface)","stroke-width":1.5}));
+      });
+      var s=document.createElement("span");
+      s.innerHTML='<i style="background:'+HUE[c]+'"></i>'+c;
+      leg.appendChild(s);
+    });
+    var hasHi = dcTask==="node_degree"||dcTask==="edge_existence";
+    document.getElementById("dc-cap").textContent =
+      dcArm.replace("qwen3-","")+" on "+dcTask+". "+
+      (hasHi ? "Runs to p=0.85 via the densfull40hi extension."
+             : "This task was only run to p=0.5.")+
+      " Zero means the primer did no better than a content-free preamble of the same length.";
+  }
+
+  /* ---------- serial position ---------- */
+  function drawSerial(){
+    var svg=document.getElementById("serial"); clear(svg);
+    var arms=["qwen3-4b","qwen3-1.7b","qwen3-1.7b-think"];
+    var show=["none","filler","clustering","degree","all"];
+    var dash={none:1,filler:1,clustering:1};
+    var pw=250, ph=250, gap=18, L=40, T=26, B=46;
+    var W=arms.length*pw+(arms.length-1)*gap, H=ph;
+    svg.setAttribute("viewBox","0 0 "+W+" "+H); svg.setAttribute("width",W); svg.setAttribute("height",H);
+    var labels=["0-9","10-19","20-29","30-39"];
+    arms.forEach(function(arm,pi){
+      var ox=pi*(pw+gap), iw=pw-L-10, ih=ph-T-B;
+      var rows=show.map(function(c){
+        return D.serial.filter(function(r){
+          return r.a===arm&&r.t==="node_degree"&&r.c===c;})[0];}).filter(Boolean);
+      var vals=[]; rows.forEach(function(r){r.b.forEach(function(v){if(v!=null)vals.push(v);});});
+      if(!vals.length) return;
+      var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals);
+      var pad=(hi-lo)*0.16||0.05; lo=Math.max(0,lo-pad); hi=Math.min(1,hi+pad);
+      var Y=function(v){return T+ih-(v-lo)/(hi-lo)*ih;};
+      var X=function(i){return ox+L+i/3*iw;};
+      svg.appendChild(el("text",{x:ox+L,y:14,"class":"tick",fill:"var(--ink)"},arm.replace("qwen3-","")));
+      [lo,(lo+hi)/2,hi].forEach(function(v){
+        svg.appendChild(el("line",{x1:ox+L,y1:Y(v),x2:ox+L+iw,y2:Y(v),"class":"grid"}));
+        svg.appendChild(el("text",{x:ox+L-7,y:Y(v)+3.5,"text-anchor":"end","class":"tick"},pct(v)+"%"));
+      });
+      labels.forEach(function(t,i){
+        svg.appendChild(el("text",{x:X(i),y:ph-26,"text-anchor":"middle","class":"tick"},t));
+      });
+      svg.appendChild(el("text",{x:ox+L+iw/2,y:ph-8,"text-anchor":"middle","class":"tick"},
+        "line in the 40-line primer"));
+      rows.forEach(function(r){
+        var pts=r.b.map(function(v,i){return v==null?null:[X(i),Y(v)];}).filter(Boolean);
+        if(pts.length<2) return;
+        var attrs={d:pts.map(function(p,i){return (i?"L":"M")+p[0]+" "+p[1];}).join(" "),
+          fill:"none",stroke:HUE[r.c],"stroke-width":dash[r.c]?1.6:2.4,
+          "stroke-linejoin":"round","stroke-linecap":"round"};
+        if(dash[r.c]) attrs["stroke-dasharray"]="4 3";
+        svg.appendChild(el("path",attrs));
+        pts.forEach(function(p){
+          svg.appendChild(el("circle",{cx:p[0],cy:p[1],r:3.4,fill:HUE[r.c],
+            stroke:"var(--surface)","stroke-width":1.3}));
+        });
+      });
+    });
+    var leg=document.getElementById("sp-legend"); leg.innerHTML="";
+    show.forEach(function(c){
+      var s=document.createElement("span");
+      s.innerHTML='<i style="background:'+HUE[c]+';'+(dash[c]?"height:2px;opacity:.75":"")+'"></i>'+
+        c+(dash[c]?" (control)":"");
+      leg.appendChild(s);
+    });
+  }
+
+  /* ---------- collapse panel ---------- */
+  function drawCollapse(){
+    var svg=document.getElementById("collapse"); clear(svg);
+    var rows=DENS.map(function(d){
+      return D.balanced.filter(function(r){
+        return r.a==="qwen3-1.7b"&&r.d===d&&r.c==="none";})[0];}).filter(Boolean);
+    var L=46,R=16,T=18,B=46,W=740,H=300,iw=W-L-R,ih=H-T-B;
+    svg.setAttribute("viewBox","0 0 "+W+" "+H); svg.setAttribute("width",W); svg.setAttribute("height",H);
+    var Y=function(v){return T+ih-v*ih;};
+    var X=function(i){return L+i/(rows.length-1)*iw;};
+    [0,0.25,0.5,0.75,1].forEach(function(v){
+      svg.appendChild(el("line",{x1:L,y1:Y(v),x2:L+iw,y2:Y(v),"class":"grid"}));
+      svg.appendChild(el("text",{x:L-8,y:Y(v)+3.5,"text-anchor":"end","class":"tick"},pct(v)+"%"));
+    });
+    svg.appendChild(el("line",{x1:L,y1:Y(0.5),x2:L+iw,y2:Y(0.5),stroke:"var(--muted)",
+      "stroke-width":1,"stroke-dasharray":"3 3"}));
+    svg.appendChild(el("text",{x:L+6,y:Y(0.5)-5,"class":"tick"},"chance"));
+    rows.forEach(function(r,i){
+      svg.appendChild(el("text",{x:X(i),y:H-24,"text-anchor":"middle","class":"tick"},r.d));
+    });
+    svg.appendChild(el("text",{x:L+iw/2,y:H-6,"text-anchor":"middle","class":"tick"},
+      "edge probability p"));
+    function line(key,color,w,dashed){
+      var pts=rows.map(function(r,i){return [X(i),Y(r[key])];});
+      var a={d:pts.map(function(p,i){return (i?"L":"M")+p[0]+" "+p[1];}).join(" "),
+        fill:"none",stroke:color,"stroke-width":w,"stroke-linejoin":"round","stroke-linecap":"round"};
+      if(dashed) a["stroke-dasharray"]="4 3";
+      svg.appendChild(el("path",a));
+      pts.forEach(function(p){svg.appendChild(el("circle",{cx:p[0],cy:p[1],r:4,fill:color,
+        stroke:"var(--surface)","stroke-width":1.5}));});
+    }
+    line("py","var(--muted)",1.8,true);
+    line("acc","var(--pos)",2.4,false);
+    line("bal","var(--neg)",2.4,false);
+
+    var tb=document.getElementById("collapse-rows"); tb.innerHTML="";
+    rows.forEach(function(r){
+      var tr=document.createElement("tr");
+      var danger = r.bal<0.6;
+      tr.innerHTML="<td class='mono'>"+r.d+"</td>"+
+        "<td class='num'>"+pct(r.gy)+"%</td>"+
+        "<td class='num'>"+pct(r.acc)+"%</td>"+
+        "<td class='num'"+(danger?" style='color:var(--neg);font-weight:600'":"")+">"+pct(r.bal)+"%</td>"+
+        "<td class='num'"+(danger?" style='color:var(--neg)'":"")+">"+pct(r.rn)+"%</td>"+
+        "<td class='num'>"+pct(r.py)+"%</td>";
+      tb.appendChild(tr);
+    });
+  }
+
+  /* ---------- capitulation ---------- */
+  function drawCapit(){
+    var svg=document.getElementById("capit"); clear(svg);
+    var pw=380, gap=44, L=52, T=22, B=48, W=pw*2+gap, H=290;
+    svg.setAttribute("viewBox","0 0 "+W+" "+H); svg.setAttribute("width",W); svg.setAttribute("height",H);
+    var iw=pw-L-12, ih=H-T-B;
+    var ymax=420;
+    function frame(ox,title,xs,xlabel){
+      svg.appendChild(el("text",{x:ox+L,y:14,"class":"tick",fill:"var(--ink)"},title));
+      for(var v=0; v<=400; v+=100){
+        var yy=T+ih-v/ymax*ih;
+        svg.appendChild(el("line",{x1:ox+L,y1:yy,x2:ox+L+iw,y2:yy,"class":"grid"}));
+        svg.appendChild(el("text",{x:ox+L-7,y:yy+3.5,"text-anchor":"end","class":"tick"},v));
+      }
+      xs.forEach(function(t,i){
+        svg.appendChild(el("text",{x:ox+L+i/(xs.length-1)*iw,y:H-28,"text-anchor":"middle","class":"tick"},t));
+      });
+      svg.appendChild(el("text",{x:ox+L+iw/2,y:H-10,"text-anchor":"middle","class":"tick"},xlabel));
+    }
+    function series(ox,xs,pts,color,label){
+      var p=pts.map(function(v,i){return v==null?null:
+        [ox+L+i/(xs.length-1)*iw, T+ih-Math.min(v,ymax)/ymax*ih];}).filter(Boolean);
+      if(p.length<2) return;
+      svg.appendChild(el("path",{d:p.map(function(q,i){return (i?"L":"M")+q[0]+" "+q[1];}).join(" "),
+        fill:"none",stroke:color,"stroke-width":2.4,"stroke-linejoin":"round","stroke-linecap":"round"}));
+      p.forEach(function(q){svg.appendChild(el("circle",{cx:q[0],cy:q[1],r:4,fill:color,
+        stroke:"var(--surface)","stroke-width":1.5}));});
+    }
+    frame(0,"Same graphs, different required answer",DENS,"edge probability p");
+    var TASKS3=[["edge_existence","#d03b3b","edge_existence (yes/no)"],
+                ["node_degree","#256abf","node_degree (integer)"],
+                ["connected_nodes","#1baf7a","connected_nodes (set)"]];
+    TASKS3.forEach(function(t){
+      series(0,DENS,DENS.map(function(d){
+        var r=D.behaviour.filter(function(x){return x.a==="qwen3-1.7b"&&x.t===t[0]&&x.d===d&&x.c==="none";})[0];
+        return r?r.tok:null;}),t[1],t[2]);
+    });
+    var NS=[40,60,80,120,160,300];
+    frame(pw+gap,"Prompt 7.5x longer, difficulty fixed (k=8)",NS.map(String),"nodes (edges 160 → 1200)");
+    [["qwen3-1.7b","#256abf"],["qwen3-0.6b","#eb6834"],["qwen3-8b","#1baf7a"]].forEach(function(a){
+      series(pw+gap,NS,NS.map(function(n){
+        var r=(D.ladder||[]).filter(function(x){return x.a===a[0]&&x.n===n&&x.k===8;})[0];
+        return r?r.tok:null;}),a[1],a[0]);
+    });
+    var leg=document.getElementById("cap-legend"); leg.innerHTML="";
+    TASKS3.forEach(function(t){
+      var s=document.createElement("span");
+      s.innerHTML='<i style="background:'+t[1]+'"></i>'+t[2]; leg.appendChild(s);
+    });
+    var s2=document.createElement("span");
+    s2.style.color="var(--muted)"; s2.textContent="right panel: same colours, by model size";
+    leg.appendChild(s2);
+  }
+
+  segmented("hm-arm", ARMS.map(plain), hmArm, function(v){hmArm=v; drawHeatmap();});
+  segmented("hm-dens", [{key:"all",label:"all"}].concat(DENS.map(function(d){
+    return {key:d,label:d};})), hmDens, function(v){hmDens=v; drawHeatmap();});
+  segmented("dc-task", TASKS.map(function(t){return {key:t,label:t};}), dcTask,
+    function(v){dcTask=v; drawCurve();});
+  segmented("dc-arm", ARMS.map(plain), dcArm, function(v){dcArm=v; drawCurve();});
+
+  drawHeatmap(); drawCurve(); drawSerial(); drawCollapse(); drawCapit();
+})();
+</script>
