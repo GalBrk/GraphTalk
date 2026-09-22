@@ -168,7 +168,7 @@ def main_table(frame):
               r"costs, which the \texttt{filler} column gives. "
               r"$^{\dagger}$: gold answer is constant at $n{=}40$, so a shift "
               r"need not reflect graph reading "
-              r"(Section~\ref{sec:results-difficulty}). \textbf{Bold}: "
+              r"(Section~\ref{sec:results-measurement}). \textbf{Bold}: "
               r"significant, exact McNemar, Benjamini--Hochberg within each "
               r"(arm, task) family and baseline, $q=0.05$.}",
               r"\label{tab:main}", r"\end{table*}"]
