@@ -92,11 +92,18 @@ def paired(frame, arm, task, baseline, cond):
     return delta, m["p_value"], len(j)
 
 
-def cell(delta, q):
+# Below this many surviving pairs a cell is reported but never bolded: the
+# survivors are selected on a post-treatment outcome (whether the generation
+# terminated), so a significant McNemar there is not interpretable as a primer
+# effect. Every such cell in this sweep is a thinking-arm `edge_count` cell.
+N_FLOOR = 100
+
+
+def cell(delta, q, n=None):
     if np.isnan(delta):
         return "--"
     body = f"{delta:+.1f}"
-    if not np.isnan(q) and q < 0.05:
+    if not np.isnan(q) and q < 0.05 and (n is None or n >= N_FLOOR):
         return r"$\mathbf{" + body + "}$"
     return f"${body}$"
 
@@ -110,7 +117,7 @@ def main_table(frame):
     invisible. The two halves disagree often enough that the paper needs both,
     and putting them side by side costs one float instead of two.
     """
-    base, dn, dnq, df, dfq = {}, {}, {}, {}, {}
+    base, dn, dnq, df, dfq, ns = {}, {}, {}, {}, {}, {}
     for arm in ARMS:
         for task in TASKS:
             d = frame[(frame.arm == arm) & (frame.task == task)]
@@ -119,7 +126,8 @@ def main_table(frame):
             vn = ["filler"] + CONDS
             ds, ps = {}, {}
             for c in vn:
-                ds[c], ps[c], _ = paired(frame, arm, task, "none", c)
+                ds[c], ps[c], ns[(arm, task, c)] = paired(
+                    frame, arm, task, "none", c)
             dn[(arm, task)] = ds
             dnq[(arm, task)] = dict(zip(vn, bh([ps[c] for c in vn])))
             ds, ps = {}, {}
@@ -133,44 +141,62 @@ def main_table(frame):
              r"\begin{table*}[!ht]", r"\centering", r"\footnotesize",
              r"\setlength{\tabcolsep}{3.1pt}",
              r"\renewcommand{\arraystretch}{0.94}",
-             r"\begin{tabular}{llr" + "r" * len(vn) + "r" * len(CONDS) + "}",
+             r"\begin{tabular}{llrr" + "r" * len(vn) + "r" * len(CONDS)
+             + "}",
              r"\toprule",
-             r"& & & \multicolumn{" + str(len(vn)) +
+             r"& & & & \multicolumn{" + str(len(vn)) +
              r"}{c}{$\Delta$ vs \texttt{none}} & \multicolumn{" +
              str(len(CONDS)) + r"}{c}{$\Delta$ vs \texttt{filler}} \\",
-             r"\cmidrule(lr){4-" + str(3 + len(vn)) + r"}" +
-             r"\cmidrule(lr){" + str(4 + len(vn)) + "-" +
-             str(3 + len(vn) + len(CONDS)) + "}",
-             "Arm & Task & none & " + " & ".join(HEADS[c] for c in vn) +
+             r"\cmidrule(lr){5-" + str(4 + len(vn)) + r"}" +
+             r"\cmidrule(lr){" + str(5 + len(vn)) + "-" +
+             str(4 + len(vn) + len(CONDS)) + "}",
+             "Arm & Task & none & $n$ & "
+             + " & ".join(HEADS[c] for c in vn) +
              " & " + " & ".join(HEADS[c] for c in CONDS) + r" \\",
              r"\midrule"]
+    shown = [t for t in TASKS if t not in CONST_GOLD]
     for i, arm in enumerate(ARMS):
         if i:
             lines.append(r"\midrule")
-        lines.append(r"\multirow{6}{*}{" + tex(arm) + "}")
-        for task in TASKS:
+        lines.append(r"\multirow{%d}{*}{" % len(shown) + tex(arm) + "}")
+        for task in shown:
             k = (arm, task)
             flag = r"$^{\dagger}$" if task in CONST_GOLD else ""
+            counts = [ns[(arm, task, c)] for c in vn]
+            lo, hi = min(counts), max(counts)
+            nstr = f"{lo}" if lo == hi else f"{lo}--{hi}"
+            if lo < N_FLOOR:
+                nstr = r"\textit{" + nstr + "}"
             lines.append(
-                " & " + tex(task) + flag + f" & {base[k]:.1f} & " +
-                " & ".join(cell(dn[k][c], dnq[k][c]) for c in vn) + " & " +
-                " & ".join(cell(df[k][c], dfq[k][c]) for c in CONDS) + r" \\")
+                " & " + tex(task) + flag + f" & {base[k]:.1f} & {nstr} & " +
+                " & ".join(cell(dn[k][c], dnq[k][c], ns[(arm, task, c)])
+                           for c in vn) + " & " +
+                " & ".join(cell(df[k][c], dfq[k][c], ns[(arm, task, c)])
+                           for c in CONDS) + r" \\")
     lines += [r"\bottomrule", r"\end{tabular}",
               r"\caption{Main sweep, $n{=}40$, pooled over densities "
               r"$p \in \{0.10, 0.20, 0.35, 0.50\}$, $100$ graphs per (task, "
-              r"primer, density) cell. The \texttt{none} column is "
-              r"exact-match accuracy (\%); the rest are paired differences in "
-              r"percentage points, against \texttt{none} on the left and "
-              r"against the length-matched \texttt{filler} on the right, with "
-              r"truncated generations excluded pairwise. Reading a primer "
-              r"against \texttt{none} alone charges it for the text it adds; "
-              r"reading it against \texttt{filler} alone hides what that text "
-              r"costs, which the \texttt{filler} column gives. "
-              r"$^{\dagger}$: gold answer is constant at $n{=}40$, so a shift "
-              r"need not reflect graph reading "
-              r"(Section~\ref{sec:results-measurement}). \textbf{Bold}: "
+              r"primer, density) cell before truncation. The "
+              r"\texttt{none} column is exact-match accuracy (\%); $n$ is the "
+              r"range, across the row, of pairs in which neither side "
+              r"truncated; the rest are paired differences in percentage "
+              r"points, against \texttt{none} on the left and against "
+              r"\texttt{filler} on the right, with truncated generations "
+              r"excluded pairwise. \texttt{filler} is length-matched to "
+              r"\texttt{clustering} only (Figure~\ref{fig:design}), so the "
+              r"right half is a length-matched contrast for that column "
+              r"alone. "
+              r"\texttt{node\_count} and \texttt{cycle\_check} are omitted: "
+              r"gold is constant at $n{=}40$, so a shift there is not graph "
+              r"reading (Section~\ref{sec:results-measurement}); both appear "
+              r"in Appendix Table~\ref{tab:pertask-nodecount} onward. "
+              r"\textbf{Bold}: "
               r"significant, exact McNemar, Benjamini--Hochberg within each "
-              r"(arm, task) family and baseline, $q=0.05$.}",
+              r"(arm, task) family and baseline, $q=0.05$. A row whose $n$ is "
+              r"\textit{italic} falls below $100$ surviving pairs and is "
+              r"never bolded, because those survivors are selected on whether "
+              r"the generation terminated "
+              r"(Section~\ref{sec:extraction}).}",
               r"\label{tab:main}", r"\end{table*}"]
     write("v3_main_table.tex", lines)
 
@@ -209,7 +235,20 @@ def additivity():
     # stable across effect magnitudes (0.43/0.33/0.48 in the [4,8), [8,15) and
     # [15,100) point bands), the ratio of means is not.
     cells = a[(100 * a.sum_parts).abs() >= 4.0]
-    percell = (cells.d_all / cells.sum_parts).median()
+    ratios = (cells.d_all / cells.sum_parts).to_numpy()
+    percell = float(np.median(ratios))
+    rng = np.random.default_rng(0)
+    boot = np.median(rng.choice(ratios, (4000, len(ratios))), axis=1)
+    lo, hi = np.percentile(boot, [2.5, 97.5])
+    # NOTE on the reference value. Under exact additivity the bundle equals
+    # the sum of its parts in expectation, but this estimator does not return
+    # 1 then: cells are screened on |denominator| >= 4 points, the denominator
+    # is itself noisy, and selecting on a noisy quantity inflates it, which
+    # pulls a median of ratios below 1. The size of that bias depends on the
+    # per-cell standard errors and on the unknown distribution of true
+    # effects, which this corpus cannot pin down, so no shortfall against a
+    # simulated null is quoted. The direction is known and is against us: the
+    # true shortfall is smaller than 1 - 0.50.
     lines += [r"\multicolumn{4}{l}{\emph{median over cells}} & " +
               f"${percell:.2f}$" + r" \\",
               r"\bottomrule", r"\end{tabular}",
@@ -220,17 +259,17 @@ def additivity():
               r"points, averaged over $p \in \{0.10, 0.20, 0.35, 0.50\}$; "
               r"rows whose parts sum to under $4$ points are omitted, since a "
               r"ratio of two null effects is not informative. The final row "
-              r"is the median over the $48$ individual (arm, task, density) "
-              r"cells rather than over the averaged rows above, because "
-              r"averaging numerator and denominator over densities first "
-              r"gives a ratio of means that the largest cells dominate; "
-              r"weighted the other ways the estimate runs from $0.29$ to "
-              r"$0.71$, so it bounds a tendency and is not a coefficient. "
-              r"The bootstrap interval on the per-cell median is "
-              r"$[0.33, 0.63]$, which excludes $1$: the bundle delivers "
-              r"reliably less than the sum of its parts. Against the "
-              r"\emph{largest} single part instead, the median is $0.80$ "
-              r"$[0.56, 1.08]$, which does not exclude $1$ "
+              r"is the median over the $" + str(len(cells)) + r"$ "
+              r"individual (arm, task, density) cells rather than over the "
+              r"averaged rows above, because averaging numerator and "
+              r"denominator over densities first gives a ratio of means that "
+              r"the largest cells dominate. Its bootstrap interval is $["
+              + f"{lo:.2f}, {hi:.2f}" + r"]$. We read this as a direction and "
+              r"not as a coefficient: the cells are screened on a noisy "
+              r"denominator, and selecting on a noisy quantity inflates it, "
+              r"so a median of ratios sits below $1$ even under exact "
+              r"additivity. The bias runs against the claim, so the bundle "
+              r"falling short of its parts survives it; its size does not "
               r"(Section~\ref{sec:results-composition}). "
               r"\texttt{edge\_count} is the extreme case: there the bundle "
               r"keeps almost nothing and in two arms moves against its "
@@ -357,6 +396,8 @@ def relevance():
              r" \\", r"\midrule",
              r"\multicolumn{5}{l}{\emph{matched: the primer carries what the "
              r"task needs}} \\"]
+    mis = r[r.matched == 0]
+    mismatch17 = 100 * mis[mis.arm == "qwen3-1.7b"].delta_vs_filler.mean()
     matched = r[r.matched == 1]
     for (cond, task), g in matched.groupby(["condition", "task"]):
         lines.append(row(f"{tex(cond)} / {tex(task)}", g))
@@ -371,7 +412,7 @@ def relevance():
               r"$p \in \{0.10, 0.20, 0.35, 0.50\}$; constant-gold tasks are "
               r"excluded. The three largest gains we measure are all matched "
               r"pairs, but matching is not sufficient and not necessary: "
-              r"mismatched content is still worth $+8.1$ points on "
+              r"mismatched content is still worth $" + f"{mismatch17:+.1f}" + r"$ points on "
               r"\texttt{qwen3-1.7b}, more than two of the matched pairs, and "
               r"the fourth matched pair reverses with model size. That pair is "
               r"\texttt{degree} on \texttt{node\_degree}, the one case where "

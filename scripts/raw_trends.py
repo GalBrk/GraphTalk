@@ -648,12 +648,13 @@ def main():
         % (len(df), df.arm.nunique(), df.graph_id.nunique()))
   want = args.question
 
-  eff = None
+  eff = eff_dropped = None
   if want in ("all", "effects", "composition", "moderators"):
     print("\n[Q1/Q2] effects")
     eff = q_effects(df)
+    eff_dropped = q_effects(df, drop_capped=True)
     save(eff, "effects.csv")
-    save(q_effects(df, drop_capped=True), "effects_capdropped.csv")
+    save(eff_dropped, "effects_capdropped.csv")
     save(q_balanced(df), "edge_existence_balanced.csv")
 
   if want in ("all", "difficulty"):
@@ -674,14 +675,14 @@ def main():
 
   if want in ("all", "composition"):
     print("\n[Q6] composition")
-    rel, add = q_composition(eff)
+    rel, add = q_composition(eff_dropped)
     print_additivity(add)
     save(rel, "relevance.csv")
     save(add, "additivity.csv")
 
   if want in ("all", "moderators"):
     print("\n[Q7] moderators")
-    save(q_moderators(eff), "moderators.csv")
+    save(q_moderators(eff_dropped), "moderators.csv")
 
   if want in ("all", "markers"):
     print("\n[markers] hand-validation sample")
