@@ -117,7 +117,7 @@ def main_table(frame):
     invisible. The two halves disagree often enough that the paper needs both,
     and putting them side by side costs one float instead of two.
     """
-    base, dn, dnq, df, dfq, ns = {}, {}, {}, {}, {}, {}
+    base, dn, dnq, df, dfq, ns, nf = {}, {}, {}, {}, {}, {}, {}
     for arm in ARMS:
         for task in TASKS:
             d = frame[(frame.arm == arm) & (frame.task == task)]
@@ -132,7 +132,8 @@ def main_table(frame):
             dnq[(arm, task)] = dict(zip(vn, bh([ps[c] for c in vn])))
             ds, ps = {}, {}
             for c in CONDS:
-                ds[c], ps[c], _ = paired(frame, arm, task, "filler", c)
+                ds[c], ps[c], nf[(arm, task, c)] = paired(
+                    frame, arm, task, "filler", c)
             df[(arm, task)] = ds
             dfq[(arm, task)] = dict(zip(CONDS, bh([ps[c] for c in CONDS])))
 
@@ -141,6 +142,7 @@ def main_table(frame):
              r"\begin{table*}[!ht]", r"\centering", r"\footnotesize",
              r"\setlength{\tabcolsep}{3.1pt}",
              r"\renewcommand{\arraystretch}{0.94}",
+             r"\resizebox{\textwidth}{!}{%",
              r"\begin{tabular}{llrr" + "r" * len(vn) + "r" * len(CONDS)
              + "}",
              r"\toprule",
@@ -162,23 +164,23 @@ def main_table(frame):
         for task in shown:
             k = (arm, task)
             flag = r"$^{\dagger}$" if task in CONST_GOLD else ""
-            counts = [ns[(arm, task, c)] for c in vn]
-            lo, hi = min(counts), max(counts)
-            nstr = f"{lo}" if lo == hi else f"{lo}--{hi}"
-            if lo < N_FLOOR:
-                nstr = r"\textit{" + nstr + "}"
+            # One figure, not a range: the range cost 90pt of width and the
+            # gate is applied per cell anyway. Report the worst case.
+            lo = min([ns[(arm, task, c)] for c in vn]
+                     + [nf[(arm, task, c)] for c in CONDS])
+            nstr = f"{lo}" if lo >= N_FLOOR else r"\textit{" + f"{lo}" + "}"
             lines.append(
                 " & " + tex(task) + flag + f" & {base[k]:.1f} & {nstr} & " +
                 " & ".join(cell(dn[k][c], dnq[k][c], ns[(arm, task, c)])
                            for c in vn) + " & " +
-                " & ".join(cell(df[k][c], dfq[k][c], ns[(arm, task, c)])
+                " & ".join(cell(df[k][c], dfq[k][c], nf[(arm, task, c)])
                            for c in CONDS) + r" \\")
-    lines += [r"\bottomrule", r"\end{tabular}",
+    lines += [r"\bottomrule", r"\end{tabular}}",
               r"\caption{Main sweep, $n{=}40$, pooled over densities "
               r"$p \in \{0.10, 0.20, 0.35, 0.50\}$, $100$ graphs per (task, "
               r"primer, density) cell before truncation. The "
               r"\texttt{none} column is exact-match accuracy (\%); $n$ is the "
-              r"range, across the row, of pairs in which neither side "
+              r"smallest number of pairs in the row in which neither side "
               r"truncated; the rest are paired differences in percentage "
               r"points, against \texttt{none} on the left and against "
               r"\texttt{filler} on the right, with truncated generations "
@@ -249,6 +251,21 @@ def additivity():
     # effects, which this corpus cannot pin down, so no shortfall against a
     # simulated null is quoted. The direction is known and is against us: the
     # true shortfall is smaller than 1 - 0.50.
+    ec = g[g.index.get_level_values("task") == "edge_count"]
+    against = int((ec.ratio < 0).sum())
+    if len(ec) and against:
+        ec_sentence = (r"\texttt{edge\_count} is the extreme case: its "
+                       r"ratios run $" + ", ".join(f"{r:.2f}" for r in ec.ratio)
+                       + r"$, and in " + str(against) + r" arm"
+                       + ("s" if against > 1 else "")
+                       + r" the bundle moves against its parts.")
+    elif len(ec):
+        ec_sentence = (r"\texttt{edge\_count} is the widest case: its ratios "
+                       r"run $" + ", ".join(f"{r:.2f}" for r in ec.ratio)
+                       + r"$, from keeping almost none of the effect to "
+                       r"overshooting it.")
+    else:
+        ec_sentence = ""
     lines += [r"\multicolumn{4}{l}{\emph{median over cells}} & " +
               f"${percell:.2f}$" + r" \\",
               r"\bottomrule", r"\end{tabular}",
@@ -271,9 +288,7 @@ def additivity():
               r"additivity. The bias runs against the claim, so the bundle "
               r"falling short of its parts survives it; its size does not "
               r"(Section~\ref{sec:results-composition}). "
-              r"\texttt{edge\_count} is the extreme case: there the bundle "
-              r"keeps almost nothing and in two arms moves against its "
-              r"parts.}",
+              + ec_sentence + "}",
               r"\label{tab:additivity}", r"\end{table}"]
     write("v3_additivity_table.tex", lines)
 
