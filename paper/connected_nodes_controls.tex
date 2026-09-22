@@ -1,0 +1,18 @@
+\begin{table}[t]\centering\small
+\begin{tabular}{lrrrr}
+\toprule
+& \multicolumn{2}{c}{vs \texttt{none}} & \multicolumn{2}{c}{vs \texttt{filler}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Cond. & $\Delta$ & $p$ & $\Delta$ & $p$ \\
+\midrule
+\texttt{components} & $\mathbf{+9.2}$ & $10^{-4}$ & $\mathbf{+21.8}$ & $10^{-4}$ \\
+\texttt{clustering} & $+1.0$ & $0.689$ & $+13.5$ & $10^{-4}$ \\
+\texttt{rwse} & $+0.0$ & $1.000$ & $+12.5$ & $10^{-4}$ \\
+\texttt{degree} & $-3.0$ & $0.188$ & $+9.5$ & $0.000$ \\
+\texttt{all} & $-2.8$ & $0.251$ & $+9.8$ & $10^{-4}$ \\
+\texttt{filler} & $-12.5$ & $10^{-4}$ & --- & --- \\
+\bottomrule
+\end{tabular}
+\caption{\texttt{connected\_nodes}, \texttt{qwen3-4b}, main sweep pooled ($n{=}400$), exact match, points. Every condition beats \texttt{filler}, because \texttt{filler} itself costs $12.5$ points; only \texttt{components} also beats \texttt{none}, and it adds $8$ tokens where \texttt{filler} adds $470$ (Figure~\ref{fig:design}). \textbf{Bold}: survives the global correction against both controls.}
+\label{tab:cncontrols}
+\end{table}
