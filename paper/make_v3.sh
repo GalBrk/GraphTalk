@@ -35,8 +35,20 @@ echo "== build the PDF =="
 
 echo
 echo "== page budget =="
-# The ACL body limit is 8 pages; Conclusion must land on page 8 or earlier.
-grep -o 'newlabel{sec:conclusion}{{[0-9.]*}{[0-9]*}' paper/talk_like_a_graph.v3.aux \
-    | sed 's/.*}{/conclusion starts on page /' || echo "  (label not found)"
+# The ACL body limit is 8 pages. The body ENDS where Limitations begins, so
+# that is the label to check -- grepping where the Conclusion *starts* reports
+# "page 8" and passes while the Conclusion itself spills onto page 9.
+body_end=$(grep -o 'newlabel{sec:limitations}{{[0-9.]*}{[0-9]*}' \
+    paper/talk_like_a_graph.v3.aux | sed 's/.*}{//')
+if [ -z "$body_end" ]; then
+    echo "  FAIL: sec:limitations label not found; page budget unchecked."
+    exit 1
+fi
+echo "  body ends on page $body_end (the Limitations heading)"
+if [ "$body_end" -gt 8 ]; then
+    echo "  FAIL: body runs past the 8-page ACL limit."
+    exit 1
+fi
+echo "  OK: within the 8-page body limit."
 
 echo "done."

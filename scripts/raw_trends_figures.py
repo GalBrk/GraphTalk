@@ -219,7 +219,7 @@ def fig_fix_break(eff):
 
 def fig_serial_position(sp):
   """Q4/M2: the answer is in the primer - does position in it matter?"""
-  show = ["none", "filler", "clustering", "degree", "all"]
+  show = ["none", "filler", "clustering", "rwse", "degree", "all"]
   arms = ["qwen3-4b", "qwen3-1.7b", "qwen3-1.7b-think"]
   fig, axes = _fig(1, 3, 13, 3.8)
   buckets = ["acc_0_9", "acc_10_19", "acc_20_29", "acc_30_39"]
@@ -231,7 +231,7 @@ def fig_serial_position(sp):
       if r.empty:
         continue
       y = [r.iloc[0][b] * 100 for b in buckets]
-      dashed = cond in ("none", "filler", "clustering")
+      dashed = cond in ("none", "filler")
       ax.plot(range(4), y, color=SERIES[cond], linewidth=2.2 if not dashed else 1.6,
               linestyle="--" if dashed else "-",
               marker="o", markersize=5, label=cond,
@@ -242,13 +242,14 @@ def fig_serial_position(sp):
   axes[0].set_ylabel("accuracy (%)", color=INK2, fontsize=9)
   axes[-1].legend(frameon=False, fontsize=8, labelcolor=INK2,
                   loc="center left", bbox_to_anchor=(1.02, 0.5))
-  # Honest caption: the controls are NOT perfectly flat (1.7b dips mid-list and
-  # recovers; filler on 1.7b-think slopes +12.1 pts), so the claim is about
-  # steepness and monotonicity, not about the controls having zero slope.
+  # The title states only what a paired test of the slope DIFFERENCE supports
+  # (4 of 24 contrasts on this task), not that answer-stating primers are
+  # uniquely steep: rwse is steeper than degree on qwen3-1.7b and never prints
+  # the queried degree, and the no-primer control is not flat either.
   fig.suptitle(
-      "node_degree: accuracy falls with the target's position in the primer -\n"
-      "steeply and monotonically when the primer states the answer (solid); "
-      "weakly or non-monotonically otherwise (dashed). Free y-axis per panel.",
+      "node_degree: accuracy by the target's position in the primer.\n"
+      "The no-primer control (dashed) is not flat, so the tested quantity is\n"
+      "the difference from it. Free y-axis per panel.",
       color=INK, fontsize=11, x=0.09, ha="left", y=1.12)
   _save(fig, "fig_serial_position.png")
 
