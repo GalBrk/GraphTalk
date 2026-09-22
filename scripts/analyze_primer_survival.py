@@ -9,7 +9,7 @@ join has been redone by hand in several places, each time with a slightly
 different rule for what "replicated" means.
 
 This script fixes the rule and writes it down. Four outputs, all in
-`analysis/tables/`:
+`csv2/sweep-large-graph/`:
 
   primer_effects_by_density.csv  every (arm, task, density, condition): `none`
                                  accuracy, condition accuracy, delta, the
@@ -193,15 +193,21 @@ def compare(hits, arm, design, task, control, treatment, density=None):
   }
 
 
-def with_bh(rows, key):
-  """Benjamini-Hochberg within each `key(row)` family, in place."""
+def with_bh(rows, key, field="bh_significant"):
+  """Benjamini-Hochberg within each `key(row)` family, in place.
+
+  Pass `key=lambda r: None` for one global family over every row, which is the
+  right scope for a claim that *selects* cells out of the whole table (a count,
+  or an "only these survive"). The per-family flag answers the narrower
+  question of whether a condition stands out among its own cell's siblings.
+  """
   families = collections.defaultdict(list)
   for i, row in enumerate(rows):
     families[key(row)].append(i)
   for indices in families.values():
     flags = significance.benjamini_hochberg([rows[i]["p_value"] for i in indices])
     for i, flag in zip(indices, flags):
-      rows[i]["bh_significant"] = bool(flag)
+      rows[i][field] = bool(flag)
   return rows
 
 
@@ -294,7 +300,7 @@ def main(argv=None):
   parser = argparse.ArgumentParser(description=__doc__,
                                    formatter_class=argparse.RawDescriptionHelpFormatter)
   parser.add_argument("--runs", default="runs")
-  parser.add_argument("--out-dir", default="analysis/tables")
+  parser.add_argument("--out-dir", default="csv2/sweep-large-graph")
   args = parser.parse_args(argv)
   os.makedirs(args.out_dir, exist_ok=True)
 
@@ -322,6 +328,7 @@ def main(argv=None):
               per_density.append(row)
 
   with_bh(per_density, lambda r: (r["arm"], r["design"], r["task"], r.get("density")))
+  with_bh(per_density, lambda r: None, field="bh_global")
   with_bh(pooled, lambda r: (r["arm"], r["design"], r["task"]))
 
   # The length-controlled comparison: every primer against `filler`. Every cell
@@ -347,6 +354,7 @@ def main(argv=None):
             row["contaminated"] = condition not in UNCONTAMINATED
             vs_filler.append(row)
   with_bh(vs_filler, lambda r: (r["arm"], r["design"], r["task"], r["density"]))
+  with_bh(vs_filler, lambda r: None, field="bh_global")
 
   # Both baselines side by side, with the length/content decomposition.
   by_none = {(r["arm"], r["design"], r["task"], r["density"], r["condition"]): r
@@ -384,9 +392,15 @@ def main(argv=None):
         "content_outweighs_length": net["delta_pp"] > 0,
         # BH carried over from the source tables; each term is corrected within
         # its own family, and re-correcting the joined row would double-count.
+        # The `_global` flags come from the same p-values corrected against
+        # every row of the source table instead: use those, not the per-family
+        # ones, for any statement that counts or ranks cells across the file.
         "length_cost_bh": length["bh_significant"],
         "content_gain_bh": content["bh_significant"],
         "net_bh": net["bh_significant"],
+        "length_cost_bh_global": length["bh_global"],
+        "content_gain_bh_global": content["bh_global"],
+        "net_bh_global": net["bh_global"],
     })
 
   print("writing tables ...")

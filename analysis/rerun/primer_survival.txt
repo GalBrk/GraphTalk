@@ -1,0 +1,40 @@
+loading and scoring run files ...
+  78539 rows scored, 5463 hit_cap rows dropped, 172 shard files
+writing tables ...
+  wrote analysis/rerun\primer_effects_by_density.csv (663 rows)
+  wrote analysis/rerun\primer_effects_pooled.csv (183 rows)
+  wrote analysis/rerun\primer_vs_filler.csv (554 rows)
+  wrote analysis/rerun\primer_decomposition.csv (550 rows)
+  wrote analysis/rerun\primer_survival.csv (93 rows)
+  wrote analysis/rerun\primer_survival_manifest.json
+
+verdicts (all conditions, both density bands):
+  plain  BOTH            7
+  plain  CONFLICT        4
+  plain  NEITHER        11
+  plain  NO_HEADROOM     8
+  plain  ONE            13
+  plain  UNTESTABLE      5
+  think  NEITHER         9
+  think  NO_HEADROOM    27
+  think  ONE             1
+  think  UNTESTABLE      8
+
+verdicts, uncontaminated primers only:
+  plain  BOTH            2
+  plain  CONFLICT        1
+  plain  NEITHER         7
+  plain  NO_HEADROOM     5
+  plain  ONE             7
+  plain  UNTESTABLE      2
+  think  NEITHER         7
+  think  NO_HEADROOM    14
+  think  ONE             1
+  think  UNTESTABLE      1
+
+length vs content, uncontaminated primers on mid-range cells:
+  arm                cells  length cost  content gain      net  (mean pp)
+  qwen3-1.7b            36         -7.8          +9.3     +1.4
+  qwen3-1.7b-think      21         -6.0          +5.0     -1.0
+  qwen3-4b              33         -2.3          +7.5     +5.2
+  qwen3-4b-think         0  (no mid-range cell -- untested arm)

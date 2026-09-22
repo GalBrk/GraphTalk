@@ -31,6 +31,21 @@ import analyze_baseline_law as abl
 CORPORA = ("densfull40", "densfull40hi")
 MARKERS = {"qwen3-1.7b": "o", "qwen3-1.7b-think": "s",
           "qwen3-4b": "^", "qwen3-4b-think": "D"}
+# Same edges as the binned table in the appendix, so the overlay and that
+# table bin the same way (the overlay is cross-fitted, the table is naive).
+BINS = (0.0, 0.25, 0.50, 0.75, 0.95, 1.0)
+
+
+def binned_means(cells):
+    """-> ([bin centre], [mean delta]) over BINS, skipping empty bins."""
+    xs, ys = [], []
+    for lo, hi in zip(BINS, BINS[1:]):
+        vals = [c["delta"] for c in cells
+                if lo <= c["baseline"] <= hi if c["baseline"] > lo or lo == 0.0]
+        if vals:
+            xs.append((lo + hi) / 2)
+            ys.append(sum(vals) / len(vals))
+    return xs, ys
 
 
 def route_only(cells):
@@ -78,13 +93,30 @@ def main():
             n_cells = len({(c["arm"], c["task"], c["density"], c["condition"])
                            for c in cells})
             title += f"\n$r$={r:+.2f}, {n_cells} cells"
+        # The trend is hard to read off ~500 overplotted points, so bin it.
+        bx, by = binned_means(cells)
+        ax.plot(bx, by, color="black", marker="o", markersize=3.4,
+                markerfacecolor="white", markeredgewidth=0.9, linewidth=1.1,
+                linestyle=":", zorder=5)
         ax.axhline(0, color="#bbbbbb", linewidth=0.7, zorder=0)
         ax.set_title(title, fontsize=6.5)
-        ax.set_xlabel("cross-fitted baseline", fontsize=6)
         ax.tick_params(labelsize=5.5)
         ax.grid(alpha=0.25, linewidth=0.5)
     ax_r.set_ylabel(r"paired $\Delta$ (points)", fontsize=6)
-    fig.tight_layout(rect=(0, 0.1, 1, 1))
+
+    # The paper's headline estimate, read from the file that computes it.
+    with open("review_checks.json", encoding="utf-8") as fh:
+        inter = json.load(fh)["interaction"]["crossfit_both"]["interaction"]
+    lo, hi = inter["ci"]
+    ax_r.text(0.04, 0.04,
+              "route $\\times$ baseline\n"
+              f"{inter['estimate']:+.1f} pp [{lo:+.1f}, {hi:+.1f}]",
+              transform=ax_r.transAxes, fontsize=5.5, va="bottom", ha="left",
+              bbox=dict(boxstyle="round,pad=0.25", facecolor="white",
+                        edgecolor="#cccccc", linewidth=0.5))
+
+    fig.tight_layout(rect=(0, 0.14, 1, 1))
+    fig.supxlabel("cross-fitted baseline", fontsize=6, y=0.115)
     # Below the panels: the route panel is crowded at the top.
     fig.legend(*ax_r.get_legend_handles_labels(), fontsize=5.5, ncol=4,
                loc="lower center", frameon=False, handletextpad=0.1,

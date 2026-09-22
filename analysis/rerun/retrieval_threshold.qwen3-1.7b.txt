@@ -1,0 +1,15 @@
+retrieval probe: task=node_degree  ~tokens = chars/4 (approx, see module docstring)
+
+==========================================================================
+qwen3-1.7b
+==========================================================================
+     k    ~tok   pooled     edge   middle     gap
+   226    1309    0.922    0.955    0.855  +0.100
+   452    2637    0.565    0.718    0.260  +0.458
+   905    5299    0.432    0.425    0.445  -0.020
+
+  reading_limit (pooled accuracy >= 0.9): ~1309 tokens (k=226)
+  middle_collapse_onset (edge-middle gap > 0.15): ~2637 tokens (k=452)
+  --reading-limits qwen3-1.7b=1309
+
+wrote 18 rows -> analysis/rerun/retrieval_threshold.qwen3-1.7b.csv

@@ -1,0 +1,100 @@
+==============================================================================
+Main sweep: accuracy (exact) vs `none`, pooled across task + style
+
+  qwen3-1.7b [excluded]
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    clustering          300    -0.010      [-0.033, +0.012]    0.4742  no
+    components          300    -0.003      [-0.022, +0.015]    0.8585  no
+    degree              300    +0.012      [-0.017, +0.038]    0.4739  no
+    filler              300    -0.033      [-0.055, -0.013]    0.0031  yes
+    rwse                300    -0.022      [-0.042, -0.002]    0.0615  no
+    all                 300    +0.047      [+0.018, +0.075]    0.0025  yes
+
+  qwen3-4b [excluded]
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    clustering          300    +0.083      [+0.053, +0.115]    0.0000  yes
+    components          300    -0.022      [-0.050, +0.005]    0.1620  no
+    degree              300    +0.030      [-0.012, +0.072]    0.1785  no
+    filler              300    -0.022      [-0.050, +0.007]    0.1699  no
+    rwse                300    +0.035      [+0.005, +0.065]    0.0324  no
+    all                 300    -0.118      [-0.157, -0.078]    0.0000  yes
+
+  pooled across all models [excluded]
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    clustering          600    +0.037      [+0.018, +0.057]    0.0004  yes
+    components          600    -0.013      [-0.029, +0.004]    0.1723  no
+    degree              600    +0.021      [-0.004, +0.046]    0.1140  no
+    filler              600    -0.028      [-0.045, -0.009]    0.0028  yes
+    rwse                600    +0.007      [-0.012, +0.025]    0.5422  no
+    all                 600    -0.036      [-0.061, -0.010]    0.0058  yes
+
+==============================================================================
+Main sweep: accuracy (exact) vs `none`, per task -- see _report_exact_per_task's docstring for why this is a separate test from the pooled one above, not just a redundant view of it
+
+  qwen3-1.7b / edge_existence (exact, per-task)
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    clustering          300    +0.013      [-0.010, +0.040]    0.4243  no
+    components          300    -0.010    n/a (3 discordant)    0.2483  no
+    degree              300    +0.020      [-0.013, +0.053]    0.3087  no
+    filler              300    -0.013    n/a (4 discordant)    0.1265  no
+    rwse                300    +0.010      [-0.010, +0.033]    0.5493  no
+    all                 300    +0.067      [+0.037, +0.100]    0.0000  yes
+
+  qwen3-1.7b / node_degree (exact, per-task)
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    clustering          300    -0.033      [-0.073, +0.007]    0.1472  no
+    components          300    +0.003      [-0.033, +0.040]    1.0000  no
+    degree              300    +0.003      [-0.043, +0.050]    1.0000  no
+    filler              300    -0.053      [-0.093, -0.013]    0.0119  yes
+    rwse                300    -0.053      [-0.090, -0.017]    0.0075  yes
+    all                 300    +0.027      [-0.023, +0.073]    0.3421  no
+
+  qwen3-4b / edge_existence (exact, per-task)
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    clustering          300    +0.053      [+0.017, +0.093]    0.0114  yes
+    components          300    -0.033      [-0.067, +0.000]    0.0866  no
+    degree              300    -0.033      [-0.067, +0.000]    0.0850  no
+    filler              300    -0.063      [-0.097, -0.033]    0.0001  yes
+    rwse                300    -0.007      [-0.047, +0.033]    0.8692  no
+    all                 300    -0.023      [-0.060, +0.013]    0.2842  no
+
+  qwen3-4b / node_degree (exact, per-task)
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    clustering          300    +0.113      [+0.067, +0.163]    0.0001  yes
+    components          300    -0.010      [-0.053, +0.033]    0.7642  no
+    degree              300    +0.093      [+0.017, +0.170]    0.0203  yes
+    filler              300    +0.020      [-0.027, +0.067]    0.4862  no
+    rwse                300    +0.077      [+0.027, +0.123]    0.0032  yes
+    all                 300    -0.213      [-0.283, -0.143]    0.0000  yes
+
+==============================================================================
+Thinking arm: non-termination rate vs `none`, pooled across task
+
+  qwen3-1.7b [not_applicable]
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    clustering          300    -0.007    n/a (4 discordant)    0.1307  no
+    components          300    +0.002    n/a (9 discordant)    1.0000  no
+    degree              300    +0.045      [+0.027, +0.065]    0.0001  yes
+    filler              300    -0.005    n/a (7 discordant)    0.4599  no
+    rwse                300    -0.007    n/a (6 discordant)    0.2184  no
+    all                 300    +0.000    n/a (8 discordant)    1.0000  no
+
+  qwen3-4b [not_applicable]
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    clustering          300    +0.000    n/a (2 discordant)    1.0000  no
+    components          300    +0.002    n/a (3 discordant)    1.0000  no
+    degree              300    +0.002    n/a (3 discordant)    1.0000  no
+    filler              300    -0.002    n/a (1 discordant)    1.0000  no
+    rwse                300    +0.003    n/a (4 discordant)    0.6255  no
+    all                 300    +0.003    n/a (4 discordant)    0.6184  no
+
+  pooled across all models [not_applicable]
+    condition    n_clusters     delta                95% CI  p (perm)  BH-sig
+    clustering          600    -0.003    n/a (6 discordant)    0.2157  no
+    components          600    +0.002      [-0.004, +0.007]    0.7722  no
+    degree              600    +0.023      [+0.013, +0.034]    0.0000  yes
+    filler              600    -0.003    n/a (8 discordant)    0.2931  no
+    rwse                600    -0.002      [-0.007, +0.003]    0.7534  no
+    all                 600    +0.002      [-0.004, +0.007]    0.7766  no
+
+wrote 60 rows to analysis/rerun/significance.densfull40hi.csv

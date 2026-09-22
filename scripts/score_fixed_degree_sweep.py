@@ -18,7 +18,12 @@ cell in this design even though density alone is not.
 
   PYTHONPATH=. python scripts/score_fixed_degree_sweep.py \
       --responses "runs/qwen3-1.7b.degfixdeg.shard*of5.jsonl" \
-                  "runs/qwen3-1.7b.degfixdegfill.shard*of5.jsonl"
+                  "runs/qwen3-1.7b.degfixdegfill.shard*of5.jsonl"       --csv csv2/sweep-large-graph/degfixdeg.1.7b.csv
+
+`--csv` writes the same paired tests the report prints, one row per
+(family, cell, condition). `family` is `pooled`, `mean_degree_block` or
+`per_cell`; each is BH-corrected on its own, so `bh_significant` only
+compares within a family.
 
 `hit_cap` rows are dropped rather than scored zero, for the same reason
 `score_density_sweep.py` drops them: a truncated generation is a budget failure,
@@ -27,6 +32,7 @@ not a wrong answer. The count dropped is reported per cell.
 
 import argparse
 import collections
+import csv
 import glob
 import json
 
@@ -127,7 +133,7 @@ def paired_arms(paired, cells, condition, control=CONTROL):
   return control_hits, treatment_hits
 
 
-def report(summary, control=CONTROL) -> None:
+def report(summary, control=CONTROL, csv_path=None) -> None:
   cells, paired, golds = summary["cells"], summary["paired"], summary["golds"]
   cell_keys = sorted({c for c, _ in cells if c is not None},
                      key=lambda c: (mean_degree(c), c[0]))
@@ -172,16 +178,27 @@ def report(summary, control=CONTROL) -> None:
       out.append((label, condition, len(control_hits), test, delta))
     return out
 
-  def show(rows, reject) -> None:
+  csv_rows = []
+
+  def show(rows, reject, family) -> None:
+    # `family` matters: each of the three groupings below gets its own
+    # Benjamini-Hochberg correction, so `bh_significant` is only comparable
+    # within a family -- the same cell can survive per-block and not pooled.
     for (label, condition, n, test, delta), keep in zip(rows, reject):
       print(f"  {label:<26} {condition:>11} - {control}: n={n:>5} "
             f"win {test['c']:>4} lose {test['b']:>4} delta {delta:+.4f} "
             f"p={test['p_value']:.4f}{'  *' if keep else ''}")
+      csv_rows.append({
+          "family": family, "cell": label, "condition": condition,
+          "control": control, "n": n, "win": test["c"], "lose": test["b"],
+          "delta": delta, "p_value": test["p_value"], "bh_significant": keep,
+      })
 
   print(f"\npooled across every cell, paired vs {control!r} "
         "(exact McNemar on rows sharing an instance_id):")
   pooled = run(None, "POOLED")
-  show(pooled, significance.benjamini_hochberg([t["p_value"] for *_, t, _ in pooled]))
+  show(pooled, significance.benjamini_hochberg([t["p_value"] for *_, t, _ in pooled]),
+       "pooled")
 
   print("\npooled per mean-degree block:")
   blocks = sorted({mean_degree(c) for c in cell_keys})
@@ -189,7 +206,8 @@ def report(summary, control=CONTROL) -> None:
   for d in blocks:
     block_cells = {c for c in cell_keys if mean_degree(c) == d}
     by_block += run(block_cells, f"d~{d} pooled")
-  show(by_block, significance.benjamini_hochberg([t["p_value"] for *_, t, _ in by_block]))
+  show(by_block, significance.benjamini_hochberg([t["p_value"] for *_, t, _ in by_block]),
+       "mean_degree_block")
 
   print("\nper cell (descriptive -- these are a family, correct before "
         "quoting any one):")
@@ -197,7 +215,8 @@ def report(summary, control=CONTROL) -> None:
   for cell in cell_keys:
     per_cell += run({cell}, f"size={cell[0]} p={cell[1]:g} (d~{mean_degree(cell)})")
   show(per_cell,
-       significance.benjamini_hochberg([t["p_value"] for *_, t, _ in per_cell]))
+       significance.benjamini_hochberg([t["p_value"] for *_, t, _ in per_cell]),
+       "per_cell")
   if per_cell:
     print("  (* = survives Benjamini-Hochberg at q=0.05 within its own family)")
 
@@ -219,14 +238,26 @@ def report(summary, control=CONTROL) -> None:
             f"ceiling {ceiling_mean:.3f}  none {none_mean:.3f}  "
             f"clustering {clustering_mean:.3f}  captured {captured:+.1%}")
 
+  if csv_path and csv_rows:
+    with open(csv_path, "w", newline="", encoding="utf-8") as handle:
+      writer = csv.DictWriter(handle, fieldnames=list(csv_rows[0].keys()))
+      writer.writeheader()
+      writer.writerows(csv_rows)
+    print()
+    print("wrote " + csv_path)
+
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--responses", nargs="+", required=True)
   parser.add_argument("--control", default=CONTROL)
+  parser.add_argument("--csv", default=None,
+                      help="also write the paired tests here, one row per "
+                           "(family, cell, condition)")
   args = parser.parse_args()
 
-  report(summarize(load(args.responses)), control=args.control)
+  report(summarize(load(args.responses)), control=args.control,
+         csv_path=args.csv)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,24 @@
+classifying cells from refit bars: shortcuts_n40_flat.json
+wrote 20 rows to analysis/rerun/screen.densfull40hi.csv
+
+9 cell(s) with p <= 0.1, split by shortcut_flag (bars: shortcuts_n40_flat.json):
+
+shortcut_flag == 'none' -- real graph-reasoning candidates (6):
+
+  model         condition   task                 n    delta        p  shortcut_flag  ceiling(treat/none)
+  qwen3-4b      filler      edge_existence     300   -0.063   0.0001  none           0.74/0.74
+  qwen3-4b      clustering  node_degree        300   +0.113   0.0001  none           0.14/0.14
+  qwen3-4b      clustering  edge_existence     300   +0.053   0.0113  none           0.73/0.74
+  qwen3-1.7b    filler      node_degree        300   -0.053   0.0124  none           0.14/0.14
+  qwen3-4b      components  edge_existence     300   -0.033   0.0869  none           0.74/0.74
+  qwen3-4b      degree      edge_existence     300   -0.033   0.0890  none           0.75/0.74
+
+shortcut_flag in ('shortcut', 'partial') -- arithmetic/lookup execution-reliability candidates, NOT graph-reasoning evidence (3):
+
+  model         condition   task                 n    delta        p  shortcut_flag  ceiling(treat/none)
+  qwen3-4b      rwse        node_degree        300   +0.077   0.0030  partial        0.21/0.14
+  qwen3-1.7b    rwse        node_degree        300   -0.053   0.0081  partial        0.21/0.14
+  qwen3-4b      degree      node_degree        300   +0.093   0.0191  shortcut       1.00/0.14
+
+shortcut_flag == 'degenerate' -- the CONTROL's own bar is >= 0.99, so a graph-blind program already scores ~100% with no primer; not evidence either way (0):
+

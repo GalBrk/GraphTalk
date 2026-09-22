@@ -69,8 +69,8 @@ they disagree.
 
 | Number | Source |
 |---|---|
-| 29 content / 21 length / 11 net BH-significant of 90 cells | `analysis/tables/primer_decomposition.csv` (`scripts/analyze_primer_survival.py`) |
-| `filler` hurts `connected_nodes` and `edge_existence` in both plain arms | `paper/main_table.tex`; replication across sizes from `analysis/tables/primer_survival.csv` |
+| 29 content / 21 length / 11 net BH-significant of 90 cells | `csv2/sweep-large-graph/primer_decomposition.csv` (`scripts/analyze_primer_survival.py`), rows with `mid_range` and not `contaminated`, counted by sign of `*_pp` among `*_bh` survivors |
+| `filler` hurts `connected_nodes` and `edge_existence` in both plain arms | `paper/main_table.tex`; replication across sizes from `csv2/sweep-large-graph/primer_survival.csv` |
 | `rwse` costs 8b 13.3 points of `edge_count` (36.7 vs 50.0, p<1e-3); 1.7b 4.6 points (p=0.036) | `analysis/tables/published_split.ec500.txt` |
 | non-termination 15.8→19.2% (p=2.4e-6); outside `edge_count` 2.6→6.9% (p=9.2e-11), 130 new failures | `analysis/tables/nontermination.densfull40.txt` (`scripts/analyze_nontermination.py`) |
 
