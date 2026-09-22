@@ -145,7 +145,7 @@ score per (task, condition) is what the primer alone determines. We call a
 condition \emph{answer-carrying} on a task when that bar is at least $0.85$;
 the bars are bimodal --- $18$ of the $42$ (task, condition) bars sit at
 exactly $1.000$ and the highest of the rest is $0.746$ --- so any threshold
-between them gives the same split.
+between them gives the same split (Appendix Table~\ref{tab:shortcut}).
 
 \subsection{Corpus, arms and measurement}
 \label{sec:setup}
@@ -161,7 +161,7 @@ six GraphQA tasks and seven conditions, extended on \texttt{node\_degree} and
 sweep ran with an $8{,}192$-token budget on every arm; the high-density
 extension ran at $2{,}048$ on the plain arms and $8{,}192$ on the thinking
 arms, so truncation rates are not comparable across those two bands and are
-reported separately.
+reported separately (Appendix Table~\ref{tab:hitcap}).
 
 Three measurement decisions change what the numbers mean. \emph{Exact match}
 is the outcome for every task; on \texttt{connected\_nodes} the usual set-F1
@@ -175,7 +175,8 @@ value, so a pair is dropped when either side truncated --- the convention least
 favourable to the primer --- and rates are reported alongside.
 \texttt{node\_count} and \texttt{cycle\_check} have a constant gold answer at
 $n{=}40$ and hence a majority-class baseline of $1.000$; they are reported in
-the appendix but excluded from every summary over tasks. Differences are paired
+Appendix Table~\ref{tab:pertask-nodecount} onward but excluded from every
+summary over tasks. Differences are paired
 on the shared graph, tested with exact McNemar \citep{mcnemar1947note} and
 corrected with Benjamini--Hochberg within each (arm, task) family. Extraction
 is not a confound: $99.84\%$ of the $84{,}000$ generations parse, and $99\%$
@@ -198,7 +199,7 @@ tasks, $172$ --- $53\%$ --- sit above $0.90$ accuracy without any primer and
 cannot show a gain by construction. Table~\ref{tab:window} bins every cell by
 that baseline and splits it by whether the primer determines the answer. Both
 columns show the same shape: nothing at the top of the range, and whatever
-movement exists concentrated between roughly $0.25$ and $0.90$.
+movement exists concentrated between roughly $0.25$ and $0.90$; Appendix Table~\ref{tab:headroom} counts the same effects by significance.
 
 The two columns differ in size, not in shape. Inside that window a primer
 that carries the answer is worth about $+16$ points on average; genuine side
@@ -220,7 +221,7 @@ primer is best twice --- \texttt{all} is the best of the five on
 \texttt{degree} leads on \texttt{qwen3-1.7b-think} ($+12.3$),
 \texttt{clustering} on \texttt{qwen3-4b} ($+7.3$) and \texttt{components} on
 \texttt{qwen3-4b-think} ($+27.7$). A primer selected on one arm does not
-transfer to another.
+transfer to another (Appendix Figure~\ref{fig:heatmap}).
 
 \paragraph{Leakage is real but far from complete.} Where the graph-blind
 solver scores $1.00$ --- the primer determines the answer outright --- the
@@ -281,7 +282,7 @@ responses longer'' nor its converse holds. On
 \texttt{qwen3-1.7b}/\texttt{edge\_existence} the same primers make the model
 write more ($206$ tokens under \texttt{none} against $352$ under
 \texttt{all}); on \texttt{qwen3-4b}/\texttt{connected\_nodes} \texttt{filler}
-alone cuts the median from $233$ to $94$.
+alone cuts the median from $233$ to $94$ (Appendix Table~\ref{tab:behaviour}).
 
 Beyond $p{=}.50$ on \texttt{edge\_existence}, \texttt{qwen3-1.7b} stops
 reasoning altogether and answers ``yes'' to $98$--$99\%$ of pairs. Neither
@@ -291,7 +292,7 @@ producing it, and on the same graphs the model keeps working on the tasks
 whose answer is a number rather than a boolean. What the two-valued answer
 format permits is a cheap guess that is right most of the time --- and raw
 accuracy rewards it while balanced accuracy does not
-(Figure~\ref{fig:balanced}).
+(Figure~\ref{fig:balanced}; Appendix Figure~\ref{fig:capitulation}).
 
 \subsection{Position and composition}
 \label{sec:results-limits}
@@ -320,7 +321,7 @@ the observed $0.50$ ($p<0.001$).
 On the $19$ cells where no single part dominates --- the only cells that
 separate dilution from selection --- the ratio to the \emph{sum} is $0.52$
 $[0.40, 0.71]$ while the ratio to the \emph{largest single part} is $1.00$
-$[0.74, 1.20]$. The bundle delivers what its best component delivers.
+$[0.74, 1.20]$. The bundle delivers what its best component delivers (Appendix Table~\ref{tab:additivity}).
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -438,7 +439,6 @@ pairs while $66$--$85\%$ of them really are edges.}
 
 \input{v3_headroom_table.tex}
 
-\input{v3_relevance_table.tex}
 
 \begin{figure}[htbp]
 \centering
@@ -483,36 +483,10 @@ $1.00$ entries reflect a constant gold answer, not primer content.}
 \label{tab:shortcut}
 \end{table}
 
-\input{degfixdeg_table.tex}
 
 \subsection{Robustness analyses}
 
-\input{published_ceiling.tex}
 
-\begin{table}[htbp]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3.2pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lrrrrrrr}
-\toprule
-Task & none & comp. & clust. & rwse & degree & filler & all \\
-\midrule
-\texttt{node\_count}      & .064 & .076 & \textbf{1.00} & \textbf{1.00} & \textbf{1.00} & \textbf{1.00} & \textbf{1.00} \\
-\texttt{edge\_count}      & .018 & .018 & .148 & .018 & \textbf{1.00} & .018 & \textbf{1.00} \\
-\texttt{node\_degree}     & .082 & .082 & .082 & .616 & \textbf{1.00} & .082 & \textbf{1.00} \\
-\texttt{connected\_nodes} & .082 & .082 & .082 & .082 & .208 & .082 & .352 \\
-\texttt{edge\_existence}  & .498 & .498 & .720 & .642 & .794 & .498 & .794 \\
-\texttt{cycle\_check}     & .832 & \textbf{1.00} & .832 & .832 & .946 & .832 & .946 \\
-\bottomrule
-\end{tabular}}
-\caption{Shortcut bars on $500$ graphs from the published $5$--$19$-node
-generator, used for the screened arms. At $n{=}40$
-(Table~\ref{tab:shortcut}) the \texttt{edge\_existence}/\texttt{none} bar
-rises to $0.735$ through class imbalance, and \texttt{degree}'s gap over
-\texttt{none} on that task falls from $+0.296$ to $+0.011$.}
-\label{tab:shortcut-published}
-\end{table}
 
 \begin{table}[htbp]
 \centering
@@ -536,186 +510,16 @@ density. \textbf{Bold}: above $50\%$.}
 \label{tab:hitcap}
 \end{table}
 
-\begin{table}[htbp]
-\centering
-\small
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{llrr}
-\toprule
-Arm & Cond. & hit rate & false alarm \\
-\midrule
-\multirow{3}{*}{qwen3-1.7b} & none       & 100.0\% & 40.3\% \\
-                            & filler     & 100.0\% & 61.8\% \\
-                            & clustering & 100.0\% & 35.2\% \\
-\midrule
-\multirow{3}{*}{qwen3-4b}   & none       & 99.1\%  & 12.6\% \\
-                            & filler     & 100.0\% & 22.5\% \\
-                            & clustering & 100.0\% & 7.5\% \\
-\bottomrule
-\end{tabular}
-\caption{\texttt{edge\_existence}, pooled over the four main-sweep
-densities: hit rate (correct on gold ``yes'') and false-alarm rate (``yes''
-on gold ``no''). Accuracy changes almost entirely through the false-alarm
-rate.}
-\label{tab:booleanbias}
-\end{table}
-
-\begin{table}[htbp]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lrrrr}
-\toprule
-& \multicolumn{2}{c}{\texttt{qwen3-1.7b}} & \multicolumn{2}{c}{\texttt{qwen3-4b}} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}
-Cond. & $\Delta d'$ & $\Delta c$ & $\Delta d'$ & $\Delta c$ \\
-\midrule
-components & $-0.36$ $[-0.56, -0.21]$ & $-0.18$ & $+0.07$ $[-0.24, +0.33]$ & $-0.10$ \\
-clustering & $+0.21$ $[+0.03, +0.41]$ & $+0.11$ & $+0.43$ $[+0.12, +0.75]$ & $+0.08$ \\
-rwse       & $+0.07$ $[-0.19, +0.43]$ & $+0.28$ & $-0.38$ $[-0.68, -0.15]$ & $-0.32$ \\
-degree     & $+0.15$ $[-0.05, +0.41]$ & $+0.19$ & $-0.04$ $[-0.33, +0.21]$ & $-0.15$ \\
-filler     & $-0.93$ $[-1.16, -0.71]$ & $-0.46$ & $-0.25$ $[-0.54, +0.00]$ & $-0.25$ \\
-all        & $+0.55$ $[+0.35, +0.77]$ & $+0.27$ & $-0.36$ $[-0.71, -0.11]$ & $-0.31$ \\
-\bottomrule
-\end{tabular}}
-\caption{\texttt{edge\_existence}, main sweep: change in sensitivity $d'$
-and criterion $c$ against \texttt{none}, averaged over the four densities
-(log-linear correction; $95\%$ bootstrap CI for $\Delta d'$). With the hit
-rate at ceiling, $d'$ and $c$ are not separately identifiable.}
-\label{tab:sdt}
-\end{table}
 
 
 
 
-\begin{table}[htbp]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{2pt}
-\begin{tabular}{lrrcr}
-\toprule
-Comparison & $\Delta$ & $n$ & density & $p$ \\
-\midrule
-clust.\ vs.\ none (main)    & $+3.0$ & $400$  & $.10$--$.50$ & $0.26$ \\
-clust.\ vs.\ none                & $+1.9$ & $2800$ & $.10$--$.85$ & $0.022$ \\
-filler vs.\ none                 & $-2.4$ & $2800$ & $.10$--$.85$ & $0.0013$ \\
-clust.\ vs.\ filler              & $+4.3$ & $2800$ & $.10$--$.85$ & $2.4{\times}10^{-8}$ \\
-clust.\ vs.\ none                & $+7.5$ & $400$  & $.35$ & $0.0089$ \\
-clust.\ vs.\ none (new seed) & $+4.2$ & $1600$ & $.10$--$.50$ & $0.00055$ \\
-\bottomrule
-\end{tabular}
-\caption{\texttt{qwen3-1.7b}, \texttt{node\_degree}. All rows except the
-first come from the dedicated $400$-graph-per-density sweep; the last row
-uses newly seeded graphs. Per-density values are in Appendix
-Table~\ref{tab:headline-density}.}
-\label{tab:headline}
-\end{table}
 
-\begin{table}[htbp]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrr}
-\toprule
-$p$ & clust.$-$none & filler$-$none & clust.$-$filler \\
-\midrule
-$.10$ & $+0.3$ & $+3.0^{*}$ & $-2.8^{*}$ \\
-$.20$ & $+3.3$ & $+0.5$ & $+2.8$ \\
-$.35$ & $+7.5^{*}$ & $+1.0$ & $+6.5^{*}$ \\
-$.50$ & $+4.3$ & $-2.0$ & $+6.3^{*}$ \\
-$.65$ & $-2.0$ & $-9.5^{*}$ & $+7.5^{*}$ \\
-$.75$ & $+0.5$ & $-6.3^{*}$ & $+6.8^{*}$ \\
-$.85$ & $-0.5$ & $-3.5^{*}$ & $+3.0^{*}$ \\
-\bottomrule
-\end{tabular}
-\caption{\texttt{qwen3-1.7b}, \texttt{node\_degree}, dedicated sweep, $400$
-graphs per density. $^{*}$: McNemar $p{<}0.05$ (uncorrected).}
-\label{tab:headline-density}
-\end{table}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\columnwidth]{rewiring.pdf}
-\caption{Rewiring: \texttt{node\_degree} accuracy by triangle level
-($200$ graphs per level; degree sequence and prompt length fixed; mean
-clustering $0.01$, $0.31$, $0.73$).}
-\label{fig:rewiring}
-\end{figure}
 
-\begin{table}[htbp]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{lrrr}
-\toprule
-Arm & \texttt{low} & \texttt{base} & \texttt{high} \\
-\midrule
-predicted shift & $-11.5$ & $0.0$ & $+16.7$ \\
-\texttt{qwen3-1.7b}       & $+0.03$ & $+0.28$ & $-0.02$ \\
-\texttt{qwen3-1.7b-think} & $+0.01$ & $+0.04$ & $+0.01$ \\
-\texttt{qwen35-2b}        & $-0.29$ & $-0.26$ & $-0.16$ \\
-\bottomrule
-\end{tabular}
-\caption{Density-prior test on the rewiring corpus: mean paired shift in
-signed \texttt{node\_degree} error, \texttt{clustering} minus \texttt{none}
-(errors clipped at $\pm20$, $200$ graphs per level). ``Predicted'' is the
-shift if answers moved fully to $\bar{C}\,(n-1)$.}
-\label{tab:prior}
-\end{table}
 
-\begin{table}[htbp]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lrrrrrr}
-\toprule
-& \multicolumn{3}{c}{1.7B, acc.\ under \texttt{none} (\%)} & \multicolumn{3}{c}{4B, acc.\ under \texttt{none} (\%)} \\
-\cmidrule(lr){2-4}\cmidrule(lr){5-7}
-Task & plain & think & think@2048 & plain & think & think@2048 \\
-\midrule
-\texttt{connected\_nodes} & $72.5$ & $78.7$ & $67.2$ & $86.0$ & $95.5$ & $89.0$ \\
-\texttt{cycle\_check}     & $90.7$ & $97.0$ & $38.0$ & $99.0$ & $99.3$ & $62.0$ \\
-\texttt{edge\_count}      & $1.3$  & $15.8$ & $0.0$  & $2.0$  & $20.0$ & $0.0$ \\
-\texttt{edge\_existence}  & $70.5$ & $99.0$ & $97.8$ & $90.5$ & $99.8$ & $99.8$ \\
-\texttt{node\_count}      & $31.5$ & $91.0$ & $86.0$ & $90.2$ & $99.5$ & $94.8$ \\
-\texttt{node\_degree}     & $60.5$ & $76.2$ & $67.7$ & $99.3$ & $97.0$ & $91.2$ \\
-\bottomrule
-\end{tabular}}
-\caption{Budget-matched comparison. Every arm ran at $8{,}192$ tokens;
-``think'' is that run and ``think@2048'' rescores it at $2{,}048$, which is
-exact under greedy decoding. The plain columns are the $8{,}192$ run;
-rescoring them at $2{,}048$ moves them by at most $0.2$ points, because the
-plain arms exceed that budget on almost no terminating generation, so the
-comparison is matched in effect. Truncated
-generations are scored incorrect here, so values differ from the
-dropped-pair convention of Table~\ref{tab:main}.}
-\label{tab:budget}
-\end{table}
 
-\begin{table}[htbp]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{2.5pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{llrrrrrrr}
-\toprule
-Arm & Task & none & comp. & clust. & rwse & degree & filler & all \\
-\midrule
-\multirow{3}{*}{1.7B} & \texttt{node\_count}  & 0.69 & 0.47 & 0.01 & 0.67 & 0.62 & 0.29 & 0.22 \\
- & \texttt{edge\_count}  & 133.4 & 98.1 & 105.7 & 79.0 & 47.7 & 181.2 & 94.2 \\
- & \texttt{node\_degree} & 0.94 & 0.91 & 0.78 & 0.91 & 0.67 & 1.27 & 0.91 \\
-\midrule
-\multirow{3}{*}{4B} & \texttt{node\_count}  & 0.10 & 0.01 & 0.01 & 0.01 & 0.02 & 0.01 & 0.00 \\
- & \texttt{edge\_count}  & 39.2 & 40.1 & 43.4 & 56.0 & 40.4 & 29.3 & 28.1 \\
- & \texttt{node\_degree} & 0.02 & 0.01 & 0.02 & 0.05 & 0.14 & 0.02 & 0.49 \\
-\bottomrule
-\end{tabular}}
-\caption{Mean absolute error on the integer tasks, plain arms, main sweep
-(non-truncated rows).}
-\label{tab:mae}
-\end{table}
+
 
 \subsection{Per-cell results}
 \label{sec:appendix-percell}
