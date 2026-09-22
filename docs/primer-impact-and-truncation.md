@@ -6,7 +6,7 @@ old undifferentiated `qwen3-1.7b[-think].n{20,40,80}.jsonl` files are superseded
 duplicates of the `node_degree_n*` files and excluded to avoid double-counting).
 Scored directly from the raw per-file records with `graphtalk.scoring.score_one`
 (the `primary` metric — accuracy for 6 tasks, F1 for `connected_nodes`), not from
-`analysis/sweep_frame.qwen3-1.7b.csv`, because `instance_id` doesn't encode graph
+`csv2/sweep-small-graph/sweep_frame.qwen3-1.7b.csv`, because `instance_id` doesn't encode graph
 size and a pooled frame can't otherwise be split by `n`.
 
 **Complete.** Every task/model/size cell below has `n=30` per condition — the two

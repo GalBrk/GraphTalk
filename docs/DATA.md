@@ -270,7 +270,7 @@ sentence like *"None of the nodes are directly connected, but node 5 is
 adjacent"* is not misread as the empty-set answer.
 
 Rescoring `runs/*.jsonl` with the fix and rebuilding
-`analysis/sweep_frame.csv` flipped **8 rows** from `wrong` to `correct`, all
+`csv2/sweep-small-graph/sweep_frame.csv` flipped **8 rows** from `wrong` to `correct`, all
 `connected_nodes/2`, spanning 7 (model, condition, style) combinations on
 `gemma4-12b` plus one on `gemma4-e4b-think`. Confirmed against the previous
 committed frame that no other task and no non-terminating row changed. The
@@ -404,7 +404,7 @@ conclusion is stated last, don't pool across the whole response" rule
 `_extract_node_list` already applies for `No nodes` (see the section above).
 
 With both guards in place, rescoring `runs/*.jsonl` and rebuilding
-`analysis/sweep_frame.csv` flipped exactly the predicted **10 rows** from
+`csv2/sweep-small-graph/sweep_frame.csv` flipped exactly the predicted **10 rows** from
 `unparsed` to `correct`, and confirmed against the previous frame that no
 other task, no non-terminating row, and no row that already had a non-null
 `predicted` value changed. The two refusal rows correctly remain `unparsed`.
@@ -486,7 +486,7 @@ coincidence. The fix correctly reads what the model actually said; the row
 newly (and correctly) counts as a model error, not an extraction bug.
 
 Rescoring `runs/*.jsonl` with the shipped version and rebuilding
-`analysis/sweep_frame.csv` flipped **507 rows** from `wrong`/`unparsed` to
+`csv2/sweep-small-graph/sweep_frame.csv` flipped **507 rows** from `wrong`/`unparsed` to
 `correct` (480 `node_degree`, 28 `node_count`, 1 `edge_count`) — far more
 than the ~13-row sample predicted, because the bug wasn't specific to the
 sampled rows; it affected this shape everywhere it occurred in the tracked
@@ -558,7 +558,7 @@ needs the `analysis` extra (`pandas`) installed:
 ```bash
 python scripts/build_sweep_frame.py --responses $(ls runs/*.jsonl | grep -v smoke) \
     --shortcuts shortcuts.json --truncated-keys analysis/truncated_keys.json
-python scripts/check_significance.py --frame analysis/sweep_frame.csv --out significance.csv
+python scripts/check_significance.py --frame csv2/sweep-small-graph/sweep_frame.csv --out significance.csv
 ```
 
 `--count` takes a *prefix* of each split, so a larger value is a strict superset:

@@ -41,7 +41,7 @@ correlated with its components and not independent evidence, matching
 `check_significance.py`'s own `_is_derived_condition` policy.
 
   PYTHONPATH=. .venv/bin/python scripts/task_scoped_screen.py \
-      --frame analysis/sweep_frame.got.csv
+      --frame csv2/sweep-small-graph/sweep_frame.got.csv
 """
 
 import argparse
@@ -229,7 +229,7 @@ def screen(
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--frame", default="analysis/sweep_frame.got.csv")
+  parser.add_argument("--frame", default="csv2/sweep-small-graph/sweep_frame.got.csv")
   parser.add_argument("--out", default=None,
                       help="default analysis/task_scoped_screen.<scheme>.csv")
   parser.add_argument("--n-perm", type=int, default=10_000)
@@ -276,7 +276,7 @@ def main() -> None:
   result = pd.DataFrame(rows).sort_values("p_value")
 
   out = args.out or analysis.tagged_path(
-      "analysis/task_scoped_screen.csv", scheme
+      "csv2/sweep-small-graph/task_scoped_screen.csv", scheme
   )
   result.to_csv(out, index=False)
   print(f"wrote {len(result)} rows to {out}")

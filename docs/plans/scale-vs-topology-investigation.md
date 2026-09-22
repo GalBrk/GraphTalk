@@ -35,7 +35,7 @@ compositionally atypical sample of that same fixed population, and does the
 
 ## 1. Scale vs. topology: pure power, plus a small decoding-noise wrinkle
 
-`scripts/check_old_vs_new_subsample.py --frame analysis/sweep_frame.count500.got.csv --model qwen3-8b --condition degree`:
+`scripts/check_old_vs_new_subsample.py --frame csv2/sweep-small-graph/sweep_frame.count500.got.csv --model qwen3-8b --condition degree`:
 
 | slice | n_clusters | delta | 95% CI | p |
 |---|---|---|---|---|
@@ -72,7 +72,7 @@ tree/forest/bipartite/isolated-node status, triangle count, clustering,
 size bucket) from the parsed graphs, joined by row index (every task shares
 the same graph at a given index -- verified, not assumed).
 
-`scripts/compare_old_vs_new_topology.py --features analysis/topology_features.csv --split-at 30`
+`scripts/compare_old_vs_new_topology.py --features csv2/sweep-small-graph/topology_features.csv --split-at 30`
 ran an unpaired permutation test (new `graphtalk.significance
 .unpaired_permutation_test`, hand-rolled to match the project's existing
 scipy-free convention) on each feature between the original 30 and the new
@@ -83,7 +83,7 @@ proportions are near-identical too (small/medium/large: 30.0/33.3/36.7%
 original vs. 30.4/34.7/34.9% new). The original 30-graph draw looks like an
 unremarkable sample of the same fixed population -- there is no detectable
 compositional skew to explain away. Full per-feature table:
-`analysis/topology_old_vs_new_report.csv`; distribution plots:
+`csv2/sweep-small-graph/topology_old_vs_new_report.csv`; distribution plots:
 `analysis/topology_distribution_plots/`.
 
 This directly corroborates part 1's power-alone verdict from an
@@ -204,18 +204,18 @@ already establishing it.
 
 ```bash
 PYTHONPATH=. .venv/Scripts/python.exe scripts/check_old_vs_new_subsample.py \
-    --frame analysis/sweep_frame.count500.got.csv --model qwen3-8b --condition degree
+    --frame csv2/sweep-small-graph/sweep_frame.count500.got.csv --model qwen3-8b --condition degree
 PYTHONPATH=. .venv/Scripts/python.exe scripts/diff_shared_instances.py \
-    --old-frame analysis/sweep_frame.got.csv --new-frame analysis/sweep_frame.count500.got.csv \
+    --old-frame csv2/sweep-small-graph/sweep_frame.got.csv --new-frame csv2/sweep-small-graph/sweep_frame.count500.got.csv \
     --model qwen3-8b --condition degree \
     --old-prompts prompts_got.jsonl --new-prompts prompts_got.count500.degree.jsonl
 PYTHONPATH=. .venv/Scripts/python.exe scripts/extract_graph_topology.py \
-    --count 500 --out analysis/topology_features.csv
+    --count 500 --out csv2/sweep-small-graph/topology_features.csv
 PYTHONPATH=. .venv/Scripts/python.exe scripts/compare_old_vs_new_topology.py \
-    --features analysis/topology_features.csv --split-at 30 \
-    --out analysis/topology_old_vs_new_report.csv
+    --features csv2/sweep-small-graph/topology_features.csv --split-at 30 \
+    --out csv2/sweep-small-graph/topology_old_vs_new_report.csv
 PYTHONPATH=. .venv/Scripts/python.exe scripts/analyze_topology_drivers.py \
-    --out analysis/topology_drivers_report.csv
+    --out csv2/sweep-small-graph/topology_drivers_report.csv
 PYTHONPATH=. .venv/Scripts/python.exe scripts/analyze_topology_drivers.py \
-    --task edge_count --out analysis/topology_drivers_report.edge_count.csv
+    --task edge_count --out csv2/sweep-small-graph/topology_drivers_report.edge_count.csv
 ```

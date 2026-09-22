@@ -31,7 +31,7 @@ difficulty and is shown here only for orientation — read the per-task table fr
 
 > **Stale in 14 of 16 cells** — carried forward unchanged when the 30 Aug
 > extraction fixes rescored 500+ rows. Correct values from
-> `analysis/sweep_frame.csv` (max error 6.7pp, `qwen3-14b`/`filler`):
+> `csv2/sweep-small-graph/sweep_frame.csv` (max error 6.7pp, `qwen3-14b`/`filler`):
 >
 > | model | `none` | `degree` | `all` | `filler` |
 > |---|---|---|---|---|
@@ -675,7 +675,7 @@ longer before getting cut off -- is wrong: its mean length on non-terminating ro
 instances finding above.
 
 A stratified read of raw `gemma4-e4b` non-terminating responses (in
-`analysis/non_termination_sample.csv`) shows a consistent pattern on both tasks:
+`csv2/sweep-small-graph/non_termination_sample.csv`) shows a consistent pattern on both tasks:
 exhaustive, node-by-node or edge-by-edge manual re-verification rather than a
 direct computation. On `edge_count`, it re-derives the adjacency list edge by edge
 with running "already counted" bookkeeping instead of summing degrees and dividing

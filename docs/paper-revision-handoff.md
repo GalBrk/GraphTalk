@@ -309,7 +309,7 @@ Figures (matplotlib):
 ## 5. Git logistics (each step confirmed with the user first)
 
 1. The working tree has untracked files that `refs/heads/analysis` tracks:
-   - `analysis/qwen3-1.7b*.densfull40.rows.csv`
+   - `csv2/sweep-large-graph/qwen3-1.7b*.densfull40.rows.csv`
    - `paper/` build files
    - `prompts.densfull40.got.jsonl`, `tests/test_hf_backend.py`
 
@@ -365,7 +365,7 @@ Figures (matplotlib):
 - `analyzing-graph-features` has the size/edge_count sweeps and archived mislabeled runs.
 - **Untracked files in the working tree** that `analysis` tracks, and that therefore block
   checkout:
-  - `analysis/qwen3-1.7b*.densfull40.rows.csv`
+  - `csv2/sweep-large-graph/qwen3-1.7b*.densfull40.rows.csv`
   - `paper/*` (LaTeX build junk only)
   - `prompts.densfull40.got.jsonl`, `tests/test_hf_backend.py`
 
@@ -469,7 +469,7 @@ Figures (matplotlib):
   shows how fragile the split is.
 
 **Other scripts**
-- `check_significance.py` reads the published-split `analysis/sweep_frame.csv`. It uses a
+- `check_significance.py` reads the published-split `csv2/sweep-small-graph/sweep_frame.csv`. It uses a
   cluster permutation, a bootstrap and BH per (arm, model, bound) family plus a global BH.
   Truncated rows are scored as wrong.
 - `paper/make_tables.py`, `make_figure.py` and `ci_all.py` (→ `make_ci_table.py`) are
@@ -560,7 +560,7 @@ rows):
 - Note that 1.7B plain at n=40, p≥0.35 is past its reading limit.
 
 **Analysis outputs:**
-- `analysis/*.densfull40.rows.csv` (scored rows with a density column).
+- `csv2/sweep-large-graph/*.densfull40.rows.csv` (scored rows with a density column).
 - `densfull40_frame_4b.csv` and `densfull40_significance_4b.csv` — **stale**: they predate
   `0de726b` and use the zeroed policy.
 - `sweep_frame{,.got,.count500.got}.csv`, `significance_report*.csv`, `glmm_report*`,

@@ -82,7 +82,7 @@ rather than silently treated as "nothing to do here" the way a plain
   # Also compute real MDEs for family-significant/not-global cells:
   PYTHONPATH=. .venv/bin/python scripts/recommend_count.py \
       --report analysis/significance_report.got.csv \
-      --frame analysis/sweep_frame.got.csv
+      --frame csv2/sweep-small-graph/sweep_frame.got.csv
 """
 
 import argparse

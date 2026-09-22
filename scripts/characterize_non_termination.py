@@ -28,11 +28,11 @@ Three sections:
    older `ground_truth_file` fallback.
 
   PYTHONPATH=. .venv/bin/python scripts/characterize_non_termination.py \
-      --frame analysis/sweep_frame.csv \
+      --frame csv2/sweep-small-graph/sweep_frame.csv \
       --significance analysis/significance_report.csv \
       --responses runs/*.jsonl \
       --prompts prompts.jsonl prompts_zero_shot.jsonl \
-      --out analysis/non_termination_sample.csv
+      --out csv2/sweep-small-graph/non_termination_sample.csv
 """
 
 import argparse

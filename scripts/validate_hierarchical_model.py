@@ -27,7 +27,7 @@ fit that mold:
    from `tests/test_hierarchical_model.py`'s synthetic-trace tests, since
    those hand the posterior in already fitted rather than fitting it.
 
-`--check real-data` additionally fits on `analysis/sweep_frame.csv` at
+`--check real-data` additionally fits on `csv2/sweep-small-graph/sweep_frame.csv` at
 real settings (the `fit()` defaults: 1000 draws/1000 tune/2 chains) and
 prints convergence diagnostics -- off by default (this is the expensive
 one; on a working compiled PyTensor backend it's tractable, on a
@@ -200,7 +200,7 @@ def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--check", choices=("prior", "posterior", "shrinkage", "real-data"),
                        default="posterior")
-  parser.add_argument("--frame", default="analysis/sweep_frame.csv",
+  parser.add_argument("--frame", default="csv2/sweep-small-graph/sweep_frame.csv",
                        help="--check real-data only")
   parser.add_argument("--draws", type=int, default=300)
   parser.add_argument("--tune", type=int, default=300)

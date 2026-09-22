@@ -525,7 +525,7 @@ thinking arm truncates, compared with `none`, across all tasks (paired McNemar):
   was scored as the answer. The extractor now ignores "no repeated" (`_NO_REPEATED`,
   regression test in `tests/test_scoring.py`). Rescoring changed only 4B `cycle_check` (225
   rows, all wrong→right); the other three arms are unchanged, and
-  `analysis/qwen3-4b.densfull40.rows.csv` was regenerated with the fix.
+  `csv2/sweep-large-graph/qwen3-4b.densfull40.rows.csv` was regenerated with the fix.
 - **Capped rows are dropped.** On `cycle_check` and `edge_count` that choice changes the
   verdict. `check_significance.py` scores capped rows as 0. On 1.7B `cycle_check` that turns
   `rwse` null and makes `clustering` (+8.5) and `all` (+7.0) significant, because `none` caps
@@ -536,4 +536,4 @@ thinking arm truncates, compared with `none`, across all tasks (paired McNemar):
   above.
 - The accuracy deltas are unpaired differences of means. The significance marks come from the
   paired test, so the two can differ by a few tenths.
-- `analysis/*-think.densfull40.rows.csv` are 90-105 MB; consider Git LFS.
+- `csv2/sweep-large-graph/*-think.densfull40.rows.csv` are 90-105 MB; consider Git LFS.

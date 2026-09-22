@@ -128,7 +128,7 @@ def main():
                       help="comma-separated rung tags (e.g. 'n40k12,n60k16'); "
                            "defaults to every rung. Stage 3 should pass only "
                            "the rungs that cleared BOTH gates for the model "
-                           "being run -- see analysis/ladder_matrix.limited.csv")
+                           "being run -- see csv2/ladder-retrieval/ladder_matrix.limited.csv")
   parser.add_argument("--out", required=True)
   args = parser.parse_args()
 
