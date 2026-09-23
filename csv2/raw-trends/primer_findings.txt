@@ -4,11 +4,13 @@
 0.00-0.25         19       +7.8      29    -1.8
 0.25-0.50          9      +16.0      20    +2.3
 0.50-0.75          9      +16.7      47    +3.9
-0.75-0.90          4       -5.7      52    +0.6
+0.75-0.90          4       -5.8      52    +0.6
 0.90-1.00         28       -1.4     176    -0.8
 [bands] side-information cells at or above 0.90: 176 of 324; at 1.00: 73
 [bands] qwen3-4b answer-carrying cells >=0.90: 8, effects -15, -12, -7, -7, -7, -6, -3, -1
 [bands] side information by primer, baseline 0.25-0.75: all +11.3 (8), clustering +2.2 (17), components -0.8 (17), degree +7.9 (8), rwse +3.1 (17)
+[bands] side information, baseline 0.25-0.75: degree and all +9.6 (16 cells, connected_nodes, edge_existence); components, clustering and rwse +1.5 (51 cells)
+[window] answer-carrying cells, baseline 0.25-0.75: 18 (node_degree), effects -19 to +45; by arm qwen3-1.7b 4 at +10.5, qwen3-1.7b-think 10 at +24.5, qwen3-4b 4 at +1.7
 [splithalf] binned on half the graphs, effect on the other half:
   0.00-0.25: carrying +7.6 side -1.7
   0.25-0.50: carrying +13.6 side +2.1
@@ -16,10 +18,10 @@
   0.75-0.90: carrying -4.9 side -0.2
   0.90-1.00: carrying -1.5 side -0.5
 [arms] median baseline and cells with baseline in [0.25, 0.75)
-  qwen3-1.7b        median  59.0  in band 40/103  below 0.25: 28
-  qwen3-1.7b-think  median  94.9  in band 35/90  below 0.25: 0
-  qwen3-4b          median  87.0  in band 10/110  below 0.25: 20
-  qwen3-4b-think    median 100.0  in band 0/90  below 0.25: 0
+  qwen3-1.7b        median  59.0  in band 40/103  below 0.25: 28  median outside edge_count  67.0
+  qwen3-1.7b-think  median  94.9  in band 35/90  below 0.25: 0  median outside edge_count  94.9
+  qwen3-4b          median  87.0  in band 10/110  below 0.25: 20  median outside edge_count  88.9
+  qwen3-4b-think    median 100.0  in band 0/90  below 0.25: 0  median outside edge_count 100.0
 [null4bt] qwen3-4b-think, largest |effect| over five primers on node_degree/edge_existence/connected_nodes (main sweep): 2.1
 [flip] qwen3-4b node_degree, degree and all vs none, by density
   degree p=0.10 base 100.0 delta  -6.0 broke 6 fixed 0 p=0.031
@@ -39,23 +41,27 @@
   median new tokens at p=.50: none 273, degree 34, filler 266
 [route] qwen3-4b node_degree: share of responses by route (accuracy)
   none   p=.50: enumerate 100% (99%)
-  degree p=.50: retrieve 88% (85%), assert 4% (100%), enumerate 8% (100%)
-  by density: accuracy without a primer | under degree: retrieves, its accuracy, enumerates
-   p=0.10: none 100.0 (enumerates 1%) | retrieves 47% at 89.4% | enumerates 2%
-   p=0.20: none  99.0 (enumerates 34%) | retrieves 72% at 97.2% | enumerates 14%
-   p=0.35: none  99.0 (enumerates 95%) | retrieves 92% at 92.4% | enumerates 6%
-   p=0.50: none  99.0 (enumerates 100%) | retrieves 88% at 85.2% | enumerates 8%
-   p=0.65: none  82.0 (enumerates 94%) | retrieves 96% at 77.1% | enumerates 2%
-   p=0.75: none  50.0 (enumerates 85%) | retrieves 97% at 56.7% | enumerates 1%
-   p=0.85: none  33.0 (enumerates 44%) | retrieves 97% at 61.9% | enumerates 0%
+  degree p=.50: retrieve 62% (92%), assert 30% (73%), enumerate 8% (100%)
+  by density: accuracy without a primer | under degree: retrieves, its accuracy, enumerates | the rest: accuracy, share opening with an answer, share opening with a wrong value
+   p=0.10: none 100.0 (enumerates 1%) | retrieves 44% at 88.6% | enumerates 2% | rest 56% at 98%, opens 5%, wrong opening 2%
+   p=0.20: none  99.0 (enumerates 34%) | retrieves 56% at 98.2% | enumerates 16% | rest 44% at 98%, opens 36%, wrong opening 7%
+   p=0.35: none  99.0 (enumerates 95%) | retrieves 74% at 90.5% | enumerates 6% | rest 26% at 96%, opens 69%, wrong opening 23%
+   p=0.50: none  99.0 (enumerates 100%) | retrieves 62% at 91.9% | enumerates 8% | rest 38% at 79%, opens 68%, wrong opening 47%
+   p=0.65: none  82.0 (enumerates 94%) | retrieves 71% at 88.7% | enumerates 2% | rest 29% at 45%, opens 86%, wrong opening 72%
+   p=0.75: none  50.0 (enumerates 85%) | retrieves 64% at 73.4% | enumerates 1% | rest 36% at 28%, opens 92%, wrong opening 89%
+   p=0.85: none  33.0 (enumerates 44%) | retrieves 69% at 79.7% | enumerates 0% | rest 31% at 16%, opens 90%, wrong opening 81%
+[verify] qwen3-1.7b-think under degree: retrieves at most 2%
 [verify] qwen3-1.7b-think under degree, p>=.35: enumerate 90%; by density 76, 91, 90, 98, 96
-  none   p<=.50: discrepancy stated in 1% (n=397); correct when stated 67%
-  degree p<=.50: discrepancy stated in 26% (n=379); correct when stated 65%
-  none   p>=.65: discrepancy stated in 4% (n=295); correct when stated 38%
-  degree p>=.65: discrepancy stated in 49% (n=268); correct when stated 69%
+  none   p<=.50: discrepancy reported in 0.3% (n=397); correct when stated 0%
+  degree p<=.50: discrepancy reported in 23.2% (n=379); correct when stated 61%
+  none   p>=.65: discrepancy reported in 4.4% (n=295); correct when stated 38%
+  degree p>=.65: discrepancy reported in 48.5% (n=268); correct when stated 69%
   degree vs none, 7 densities: +19.9 [+16.3, +23.6] broke 29 fixed 156 p=3.1e-22 n=639
   degree vs none, p>=.65:     +31.6 [+24.7, +38.0] broke 14 fixed 97 p=1.9e-16 n=263
   degree vs none by density: +5.2, -1.0, +22.8, +21.3, +23.3, +25.0, +45.2
+[trunc] qwen3-1.7b-think node_degree generations reaching the budget: none 8/700 (1.1%), degree 53/700 (7.6%), all 6/700 (0.9%)
+  truncated degree generations reporting a discrepancy: 96% (n=53)
+  degree vs none, 7 densities, truncation counted as an error: +16.0 [+12.0, +19.7] broke 50 fixed 162 p=5.5e-15 n=700
 [plain17] qwen3-1.7b node_degree, degree vs none by density: p=0.10 +3 (5 fixed, 2 broke, p=0.45), p=0.20 +10 (12 fixed, 2 broke, p=0.013), p=0.35 +18 (27 fixed, 9 broke, p=0.0039), p=0.50 -1 (13 fixed, 14 broke, p=1), p=0.65 +0 (7 fixed, 7 broke, p=1), p=0.75 -1 (12 fixed, 13 broke, p=1), p=0.85 +2 (7 fixed, 5 broke, p=0.77)
 [recover] accuracy under degree (none) where the solver scores 1.00
   node_degree qwen3-1.7b        0.43 (0.39) n=699
@@ -66,8 +72,8 @@
   edge_count  qwen3-1.7b-think  0.38 (1.00) n=13
   edge_count  qwen3-4b          0.30 (0.02) n=393
   edge_count  qwen3-4b-think    0.76 (1.00) n=34
-[edgecount] handshake wording (uses_degree_sum) and exact match, main sweep
-  qwen3-1.7b none   wording by density 67, 46, 47, 7%; truncated 30%; exact among terminated 1.8%
+[edgecount] handshake wording (uses_degree_sum, terminated generations, as every procedure share) and exact match, main sweep
+  qwen3-1.7b none   wording by density 64, 45, 52, 8%; truncated 30%; exact among terminated 1.8%
   qwen3-1.7b degree wording by density 99, 100, 100, 100%; truncated 10%; exact among terminated 4.7%
     p=0.10: degree-none +6.5 n=62
     p=0.20: degree-none +1.2 n=86
@@ -133,9 +139,9 @@
 [bundle] all minus the mean of its parts over 54 (arm, task, density) combinations: +0.2 [-1.1, +1.6]
   qwen3-4b node_degree p>=.65: degree +9.3, clustering +11.3, rwse +7.7, all -21.3
 [length] mean primer characters (main sweep): components 37, degree 891, clustering 1,629, rwse 2,949, all 4,691, filler 1,829
-  1.7b: slope positive in 7 of 8 (3 without all); range -0.1 to +3.4 points per 1,000 chars
-  4b: slope positive in 0 of 8 (1 without all); range -6.5 to +0.0 points per 1,000 chars
-  all: mean -0.26; CI excludes 0 in 9 of 16
+  1.7b (Table 2 columns with >=100 pairs): slope positive in 6 of 7 (2 without all); range -0.1 to +3.4 points per 1,000 chars
+  4b (Table 2 columns with >=100 pairs): slope positive in 0 of 7 (0 without all); range -2.0 to +0.0 points per 1,000 chars
+  all: mean -0.02; CI excludes 0 in 8 of 14
   filler below the fitted line: qwen3-1.7b/edge_existence 18.3, qwen3-4b/connected_nodes 13.8
 [nodecount] qwen3-1.7b share answering 39: none 68.5%, rwse 66.5%, degree 61.8%, components 47.2%, filler 28.7%, all 21.5%, clustering 1.2%
 [cluster] mean within-graph SD of printed clustering values: p=0.10 0.157, p=0.20 0.094, p=0.35 0.051, p=0.50 0.033, p=0.65 0.021, p=0.75 0.015, p=0.85 0.009
@@ -143,6 +149,13 @@
 [f1] of 5 contrasts with |exact| >= 5, F1 moves the same way in 3 (by 0.11 to 0.17 as much) and reverses 2
 [goldshare] share of queried pairs that are edges: p=0.10 10%, p=0.20 18%, p=0.35 31%, p=0.50 48%, p=0.65 66%, p=0.75 76%, p=0.85 85%
 [power] median discordance 0.080 over 307 cells -> smallest detectable effect 7.9 points at 100 graphs
+[power] side-information cells at baselines 0.25-0.75: median discordance 0.235 over 50 cells -> 13.6 points
+[position] qwen3-4b degree, retrievals: accuracy for queried nodes 0-9 95.7% (n=138) vs 10-39 83.1% (n=302); within density +11.8 points, permutation p=0.0005; by decade of the node id 95.7 / 81.6 / 86.5 / 81.5%
+[position] qwen3-4b all, retrievals: accuracy for queried nodes 0-9 88.5% (n=87) vs 10-39 53.4% (n=118); within density +29.6 points, permutation p=0.0005; by decade of the node id 88.5 / 45.0 / 60.3 / 50.0%
+[rerun] qwen3-1.7b node_degree prompts generated twice: 1200; identical responses 722 (60%); correctness changes on 64 (5.3%)
+[compproc] qwen3-4b connected_nodes, share restating the queried node's line (accuracy of those): none 63.0% (92%), components 98.5% (95%), filler 21.8% (84%)
+[clustproc] qwen3-4b node_degree p>=.65: clustering retrieve/assert/enumerate 0/31/69%, median 332 tokens; none retrieve/assert/enumerate 0/26/74%, median 329 tokens
+[plaincite] qwen3-1.7b items degree fixes at p=.20/.35: 39; citing the stated degree or reporting a discrepancy: 0
 [extract] parsed 99.84% of 84000; unparsed 133, of which truncated 132, cycle_check 128; terminated 78538, unparsed among them 1
 [extract] high-density extension: largest truncation rate 2.5% (('qwen3-1.7b-think', 'node_degree'))
 wrote primer_cells.csv, edge_existence_collapse.csv and node_degree_routes.csv to csv2/raw-trends

@@ -35,32 +35,33 @@ plt.rcParams.update({
 
 def window():
     t = pd.read_csv(SRC + "primer_cells.csv")
+    t["base"] = 100 * t.baseline
     fig, ax = plt.subplots(figsize=(3.03, 1.75))
-    ax.axvspan(0.25, 0.75, color="#f1f0ec", lw=0, zorder=0)
+    ax.axvspan(25, 75, color="#f1f0ec", lw=0, zorder=0)
     ax.axhline(0, color=INK2, lw=0.6, zorder=1)
     for carries, col, mk, lab in ((False, ORANGE, "o", "side information"),
                                   (True, BLUE, "^", "answer-carrying")):
         s = t[t.carries == carries]
         sig = s.q < 0.05
-        ax.scatter(s[~sig].baseline, s[~sig].delta, s=11, marker=mk,
+        ax.scatter(s[~sig].base, s[~sig].delta, s=11, marker=mk,
                    facecolors="none", edgecolors=col, linewidths=0.6, zorder=2)
-        ax.scatter(s[sig].baseline, s[sig].delta, s=11, marker=mk, color=col,
+        ax.scatter(s[sig].base, s[sig].delta, s=11, marker=mk, color=col,
                    edgecolors="white", linewidths=0.3, zorder=3, label=lab)
     tr = t[(t.arm == "qwen3-4b") & (t.task == "node_degree")
            & (t.condition == "degree")].sort_values("density")
-    ax.plot(tr.baseline, tr.delta, color=INK, lw=0.8, zorder=4)
+    ax.plot(tr.base, tr.delta, color=INK, lw=0.8, zorder=4)
     first, last = tr.iloc[0], tr.iloc[-1]
-    ax.annotate(r"$p{=}.10$", (first.baseline, first.delta), xytext=(-6, 13),
-                textcoords="offset points", fontsize=6.5, color=INK,
+    ax.annotate(r"$p$=.10", (first.base, first.delta), xytext=(-8, 13),
+                textcoords="offset points", fontsize=7, color=INK,
                 arrowprops=dict(arrowstyle="-", lw=0.4, color=INK))
-    ax.annotate(r"$p{=}.85$", (last.baseline, last.delta), xytext=(-8, 5),
-                textcoords="offset points", fontsize=6.5, color=INK)
-    ax.annotate("qwen3-4b, node_degree,\n" + r"$\mathtt{degree}$, $p{=}.10$ to $.85$",
-                xy=tuple(tr.iloc[4][["baseline", "delta"]]), xytext=(0.30, -30),
-                fontsize=6.3, color=INK,
+    ax.annotate(r"$p$=.85", (last.base, last.delta), xytext=(-9, 5),
+                textcoords="offset points", fontsize=7, color=INK)
+    ax.annotate("qwen3-4b, node_degree,\ndegree, p=.10 to .85",
+                xy=tuple(tr.iloc[4][["base", "delta"]]), xytext=(29, -31),
+                fontsize=7, color=INK, family=["Courier New", "monospace"],
                 arrowprops=dict(arrowstyle="-", lw=0.5, color=INK))
-    ax.set_xlim(-0.02, 1.02)
-    ax.set_xlabel("accuracy without a primer")
+    ax.set_xlim(-2, 102)
+    ax.set_xlabel("accuracy without a primer (%)")
     ax.set_ylabel("effect of the primer (points)")
     ax.grid(axis="y", color=GRID, lw=0.4, zorder=0)
     ax.legend(frameon=False, loc="upper right", handletextpad=0.2,
@@ -73,30 +74,34 @@ def window():
 
 def edge_existence():
     c = pd.read_csv(SRC + "edge_existence_collapse.csv")
-    series = [("none", INK2, "o", "-"), ("filler", ORANGE, "s", "-"),
-              ("degree", BLUE, "^", "-"), ("all", AQUA, "D", "-")]
+    # A distinct dash per condition, so the lines stay apart in greyscale print.
+    series = [("none", INK2, "o", "-"), ("filler", ORANGE, "s", (0, (1, 1))),
+              ("degree", BLUE, "^", (0, (4, 1.5))), ("all", AQUA, "D", (0, (6, 1, 1, 1)))]
     fig, (a, b) = plt.subplots(1, 2, figsize=(3.03, 1.45))
     for cond, col, mk, ls in series:
         s = c[c.condition == cond].sort_values("density")
         kw = dict(color=col, marker=mk, ms=3, lw=1.0, ls=ls, mew=0)
-        a.plot(s.density, s.bacc, label=cond, **kw)
+        a.plot(s.density, 100 * s.bacc, label=cond, **kw)
         b.plot(s.density, s.tokens, **kw)
-    a.axhline(0.5, color=INK2, lw=0.5, ls=(0, (2, 2)))
-    a.text(0.09, 0.505, "chance", fontsize=6, color=INK2, ha="left", va="bottom")
-    a.set_ylim(0.45, 1.0)
-    a.set_ylabel("balanced accuracy")
+    a.axhline(50, color=INK2, lw=0.5, ls=(0, (2, 2)))
+    a.text(0.09, 50.5, "chance", fontsize=7, color=INK2, ha="left", va="bottom")
+    a.set_ylim(45, 100)
+    a.set_ylabel("balanced accuracy (%)")
     b.set_ylabel("median new tokens")
     b.set_ylim(0, 430)
+    dens = sorted(c.density.unique())
     for ax, tag in ((a, "(a)"), (b, "(b)")):
-        ax.set_xticks([0.1, 0.35, 0.65, 0.85])
-        ax.set_xticklabels([".10", ".35", ".65", ".85"])
+        # a tick at every density; labels on four so that 7-pt text fits
+        ax.set_xticks(dens)
+        ax.set_xticklabels([f"{d:.2f}".lstrip("0") if d in (0.10, 0.35, 0.65, 0.85)
+                            else "" for d in dens])
         ax.set_xlabel(r"edge density $p$")
         ax.grid(axis="y", color=GRID, lw=0.4)
         ax.text(0.02, 1.02, tag, transform=ax.transAxes, fontsize=7,
                 va="bottom", ha="left")
     fig.legend(*a.get_legend_handles_labels(), loc="upper center", ncol=4,
-               frameon=False, handlelength=1.6, columnspacing=1.0,
-               bbox_to_anchor=(0.5, 1.02))
+               frameon=False, handlelength=2.4, columnspacing=1.0,
+               bbox_to_anchor=(0.5, 1.02), prop={"family": "monospace", "size": 7})
     fig.tight_layout(pad=0.2, rect=(0, 0, 1, 0.9))
     fig.savefig(OUT + "v3_fig_edgeexist.pdf")
     plt.close(fig)

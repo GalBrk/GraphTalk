@@ -45,24 +45,46 @@ BAND = (0.25, 0.75)          # where both kinds of primer gain (Table 2's bins)
 SEED = 20260923
 B = 2000
 
-# A response counts when it restates the queried node's neighbour list ("Node 7
-# is connected to ...") before giving its answer; it enumerates when it also
-# lists the neighbours one per line. It retrieves when it gives the answer
-# without restating the list, or states the answer first and attaches the list
-# afterwards -- under the degree primer most of qwen3-4b's list-restating
-# responses open with the stated value, and none do without a primer.
+# A response retrieves when it answers without restating the queried node's
+# neighbour list ("Node 7 is connected to ..."); otherwise it enumerates when it
+# lists at least five neighbours one per line, and asserts a count when it does
+# not. A response that opens with an answer and then restates the list is not a
+# retrieval: most such qwen3-4b responses from p=.50 open with a value other than
+# the stated degree and then recount, so opens_with() reports them separately.
 _ENUM_LINE = re.compile(r"^\s*(?:\d+\.|[-*])\s*\**\d+\**\s*$", re.M)
-_ANSWER_FIRST = re.compile(r"^\s*(?:\*\*)?The degree of node \d+ is \**\d+", re.I)
+_ANSWER_FIRST = re.compile(r"^\s*(?:\*\*)?The degree of node \d+ is \**(\d+)", re.I)
 _DISCREPANCY = re.compile(r"discrepanc|contradict|conflict|inconsisten", re.I)
+# "to see if there's any inconsistency" checks for a discrepancy without reporting one.
+_HYPOTHETICAL = re.compile(r"\b(?:any|no|not|without|whether|if there|check for|"
+                           r"check if|to see if)\b", re.I)
 
 
 def route(text, target):
   text = text or ""
   lists = re.search(rf"[Nn]ode {target}\**\s+is connected to"
-                    r"|connected to (?:the following )?nodes", text)
-  if not lists or _ANSWER_FIRST.search(text):
+                    r"|connected to (?:the following )?nodes"
+                    rf"|(?:nodes|edges) (?:directly )?connected to (?:\*\*)?node {target}\b,?"
+                    r" (?:which|that) are", text)
+  if not lists:
     return "retrieve"
   return "enumerate" if len(_ENUM_LINE.findall(text)) >= 5 else "assert"
+
+
+def opens_with(text):
+  """The value a response states before anything else, or None."""
+  m = _ANSWER_FIRST.search(text or "")
+  return int(m.group(1)) if m else None
+
+
+def reports_discrepancy(text):
+  """True when a discrepancy word is used to report one, not to look for one: the
+  60 characters before it, within its sentence, carry no hypothetical cue."""
+  text = text or ""
+  for m in _DISCREPANCY.finditer(text):
+    before = re.split(r"[.!?\n]", text[max(0, m.start() - 60):m.start()])[-1]
+    if not _HYPOTHETICAL.search(before):
+      return True
+  return False
 
 
 # ------------------------------------------------------------------ helpers
@@ -72,6 +94,15 @@ def pairs(f, arm, task, a, b, dens):
   y = d[d.condition == b].set_index(["density_class", "graph_id"])
   j = x.join(y, lsuffix="_a", rsuffix="_b", how="inner")
   return j[(j.hit_cap_a == 0) & (j.hit_cap_b == 0)]
+
+
+def pairs_as_error(f, arm, task, a, b, dens):
+  """All pairs, with a generation that reaches the budget scored as wrong."""
+  d = f[(f.arm == arm) & (f.task == task) & f.density_class.isin(dens)].copy()
+  d["exact"] = np.where(d.hit_cap == 1, 0, d.exact)
+  x = d[d.condition == a].set_index(["density_class", "graph_id"])
+  y = d[d.condition == b].set_index(["density_class", "graph_id"])
+  return x.join(y, lsuffix="_a", rsuffix="_b", how="inner")
 
 
 def boot(j, stat):
@@ -128,7 +159,9 @@ def band_table(f, bars):
   print(f"[cells] {len(t)} cells with >=50 untruncated pairs; "
         f"{int(t.carries.sum())} answer-carrying, {int((~t.carries).sum())} side")
   print("[bands] mean effect by baseline band (answer-carrying | side information)")
-  print(apw.window(t).to_string(index=False, float_format=lambda x: f"{x:+.1f}"))
+  # round(., 9) first: a band mean that is exactly a half (-23/4) arrives as
+  # -5.7499999... and would otherwise print as -5.7.
+  print(apw.window(t).round(9).to_string(index=False, float_format=lambda x: f"{x:+.1f}"))
   side = t[~t.carries]
   print(f"[bands] side-information cells at or above 0.90: "
         f"{int((side.baseline >= 0.90).sum())} of {len(side)}; at 1.00: "
@@ -141,6 +174,17 @@ def band_table(f, bars):
   g = s.groupby("condition").delta.agg(["mean", "size"])
   print(f"[bands] side information by primer, baseline {lo}-{hi}: "
         + ", ".join(f"{c} {r['mean']:+.1f} ({int(r['size'])})" for c, r in g.iterrows()))
+  deg = s.condition.isin(["degree", "all"])
+  print(f"[bands] side information, baseline {lo}-{hi}: degree and all "
+        f"{s[deg].delta.mean():+.1f} ({int(deg.sum())} cells, "
+        f"{', '.join(sorted(set(s[deg].task)))}); components, clustering and rwse "
+        f"{s[~deg].delta.mean():+.1f} ({int((~deg).sum())} cells)")
+  w = t[t.carries & (t.baseline >= lo) & (t.baseline < hi)]
+  print(f"[window] answer-carrying cells, baseline {lo}-{hi}: {len(w)} "
+        f"({', '.join(sorted(set(w.task)))}), effects {w.delta.min():+.0f} to "
+        f"{w.delta.max():+.0f}; by arm " + ", ".join(
+            f"{a} {int(r['size'])} at {r['mean']:+.1f}"
+            for a, r in w.groupby("arm").delta.agg(["size", "mean"]).iterrows()))
 
   # Regression to the mean: bin each cell on half its graphs, measure on the other.
   cells = []
@@ -180,8 +224,12 @@ def per_arm(t):
   for arm in ARMS:
     a = t[t.arm == arm]
     w = a[(a.baseline >= lo) & (a.baseline < hi)]
+    # The thinking arms keep no edge_count cells (they mostly truncate), so the
+    # like-for-like comparison of arms is on the other tasks.
+    m = a[a.task != "edge_count"].baseline.median()
     print(f"  {arm:17s} median {100 * a.baseline.median():5.1f}  in band "
-          f"{len(w)}/{len(a)}  below {lo}: {int((a.baseline < lo).sum())}")
+          f"{len(w)}/{len(a)}  below {lo}: {int((a.baseline < lo).sum())}  "
+          f"median outside edge_count {100 * m:5.1f}")
 
 
 def four_b_think_null(f):
@@ -221,7 +269,9 @@ def procedure(f):
   nd["text"] = [runs[a][(i, c)]["response"] for a, i, c in
                 zip(nd.arm, nd.instance_id, nd.condition)]
   nd["route"] = [route(x, int(t)) for x, t in zip(nd.text, nd.target_id)]
-  nd["flag"] = nd.text.str.contains(_DISCREPANCY)
+  nd["flag"] = nd.text.apply(reports_discrepancy)
+  nd["opens"] = nd.text.apply(opens_with)
+  capped = nd[nd.hit_cap == 1]
   nd = nd[nd.hit_cap == 0]
 
   s = nd[nd.arm == "qwen3-4b"]
@@ -232,17 +282,23 @@ def procedure(f):
         f"{r} {100 * (x.route == r).mean():.0f}% ({100 * x[x.route == r].exact.mean():.0f}%)"
         for r in ["retrieve", "assert", "enumerate"] if (x.route == r).any()))
   print("  by density: accuracy without a primer | under degree: retrieves, its "
-        "accuracy, enumerates")
+        "accuracy, enumerates | the rest: accuracy, share opening with an answer, "
+        "share opening with a wrong value")
   for dens in DENS4 + DENSHI:
     n = s[(s.condition == "none") & (s.density_class == dens)]
     g = s[(s.condition == "degree") & (s.density_class == dens)]
-    r = g[g.route == "retrieve"]
+    r, o = g[g.route == "retrieve"], g[g.route != "retrieve"]
+    wrong = o.opens.notna() & (o.opens != o.target_degree)
     print(f"   p={dens:.2f}: none {100 * n.exact.mean():5.1f} (enumerates "
           f"{100 * (n.route == 'enumerate').mean():.0f}%) | retrieves "
           f"{100 * len(r) / len(g):.0f}% at {100 * r.exact.mean():.1f}% | enumerates "
-          f"{100 * (g.route == 'enumerate').mean():.0f}%")
+          f"{100 * (g.route == 'enumerate').mean():.0f}% | rest {100 * len(o) / len(g):.0f}% "
+          f"at {100 * o.exact.mean():.0f}%, opens {100 * o.opens.notna().mean():.0f}%, "
+          f"wrong opening {100 * wrong.mean():.0f}%")
 
   s = nd[nd.arm == "qwen3-1.7b-think"]
+  print(f"[verify] qwen3-1.7b-think under degree: retrieves at most "
+        f"{100 * max((s[(s.condition == 'degree') & (s.density_class == d)].route == 'retrieve').mean() for d in DENS4 + DENSHI):.0f}%")
   x = s[(s.condition == "degree") & (s.density_class >= 0.35)]
   print(f"[verify] qwen3-1.7b-think under degree, p>=.35: enumerate "
         f"{100 * (x.route == 'enumerate').mean():.0f}%; by density "
@@ -251,7 +307,7 @@ def procedure(f):
   for band, dens in (("p<=.50", DENS4), ("p>=.65", DENSHI)):
     for c in ["none", "degree"]:
       y = s[(s.condition == c) & s.density_class.isin(dens)]
-      print(f"  {c:6s} {band}: discrepancy stated in {100 * y.flag.mean():.0f}% "
+      print(f"  {c:6s} {band}: discrepancy reported in {100 * y.flag.mean():.1f}% "
             f"(n={len(y)}); correct when stated {100 * y[y.flag].exact.mean():.0f}%")
   print("  degree vs none, 7 densities: "
         + fmt(effect(pairs(f, "qwen3-1.7b-think", "node_degree", "none", "degree",
@@ -263,6 +319,18 @@ def procedure(f):
       f"{100 * (j.exact_b.mean() - j.exact_a.mean()):+.1f}"
       for j in (pairs(f, "qwen3-1.7b-think", "node_degree", "none", "degree", [p])
                 for p in DENS4 + DENSHI)))
+
+  # The pair rule drops truncated generations, and degree truncates more often.
+  t = f[(f.arm == "qwen3-1.7b-think") & (f.task == "node_degree")]
+  print("[trunc] qwen3-1.7b-think node_degree generations reaching the budget: " + ", ".join(
+      f"{c} {int(t[t.condition == c].hit_cap.sum())}/{int((t.condition == c).sum())} "
+      f"({100 * t[t.condition == c].hit_cap.mean():.1f}%)" for c in ["none", "degree", "all"]))
+  cap = capped[(capped.arm == "qwen3-1.7b-think") & (capped.condition == "degree")]
+  print(f"  truncated degree generations reporting a discrepancy: "
+        f"{100 * cap.flag.mean():.0f}% (n={len(cap)})")
+  print("  degree vs none, 7 densities, truncation counted as an error: "
+        + fmt(effect(pairs_as_error(f, "qwen3-1.7b-think", "node_degree", "none",
+                                    "degree", DENS4 + DENSHI))))
 
 
 def plain_small(f):
@@ -282,13 +350,15 @@ def recovery(f):
 
 
 def edge_count(f):
-  print("[edgecount] handshake wording (uses_degree_sum) and exact match, main sweep")
+  print("[edgecount] handshake wording (uses_degree_sum, terminated generations, as "
+        "every procedure share) and exact match, main sweep")
   for arm in ["qwen3-1.7b", "qwen3-4b"]:
     d = f[(f.arm == arm) & (f.task == "edge_count") & f.density_class.isin(DENS4)]
     for c in ["none", "degree"]:
       x = d[d.condition == c]
+      t = x[x.hit_cap == 0]
       print(f"  {arm:10s} {c:6s} wording by density "
-            + ", ".join(f"{100 * x[x.density_class == p].uses_degree_sum.mean():.0f}"
+            + ", ".join(f"{100 * t[t.density_class == p].uses_degree_sum.mean():.0f}"
                         for p in DENS4)
             + f"%; truncated {100 * x.hit_cap.mean():.0f}%; exact among terminated "
             f"{100 * x[x.hit_cap == 0].exact.mean():.1f}%")
@@ -453,6 +523,10 @@ def length(f):
       C = d.pivot_table(index=["density_class", "graph_id"], columns="condition",
                         values="hit_cap")
       W = W.where(C == 0)
+      # Table 2's rule: a column whose fewest untruncated pairs fall below 100 is
+      # selected on termination, so it is not interpreted (two edge_count columns).
+      if min((W["none"].notna() & W[c].notna()).sum() for c in PRIMERS + ["filler"]) < 100:
+        continue
 
       def fit(w):
         ds = [100 * (w.loc[w["none"].notna() & w[c].notna(), c].mean()
@@ -471,7 +545,8 @@ def length(f):
   t = pd.DataFrame(rows)
   for size in ["1.7b", "4b"]:
     s = t[t.arm.str.startswith("qwen3-" + size)]
-    print(f"  {size}: slope positive in {(s.slope > 0).sum()} of {len(s)} "
+    print(f"  {size} (Table 2 columns with >=100 pairs): slope positive in "
+          f"{(s.slope > 0).sum()} of {len(s)} "
           f"({(s.slope_no_all > 0).sum()} without all); range {s.slope.min():+.1f} to "
           f"{s.slope.max():+.1f} points per 1,000 chars")
   print(f"  all: mean {t.slope.mean():+.2f}; CI excludes 0 in "
@@ -527,8 +602,9 @@ def measurement(f):
       f"p={d:.2f} {100 * g.gold_is_yes.mean():.0f}%" for d, g in e.groupby("density_class")))
 
 
-def power(f):
-  """Smallest paired effect one cell can detect (80% power, two-sided .05)."""
+def power(f, t):
+  """Smallest paired effect one cell can detect (80% power, two-sided .05), over all
+  cells and over the side-information cells at baselines 0.25-0.75, where primers act."""
   disc = []
   for arm in ARMS:
     for task in TASKS4:
@@ -541,6 +617,107 @@ def power(f):
   med = float(np.median(disc))
   print(f"[power] median discordance {med:.3f} over {len(disc)} cells -> smallest "
         f"detectable effect {100 * z * np.sqrt(med / 100):.1f} points at 100 graphs")
+  lo, hi = BAND
+  s = t[(~t.carries) & (t.baseline >= lo) & (t.baseline < hi)]
+  dm = []
+  for r in s.itertuples():
+    j = pairs(f, r.arm, r.task, "none", r.condition, [r.density])
+    if len(j) >= 100:
+      dm.append((j.exact_a != j.exact_b).mean())
+  med = float(np.median(dm))
+  print(f"[power] side-information cells at baselines {lo}-{hi}: median discordance "
+        f"{med:.3f} over {len(dm)} cells -> {100 * z * np.sqrt(med / 100):.1f} points")
+
+
+def position(f):
+  """qwen3-4b retrieval accuracy by where the queried node's line sits in the primer
+  (lines are in node order): nodes 0-9 against 10-39, within density."""
+  runs = load_runs("runs/qwen3-4b.densfull40*.shard*.jsonl", tasks={"node_degree"},
+                   conds={"degree", "all"})
+  d = f[(f.arm == "qwen3-4b") & (f.task == "node_degree") & (f.hit_cap == 0)
+        & f.condition.isin(["degree", "all"])].copy()
+  d["route"] = [route(runs[(i, c)]["response"], int(t))
+                for i, c, t in zip(d.instance_id, d.condition, d.target_id)]
+  d = d[d.route == "retrieve"].copy()
+  d["early"] = d.target_id < 10
+
+  def gap(x, early):
+    diffs, w = [], []
+    for _, idx in x.groupby("density_class").groups.items():
+      e = early.loc[idx]
+      if e.any() and (~e).any():
+        diffs.append(x.exact.loc[idx][e].mean() - x.exact.loc[idx][~e].mean())
+        w.append(len(idx))
+    return 100 * np.average(diffs, weights=w)
+
+  rng = np.random.default_rng(SEED)
+  for c in ["degree", "all"]:
+    g = d[d.condition == c]
+    obs = gap(g, g.early)
+    perm = [gap(g, g.groupby("density_class").early.transform(
+        lambda s: rng.permutation(s.to_numpy()))) for _ in range(B)]
+    p = (np.sum(np.abs(perm) >= abs(obs)) + 1) / (B + 1)
+    print(f"[position] qwen3-4b {c}, retrievals: accuracy for queried nodes 0-9 "
+          f"{100 * g[g.early].exact.mean():.1f}% (n={int(g.early.sum())}) vs 10-39 "
+          f"{100 * g[~g.early].exact.mean():.1f}% (n={int((~g.early).sum())}); within "
+          f"density {obs:+.1f} points, permutation p={p:.2g}; by decade of the node id "
+          + " / ".join(f"{100 * g[g.target_id // 10 == k].exact.mean():.1f}"
+                       for k in range(4)) + "%")
+
+
+def rerun():
+  """Identical prompts generated twice: degdens40 re-ran the main sweep's graphs."""
+  main = load_runs("runs/qwen3-1.7b.densfull40.shard*.jsonl", tasks={"node_degree"})
+  again = load_runs("runs/qwen3-1.7b.degdens40.shard*.jsonl")
+  n = same = changed = 0
+  for key, r in again.items():
+    b = main.get(key)
+    if b is None:
+      continue
+    n += 1
+    same += r["response"] == b["response"]
+    ex = [scoring.score_one(scoring.extract_answer(x["response"] or "", "node_degree"),
+                            x["gold"], "node_degree")["exact"] for x in (r, b)]
+    changed += ex[0] != ex[1]
+  print(f"[rerun] qwen3-1.7b node_degree prompts generated twice: {n}; identical "
+        f"responses {same} ({100 * same / n:.0f}%); correctness changes on {changed} "
+        f"({100 * changed / n:.1f}%)")
+
+
+def other_procedures(f):
+  """Two procedure checks outside the stated-answer account."""
+  runs = load_runs("runs/qwen3-4b.densfull40.shard*.jsonl", tasks={"connected_nodes"},
+                   conds={"none", "components", "filler"})
+  d = f[(f.arm == "qwen3-4b") & (f.task == "connected_nodes") & (f.hit_cap == 0)
+        & f.condition.isin(["none", "components", "filler"])].copy()
+  d["restates"] = [bool(re.search(rf"[Nn]ode {int(t)}\**\s+is connected to",
+                                  runs[(i, c)]["response"] or ""))
+                   for i, c, t in zip(d.instance_id, d.condition, d.target_id)]
+  print("[compproc] qwen3-4b connected_nodes, share restating the queried node's line "
+        "(accuracy of those): " + ", ".join(
+            f"{c} {100 * d[d.condition == c].restates.mean():.1f}% "
+            f"({100 * d[(d.condition == c) & d.restates].exact.mean():.0f}%)"
+            for c in ["none", "components", "filler"]))
+  runs = load_runs("runs/qwen3-4b.densfull40hi.shard*.jsonl", tasks={"node_degree"},
+                   conds={"none", "clustering"})
+  d = f[(f.arm == "qwen3-4b") & (f.task == "node_degree") & (f.hit_cap == 0)
+        & f.condition.isin(["none", "clustering"]) & f.density_class.isin(DENSHI)].copy()
+  d["route"] = [route(runs[(i, c)]["response"], int(t))
+                for i, c, t in zip(d.instance_id, d.condition, d.target_id)]
+  print("[clustproc] qwen3-4b node_degree p>=.65: " + "; ".join(
+      f"{c} retrieve/assert/enumerate "
+      + "/".join(f"{100 * (g.route == r).mean():.0f}" for r in ["retrieve", "assert", "enumerate"])
+      + f"%, median {g.n_new_tokens.median():.0f} tokens" for c, g in d.groupby("condition")))
+  runs = load_runs("runs/qwen3-1.7b.densfull40.shard*.jsonl", tasks={"node_degree"},
+                   conds={"degree"})
+  j = pairs(f, "qwen3-1.7b", "node_degree", "none", "degree", [0.20, 0.35])
+  fixed = j[(j.exact_a == 0) & (j.exact_b == 1)]
+  cites = sum(bool(re.search(rf"[Nn]ode {int(r.target_id_b)}\** has degree", x))
+              or reports_discrepancy(x)
+              for r in fixed.itertuples()
+              for x in [runs[(r.instance_id_b, "degree")]["response"] or ""])
+  print(f"[plaincite] qwen3-1.7b items degree fixes at p=.20/.35: {len(fixed)}; citing the "
+        f"stated degree or reporting a discrepancy: {cites}")
 
 
 def extraction(f):
@@ -568,7 +745,7 @@ def route_data(f):
           & f.condition.isin(conds)].copy()
     text = [runs[(i, c)]["response"] for i, c in zip(d.instance_id, d.condition)]
     d["route"] = [route(x, int(t)) for x, t in zip(text, d.target_id)]
-    d["flag"] = [bool(_DISCREPANCY.search(x or "")) for x in text]
+    d["flag"] = [reports_discrepancy(x) for x in text]
     for (c, dens), g in d.groupby(["condition", "density_class"]):
       r = dict(arm=arm, condition=c, density=dens, n=len(g), acc=g.exact.mean(),
                discrepancy=g.flag.mean())
@@ -635,7 +812,10 @@ def main():
   node_count(f)
   clustering_spread()
   measurement(f)
-  power(f)
+  power(f, t)
+  position(f)
+  rerun()
+  other_procedures(f)
   extraction(f)
   if args.csv_dir:
     figure_data(f, bars, args.csv_dir)
