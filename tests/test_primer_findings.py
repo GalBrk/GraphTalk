@@ -18,6 +18,10 @@ def test_route_retrieve_assert_enumerate():
   assert pf.route(listing, 7) == "enumerate"
   # A different node's neighbour list is not the queried node's.
   assert pf.route("Node 8 is connected to node 7.", 7) == "retrieve"
+  # Stating the answer first and attaching the list afterwards is retrieval.
+  assert pf.route("The degree of node 7 is **5**.\n\nNode 7 is connected to "
+                  "nodes 1, 2, 3, 4, 5.", 7) == "retrieve"
+  assert pf.route("**The degree of node 7 is 5**", 7) == "retrieve"
 
 
 def test_pairs_drop_a_pair_when_either_side_truncates():
@@ -30,6 +34,14 @@ def test_pairs_drop_a_pair_when_either_side_truncates():
                   condition="degree", exact=ex_b, hit_cap=cap_b)]
   j = pf.pairs(pd.DataFrame(rows), "a", "t", "none", "degree", [0.1])
   assert sorted(j.index.get_level_values("graph_id")) == [0, 1]
+
+
+def test_boot_interval_does_not_depend_on_earlier_draws():
+  j = pd.DataFrame({"x": np.arange(40) % 3},
+                   index=pd.MultiIndex.from_product([[0.1, 0.2], range(20)]))
+  # With one shared generator the second call would draw different resamples.
+  first = pf.boot(j, lambda s: s.x.mean())
+  assert np.array_equal(first, pf.boot(j, lambda s: s.x.mean()))
 
 
 def test_bh_matches_hand_computation_and_is_monotone():

@@ -162,8 +162,31 @@ and results reorganised around the procedure account).
 | 35 | Two new abstract claims unverified | both confirmed, on the seven-density basis those two tasks carry: `qwen3-1.7b-think`/`node_degree`/`degree` **+20.1**; `qwen3-1.7b`/`edge_existence` false alarms **−18.6** under `all` and **+18.3** under `filler`. Checking them over the four shared densities gives +12.2/−15.7/+21.5, so the basis matters and the paper uses the right one |
 | 36 | Reproducibility of the new floats | all six inputs (`v3_conditions_table`, `v3_main_table`, `v3_pertask_tables`, `v3_routes_table`, `v3_fig_window`, `v3_fig_edgeexist`) trace to `make_v3_tables.py` or `make_v3_figures.py`, and `make_v3.sh` runs both plus `primer_findings.py` |
 
+### Round 7 — verification
+
+Two verifiers compared the restructured paper with the version before it. Both
+returned *approve with fixes*: better on every grading criterion, but three
+statements contradicted by the data.
+
+| # | issue | resolution |
+|---|---|---|
+| 37 | The Discussion's account (effect = accuracy of the adopted procedure minus that of the abandoned one) failed at p=.65: `retrieval` was any response that did not restate the neighbour list, so a response that stated the degree first and listed afterwards counted as counting | retrieval redefined as answer-first (`route()`, with a test); `qwen3-4b` under `degree` retrieves 47–97% at 57–97% against a count of 100–33%, and the sign matches at all seven densities. The primer also displaces enumeration (85–100% → at most 8%); `all` costs through less accurate retrieval and through non-retrieving responses that are 43 / 4 / 2% accurate from p=.65. Appendix Table 4 gains *enumerates* and *acc. of the rest* rows |
+| 38 | "Thinking mode moves most cells out of this range" is false for the 1.7B model (38.8% vs 38.9% of cells in the band) | rewritten: thinking empties the range below 0.25 (28 and 20 cells → 0) and leaves the 1.7B model a similar share in the band |
+| 39 | The Sanford link held by construction; "cf. Levy" pointed the wrong way | rewritten around what a stated answer still leaves undone (87% on `node_degree` at p=.50, 30% on `edge_count`); Levy contrasted on sign changes between models |
+| 40 | "Answer leakage" in the title was never defined | defined in the Introduction |
+| 41 | `qwen3-1.7b` "rarely uses the stated value" omitted its gains at p=.20 and .35 | +10 and +18 where its count is partly right, within 2 points from p=.50 (`[plain17]`) |
+| 42 | The 400-per-density replication includes the main sweep's 100 graphs | reports the 300 new graphs: +4.0 [1.2, 6.8], p=.0047 |
+| 43 | `all` "4.6 points below the best of its parts" compares with the maximum of three noisy estimates, which is biased upward | mean of parts only |
+| 44 | Positive 1.7B length slopes rest on `all`, the longest primer | 3 and 1 of 8 positive without it; heading "No consistent gain from bundling or length" |
+| 45 | set-F1 "compresses contrasts about sixfold" hid two reversals | "a sixth as much, and reverses two of the five contrasts above 5 points" |
+| 46 | Figure 1: legend over the data, "significant after correction" unspecific | legend in the empty upper right, labelled *answer-carrying*; caption states q<.05 within each (arm, task) and "content primer" (the 393 cells exclude `filler`) |
+| 47 | Ethics gave 217,000 generations without the analysed subset | 98,400 analysed (84,000 + 4,800 + 3,200 + 6,400) |
+| 48 | After the fixes, Ethics ran to page 6 | tightened without dropping a finding: the Discussion no longer restates §4.2, the within-graph clustering spread moved from Limitations into §4.4 as a finding, the duplicated Shi/Levy sentence left Related Work, the Qwen3 model-card footnote became a bibliography entry, Table 1's forward reference to Table 2 became its own key, and both figures lost 0.1 in of height |
+| 49 | All 25 cited references re-checked against the record of the version cited (ACL Anthology, NeurIPS and PMLR BibTeX, Crossref, arXiv, the ICLR proceedings, the Qwen3 model card) | two author lists corrected to the NeurIPS records: Dziri et al. (Welleck is seventh) and Rampášek et al. ("Michael Galkin"). Fatemi et al. stays 2024: arXiv October 2023, but the cited version is ICLR 2024. "Qwen Team" is the citation the Qwen3 model card gives. The other 21 match exactly |
+
 ## Status
 
-`make_v3.sh` exit 0; body and Ethics both end on page 5; 0 undefined
-references, 0 overfull boxes, 0 undefined citations; 19 tests pass; every
+`make_v3.sh` exit 0; body, Limitations and Ethics end on page 5 (8 pages with
+references and appendix); A4, all fonts embedded, no Type 3; abstract 197
+words; 0 undefined references, 0 overfull boxes, 0 undefined citations; every
 float traces to a generator that `make_v3.sh` runs; all four arms reported.

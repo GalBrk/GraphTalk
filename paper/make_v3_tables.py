@@ -149,16 +149,16 @@ def main_table(frame):
             cell(got[k][1][c][0], got[k][2][c], got[k][1][c][2]) for k in cols)
             + r" \\")
     lines += [r"\bottomrule", r"\end{tabular}}",
-              r"\caption{Pooled effects against \texttt{none} (points), "
-              r"$p\le.50$, $100$ graphs per (task, density). Tasks: "
+              r"\caption{Pooled effects against \texttt{none} (points) over "
+              r"$p\le.50$. Tasks: "
               r"\texttt{edge\_existence} (exist.), \texttt{node\_degree} (deg.), "
               r"\texttt{connected\_nodes} (conn.), \texttt{edge\_count} (count). "
               r"First row: accuracy under \texttt{none} over terminated "
-              r"generations; \emph{pairs}: fewest pairs in which neither "
-              r"generation truncated. \textbf{Bold}: exact McNemar, "
-              r"Benjamini--Hochberg over each column's six contrasts, $q<.05$; "
-              r"columns with \textit{italic} pair counts (below $100$) are never "
-              r"bolded, since their survivors are selected on termination.}",
+              r"generations; \emph{pairs}: fewest untruncated pairs. "
+              r"\textbf{Bold}: $q<.05$ (exact McNemar, Benjamini--Hochberg over "
+              r"each column's six contrasts); columns with \textit{italic} pair "
+              r"counts (below $100$) are never bolded, since their pairs are "
+              r"selected on termination.}",
               r"\label{tab:main}", r"\end{table*}"]
     write("v3_main_table.tex", lines)
 
@@ -192,11 +192,10 @@ def conditions(frame):
     lines += [r"\bottomrule", r"\end{tabular}",
               r"\caption{The seven conditions. \emph{States}: what each primer "
               r"gives per node (\texttt{components}: for the graph). "
-              r"\emph{Chars}: mean primer "
-              r"length in characters. \emph{Carries}: tasks with variable gold "
-              r"on which the graph-blind solver scores at least "
-              r"$0.85$ (Appendix Table~\ref{tab:shortcut}); abbreviations as "
-              r"in Table~\ref{tab:main}.}",
+              r"\emph{Chars}: mean length. \emph{Carries}: tasks with variable "
+              r"gold on which the graph-blind solver scores at least $0.85$ "
+              r"(Appendix Table~\ref{tab:shortcut}): \texttt{node\_degree} "
+              r"(deg.) and \texttt{edge\_count} (count).}",
               r"\label{tab:conditions}", r"\end{table}"]
     write("v3_conditions_table.tex", lines)
 
@@ -250,14 +249,17 @@ def routes():
              + r" \\", r"\midrule",
              r"\multicolumn{%d}{@{}l}{\texttt{qwen3-4b}} \\" % (len(dens) + 1),
              row(r"acc., \texttt{none}", "qwen3-4b", "none", "acc"),
+             row(r"\quad enumerates", "qwen3-4b", "none", "share_enumerate"),
              row(r"acc., \texttt{degree}", "qwen3-4b", "degree", "acc"),
              row(r"\quad retrieves", "qwen3-4b", "degree", "share_retrieve"),
              row(r"\quad acc.\ of retrievals", "qwen3-4b", "degree",
                  "acc_retrieve"),
+             row(r"\quad enumerates", "qwen3-4b", "degree", "share_enumerate"),
              row(r"acc., \texttt{all}", "qwen3-4b", "all", "acc"),
              row(r"\quad retrieves", "qwen3-4b", "all", "share_retrieve"),
              row(r"\quad acc.\ of retrievals", "qwen3-4b", "all",
                  "acc_retrieve"),
+             row(r"\quad acc.\ of the rest", "qwen3-4b", "all", "acc_other"),
              r"\midrule",
              r"\multicolumn{%d}{@{}l}{\texttt{qwen3-1.7b-think}} \\"
              % (len(dens) + 1),
@@ -274,12 +276,13 @@ def routes():
              row(r"\quad retrieves", "qwen3-1.7b", "degree", "share_retrieve"),
              r"\bottomrule", r"\end{tabular}",
              r"\caption{Procedure on \texttt{node\_degree} by density (\%, "
-             r"terminated generations). \emph{Retrieves}: the response gives "
-             r"the answer without restating the queried node's neighbour "
-             r"list. \emph{Enumerates}: it lists the neighbours one per line. "
-             r"\emph{States a discrepancy}: it reports that its count and the "
-             r"primer disagree. Without a primer every arm counts, so the "
-             r"\texttt{none} row is the accuracy of counting.}",
+             r"terminated generations). \emph{Retrieves}: the response states "
+             r"its answer before restating the queried node's neighbour list, "
+             r"or without restating it. \emph{Enumerates}: it lists the "
+             r"neighbours one per line. \emph{The rest}: responses that do not "
+             r"retrieve. \emph{States a discrepancy}: it reports that its count "
+             r"and the primer disagree. Without a primer every arm counts, so "
+             r"the \texttt{none} rows give the accuracy of counting.}",
              r"\label{tab:routes}", r"\end{table}"]
     write("v3_routes_table.tex", lines)
 
