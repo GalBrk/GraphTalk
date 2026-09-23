@@ -40,20 +40,27 @@ TASKS4 = ["edge_existence", "node_degree", "connected_nodes", "edge_count"]
 DENS4 = [0.10, 0.20, 0.35, 0.50]
 DENSHI = [0.65, 0.75, 0.85]
 BAND = (0.25, 0.75)          # where both kinds of primer gain (Table 2's bins)
-RNG = np.random.default_rng(20260923)
+# Every bootstrap restarts from SEED, so an interval does not depend on which
+# analyses ran before it (a shared generator shifted them whenever one was added).
+SEED = 20260923
 B = 2000
 
-# A response restates the queried node's neighbour list ("Node 7 is connected
-# to ...") when it counts; it also lists the neighbours one per line when it
-# enumerates them. Anything else answers without recounting.
+# A response counts when it restates the queried node's neighbour list ("Node 7
+# is connected to ...") before giving its answer; it enumerates when it also
+# lists the neighbours one per line. It retrieves when it gives the answer
+# without restating the list, or states the answer first and attaches the list
+# afterwards -- under the degree primer most of qwen3-4b's list-restating
+# responses open with the stated value, and none do without a primer.
 _ENUM_LINE = re.compile(r"^\s*(?:\d+\.|[-*])\s*\**\d+\**\s*$", re.M)
+_ANSWER_FIRST = re.compile(r"^\s*(?:\*\*)?The degree of node \d+ is \**\d+", re.I)
 _DISCREPANCY = re.compile(r"discrepanc|contradict|conflict|inconsisten", re.I)
 
 
 def route(text, target):
+  text = text or ""
   lists = re.search(rf"[Nn]ode {target}\**\s+is connected to"
-                    r"|connected to (?:the following )?nodes", text or "")
-  if not lists:
+                    r"|connected to (?:the following )?nodes", text)
+  if not lists or _ANSWER_FIRST.search(text):
     return "retrieve"
   return "enumerate" if len(_ENUM_LINE.findall(text)) >= 5 else "assert"
 
@@ -70,9 +77,10 @@ def pairs(f, arm, task, a, b, dens):
 def boot(j, stat):
   """95% interval of stat(j) over graphs resampled within each density."""
   groups = [g for _, g in j.groupby(level=0)]
+  rng = np.random.default_rng(SEED)
   vals = []
   for _ in range(B):
-    vals.append(stat(pd.concat([g.iloc[RNG.integers(0, len(g), len(g))]
+    vals.append(stat(pd.concat([g.iloc[rng.integers(0, len(g), len(g))]
                                 for g in groups])))
   return np.percentile(vals, [2.5, 97.5])
 
@@ -173,7 +181,7 @@ def per_arm(t):
     a = t[t.arm == arm]
     w = a[(a.baseline >= lo) & (a.baseline < hi)]
     print(f"  {arm:17s} median {100 * a.baseline.median():5.1f}  in band "
-          f"{len(w)}/{len(a)}")
+          f"{len(w)}/{len(a)}  below {lo}: {int((a.baseline < lo).sum())}")
 
 
 def four_b_think_null(f):
@@ -223,12 +231,16 @@ def procedure(f):
     print(f"  {c:6s} p=.50: " + ", ".join(
         f"{r} {100 * (x.route == r).mean():.0f}% ({100 * x[x.route == r].exact.mean():.0f}%)"
         for r in ["retrieve", "assert", "enumerate"] if (x.route == r).any()))
-  print("  accuracy by density: retrieval under degree | enumeration under none")
+  print("  by density: accuracy without a primer | under degree: retrieves, its "
+        "accuracy, enumerates")
   for dens in DENS4 + DENSHI:
-    r = s[(s.condition == "degree") & (s.density_class == dens) & (s.route == "retrieve")]
-    e = s[(s.condition == "none") & (s.density_class == dens) & (s.route == "enumerate")]
-    print(f"   p={dens:.2f}: retrieve {100 * r.exact.mean():5.1f} (n={len(r)}) | "
-          f"enumerate {100 * e.exact.mean():5.1f} (n={len(e)})")
+    n = s[(s.condition == "none") & (s.density_class == dens)]
+    g = s[(s.condition == "degree") & (s.density_class == dens)]
+    r = g[g.route == "retrieve"]
+    print(f"   p={dens:.2f}: none {100 * n.exact.mean():5.1f} (enumerates "
+          f"{100 * (n.route == 'enumerate').mean():.0f}%) | retrieves "
+          f"{100 * len(r) / len(g):.0f}% at {100 * r.exact.mean():.1f}% | enumerates "
+          f"{100 * (g.route == 'enumerate').mean():.0f}%")
 
   s = nd[nd.arm == "qwen3-1.7b-think"]
   x = s[(s.condition == "degree") & (s.density_class >= 0.35)]
@@ -251,6 +263,13 @@ def procedure(f):
       f"{100 * (j.exact_b.mean() - j.exact_a.mean()):+.1f}"
       for j in (pairs(f, "qwen3-1.7b-think", "node_degree", "none", "degree", [p])
                 for p in DENS4 + DENSHI)))
+
+
+def plain_small(f):
+  print("[plain17] qwen3-1.7b node_degree, degree vs none by density: " + ", ".join(
+      f"p={p:.2f} {e[0]:+.0f} ({e[4]} fixed, {e[3]} broke, p={e[5]:.2g})"
+      for p, e in ((p, effect(pairs(f, "qwen3-1.7b", "node_degree", "none", "degree", [p])))
+                   for p in DENS4 + DENSHI)))
 
 
 def recovery(f):
@@ -360,7 +379,8 @@ def replication():
       strata.append(m.group(0))
     d, st = np.array(diffs), np.array(strata)
     idx = [np.flatnonzero(st == s) for s in np.unique(st)]
-    bs = [np.mean(np.concatenate([d[RNG.choice(i, len(i))] for i in idx])) for _ in range(B)]
+    rng = np.random.default_rng(SEED)
+    bs = [np.mean(np.concatenate([d[rng.choice(i, len(i))] for i in idx])) for _ in range(B)]
     fixed, broke = int((d == 1).sum()), int((d == -1).sum())
     m = scoring.mcnemar(np.array([0] * fixed + [1] * broke, bool),
                         np.array([1] * fixed + [0] * broke, bool))
@@ -370,6 +390,10 @@ def replication():
 
   main = load_runs("runs/qwen3-1.7b.degdens40.shard*.jsonl")
   contrast(main, lambda m: float(m.group(2)) <= 0.5, "400 graphs per density, p<=.50")
+  # Indices 0-99 at each density are the main sweep's own graphs; the other 300
+  # are new, so they are the part of this run that replicates independently.
+  new = {k: v for k, v in main.items() if int(k[0].rsplit("/", 1)[1]) >= 100}
+  contrast(new, lambda m: float(m.group(2)) <= 0.5, "the 300 new graphs per density")
   contrast(load_runs("runs/qwen3-1.7b.degdensrep.shard*.jsonl"), lambda m: True,
            "fresh seeds, 1,600 graphs")
   grid = load_runs("runs/qwen3-1.7b.degfixdeg*.jsonl")
@@ -403,13 +427,12 @@ def bundle(f):
           eff[c] = 100 * (j.exact_b.mean() - j.exact_a.mean()) if len(j) >= 50 else np.nan
         rows.append(dict(arm=arm, task=task, dens=dens, **eff))
   t = pd.DataFrame(rows).dropna()
-  t["mean"] = t[parts].mean(axis=1)
-  t["best"] = t[parts].max(axis=1)
-  for k in ["mean", "best"]:
-    e = t["all"] - t[k]
-    bs = [e.iloc[RNG.integers(0, len(e), len(e))].mean() for _ in range(B)]
-    print(f"[bundle] all minus {k} of parts over {len(t)} cells: {e.mean():+.1f} "
-          f"[{np.percentile(bs, 2.5):+.1f}, {np.percentile(bs, 97.5):+.1f}]")
+  e = t["all"] - t[parts].mean(axis=1)
+  rng = np.random.default_rng(SEED)
+  bs = [e.iloc[rng.integers(0, len(e), len(e))].mean() for _ in range(B)]
+  print(f"[bundle] all minus the mean of its parts over {len(t)} (arm, task, "
+        f"density) combinations: {e.mean():+.1f} "
+        f"[{np.percentile(bs, 2.5):+.1f}, {np.percentile(bs, 97.5):+.1f}]")
   print("  qwen3-4b node_degree p>=.65: " + ", ".join(
       f"{c} {effect(pairs(f, 'qwen3-4b', 'node_degree', 'none', c, DENSHI))[0]:+.1f}"
       for c in parts + ["all"]))
@@ -438,16 +461,19 @@ def length(f):
         slope, icpt = np.polyfit(x, ds, 1)
         ok = w["none"].notna() & w["filler"].notna()
         fil = 100 * (w.loc[ok, "filler"].mean() - w.loc[ok, "none"].mean())
-        return slope, fil - (icpt + slope * kch["filler"])
-      s, resid = fit(W)
-      bs = np.array([fit(W.iloc[RNG.integers(0, len(W), len(W))]) for _ in range(400)])
-      lo, hi = np.nanpercentile(bs[:, 0], [2.5, 97.5])
-      rows.append(dict(arm=arm, task=task, slope=s, lo=lo, hi=hi, resid=resid))
+        return slope, fil - (icpt + slope * kch["filler"]), np.polyfit(x[:4], ds[:4], 1)[0]
+      s, resid, s4 = fit(W)
+      rng = np.random.default_rng(SEED)
+      bs = np.array([fit(W.iloc[rng.integers(0, len(W), len(W))])[0] for _ in range(400)])
+      lo, hi = np.nanpercentile(bs, [2.5, 97.5])
+      rows.append(dict(arm=arm, task=task, slope=s, lo=lo, hi=hi, resid=resid,
+                       slope_no_all=s4))
   t = pd.DataFrame(rows)
   for size in ["1.7b", "4b"]:
     s = t[t.arm.str.startswith("qwen3-" + size)]
-    print(f"  {size}: slope positive in {(s.slope > 0).sum()} of {len(s)}; "
-          f"range {s.slope.min():+.1f} to {s.slope.max():+.1f} points per 1,000 chars")
+    print(f"  {size}: slope positive in {(s.slope > 0).sum()} of {len(s)} "
+          f"({(s.slope_no_all > 0).sum()} without all); range {s.slope.min():+.1f} to "
+          f"{s.slope.max():+.1f} points per 1,000 chars")
   print(f"  all: mean {t.slope.mean():+.2f}; CI excludes 0 in "
         f"{int(((t.lo > 0) | (t.hi < 0)).sum())} of {len(t)}")
   big = t.nsmallest(2, "resid")
@@ -476,6 +502,29 @@ def node_count(f):
   print("[nodecount] qwen3-1.7b share answering 39: " + ", ".join(
       f"{c} {100 * (d[d.condition == c].pred.astype(str) == '39').mean():.1f}%"
       for c in ["none", "rwse", "degree", "components", "filler", "all", "clustering"]))
+
+
+def measurement(f):
+  """Why exact match on connected_nodes, and how the edge share moves."""
+  same, flipped = [], 0
+  for arm in ARMS:
+    for c in ["filler"] + PRIMERS:
+      j = pairs(f, arm, "connected_nodes", "none", c, DENS4)
+      ex = 100 * (j.exact_b.mean() - j.exact_a.mean())
+      f1 = 100 * (j.f1_b.mean() - j.f1_a.mean())
+      if abs(ex) >= 5:
+        if ex * f1 > 0:
+          same.append(f1 / ex)
+        else:
+          flipped += 1
+      if arm == "qwen3-4b" and c == "filler":
+        print(f"[f1] qwen3-4b filler on connected_nodes: exact {ex:+.1f}, F1 {f1:+.1f}")
+  print(f"[f1] of {len(same) + flipped} contrasts with |exact| >= 5, F1 moves the same "
+        f"way in {len(same)} (by {min(same):.2f} to {max(same):.2f} as much) and "
+        f"reverses {flipped}")
+  e = f[(f.task == "edge_existence") & (f.arm == "qwen3-1.7b") & (f.condition == "none")]
+  print("[goldshare] share of queried pairs that are edges: " + ", ".join(
+      f"p={d:.2f} {100 * g.gold_is_yes.mean():.0f}%" for d, g in e.groupby("density_class")))
 
 
 def power(f):
@@ -527,6 +576,8 @@ def route_data(f):
         s = g[g.route == k]
         r["share_" + k] = len(s) / len(g)
         r["acc_" + k] = s.exact.mean() if len(s) else np.nan
+      other = g[g.route != "retrieve"]
+      r["acc_other"] = other.exact.mean() if len(other) else np.nan
       rows.append(r)
   return pd.DataFrame(rows)
 
@@ -572,6 +623,7 @@ def main():
   four_b_think_null(f)
   sign_flip(f)
   procedure(f)
+  plain_small(f)
   recovery(f)
   edge_count(f)
   edge_existence(f)
@@ -582,6 +634,7 @@ def main():
   length(f)
   node_count(f)
   clustering_spread()
+  measurement(f)
   power(f)
   extraction(f)
   if args.csv_dir:

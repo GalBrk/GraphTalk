@@ -35,11 +35,11 @@ plt.rcParams.update({
 
 def window():
     t = pd.read_csv(SRC + "primer_cells.csv")
-    fig, ax = plt.subplots(figsize=(3.03, 2.0))
+    fig, ax = plt.subplots(figsize=(3.03, 1.75))
     ax.axvspan(0.25, 0.75, color="#f1f0ec", lw=0, zorder=0)
     ax.axhline(0, color=INK2, lw=0.6, zorder=1)
     for carries, col, mk, lab in ((False, ORANGE, "o", "side information"),
-                                  (True, BLUE, "^", "states the answer")):
+                                  (True, BLUE, "^", "answer-carrying")):
         s = t[t.carries == carries]
         sig = s.q < 0.05
         ax.scatter(s[~sig].baseline, s[~sig].delta, s=11, marker=mk,
@@ -63,7 +63,7 @@ def window():
     ax.set_xlabel("accuracy without a primer")
     ax.set_ylabel("effect of the primer (points)")
     ax.grid(axis="y", color=GRID, lw=0.4, zorder=0)
-    ax.legend(frameon=False, loc="upper left", handletextpad=0.2,
+    ax.legend(frameon=False, loc="upper right", handletextpad=0.2,
               borderaxespad=0.1, markerscale=1.1)
     fig.tight_layout(pad=0.2)
     fig.savefig(OUT + "v3_fig_window.pdf")
@@ -75,7 +75,7 @@ def edge_existence():
     c = pd.read_csv(SRC + "edge_existence_collapse.csv")
     series = [("none", INK2, "o", "-"), ("filler", ORANGE, "s", "-"),
               ("degree", BLUE, "^", "-"), ("all", AQUA, "D", "-")]
-    fig, (a, b) = plt.subplots(1, 2, figsize=(3.03, 1.65))
+    fig, (a, b) = plt.subplots(1, 2, figsize=(3.03, 1.45))
     for cond, col, mk, ls in series:
         s = c[c.condition == cond].sort_values("density")
         kw = dict(color=col, marker=mk, ms=3, lw=1.0, ls=ls, mew=0)

@@ -6,47 +6,56 @@ traces to one of these commands.
 
 ## v3 (current paper)
 
-Every number in the body of `talk_like_a_graph.v3.tex` traces to a column of
-`csv2/raw-trends/`, which is rebuilt from the raw generations by:
+Every hand-typed number in `talk_like_a_graph.v3.tex` is printed, under the
+tag given below, by
 
 ```bash
-PYTHONPATH=. python scripts/build_raw_frame.py            # runs/ -> frame.csv
-PYTHONPATH=. python scripts/raw_trends.py --question all  # -> the rest
-PYTHONPATH=. python scripts/analyze_primer_window.py --tex paper/v3_window_table.tex
+PYTHONPATH=. python scripts/primer_findings.py --csv-dir csv2/raw-trends
 ```
 
-`build_raw_frame.py` regenerates every graph from its `instance_id` and aborts
-if a regenerated gold answer disagrees with the stored one, so a clean run is
-also a check that the frame matches the generations.
+whose last full output is kept in `csv2/raw-trends/primer_findings.txt`. It
+reads `csv2/raw-trends/frame.csv` (rebuilt from `runs/` by
+`scripts/build_raw_frame.py`, which aborts if a regenerated gold answer
+disagrees with the stored one), the raw responses in `runs/` for the procedure
+measures, and `runs/qwen3-1.7b.{degdens40,degdensrep,degfixdeg}.*` for the
+replication. Pairing everywhere: pair on the shared graph within (arm, task,
+density), drop the pair if either generation hit the budget.
 
-| Body figure | Source | Command |
-|---|---|---|
-| primer lengths 37 / 891 / 1,629 / 2,949 / 4,691, and 1,829 for `filler` | `frame.csv`, mean `primer_chars` by condition | `--question all` |
-| length term −0.3 pts per 1,000 chars, positive in 8 of 16 cells | `effects.csv` × `frame.csv`, fitted within each (arm, task) over the five content primers | `analyze_primer_window.py` |
-| shortcut bars: 18 of 42 at exactly 1.000, highest of the rest 0.746; `filler` scores 1.00 on `node_count` | `shortcuts_n40_flat.json` | `scripts/shortcut_table_n40.py` |
-| 84,000 generations; 99.84% parse; 133 unparsed, 128 of them `cycle_check` | `frame.csv` (`parsed`, `task`, `hit_cap`) | `--question all` |
-| decoding budgets 8,192 and 2,048 | `runs/*.jsonl` (`hit_cap`, `n_new_tokens`) | read from the generations |
-| set-F1 0.93–1.00 against exact match 0.48–0.92 on `connected_nodes` | `effects.csv` (`f1`, `acc`) | `--question effects` |
-| balanced accuracy, predicted-yes rate, the 98–99% yes rate | `edge_existence_balanced.csv` | `--question effects` |
-| 324 side-information cells, 172 (53%) above 0.90 | printed summary + `v3_window_table.tex` | `analyze_primer_window.py` |
-| band means: +16 answer-carrying, +2 to +4 side information, −1.4 / −0.8 above 0.90 | same | same |
-| per-primer side-information means +5.3, +2.9, +2.2, −0.3 | same | same |
-| recovered fraction 0.006 to 0.99 where the bar is 1.00 | same, "what does the model recover" block | same |
-| `qwen3-4b`/`node_degree`/`degree` profile −6, −1, −7, −12, −6, +7, +27 | `effects.csv` (`vs_none_delta` by density) | `--question effects` |
-| 13 items broken against 1 fixed at p=.50 | `effects.csv` (`vs_none_broke`, `vs_none_fixed`) | `--question effects` |
-| response lengths 273 / 34 / 266, 206 / 352, 233 / 94 | `behaviour.csv` (`median_tokens`) | `--question behaviour` |
-| sum-of-degrees 7%→100% and 67%→99%; truncation 29%→20% | `behaviour.csv` (`uses_degree_sum`, `hit_cap_rate`) | `--question behaviour` |
-| density profiles +22/+30/+24/+33 and +7/+11/+10/+9 | `effects.csv` (`vs_none_delta`) | `--question effects` |
-| serial position 24.3 [−33.5, −15.2]; control +25.0; 6 of 48 distinguishable | `serial_position.csv` (`slope_pts`, `slope_vs_none`, `svn_lo`, `svn_hi`) | `--question mechanism` |
-| id/difficulty correlations +0.019 and +0.020 over 19,600 items | printed by `print_id_confound` | `--question mechanism` |
-| additivity 0.50 [0.29, 0.71]; 0.52 and 1.00 [0.74, 1.20] on 19 cells | `additivity.csv` (`ratio`, `ratio_max`, `max_share`) | `--question composition` |
-| headroom crossover counts (quoted in `docs/`, table in the appendix) | `headroom.csv` | `--question headroom` |
-| approximately 217,000 generations (Ethics) | line count of `runs/*.jsonl`, archive excluded | — |
+| Body figure | Tag |
+|---|---|
+| primer lengths 37 / 891 / 1,629 / 2,949 / 4,691 and 1,829 (`filler`, so 12% above `clustering`), main-sweep means | `[length]` first line |
+| any answer-carrying threshold in (0.746, 1.00] gives the same split | solver scores (Appendix Table 5) |
+| 393 cells (five content primers) with at least 50 pairs; the 47 dropped are `edge_count` | `[cells]` |
+| 78,538 terminated generations, 1 unparsed; high-density truncation at most 2.5% | `[extract]` |
+| set-F1 moves about a sixth as much as exact match and reverses 2 of the 5 contrasts above 5 points | `[f1]` |
+| edge share 10% to 85% by density | `[goldshare]` |
+| band means +16.0 / +16.7, +7.8, −5.7, −1.4; side +2.3 / +3.9, −1.8, −0.8; every `qwen3-4b` answer-carrying cell above 0.90 negative (−1 to −15); all 18 answer-carrying cells in 0.25–0.75 are `node_degree` | `[bands]`; the 18 from `primer_cells.csv` (`carries`, `baseline`) |
+| split-half reproduces every band within about 3 points | `[splithalf]` |
+| median baselines 59.0 / 94.9 / 87.0 / 100.0; cells in 0.25–0.75: 40/103, 35/90, 10/110, 0/90; below 0.25: 28 and 20 without thinking, none with | `[arms]` |
+| no primer moves `qwen3-4b-think` by more than 2.1, pooled over p ≤ .50 | `[null4bt]`, Table 2 |
+| `degree` profile −6, −1, −7, −12, −6, +7, +27; 13 broken / 1 fixed; `filler` −2 at p=.50; `all` down at every density, by up to 37 | `[flip]` |
+| `qwen3-4b` count 99–100% to p=.50, then 82 / 50 / 33%; under `degree` retrieves 47–97% of responses at 57–97% accuracy, below the count to p=.65 and above it at .75 and .85; enumeration 85–100% to at most 8% at p=.35–.75; under `all` retrieves 27–86% at 40–94%, the rest 43 / 4 / 2% accurate from p=.65 | `[route]`, `node_degree_routes.csv` (Appendix Table 4) |
+| `qwen3-1.7b-think`: retrieves at most 2%; enumerates 76–98% from p=.35; discrepancy 26% / 49% vs 1% / 4%; about two thirds correct when stated; +19.9 [16.3, 23.6]; +31.6 above p=.50; +5.2 and −1.0 at p=.10, .20 | `[verify]`, `node_degree_routes.csv` |
+| `qwen3-1.7b` retrieves at most 4%; +10 and +18 at p=.20 and .35 (count 80% and 41%); within 2 points from p=.50, baseline 5–30% | `[plain17]`, `node_degree_routes.csv` |
+| `edge_count`: `qwen3-4b` wording 96–100%, 2% exact, 30% exact under `degree`, +23 / +30 / +24 / +34, 114 / 5; `qwen3-1.7b` 7–67% to 99–100%, 4.7% exact, +4.0, MAE 136 to 40 | `[edgecount]` |
+| `edge_existence` hits 0.97–1.00; 94–99% of errors false alarms; false alarms 0.51 to 0.33 (−18.6 [−24.0, −13.1]); −6 to −9; 0.69 (+18.3 [13.9, 22.7]); 0.61; `qwen3-4b` 0.16 to 0.08, +4.6 [2.3, 6.9], others +7 to +14 | `[fa]` |
+| yes-rate 98–99%, 48–120 tokens, balanced accuracy 0.52–0.53; 259–404 tokens; +9.5 [4.5, 15.0], +14.9 [8.7, 21.4]; `filler` 97% vs 65% at p=.35 | `[collapse]`, `edge_existence_collapse.csv` (Figure 2) |
+| `clustering` +11.3 [6.7, 16.3], 46 / 12; `rwse` +7.7; `filler` +2.0; counting 33–82%; printed clustering values vary within a graph by an SD of at most 0.02 from p=.65 | `[clusthi]`, `[flip]` baselines, `[cluster]` |
+| replication +4.0 on the 300 new graphs per density (p=.0047), +4.2, +6.2; p ≤ .005 in each; +3.0 in the main sweep | `[replic]`, Table 2 |
+| `components` +7, +11, +10, +9; connected graphs at p ≥ .20 | `[comp]` |
+| bundle vs mean of parts +0.2 [−1.1, 1.6] over 54 (arm, task, density) combinations; +9.3 / +11.3 / +7.7 vs −21.3 | `[bundle]` |
+| length slopes −6.5 to +3.4, positive 7 of 8 (1.7B) and 0 of 8 (4B), 3 and 1 of 8 without `all`; `filler` 18.3 and 13.8 below the line | `[length]` |
+| `node_count`: 68.5%, 1.2%, 66.5% | `[nodecount]` |
+| smallest detectable effect about 8 points | `[power]` |
+| Discussion: `qwen3-4b` right on 87% of `node_degree` items at p=.50 under `degree`; exact on 30% of `edge_count` graphs, `qwen3-1.7b` on 5% | Appendix Table 4, `[edgecount]` |
+| solver scores (1.00; at most 0.746) | `shortcuts_n40_flat.json`, `scripts/shortcut_table_n40.py` (Appendix Table 5) |
+| 84,000 generations; budgets 8,192 and 2,048; truncation 81% / 62% | `runs/*.jsonl` (`hit_cap`, `n_new_tokens`; Appendix Table 6) |
+| about 217,000 generations (Ethics); 98,400 analysed = 84,000 (`densfull40`) + 4,800 (`degdens40`) + 3,200 (`degdensrep`) + 6,400 (`qwen3-1.7b.degfixdeg`) | line count of `runs/*.jsonl`, archive excluded |
 
-Body floats: `v3_main_table.tex` and the appendix `v3_*` tables come from
-`paper/make_v3_tables.py`; `v3_window_table.tex` from
-`scripts/analyze_primer_window.py`; `v3_fig_*.pdf` from
-`scripts/raw_trends_figures.py --format pdf`.
+Floats: Tables 1, 2 and the appendix tables come from `paper/make_v3_tables.py`;
+the two figures from `paper/make_v3_figures.py`, which draws
+`csv2/raw-trends/primer_cells.csv` and `edge_existence_collapse.csv`. All run
+from `paper/make_v3.sh`.
 
 ## v1 (superseded, retained for the inherited floats)
 
