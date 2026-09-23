@@ -18,10 +18,22 @@ def test_route_retrieve_assert_enumerate():
   assert pf.route(listing, 7) == "enumerate"
   # A different node's neighbour list is not the queried node's.
   assert pf.route("Node 8 is connected to node 7.", 7) == "retrieve"
-  # Stating the answer first and attaching the list afterwards is retrieval.
-  assert pf.route("The degree of node 7 is **5**.\n\nNode 7 is connected to "
-                  "nodes 1, 2, 3, 4, 5.", 7) == "retrieve"
+  # Opening with an answer and then restating the list is a recount, not retrieval.
+  first = "The degree of node 7 is **6**.\n\nNode 7 is connected to nodes 1, 2, 3, 4, 5."
+  assert pf.route(first, 7) == "assert"
+  assert pf.opens_with(first) == 6
   assert pf.route("**The degree of node 7 is 5**", 7) == "retrieve"
+  # Naming the neighbours inline also restates the list.
+  assert pf.route("counting the nodes directly connected to node 7, which are: 1, 2.",
+                  7) == "assert"
+  assert pf.opens_with("Node 7 is connected to nodes 1, 2.") is None
+
+
+def test_discrepancy_is_reported_not_looked_for():
+  assert pf.reports_discrepancy("I count 5, but the primer says 6. That is a discrepancy.")
+  assert pf.reports_discrepancy("Wait, that's a contradiction.")
+  assert not pf.reports_discrepancy("Let me check if there's any conflicting information.")
+  assert not pf.reports_discrepancy("I want to see if there's any inconsistency here.")
 
 
 def test_pairs_drop_a_pair_when_either_side_truncates():

@@ -186,9 +186,66 @@ statements contradicted by the data.
 | 50 | Bootstrap intervals shifted whenever an analysis was added: every bootstrap drew from one shared generator | each bootstrap starts from its own fixed seed (tested); all eight printed intervals are re-read from the regenerated snapshot |
 | 51 | Repetition (authors' directive: state a result once): the account appeared word for word in the Introduction and the Discussion; `qwen3-4b`'s 30% on `edge_count` three times; the "yes"-rate channel three times; `clustering` as the only primer to help `qwen3-4b` on `edge_existence` twice, with +4.0 and +4.6 on different bases; `degree`'s +27.7 on `edge_count`, the 33–82% count accuracy, the parts' +11.3 and +7.7, and the 84,000 generations each once more | each kept in one place: the Introduction previews the account in one clause, the Sanford and Dziri points share one sentence, and §4.1 no longer repeats what §4.3 and §4.4 report |
 
+## Round 8 — final
+
+Five reviewers, each with a disjoint scope, re-checked every number against
+`runs/` with independently written code: numbers I (abstract to §4.2),
+numbers II (§4.3 to Ethics), methodology and inference, literature and
+citations, and presentation against the ACL template and the grading
+criteria. Every number reproduced. The fixes below concern what the numbers
+were taken to show.
+
+| # | issue | resolution |
+|---|---|---|
+| 52 | Ethics counted 98,400 analysed generations; the 400-per-density run also generated a `components` condition that no analysis uses | 97,200 once the run-to-run check (item 65) is counted: 84,000 + 2,400 + 1,200 + 3,200 + 6,400; §3.2 now describes the run as the 300 new graphs per density that enter the result |
+| 53 | "lower it by 6 to 9 points": the largest is 8.47 | 6 to 8 |
+| 54 | The answer-first retrieval class (round 7) absorbed recounts: from p=.50, most `qwen3-4b` responses that open with an answer open with a wrong one and then recount, so "the sign matches at all seven densities" was close to arithmetic | retrieval is again "answers without restating the list" (44–74%, 73–98% accurate); the text says what the rest do (open with an answer, usually wrong, then recount; 79/45/28/16% accurate) and that at p=.65 they outweigh retrieval's gain. Appendix Table 4 gains "acc. of the rest" under `degree` |
+| 55 | The discrepancy regex counted checks ("to see if there's any inconsistency") | hypothetical cues excluded (tested); 23% / 49% against 0.3% / 4%, correct in 61% / 69% |
+| 56 | The thinking arm's +19.9 drops its non-terminating checks: `degree` truncates 7.6% of its generations against 1.1% | both reported: +16.0 [12.0, 19.7] when truncation counts as an error; abstract "16 to 20 points"; Table 6 caption |
+| 57 | "Thinking empties the range below 0.25" came from the cell filter, which drops every thinking-arm `edge_count` cell | medians stated over the retained cells, with the exclusion named |
+| 58 | The +16-point window is an across-arm average | its composition is stated: 10 of the 18 cells are `qwen3-1.7b-think`'s, range −19 to +45; abstract "mostly for Qwen3-1.7B with thinking" |
+| 59 | RQ answers: RQ1's side-information figure holds only in the middle bands and mostly for `degree`/`all` on edge tasks; RQ2 generalised one arm's rule; RQ3's "rate of yes" is an outcome | rewritten; Discussion scoped "for primers that state the answer" |
+| 60 | Power "about 8 points" is the all-cell median, half of it at ceiling | about 14 points where primers act (side information at 25–75%) |
+| 61 | The solver was described as reading the edge count on `edge_count` | "except the count a task asks for" (§3.1, Table 5) |
+| 62 | Length slopes included the two termination-selected columns; Table 2 printed their effects, which reverse when truncation counts as an error | fits restricted to Table 2's columns with ≥100 pairs (−2.0 to +3.4; 6 of 7 and 0 of 7); those columns now print "--" |
+| 63 | Citation metadata: both ICLR entries lacked the pages of the version cited | pages from proceedings.iclr.cc (43909–43934; 48118–48145); Feng et al. 2019 (partial-input baselines) and Turpin et al. 2023 (unstated reasons) added where the text needed them |
+| 64 | Presentation: accuracy in three scales; 13 sentences over 35 words; inconsistent names (count, dedicated/further, states/reports a discrepancy); `filler` called side information; float-noise rounding (−5.75 printed −5.7); author block without affiliation | one scale (percent); sentences split; names unified (`edge_count` abbreviated e.count); rounding guard in both generators; Tel Aviv University added; figures at ≥7 pt with a dash per condition in Figure 2 |
+| 65 | Two findings the authors asked for | retrieval by queried node (§4.2: 96% for nodes 0–9 against 83%, +12 within density, p<.001; `[position]`), stated with its confound: nodes 0–9 open the primer and are the only single-digit ids, and accuracy does not fall with position from node 10; and run-to-run variation (Limitations: 1,200 identical `qwen3-1.7b` prompts change 5% of outcomes; `[rerun]`) |
+
+### Round 8 — verification
+
+The verifier compared the new version with `e331866` and approved it with
+fixes: every changed number recomputed from `runs/`, the snapshot and the
+generated floats regenerate identically, and the new version is better on all
+seven grading criteria.
+
+| # | issue | resolution |
+|---|---|---|
+| 66 | Ethics said 96,000, but the run-to-run check analyses 1,200 more generations | 97,200 |
+| 67 | Table 5 blamed `rwse`'s low `edge_existence` score on out-of-sample failure; its fitted rule fails on the fitting graphs too (at p=.85 every printed 2-step value is 0.03) | caption says so |
+| 68 | The position result was credited to primacy, but the drop is a step at the single-/two-digit id boundary with no gradient after it | stated as above; Liu et al. cited only in Limitations |
+| 69 | `route()` missed "nodes connected to node 11, which are: ..." (14 `all` responses at p=.10) | regex extended (tested); `all` retrieves 15–51%; no `degree` number moves |
+| 70 | Medians compared across different cell sets | like-for-like, outside `edge_count`: 67.0 → 94.9% and 88.9 → 100.0% |
+| 71 | Wording: the run-to-run sentence did not say what was regenerated; "keep the responses long" named primers Figure 2 does not show; the window's range read as the thinking cells'; the discrepancy base rate; "less careful"; RQ3's edge-query half; two sentences over 50 words; Table 2's "omitted"; empty PDF metadata | each fixed |
+
+Optional additions computed but left out of the paper for space (authors'
+instruction: include if they fit, otherwise record them here):
+
+- `components` changes `qwen3-4b`'s procedure on `connected_nodes`: it restates
+  the queried node's neighbour line in 98.5% of responses, against 63.0% under
+  `none` and 21.8% under `filler` (`[compproc]`).
+- Two gains lie outside the procedure account: `degree` improves the plain
+  1.7B arm's count at p=.20 and .35 without being cited (none of the 39 items
+  it fixes cites the stated degree or reports a discrepancy; `[plaincite]`),
+  and `clustering` improves `qwen3-4b`'s count without changing its procedure
+  (`[clustproc]`).
+
 ## Status
 
-`make_v3.sh` exit 0; body, Limitations and Ethics end on page 5 (8 pages with
-references and appendix); A4, all fonts embedded, no Type 3; abstract 197
-words; 0 undefined references, 0 overfull boxes, 0 undefined citations; every
-float traces to a generator that `make_v3.sh` runs; all four arms reported.
+Closed after round 8, the last round. `make_v3.sh` exit 0; body, Limitations
+and Ethics end on page 5 (8 pages with references and appendix); A4, all fonts
+embedded, no Type 3; abstract 199 words; 0 undefined references, 0 overfull
+boxes, 0 undefined citations; every printed interval appears in
+`csv2/raw-trends/primer_findings.txt`; every float traces to a generator that
+`make_v3.sh` runs; 804 tests pass (the one failure, `test_prompts.py`, is torch
+failing to load on this machine).

@@ -2,20 +2,20 @@
 \begin{table}[t]
 \centering
 \small
-\setlength{\tabcolsep}{2.4pt}
+\setlength{\tabcolsep}{1.8pt}
 \begin{tabular}{@{}llrl@{}}
 \toprule
 Condition & States & Chars & Carries \\
 \midrule
 \texttt{none} & no primer & -- & -- \\
+\texttt{filler} & ``Node $i$ is simply present'' & 1,829 & -- \\
 \texttt{components} & component count & 37 & -- \\
-\texttt{degree} & degree & 891 & deg., count \\
 \texttt{clustering} & clustering coefficient & 1,629 & -- \\
 \texttt{rwse} & return prob., 2 and 3 steps & 2,949 & -- \\
-\texttt{all} & the three rows above & 4,691 & deg., count \\
-\texttt{filler} & ``Node $i$ is simply present'' & 1,829 & -- \\
+\texttt{degree} & degree & 891 & deg., e.count \\
+\texttt{all} & the three rows above & 4,691 & deg., e.count \\
 \bottomrule
 \end{tabular}
-\caption{The seven conditions. \emph{States}: what each primer gives per node (\texttt{components}: for the graph). \emph{Chars}: mean length. \emph{Carries}: tasks with variable gold on which the graph-blind solver scores at least $0.85$ (Appendix Table~\ref{tab:shortcut}): \texttt{node\_degree} (deg.) and \texttt{edge\_count} (count).}
+\caption{The seven conditions. \emph{States}: what each primer gives per node (\texttt{components}: for the graph). \emph{Chars}: mean length. \emph{Carries}: tasks with variable gold on which the graph-blind solver scores at least $85\%$ (Appendix Table~\ref{tab:shortcut}): \texttt{node\_degree} (deg.) and \texttt{edge\_count} (e.count).}
 \label{tab:conditions}
 \end{table}

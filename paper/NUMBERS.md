@@ -21,36 +21,51 @@ measures, and `runs/qwen3-1.7b.{degdens40,degdensrep,degfixdeg}.*` for the
 replication. Pairing everywhere: pair on the shared graph within (arm, task,
 density), drop the pair if either generation hit the budget.
 
+Accuracies and rates appear in the text as percentages; the snapshot prints
+some of them as fractions (false-alarm rates, balanced accuracy, baselines,
+solver scores), so multiply those by 100.
+
 | Body figure | Tag |
 |---|---|
 | primer lengths 37 / 891 / 1,629 / 2,949 / 4,691 and 1,829 (`filler`, so 12% above `clustering`), main-sweep means | `[length]` first line |
-| any answer-carrying threshold in (0.746, 1.00] gives the same split | solver scores (Appendix Table 5) |
+| 16 exact rules, 1 heuristic, 8 fitted rules | `graphtalk.shortcuts` `THEOREMS`, `HEURISTICS`, `FITTED` |
+| any answer-carrying threshold in (74.6%, 100%] gives the same split | solver scores (Appendix Table 5) |
 | 393 cells (five content primers) with at least 50 pairs; the 47 dropped are `edge_count` | `[cells]` |
 | 78,538 terminated generations, 1 unparsed; high-density truncation at most 2.5% | `[extract]` |
-| set-F1 moves about a sixth as much as exact match and reverses 2 of the 5 contrasts above 5 points | `[f1]` |
+| set-F1 moves a ninth to a sixth as much as exact match (0.11 to 0.17) and reverses 2 of the 5 contrasts above 5 points | `[f1]` |
 | edge share 10% to 85% by density | `[goldshare]` |
-| band means +16.0 / +16.7, +7.8, −5.7, −1.4; side +2.3 / +3.9, −1.8, −0.8; every `qwen3-4b` answer-carrying cell above 0.90 negative (−1 to −15); all 18 answer-carrying cells in 0.25–0.75 are `node_degree` | `[bands]`; the 18 from `primer_cells.csv` (`carries`, `baseline`) |
+| band means +16.0 / +16.7, +7.8, −5.8, −1.4; side +2.3 / +3.9, −1.8, −0.8; every `qwen3-4b` answer-carrying cell from 90% negative (−1 to −15) | `[bands]` |
+| the 18 intermediate answer-carrying cells: all `node_degree`, 10 from `qwen3-1.7b-think`, effects −19 to +45 | `[window]` |
 | split-half reproduces every band within about 3 points | `[splithalf]` |
-| median baselines 59.0 / 94.9 / 87.0 / 100.0; cells in 0.25–0.75: 40/103, 35/90, 10/110, 0/90; below 0.25: 28 and 20 without thinking, none with | `[arms]` |
+| outside `edge_count` (the thinking arms keep no `edge_count` cells), median baselines 67.0 → 94.9% (1.7B) and 88.9 → 100.0% (4B); 35 of 90 `qwen3-1.7b-think` cells in 25–75%, 0 of 90 for `qwen3-4b-think` | `[arms]` ("median outside edge_count") |
 | no primer moves `qwen3-4b-think` by more than 2.1, pooled over p ≤ .50 | `[null4bt]`, Table 2 |
 | `degree` profile −6, −1, −7, −12, −6, +7, +27; 13 broken / 1 fixed; `filler` −2 at p=.50; `all` down at every density, by up to 37 | `[flip]` |
-| `qwen3-4b` count 99–100% to p=.50, then 82 / 50 / 33%; under `degree` retrieves 47–97% of responses at 57–97% accuracy, below the count to p=.65 and above it at .75 and .85; enumeration 85–100% to at most 8% at p=.35–.75; under `all` retrieves 27–86% at 40–94%, the rest 43 / 4 / 2% accurate from p=.65 | `[route]`, `node_degree_routes.csv` (Appendix Table 4) |
-| `qwen3-1.7b-think`: retrieves at most 2%; enumerates 76–98% from p=.35; discrepancy 26% / 49% vs 1% / 4%; about two thirds correct when stated; +19.9 [16.3, 23.6]; +31.6 above p=.50; +5.2 and −1.0 at p=.10, .20 | `[verify]`, `node_degree_routes.csv` |
+| `qwen3-4b` count 99–100% to p=.50, then 82 / 50 / 33%; under `degree` retrieves (no restated list) 44–74% of responses at 73–98% accuracy, below the count to p=.50 and above it from .65; enumeration 85–100% to at most 8% at p=.35–.75; from p=.50 the other responses open with an answer in 68–92%, usually a wrong one, and are 79 / 45 / 28 / 16% accurate; under `all` retrieves 15–51% at 49–96%, the rest 32 / 12 / 5% accurate from p=.65 | `[route]`, `node_degree_routes.csv` (Appendix Table 4) |
+| retrieval for nodes 0–9: 96% vs 83%, +12 within density, permutation p<.001; by decade of the node id 96 / 82 / 87 / 82%, so no fall with position after node 10 (nodes 0–9 are also the only single-digit ids) | `[position]` |
+| `qwen3-1.7b-think`: retrieves at most 2%; enumerates 76–98% from p=.35; discrepancy 23% / 49% vs 0.3% / 4% without a primer; correct when reported 61% / 69%; +19.9 [16.3, 23.6]; +31.6 above p=.50; +5.2 and −1.0 at p=.10, .20 | `[verify]`, `node_degree_routes.csv` |
+| `qwen3-1.7b-think` truncation under `degree` 7.6% (8%) vs 1.1% (1%) under `none`; 96% of truncated report a discrepancy; truncation as error +16.0 [12.0, 19.7] | `[trunc]` |
 | `qwen3-1.7b` retrieves at most 4%; +10 and +18 at p=.20 and .35 (count 80% and 41%); within 2 points from p=.50, baseline 5–30% | `[plain17]`, `node_degree_routes.csv` |
-| `edge_count`: `qwen3-4b` wording 96–100%, 2% exact, 30% exact under `degree`, +23 / +30 / +24 / +34, 114 / 5; `qwen3-1.7b` 7–67% to 99–100%, 4.7% exact, +4.0, MAE 136 to 40 | `[edgecount]` |
-| `edge_existence` hits 0.97–1.00; 94–99% of errors false alarms; false alarms 0.51 to 0.33 (−18.6 [−24.0, −13.1]); −6 to −9; 0.69 (+18.3 [13.9, 22.7]); 0.61; `qwen3-4b` 0.16 to 0.08, +4.6 [2.3, 6.9], others +7 to +14 | `[fa]` |
-| yes-rate 98–99%, 48–120 tokens, balanced accuracy 0.52–0.53; 259–404 tokens; +9.5 [4.5, 15.0], +14.9 [8.7, 21.4]; `filler` 97% vs 65% at p=.35 | `[collapse]`, `edge_existence_collapse.csv` (Figure 2) |
-| `clustering` +11.3 [6.7, 16.3], 46 / 12; `rwse` +7.7; `filler` +2.0; printed clustering values vary within a graph by an SD of at most 0.02 from p=.65 | `[clusthi]`, `[flip]` baselines, `[cluster]` |
-| replication +4.0 on the 300 new graphs per density (p=.0047), +4.2, +6.2; p ≤ .005 in each; +3.0 in the main sweep | `[replic]`, Table 2 |
+| `edge_count`: `qwen3-4b` wording 96–100%, 2% exact, 30% exact under `degree`, +23 / +30 / +24 / +34, 114 / 5; `qwen3-1.7b` 8–64% to 99–100% (terminated generations), 4.7% exact, +4.0, MAE 136 to 40 | `[edgecount]` |
+| `edge_existence` hits 97–100%; 94–99% of errors false alarms; false alarms 51% to 33% (−18.6 [−24.0, −13.1]); −6 to −8; 69% (+18.3 [13.9, 22.7]); 61%; `qwen3-4b` 16% to 8%, +4.6 [2.3, 6.9], others +7 to +14 | `[fa]` |
+| yes-rate 98–99%, 48–120 tokens, balanced accuracy 52–53%; 259–404 tokens; +9.5 [4.5, 15.0], +14.9 [8.7, 21.4]; `filler` 97% vs 65% at p=.35 | `[collapse]`, `edge_existence_collapse.csv` (Figure 2) |
+| `clustering` +11.3 [6.7, 16.3], 46 / 12; `rwse` +7.7; `filler` +2.0; under `clustering` 69% enumerate vs 74% without a primer; mean within-graph SD of printed clustering values at most 0.02 from p=.65 | `[clusthi]`, `[clustproc]`, `[cluster]` |
+| replication +4.0 on the 300 new graphs per density (p=.0047), +4.2, +6.2; each p ≤ .005; +3.0 in the main sweep | `[replic]`, Table 2 |
 | `components` +7, +11, +10, +9; connected graphs at p ≥ .20 | `[comp]` |
-| bundle vs mean of parts +0.2 [−1.1, 1.6] over 54 (arm, task, density) combinations; `all` −21.3 where each part gains (+9.3 / +11.3 / +7.7, not printed) | `[bundle]` |
-| length slopes −6.5 to +3.4, positive 7 of 8 (1.7B) and 0 of 8 (4B), 3 and 1 of 8 without `all`; `filler` 18.3 and 13.8 below the line | `[length]` |
+| bundle vs mean of parts +0.2 [−1.1, 1.6] (bootstrap over the 54 combinations); `all` −21.3 where each part gains (+9.3 / +11.3 / +7.7, not printed) | `[bundle]` |
+| length slopes over Table 2's columns with ≥100 pairs: −2.0 to +3.4, positive 6 of 7 (1.7B) and 0 of 7 (4B), 2 and 0 of 7 without `all`; `filler` 18.3 and 13.8 below the line | `[length]` |
 | `node_count`: 68.5%, 1.2%, 66.5% | `[nodecount]` |
-| smallest detectable effect about 8 points | `[power]` |
-| Discussion: `qwen3-4b` right on 87% of `node_degree` items at p=.50 under `degree`; exact on 30% of `edge_count` graphs, `qwen3-1.7b` on 5% | Appendix Table 4, `[edgecount]` |
-| solver scores (1.00; at most 0.746) | `shortcuts_n40_flat.json`, `scripts/shortcut_table_n40.py` (Appendix Table 5) |
+| Limitations: 1,200 identical `qwen3-1.7b` prompts regenerated change 5% of outcomes (5.3%), 60% of responses identical | `[rerun]` |
+| Limitations: detectable effect about 14 points where primers act (side information at 25–75%; 13.6) | `[power]` second line |
+| Discussion: `qwen3-4b` right on 87% of `node_degree` items at p=.50 under `degree` | Appendix Table 4 |
+| solver scores (100%; at most 74.6%) | `shortcuts_n40_flat.json`, `scripts/shortcut_table_n40.py` (Appendix Table 5) |
 | 84,000 generations; budgets 8,192 and 2,048; truncation 81% / 62% | `runs/*.jsonl` (`hit_cap`, `n_new_tokens`; Appendix Table 6) |
-| about 217,000 generations (Ethics); 98,400 analysed = 84,000 (`densfull40`) + 4,800 (`degdens40`) + 3,200 (`degdensrep`) + 6,400 (`qwen3-1.7b.degfixdeg`) | line count of `runs/*.jsonl`, archive excluded |
+| about 217,000 generations (Ethics); 97,200 analysed = 84,000 (`densfull40`) + 2,400 (the 300 new graphs per density of `degdens40`, `none` and `clustering`; `[replic]`) + 1,200 (its re-runs of the main sweep's 100 graphs per density, three conditions; `[rerun]`) + 3,200 (`degdensrep`) + 6,400 (`qwen3-1.7b.degfixdeg`) | line count of `runs/*.jsonl`, archive excluded |
+
+Computed but not in the paper (optional additions, see `docs/paper-v3-review.md`):
+`[compproc]` `components` makes `qwen3-4b` restate the queried node's line on
+`connected_nodes` in 98.5% of responses (63.0% under `none`, 21.8% under
+`filler`); `[plaincite]` none of the 39 items `degree` fixes for `qwen3-1.7b` at
+p=.20/.35 cites the stated degree or reports a discrepancy.
 
 Floats: Tables 1, 2 and the appendix tables come from `paper/make_v3_tables.py`;
 the two figures from `paper/make_v3_figures.py`, which draws
