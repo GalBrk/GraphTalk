@@ -150,9 +150,20 @@ paper still makes?
 | 31 | Eight surviving floats had no reference from the body | each now referenced from the claim it supports |
 | 32 | `make_v3_tables.py` still generated `v3_relevance_table.tex`, which nothing inputs | generator call removed |
 
+## Round 7 — closed
+
+Run against the restructured paper (new title, ACL 2023 style, Related Work,
+and results reorganised around the procedure account).
+
+| # | issue | resolution |
+|---|---|---|
+| 33 | Page gate failed: it now requires Limitations and Ethics inside page 5 too, and Ethics ran to page 6 | Discussion and Ethics tightened without dropping content; both now end on page 5 |
+| 34 | Citation integrity after the rewrite | clean: 24 cited, all present in `custom.bib`, `.bbl` carries exactly those 24, no phantom entries, 0 undefined-citation warnings |
+| 35 | Two new abstract claims unverified | both confirmed, on the seven-density basis those two tasks carry: `qwen3-1.7b-think`/`node_degree`/`degree` **+20.1**; `qwen3-1.7b`/`edge_existence` false alarms **−18.6** under `all` and **+18.3** under `filler`. Checking them over the four shared densities gives +12.2/−15.7/+21.5, so the basis matters and the paper uses the right one |
+| 36 | Reproducibility of the new floats | all six inputs (`v3_conditions_table`, `v3_main_table`, `v3_pertask_tables`, `v3_routes_table`, `v3_fig_window`, `v3_fig_edgeexist`) trace to `make_v3_tables.py` or `make_v3_figures.py`, and `make_v3.sh` runs both plus `primer_findings.py` |
+
 ## Status
 
-All verifiers green at round 6: `make_v3.sh` exit 0, body ends page 5,
-0 undefined references, 0 overfull boxes, 19 tests pass, every body numeral
-mapped in `paper/NUMBERS.md`, all four arms reported, and no float
-generated, input or referenced without the other two.
+`make_v3.sh` exit 0; body and Ethics both end on page 5; 0 undefined
+references, 0 overfull boxes, 0 undefined citations; 19 tests pass; every
+float traces to a generator that `make_v3.sh` runs; all four arms reported.
