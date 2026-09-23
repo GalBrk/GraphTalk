@@ -40,10 +40,10 @@ density), drop the pair if either generation hit the budget.
 | `edge_count`: `qwen3-4b` wording 96–100%, 2% exact, 30% exact under `degree`, +23 / +30 / +24 / +34, 114 / 5; `qwen3-1.7b` 7–67% to 99–100%, 4.7% exact, +4.0, MAE 136 to 40 | `[edgecount]` |
 | `edge_existence` hits 0.97–1.00; 94–99% of errors false alarms; false alarms 0.51 to 0.33 (−18.6 [−24.0, −13.1]); −6 to −9; 0.69 (+18.3 [13.9, 22.7]); 0.61; `qwen3-4b` 0.16 to 0.08, +4.6 [2.3, 6.9], others +7 to +14 | `[fa]` |
 | yes-rate 98–99%, 48–120 tokens, balanced accuracy 0.52–0.53; 259–404 tokens; +9.5 [4.5, 15.0], +14.9 [8.7, 21.4]; `filler` 97% vs 65% at p=.35 | `[collapse]`, `edge_existence_collapse.csv` (Figure 2) |
-| `clustering` +11.3 [6.7, 16.3], 46 / 12; `rwse` +7.7; `filler` +2.0; counting 33–82%; printed clustering values vary within a graph by an SD of at most 0.02 from p=.65 | `[clusthi]`, `[flip]` baselines, `[cluster]` |
+| `clustering` +11.3 [6.7, 16.3], 46 / 12; `rwse` +7.7; `filler` +2.0; printed clustering values vary within a graph by an SD of at most 0.02 from p=.65 | `[clusthi]`, `[flip]` baselines, `[cluster]` |
 | replication +4.0 on the 300 new graphs per density (p=.0047), +4.2, +6.2; p ≤ .005 in each; +3.0 in the main sweep | `[replic]`, Table 2 |
 | `components` +7, +11, +10, +9; connected graphs at p ≥ .20 | `[comp]` |
-| bundle vs mean of parts +0.2 [−1.1, 1.6] over 54 (arm, task, density) combinations; +9.3 / +11.3 / +7.7 vs −21.3 | `[bundle]` |
+| bundle vs mean of parts +0.2 [−1.1, 1.6] over 54 (arm, task, density) combinations; `all` −21.3 where each part gains (+9.3 / +11.3 / +7.7, not printed) | `[bundle]` |
 | length slopes −6.5 to +3.4, positive 7 of 8 (1.7B) and 0 of 8 (4B), 3 and 1 of 8 without `all`; `filler` 18.3 and 13.8 below the line | `[length]` |
 | `node_count`: 68.5%, 1.2%, 66.5% | `[nodecount]` |
 | smallest detectable effect about 8 points | `[power]` |
