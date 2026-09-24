@@ -2,7 +2,7 @@
 
 Throwaway-quality scripts that produced every number in
 `docs/primer-effects-and-power.md`'s companion,
-[`docs/candidate-analyses.md`](../../docs/candidate-analyses.md). None of them
+[`superseded/docs/candidate-analyses.md`](../../superseded/docs/candidate-analyses.md). None of them
 feeds the paper. They are kept so the decision about what to fold in can be
 revisited without re-deriving the numbers.
 
@@ -18,8 +18,8 @@ Run every one from the repo root with `PYTHONPATH=.`; they import
 
 | script | section of `candidate-analyses.md` | notes |
 |---|---|---|
-| `a_routegap.py` | (a) route gap vs baseline | takes an output path for the cell dump |
-| `a_transfer.py` | (a), cross-corpus sign transfer | reads `a_routegap.py`'s dump |
+| `a_routegap.py` (moved to `superseded/scripts/candidates/`) | (a) route gap vs baseline | takes an output path for the cell dump |
+| `a_transfer.py` (moved to `superseded/scripts/candidates/`) | (a), cross-corpus sign transfer | reads `a_routegap.py`'s dump |
 | `b_copying.py` | (b) are `degree` errors copying errors | parses graphs out of `prompts.densfull40.jsonl` |
 | `c_confound.py` | (c) density vs answer magnitude | `degfixdeg` plus a within-density regression |
 | `de_churn_len.py` | (d) and (e), the scoring pass | writes a JSON dump; slow, one pass over `densfull40` |
@@ -29,8 +29,8 @@ Run every one from the repo root with `PYTHONPATH=.`; they import
 | `h_got.py` | (f2) GoT naming vs integer ids | desubstitutes before scoring; see `graphtalk/node_naming.py` |
 
 ```bash
-PYTHONPATH=. python scripts/candidates/a_routegap.py /tmp/a_cells.json
-PYTHONPATH=. python scripts/candidates/a_transfer.py /tmp/a_cells.json
+PYTHONPATH=. python superseded/scripts/candidates/a_routegap.py /tmp/a_cells.json
+PYTHONPATH=. python superseded/scripts/candidates/a_transfer.py /tmp/a_cells.json
 PYTHONPATH=. python scripts/candidates/b_copying.py /tmp/b_detail.json
 PYTHONPATH=. python scripts/candidates/c_confound.py
 PYTHONPATH=. python scripts/candidates/de_churn_len.py /tmp/de_rows.json

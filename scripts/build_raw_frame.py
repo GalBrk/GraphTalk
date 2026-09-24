@@ -1,6 +1,6 @@
 """Raw `runs/*.jsonl` -> one tidy per-response frame for the 40-node density sweep.
 
-Everything downstream (`scripts/raw_trends.py`) reads this one CSV. Nothing here
+Everything downstream (`scripts/primer_findings.py`) reads this one CSV. Nothing here
 consults an existing analysis CSV or doc -- the point of this frame is to be an
 independent rebuild from the raw generations plus `graphtalk/`.
 
@@ -45,7 +45,7 @@ _KEY = re.compile(r"^(.+)/size(\d+)/p([\d.]+)/(\d+)$")
 # hand-validation showed 20/20 of its positives cite the *edge list* ("Node N is
 # connected to ...") and none cite the primer, so it is named for what it measures.
 # Deliberately conservative: each is validated against a
-# hand-labelled sample by `raw_trends.py --question markers`, and any marker under
+# hand-labelled sample by `superseded/scripts/raw_trends.py --question markers`, and any marker under
 # 0.9 precision is dropped rather than loosened until it agrees.
 _MARKERS = {
     "uses_degree_sum": re.compile(

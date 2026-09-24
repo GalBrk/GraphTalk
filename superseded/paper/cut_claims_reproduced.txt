@@ -1,0 +1,17 @@
+v3 '97,200 analysed' (v3.tex:429) is the sum 84000 + 2400 + 1200 + 3200 + 6400 = 97200 (40-node sweep, degdens40, new graphs, re-runs of main-sweep prompts, degdensrep, degfixdeg).
+v1 copy test (v1.tex:447-449): 12 of 29 wrong answers equal node k-1's or k+1's stated degree (superseded/error_taxonomy.json); against the 17.3% background v1 states, one-sided binomial p=0.002. The script that derived 17.3% (scripts/candidates/b_copying.py) was never committed.
+v1/v2 null cells (v1.tex:496-500), qwen3-1.7b: 10 of 24 at floor or ceiling (superseded/csv2/sweep-large-graph/mde_qwen3-1.7b.csv)
+v1/v2 null cells (v1.tex:496-500), qwen3-1.7b-think: 23 of 33 at floor or ceiling (superseded/csv2/sweep-large-graph/mde_qwen3-1.7b-think.csv)
+v1/v2 null cells (v1.tex:496-500), qwen3-4b: 10 of 20 at floor or ceiling (superseded/csv2/sweep-large-graph/mde_qwen3-4b.csv)
+v1/v2 null cells (v1.tex:496-500), qwen3-4b-think: 33 of 33 at floor or ceiling (superseded/csv2/sweep-large-graph/mde_qwen3-4b-think.csv)
+v2 median detectable gain (v2.tex:560-563), qwen3-1.7b arms pooled: 5.49 points
+v2 median detectable gain (v2.tex:560-563), qwen3-4b arms pooled: 5.35 points
+v1's medians (5.6 and 10.0, v1.tex:500-502) came from pre-fix MDE files kept only in the untracked archive/pre-mde-fold/; they are not in git.
+v2 qwen3-1.7b-think node_degree baseline (v2.tex:396-397): unweighted mean of 0.928, 0.950, 0.600, 0.600, 0.520, 0.469, 0.424 = 0.642 (superseded/csv2/raw-trends/node_degree_routes.csv)
+v2 length cost vs no-primer accuracy (v2.tex:419-422), all rows of superseded/csv2/sweep-large-graph/primer_decomposition.csv: qwen3-1.7b -0.32, qwen3-1.7b-think +0.59, qwen3-4b -0.21, qwen3-4b-think -0.31
+v2 length cost vs no-primer accuracy (v2.tex:419-422), mid-range rows of superseded/csv2/sweep-large-graph/primer_decomposition.csv: qwen3-1.7b -0.12, qwen3-1.7b-think +0.74, qwen3-4b -0.40
+  v2 printed +0.55 (1.7b-think), -0.09 (1.7b), -0.44 (4b) and did not state its row set; neither of these two row sets reproduces all three.
+v2/short cross-fit (v2.tex:477-481), node_degree: 168 points, r=-0.235 (p=0.0022), slope -9.1
+v2/short cross-fit (v2.tex:477-481), edge_count: 64 points, r=-0.664 (p=2.2e-09), slope -26.5
+v2/short cross-fit (v2.tex:477-481), pooled: 232 points, r=-0.308 (p=1.8e-06), slope -10.5
+short-draft route threshold (short.tex:110-111): largest gain at or below 0.05 is 0.0105, smallest above 0.0662 (shortcuts_n40_flat.json); the draft printed 0.011 and 0.066

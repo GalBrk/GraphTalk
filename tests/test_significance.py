@@ -1748,7 +1748,7 @@ def test_exact_paired_ci_reports_no_interval_width_without_discordant_pairs():
   """`n_discordant` is what a caller renders; the zero width is not a claim.
 
   Conditional on nothing disagreeing there is no direction to bound, so the
-  interval is a point. `paper/make_ci_table.py` prints "n/a" off the count
+  interval is a point. `superseded/paper/make_ci_table.py` prints "n/a" off the count
   rather than a zero-width 95% interval, which reads as a confident null.
   """
   assert significance.exact_paired_ci(0, 0, 380) == {
@@ -1758,7 +1758,7 @@ def test_exact_paired_ci_reports_no_interval_width_without_discordant_pairs():
 def test_exact_paired_ci_does_not_overclaim_where_the_bootstrap_did():
   """The five cells the bootstrap wrongly separated from zero.
 
-  Each is a real `ci_all.json` cell: a handful of disagreements out of ~370,
+  Each is a real `superseded/ci_all.json` cell: a handful of disagreements out of ~370,
   where the percentile bootstrap returned an interval excluding zero (its
   measured false-positive rate is 6.25% at 5 discordant pairs and 6.58% at
   8, against a nominal 5%). The exact interval covers zero at all five.

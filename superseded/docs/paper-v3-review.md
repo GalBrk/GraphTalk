@@ -1,0 +1,253 @@
+# v3 review log
+
+Tracking file for the 5-page rebuild. Target: body (Introduction through
+Conclusion, excluding references and appendix) at 5 pages, organised around
+which primers help and harm — for which task, which arm, on what terms, and
+where the limit is.
+
+Each round: review, list issues, fix, re-review. A round closes only when the
+verifier block is green and no open issues remain.
+
+## Verifier block
+
+| check | command | target | round 2 |
+|---|---|---|---|
+| builds | `bash superseded/paper/make_v3.sh` | exit 0 | pass |
+| body length | `sec:limitations` in `.aux` | page 5 or lower | **p5** |
+| undefined refs | `grep -c 'LaTeX Warning: Reference'` | 0 | **0** |
+| overfull boxes | final pass of the log | 0 | **0** |
+| numbers traceable | every prose figure maps to a script + CSV | no orphans | round 3 |
+| tests | `pytest -q tests/test_raw_frame.py tests/test_scoring.py` | pass | **19 passed** |
+
+The page gate checks `sec:limitations`, not `sec:conclusion`: the body ends
+where Limitations begins, and grepping where the Conclusion *starts* passes
+while the Conclusion itself spills onto the next page.
+
+## Triviality audit
+
+The paper must carry findings a reviewer could not have predicted.
+
+**Expected — machinery, never a headline**
+
+| finding | why it is not a result |
+|---|---|
+| Primers help models with headroom, hurt models at ceiling | a ceiling effect; what earns its place is the *within-arm* sign flip and the leaky/non-leaky split, not the direction |
+| Added text costs accuracy | it does not, here — see below — so the expected claim is itself refuted |
+| Set-F1 hides the ceiling on `connected_nodes` | a measurement choice; one clause |
+| Bigger model scores higher | not reported |
+
+**Non-trivial — these carry the paper**
+
+| finding | why it is surprising |
+|---|---|
+| A primer that **states the answer verbatim** costs `qwen3-4b` 12 points at p=.50, breaking 13 items and fixing 1 | the information is present and correct |
+| The **same arm, task and primer** gain +27 at p=.85 and lose 12 at p=.50, tracking baseline monotonically | the effect belongs to the cell, not the primer |
+| **Length is nearly free** (−0.3 pts per 1,000 chars, positive in 8 of 16 cells) while a degenerate preamble costs up to 15.7 | contradicts the expected long-prompt penalty |
+| The primer **replaces the algorithm**: sum-of-degrees stated in 7% → 100% of responses | visible in the text, not inferred from scores |
+| **Leakage is incomplete**: where the graph-blind solver scores 1.00, models recover 0.006 to 0.99 | containing the answer is not giving it |
+| Raw accuracy **rises to 86% while balanced accuracy sits at chance** | the benchmark rewards giving up |
+| **53% of side-information cells** sit above 0.90 and cannot show a gain | most of a standard sweep is uninformative |
+| `all` ≈ its **largest single part** (1.00 [0.74, 1.20]), not a diluted sum | bundling buys one primer's worth of three |
+
+---
+
+## Round 1 — closed
+
+| # | issue | resolution |
+|---|---|---|
+| 1 | Body 9 pages, target 5 | body rewritten; ends p5 |
+| 2 | Related Work a full section | folded into the Introduction |
+| 3 | Method had five subsections | two: controls, and corpus/measurement |
+| 4 | Headroom crossover absent and unscripted | `raw_trends.py --question headroom` → `headroom.csv`; superseded in the body by the leaky/non-leaky split |
+| 5 | `cycle_check` 90.7 in the budget comparison | section cut in the rewrite |
+| 6 | `clustering` +5.9 cited without the main-sweep figure | section cut in the rewrite |
+| 7 | Floor/ceiling null-cell claim unreproducible | cut |
+| 8 | Paper led on the headroom law | leads on the answer-stating paradox |
+
+## Round 2 — closed
+
+Triggered by reconciling the body against `superseded/docs/paper-v3-review-fixes.md` (130
+verified findings) and against the abstract, which had been revised to
+stricter claims than the body carried.
+
+| # | issue | resolution |
+|---|---|---|
+| 9 | **Decoding budget wrong by 4×.** Paper said 2,048 for plain arms; the raw generations cap at **8,192** on `densfull40` and 2,048 only on `densfull40hi` | corrected, and the non-comparability of truncation across the two bands is stated |
+| 10 | **`filler` called "content-free"** — it states the vertex set in 40 id-ordered lines and a solver reading it alone scores 1.00 on `node_count` | renamed a *degenerate-content preamble of comparable length to `clustering`*; no longer the reference a content effect is defined against |
+| 11 | **Length cost misattributed.** Fitted within (arm, task) the length term is −0.3 pts/1,000 chars, positive in 8 of 16 cells | claim replaced; the length-cost table, which is orphaned and refuted, dropped |
+| 12 | **Serial position overclaimed.** Only 6 of 48 gradients differ from their own control; `none` itself slopes +25.0 on one cell | rewritten as unattributed; `_slope_diff` added to `raw_trends.py` so the count is reproducible |
+| 13 | Additivity quoted 0.44 (7 densities) against a 4-density table | 0.50 [0.29, 0.71]; largest-part ratio 1.00 [0.74, 1.20] on the 19 discriminating cells |
+| 14 | `158 of 289` cells above 0.90 | **172 of 324 (53%)** per `analyze_primer_window.py` |
+| 15 | Answer-carrying primers "+11 to +13" | **+16** in the 0.25–0.75 bands |
+| 16 | "next bar below 0.85 is 0.21" | **0.746**; the bars are bimodal, 18 at exactly 1.000 |
+| 17 | Parse residual "confined to truncated `cycle_check`" | 128 of 133 are `cycle_check`; 5 are `edge_existence` |
+| 18 | `v3_window_table` orphaned; `v3_headroom_table` unused | window table now carries §4.1; headroom table moved to the appendix |
+| 19 | `v3_window_table` input twice | appendix duplicate removed |
+| 20 | Three appendix tables overran the column (10 overfull boxes) | wrapped in `\resizebox` |
+
+## Round 3 — closed
+
+| # | issue | resolution |
+|---|---|---|
+| 21 | Traceability sweep | `superseded/paper/NUMBERS.md` v3 section rewritten: every body figure maps to a CSV column and the command that writes it |
+| 22 | Unified `4,706`/`4,691` for the same quantity, and `+11 to +13`/`+16` between abstract and body | both unified |
+| 23 | **`components` is a constant string at p≥.20.** Every n=40 ER graph at p≥.20 is connected (verified: 0 of 100 have >1 component at .20/.35/.50; 52 of 100 at .10), yet the gain there (+11, +10, +9) exceeds the gain where the string varies (+7.0) | the paper now states that this gain is not graph-specific content, and links it to the `node_count` off-by-one that any interposed text interrupts |
+| 24 | Additivity shortfall untested against a null; a ratio of noisy quantities is biased downward | matched-null simulation added to `print_additivity`: exact additivity plus the observed per-cell noise gives 1.00 [0.92, 1.08] against an observed 0.50, p<0.001 |
+
+Review items 2.1–2.5, 2.10–2.16 of `superseded/docs/paper-v3-review-fixes.md` targeted
+sections the rewrite removed, or were resolved by it: the −11.0 interaction is
+gone, §5.4 is rebuilt on the tested difference, the leakage is named in the
+abstract, and the shortcut bar is compared against model accuracy for the first
+time.
+
+## Round 4 — closed
+
+Coherence read-through of the assembled body.
+
+| # | issue | resolution |
+|---|---|---|
+| 25 | Conclusion still carried `+11 to +13` where abstract and body say `+16` | unified |
+| 26 | §4.4 headed "Two effects that do not survive their controls", but bundling *does* survive its matched null | retitled "Position and composition" |
+| 27 | §4.1 reports `components` at −0.3 while §4.3 reports it at +7…+9, which reads as a contradiction | forward reference added; the two are a mean over cells and one arm's format effect |
+
+A cross-document sweep confirms one value per quantity: `+16` (4 sites),
+`0.50`, `172`, `324`, `4,691` (3 sites), `6 of 48`, `0.746`; and no
+occurrences of the superseded `+11 to 13`, `0.44` or `4,706`. The only
+remaining instance of "content-free" is the sentence stating that `filler` is
+not content-free.
+
+## Round 5 — closed
+
+Audit against the brief rather than against the prose: does the paper say
+which primers help and harm, for which task *and which arm*, on what terms,
+and where the limit is?
+
+| # | issue | resolution |
+|---|---|---|
+| 28 | The body leaned on the two plain arms; the thinking arms appeared only in passing | per-arm paragraph added, with `print_per_arm` in `raw_trends.py` so it is reproducible |
+
+The audit produced a result the paper did not have. **Thinking mode closes the
+window**: median baseline rises 56.5 → 79.0 on the 1.7B checkpoint and
+87.0 → 97.0 on the 4B one, leaving 60 of 110 cells in the 0.25–0.90 window for
+`qwen3-1.7b` and only 15 for `qwen3-4b-think`. And **no primer is best twice**
+— `all` leads on `qwen3-1.7b` (+9.8) and is worst on both 4B arms (−9.5,
+−13.0); `degree` leads on `qwen3-1.7b-think`, `clustering` on `qwen3-4b`,
+`components` on `qwen3-4b-think`. A primer chosen on one arm does not transfer.
+
+Also checked: the body contains no process narration — no reference to
+`docs/`, CSV files, scripts, review history or earlier versions — so it reads
+as findings rather than as the path taken to them.
+
+## Round 6 — closed
+
+Audit of the appendix against the body: does every float support a claim the
+paper still makes?
+
+| # | issue | resolution |
+|---|---|---|
+| 29 | Nine appendix floats were orphaned, all supporting sections the rewrite removed (budget-matched thinking, MAE, signal detection, the `clustering` headline and its density table, rewiring, the density prior, the published-split bars, relevance matching) | dropped, with the `degfixdeg` and `published_ceiling` inputs |
+| 30 | `tab:budget` carried two figures that do not reproduce: `qwen3-1.7b`/`cycle_check` read 90.7 against 92.2 from the frame, and `qwen3-4b` 99.0 against 99.8 | dropped with the table; no surviving float reports them |
+| 31 | Eight surviving floats had no reference from the body | each now referenced from the claim it supports |
+| 32 | `make_v3_tables.py` still generated `v3_relevance_table.tex`, which nothing inputs | generator call removed |
+
+## Round 7 — closed
+
+Run against the restructured paper (new title, ACL 2023 style, Related Work,
+and results reorganised around the procedure account).
+
+| # | issue | resolution |
+|---|---|---|
+| 33 | Page gate failed: it now requires Limitations and Ethics inside page 5 too, and Ethics ran to page 6 | Discussion and Ethics tightened without dropping content; both now end on page 5 |
+| 34 | Citation integrity after the rewrite | clean: 24 cited, all present in `custom.bib`, `.bbl` carries exactly those 24, no phantom entries, 0 undefined-citation warnings |
+| 35 | Two new abstract claims unverified | both confirmed, on the seven-density basis those two tasks carry: `qwen3-1.7b-think`/`node_degree`/`degree` **+20.1**; `qwen3-1.7b`/`edge_existence` false alarms **−18.6** under `all` and **+18.3** under `filler`. Checking them over the four shared densities gives +12.2/−15.7/+21.5, so the basis matters and the paper uses the right one |
+| 36 | Reproducibility of the new floats | all six inputs (`v3_conditions_table`, `v3_main_table`, `v3_pertask_tables`, `v3_routes_table`, `v3_fig_window`, `v3_fig_edgeexist`) trace to `make_v3_tables.py` or `make_v3_figures.py`, and `make_v3.sh` runs both plus `primer_findings.py` |
+
+### Round 7 — verification
+
+Two verifiers compared the restructured paper with the version before it. Both
+returned *approve with fixes*: better on every grading criterion, but three
+statements contradicted by the data.
+
+| # | issue | resolution |
+|---|---|---|
+| 37 | The Discussion's account (effect = accuracy of the adopted procedure minus that of the abandoned one) failed at p=.65: `retrieval` was any response that did not restate the neighbour list, so a response that stated the degree first and listed afterwards counted as counting | retrieval redefined as answer-first (`route()`, with a test); `qwen3-4b` under `degree` retrieves 47–97% at 57–97% against a count of 100–33%, and the sign matches at all seven densities. The primer also displaces enumeration (85–100% → at most 8%); `all` costs through less accurate retrieval and through non-retrieving responses that are 43 / 4 / 2% accurate from p=.65. Appendix Table 4 gains *enumerates* and *acc. of the rest* rows |
+| 38 | "Thinking mode moves most cells out of this range" is false for the 1.7B model (38.8% vs 38.9% of cells in the band) | rewritten: thinking empties the range below 0.25 (28 and 20 cells → 0) and leaves the 1.7B model a similar share in the band |
+| 39 | The Sanford link held by construction; "cf. Levy" pointed the wrong way | rewritten around what a stated answer still leaves undone (87% on `node_degree` at p=.50, 30% on `edge_count`); Levy contrasted on sign changes between models |
+| 40 | "Answer leakage" in the title was never defined | defined in the Introduction |
+| 41 | `qwen3-1.7b` "rarely uses the stated value" omitted its gains at p=.20 and .35 | +10 and +18 where its count is partly right, within 2 points from p=.50 (`[plain17]`) |
+| 42 | The 400-per-density replication includes the main sweep's 100 graphs | reports the 300 new graphs: +4.0 [1.2, 6.8], p=.0047 |
+| 43 | `all` "4.6 points below the best of its parts" compares with the maximum of three noisy estimates, which is biased upward | mean of parts only |
+| 44 | Positive 1.7B length slopes rest on `all`, the longest primer | 3 and 1 of 8 positive without it; heading "No consistent gain from bundling or length" |
+| 45 | set-F1 "compresses contrasts about sixfold" hid two reversals | "a sixth as much, and reverses two of the five contrasts above 5 points" |
+| 46 | Figure 1: legend over the data, "significant after correction" unspecific | legend in the empty upper right, labelled *answer-carrying*; caption states q<.05 within each (arm, task) and "content primer" (the 393 cells exclude `filler`) |
+| 47 | Ethics gave 217,000 generations without the analysed subset | 98,400 analysed (84,000 + 4,800 + 3,200 + 6,400) |
+| 48 | After the fixes, Ethics ran to page 6 | tightened without dropping a finding: the Discussion no longer restates §4.2, the within-graph clustering spread moved from Limitations into §4.4 as a finding, the duplicated Shi/Levy sentence left Related Work, the Qwen3 model-card footnote became a bibliography entry, Table 1's forward reference to Table 2 became its own key, and both figures lost 0.1 in of height |
+| 49 | All 25 cited references re-checked against the record of the version cited (ACL Anthology, NeurIPS and PMLR BibTeX, Crossref, arXiv, the ICLR proceedings, the Qwen3 model card) | two author lists corrected to the NeurIPS records: Dziri et al. (Welleck is seventh) and Rampášek et al. ("Michael Galkin"). Fatemi et al. stays 2024: arXiv October 2023, but the cited version is ICLR 2024. "Qwen Team" is the citation the Qwen3 model card gives. The other 21 match exactly |
+| 50 | Bootstrap intervals shifted whenever an analysis was added: every bootstrap drew from one shared generator | each bootstrap starts from its own fixed seed (tested); all eight printed intervals are re-read from the regenerated snapshot |
+| 51 | Repetition (authors' directive: state a result once): the account appeared word for word in the Introduction and the Discussion; `qwen3-4b`'s 30% on `edge_count` three times; the "yes"-rate channel three times; `clustering` as the only primer to help `qwen3-4b` on `edge_existence` twice, with +4.0 and +4.6 on different bases; `degree`'s +27.7 on `edge_count`, the 33–82% count accuracy, the parts' +11.3 and +7.7, and the 84,000 generations each once more | each kept in one place: the Introduction previews the account in one clause, the Sanford and Dziri points share one sentence, and §4.1 no longer repeats what §4.3 and §4.4 report |
+
+## Round 8 — final
+
+Five reviewers, each with a disjoint scope, re-checked every number against
+`runs/` with independently written code: numbers I (abstract to §4.2),
+numbers II (§4.3 to Ethics), methodology and inference, literature and
+citations, and presentation against the ACL template and the grading
+criteria. Every number reproduced. The fixes below concern what the numbers
+were taken to show.
+
+| # | issue | resolution |
+|---|---|---|
+| 52 | Ethics counted 98,400 analysed generations; the 400-per-density run also generated a `components` condition that no analysis uses | 97,200 once the run-to-run check (item 65) is counted: 84,000 + 2,400 + 1,200 + 3,200 + 6,400; §3.2 now describes the run as the 300 new graphs per density that enter the result |
+| 53 | "lower it by 6 to 9 points": the largest is 8.47 | 6 to 8 |
+| 54 | The answer-first retrieval class (round 7) absorbed recounts: from p=.50, most `qwen3-4b` responses that open with an answer open with a wrong one and then recount, so "the sign matches at all seven densities" was close to arithmetic | retrieval is again "answers without restating the list" (44–74%, 73–98% accurate); the text says what the rest do (open with an answer, usually wrong, then recount; 79/45/28/16% accurate) and that at p=.65 they outweigh retrieval's gain. Appendix Table 4 gains "acc. of the rest" under `degree` |
+| 55 | The discrepancy regex counted checks ("to see if there's any inconsistency") | hypothetical cues excluded (tested); 23% / 49% against 0.3% / 4%, correct in 61% / 69% |
+| 56 | The thinking arm's +19.9 drops its non-terminating checks: `degree` truncates 7.6% of its generations against 1.1% | both reported: +16.0 [12.0, 19.7] when truncation counts as an error; abstract "16 to 20 points"; Table 6 caption |
+| 57 | "Thinking empties the range below 0.25" came from the cell filter, which drops every thinking-arm `edge_count` cell | medians stated over the retained cells, with the exclusion named |
+| 58 | The +16-point window is an across-arm average | its composition is stated: 10 of the 18 cells are `qwen3-1.7b-think`'s, range −19 to +45; abstract "mostly for Qwen3-1.7B with thinking" |
+| 59 | RQ answers: RQ1's side-information figure holds only in the middle bands and mostly for `degree`/`all` on edge tasks; RQ2 generalised one arm's rule; RQ3's "rate of yes" is an outcome | rewritten; Discussion scoped "for primers that state the answer" |
+| 60 | Power "about 8 points" is the all-cell median, half of it at ceiling | about 14 points where primers act (side information at 25–75%) |
+| 61 | The solver was described as reading the edge count on `edge_count` | "except the count a task asks for" (§3.1, Table 5) |
+| 62 | Length slopes included the two termination-selected columns; Table 2 printed their effects, which reverse when truncation counts as an error | fits restricted to Table 2's columns with ≥100 pairs (−2.0 to +3.4; 6 of 7 and 0 of 7); those columns now print "--" |
+| 63 | Citation metadata: both ICLR entries lacked the pages of the version cited | pages from proceedings.iclr.cc (43909–43934; 48118–48145); Feng et al. 2019 (partial-input baselines) and Turpin et al. 2023 (unstated reasons) added where the text needed them |
+| 64 | Presentation: accuracy in three scales; 13 sentences over 35 words; inconsistent names (count, dedicated/further, states/reports a discrepancy); `filler` called side information; float-noise rounding (−5.75 printed −5.7); author block without affiliation | one scale (percent); sentences split; names unified (`edge_count` abbreviated e.count); rounding guard in both generators; Tel Aviv University added; figures at ≥7 pt with a dash per condition in Figure 2 |
+| 65 | Two findings the authors asked for | retrieval by queried node (§4.2: 96% for nodes 0–9 against 83%, +12 within density, p<.001; `[position]`), stated with its confound: nodes 0–9 open the primer and are the only single-digit ids, and accuracy does not fall with position from node 10; and run-to-run variation (Limitations: 1,200 identical `qwen3-1.7b` prompts change 5% of outcomes; `[rerun]`) |
+
+### Round 8 — verification
+
+The verifier compared the new version with `e331866` and approved it with
+fixes: every changed number recomputed from `runs/`, the snapshot and the
+generated floats regenerate identically, and the new version is better on all
+seven grading criteria.
+
+| # | issue | resolution |
+|---|---|---|
+| 66 | Ethics said 96,000, but the run-to-run check analyses 1,200 more generations | 97,200 |
+| 67 | Table 5 blamed `rwse`'s low `edge_existence` score on out-of-sample failure; its fitted rule fails on the fitting graphs too (at p=.85 every printed 2-step value is 0.03) | caption says so |
+| 68 | The position result was credited to primacy, but the drop is a step at the single-/two-digit id boundary with no gradient after it | stated as above; Liu et al. cited only in Limitations |
+| 69 | `route()` missed "nodes connected to node 11, which are: ..." (14 `all` responses at p=.10) | regex extended (tested); `all` retrieves 15–51%; no `degree` number moves |
+| 70 | Medians compared across different cell sets | like-for-like, outside `edge_count`: 67.0 → 94.9% and 88.9 → 100.0% |
+| 71 | Wording: the run-to-run sentence did not say what was regenerated; "keep the responses long" named primers Figure 2 does not show; the window's range read as the thinking cells'; the discrepancy base rate; "less careful"; RQ3's edge-query half; two sentences over 50 words; Table 2's "omitted"; empty PDF metadata | each fixed |
+
+Optional additions computed but left out of the paper for space (authors'
+instruction: include if they fit, otherwise record them here):
+
+- `components` changes `qwen3-4b`'s procedure on `connected_nodes`: it restates
+  the queried node's neighbour line in 98.5% of responses, against 63.0% under
+  `none` and 21.8% under `filler` (`[compproc]`).
+- Two gains lie outside the procedure account: `degree` improves the plain
+  1.7B arm's count at p=.20 and .35 without being cited (none of the 39 items
+  it fixes cites the stated degree or reports a discrepancy; `[plaincite]`),
+  and `clustering` improves `qwen3-4b`'s count without changing its procedure
+  (`[clustproc]`).
+
+## Status
+
+Closed after round 8, the last round; the verifier re-checked the final
+version and approved it (one precision edit followed: the truncation-as-error
+estimate counts every truncated generation). `make_v3.sh` exit 0; body, Limitations
+and Ethics end on page 5 (8 pages with references and appendix); A4, all fonts
+embedded, no Type 3; abstract 199 words; 0 undefined references, 0 overfull
+boxes, 0 undefined citations; every printed interval appears in
+`superseded/csv2/raw-trends/primer_findings.txt`; every float traces to a generator that
+`make_v3.sh` runs; 804 tests pass (the one failure, `test_prompts.py`, is torch
+failing to load on this machine).

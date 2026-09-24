@@ -1,0 +1,23 @@
+[lrows] v3 'analysed' count; here: distinct rows that primer_findings.py reads: 40-node sweep 84000, degdens40 4800, degdens40hi 4800, degdensrep 3200, degfixdeg 6400; total 103200
+[lcopy] v1 copy test: plain qwen3-4b, node_degree under degree, finished wrong answers equal to the degree stated for node k-1 or k+1
+  main sweep, p<=.50: 12 of 29; background 19.4%; one-sided binomial p=0.0055
+  all seven densities: 27 of 136; background 13.1%; one-sided binomial p=0.018
+[lmde] v1/v2 null comparisons against none (400 paired graphs each, under the truncation flag): per arm, null comparisons, share where a gain or a harm cannot be detected (floor or ceiling), median detectable gain (points) where a gain can be
+  qwen3-1.7b        16 of 29 null; floor or ceiling 0/16; median detectable gain 6.2
+  qwen3-1.7b-think  17 of 29 null; floor or ceiling 8/17; median detectable gain 5.5
+  qwen3-4b          18 of 36 null; floor or ceiling 11/18; median detectable gain 3.7
+  qwen3-4b-think    28 of 30 null; floor or ceiling 18/28; median detectable gain 3.2
+  qwen3-1.7b arms pooled: median detectable gain 5.7 over 25 cells
+  qwen3-4b arms pooled: median detectable gain 3.2 over 20 cells
+[lbase] v2 qwen3-1.7b-think no-primer accuracy, unweighted mean of per-density correct shares: node_degree 0.634 over 7 densities; connected_nodes 0.787 over 4 densities
+[llen] v2 filler cost vs no-primer accuracy: Pearson r per arm over (task, density) cells under the truncation flag
+  qwen3-1.7b        r=-0.07 (p=0.79) over 19 cells
+  qwen3-1.7b-think  r=+0.52 (p=0.026) over 18 cells
+  qwen3-4b          r=-0.44 (p=0.041) over 22 cells
+  qwen3-4b-think    r=-0.45 (p=0.06) over 18 cells
+  qwen3-1.7b edge_existence, filler minus none by density: -5.0, -20.0, -32.0, -6.0, -2.0, -1.0, -1.0
+[lcross] v2/short cross-fitted baseline vs effect on route cells (node_degree/rwse, node_degree/degree, node_degree/all, edge_count/clustering, edge_count/degree, edge_count/all), cells under the truncation flag: points, r, p, slope (points per unit baseline)
+  node_degree 168 points, r=-0.248 (p=0.0012), slope -9.0
+  edge_count  30 points, r=-0.142 (p=0.45), slope -80.6
+  pooled      198 points, r=-0.275 (p=8.7e-05), slope -8.5
+[lroute] short-draft route threshold 0.05 on bar(cond) - bar(none): largest gain at or below 0.010 (edge_existence/degree), smallest above 0.066 (node_degree/rwse)

@@ -1,41 +1,30 @@
-"""When does a primer help, and is the help answer leakage?
+"""The paired effect of every primer in every cell of the 40-node sweep, for
+`scripts/primer_findings.py` ([bands], [window], [bandsens], [flagged]).
 
-Two analyses the paper needs and did not have.
+A cell is one (arm, task, density, primer): its paired effect against `none`
+and its baseline (the `none` correct share). Cells are split by whether the
+primer text alone determines the answer: a graph-blind solver reading only the
+primer (`shortcuts_n40_flat.json`) scores near-perfectly on it. Pairs follow
+rule R1 (graphtalk/outcomes.py): a truncated response counts as not correct and
+is never dropped; cells whose truncated share reaches 15% are flagged.
 
-**The window.** A primer can only move a cell that is not already at floor or
-ceiling. Binning every (arm, task, density, condition) cell of the main sweep
-by its `none` accuracy shows where the movement actually lives, and splitting
-the bins by whether the primer text alone determines the answer separates
-leakage from genuine side information. This replaces the route x baseline
-interaction, which a content-free null reproduces (see
-docs/paper-v3-review-fixes.md).
-
-**The gap.** `shortcuts.py` scores a solver that reads only the primer. The
-paper defines that bar and never compares an effect to it. For every cell
-where the bar is high, this reports how much of what the primer hands the
-model the model actually recovers.
-
-Both read `csv2/raw-trends/frame.csv` and `shortcuts_n40_flat.json`; neither
-needs new generations.
-
-    PYTHONPATH=. python scripts/analyze_primer_window.py
-    PYTHONPATH=. python scripts/analyze_primer_window.py --tex paper/v3_window_table.tex
+The command-line report this module used to print is in
+superseded/scripts/analyze_primer_window.py; every number it gave is printed by
+primer_findings.py now.
 """
-import argparse
-import json
-
 import numpy as np
 import pandas as pd
 
-FRAME = "csv2/raw-trends/frame.csv"
-BARS = "shortcuts_n40_flat.json"
+from graphtalk import outcomes
+
 ARMS = ["qwen3-1.7b", "qwen3-1.7b-think", "qwen3-4b", "qwen3-4b-think"]
 CONDS = ["components", "clustering", "rwse", "degree", "all"]
 # Constant gold at n=40, so a shift there is not about reading a graph.
 CONST_GOLD = ("node_count", "cycle_check")
 # A primer "carries the answer" when a solver reading only the primer text
-# scores near-perfectly. The gap in the bar distribution is wide: the next
-# value below 0.85 is 0.21, so the threshold is not doing any work.
+# scores near-perfectly. The highest bar below 0.85 is 0.746
+# (edge_existence/degree) and the carrying cells score 1.00, so any threshold
+# in (0.746, 1.0] gives the same split.
 CARRIES = 0.85
 BANDS = [(0.00, 0.25), (0.25, 0.50), (0.50, 0.75), (0.75, 0.90), (0.90, 1.01)]
 
@@ -56,15 +45,20 @@ def cells(frame, bars):
                 for c in CONDS:
                     b = d[d.condition == c].set_index("graph_id")
                     j = a.join(b, lsuffix="_a", rsuffix="_b", how="inner")
-                    j = j[(j.hit_cap_a == 0) & (j.hit_cap_b == 0)]
-                    if len(j) < 50:
+                    if j.empty:
                         continue
+                    # R1: every pair is kept; a truncated response is not correct.
+                    ca = outcomes.outcome(j.exact_a, j.hit_cap_a) == outcomes.CORRECT
+                    cb = outcomes.outcome(j.exact_b, j.hit_cap_b) == outcomes.CORRECT
+                    ta, tb = j.hit_cap_a.mean(), j.hit_cap_b.mean()
                     out.append(dict(
                         arm=arm, task=task, density=dens, condition=c,
                         n=len(j),
-                        baseline=j.exact_a.mean(),
-                        delta=100.0 * (j.exact_b.mean() - j.exact_a.mean()),
-                        acc=j.exact_b.mean(),
+                        baseline=ca.mean(),
+                        delta=100.0 * (cb.mean() - ca.mean()),
+                        acc=cb.mean(),
+                        trunc_a=ta, trunc_b=tb,
+                        flagged=max(ta, tb) >= outcomes.FLAG,
                         bar=bars.get(f"{task}/{c}", float("nan")),
                         bar_none=bars.get(f"{task}/none", float("nan"))))
     t = pd.DataFrame(out)
@@ -73,6 +67,7 @@ def cells(frame, bars):
 
 
 def window(t):
+    """Mean effect per baseline band, answer-carrying cells and side information."""
     rows = []
     for lo, hi in BANDS:
         s = t[(t.baseline >= lo) & (t.baseline < hi)]
@@ -85,98 +80,3 @@ def window(t):
                          n_side=len(non),
                          d_side=non.delta.mean() if len(non) else np.nan))
     return pd.DataFrame(rows)
-
-
-def by_primer(t, lo=0.25, hi=0.90):
-    s = t[(~t.carries) & (t.baseline >= lo) & (t.baseline < hi)]
-    g = s.groupby("condition").delta.agg(["mean", "median", "count"])
-    return g.reindex([c for c in CONDS if c in g.index])
-
-
-def gap(t):
-    """Where the primer carries the answer, how much does the model recover?"""
-    s = t[t.carries].copy()
-    s["gap"] = 100.0 * s.bar - 100.0 * s.acc
-    s["recovered"] = s.acc / s.bar
-    g = s.groupby(["arm", "task", "condition"]).agg(
-        baseline=("baseline", "mean"), acc=("acc", "mean"),
-        bar=("bar", "mean"), gap=("gap", "mean"),
-        recovered=("recovered", "mean"), cells=("n", "size"))
-    return g.sort_values("gap")
-
-
-def tex(t, path):
-    w = window(t)
-    p = by_primer(t)
-    L = [r"% Auto-generated by scripts/analyze_primer_window.py -- do not hand-edit.",
-         r"\begin{table}[t]", r"\centering", r"\small",
-         r"\setlength{\tabcolsep}{4pt}",
-         r"\begin{tabular}{lrrrr}", r"\toprule",
-         r"Accuracy under & \multicolumn{2}{c}{primer carries} "
-         r"& \multicolumn{2}{c}{side information} \\",
-         r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}",
-         r"\texttt{none} & cells & $\Delta$ & cells & $\Delta$ \\",
-         r"\midrule"]
-    for _, r in w.iterrows():
-        def f(x):
-            return "--" if pd.isna(x) else f"${x:+.1f}$"
-        L.append(f"${r.band.replace('-', '$--$')}$ & {r.n_carries} & "
-                 f"{f(r.d_carries)} & {r.n_side} & {f(r.d_side)} \\\\")
-    L += [r"\midrule",
-          r"\multicolumn{5}{l}{\emph{side information only, baseline "
-          r"$0.25$--$0.90$}} \\"]
-    for c, r in p.iterrows():
-        L.append(r"\texttt{%s} & \multicolumn{4}{l}{mean $%+.1f$, median "
-                 r"$%+.1f$ over %d cells} \\" % (c, r["mean"], r["median"],
-                                                 r["count"]))
-    L += [r"\bottomrule", r"\end{tabular}",
-          r"\caption{Mean paired effect against \texttt{none} (percentage "
-          r"points) for every (arm, task, density, primer) cell of the main "
-          r"sweep, binned by the cell's own \texttt{none} accuracy and split "
-          r"by whether the primer text alone determines the answer (shortcut "
-          r"bar $\ge " + f"{CARRIES:.2f}" + r"$; Table~\ref{tab:shortcut}). "
-          r"Constant-gold tasks are excluded. Movement lives in the middle of "
-          r"the baseline range in both columns, and a primer that carries the "
-          r"answer is worth several times one that does not; above $0.90$, "
-          r"where most cells sit, neither does anything.}",
-          r"\label{tab:window}", r"\end{table}"]
-    with open(path, "w", encoding="utf-8", newline="") as fh:
-        fh.write("\n".join(L) + "\n")
-    print(f"wrote {path}")
-
-
-def main():
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--frame", default=FRAME)
-    ap.add_argument("--bars", default=BARS)
-    ap.add_argument("--tex")
-    ap.add_argument("--csv")
-    args = ap.parse_args()
-
-    frame = pd.read_csv(args.frame)
-    bars = json.load(open(args.bars, encoding="utf-8"))
-    t = cells(frame, bars)
-
-    print(f"{len(t)} cells | carries the answer: {t.carries.sum()} | "
-          f"side information: {(~t.carries).sum()}")
-    side = t[~t.carries]
-    top = (side.baseline > 0.90).sum()
-    print(f"of the {len(side)} side-information cells, {top} "
-          f"({100 * top / len(side):.0f}%) sit above 0.90 under `none` and "
-          f"cannot show a gain\n")
-    print("effect by baseline band:")
-    print(window(t).to_string(index=False, float_format=lambda x: f"{x:+.2f}"))
-    print("\nside information only, baseline 0.25-0.90, by primer:")
-    print(by_primer(t).to_string(float_format=lambda x: f"{x:+.2f}"))
-    print("\nwhere the primer carries the answer, what does the model recover?")
-    print(gap(t).to_string(float_format=lambda x: f"{x:.3f}"))
-
-    if args.csv:
-        t.to_csv(args.csv, index=False)
-        print(f"\nwrote {args.csv}")
-    if args.tex:
-        tex(t, args.tex)
-
-
-if __name__ == "__main__":
-    main()

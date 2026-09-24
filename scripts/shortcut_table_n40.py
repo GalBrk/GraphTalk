@@ -3,7 +3,7 @@
 `shortcuts.json` (from `shortcut_table.py`) is fit and scored on the vendored
 generator's 5-19 node graphs, which the paper's `_long.tex` itself says "do
 not transfer" to the n=40 corpus the models are actually evaluated on -- see
-docs/paper-revision-handoff.md. This refits the same rung-3 solver (theorem +
+superseded/docs/paper-revision-handoff.md. This refits the same rung-3 solver (theorem +
 heuristic + fitted rules, disjoint fit/test graph sets) on n=40 ER graphs at
 each density densfull40/densfull40hi actually used, so route-vs-no-route
 classification and any bar-relative Δ can be computed honestly.
