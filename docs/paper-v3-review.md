@@ -242,7 +242,9 @@ instruction: include if they fit, otherwise record them here):
 
 ## Status
 
-Closed after round 8, the last round. `make_v3.sh` exit 0; body, Limitations
+Closed after round 8, the last round; the verifier re-checked the final
+version and approved it (one precision edit followed: the truncation-as-error
+estimate counts every truncated generation). `make_v3.sh` exit 0; body, Limitations
 and Ethics end on page 5 (8 pages with references and appendix); A4, all fonts
 embedded, no Type 3; abstract 199 words; 0 undefined references, 0 overfull
 boxes, 0 undefined citations; every printed interval appears in
