@@ -1667,7 +1667,7 @@ grouping key so exact match and F1 are never averaged together.
 **Status: all four arms complete** (2026-09-16), 16,800/16,800 rows each --
 `qwen3-1.7b`, `qwen3-1.7b-think`, `qwen3-4b`, `qwen3-4b-think`. Two rows
 duplicated across a preemption/resume on `qwen3-1.7b` only (deduplicated by the
-scorer). **Full tables and conclusions: `docs/full-task-density-sweep.md`.**
+scorer). **Full tables and conclusions: `superseded/docs/full-task-density-sweep.md`.**
 Every number below was re-verified against the run files on 2026-09-16, after
 the boolean-extraction fix described there (it changed only `qwen3-4b`
 `cycle_check`).
@@ -1946,7 +1946,7 @@ Reproduce everything below with:
 PYTHONPATH=. python scripts/analyze_baseline_law.py --shortcuts shortcuts.json
 ```
 
-The observation that starts this off is in `docs/full-task-density-sweep.md`:
+The observation that starts this off is in `superseded/docs/full-task-density-sweep.md`:
 the same primer helps `qwen3-1.7b` on `node_degree` and hurts `qwen3-4b`,
 which reads as a scale effect. It is not one. Within `qwen3-4b` alone the
 `degree` primer is worth **+27.8 pp** on `edge_count` (baseline 0.02) and

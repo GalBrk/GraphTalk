@@ -1,24 +1,29 @@
-"""Numbers behind the v3 paper's findings, recomputed from the raw generations.
+"""The one analysis of the 40-node sweep, recomputed from the raw generations.
 
-Every body number that a generated float does not already carry is printed
-here, under a tag that paper/NUMBERS.md points to. Two figure-data CSVs are
-written for paper/make_v3_figures.py.
+Every number in docs/results/n40-sweep.md is printed here, under a tag
+("[flip]", "[main]", ...); tests/test_results_docs.py checks the doc against the
+saved output, csv2/raw-trends/primer_findings.txt. --csv-dir also writes
+primer_cells.csv, edge_existence_collapse.csv and node_degree_routes.csv.
 
 Sources: csv2/raw-trends/frame.csv (the 84,000-row frame that
 scripts/build_raw_frame.py rebuilds from runs/ and checks gold-for-gold), the
 raw responses in runs/ for the two text measures (route and discrepancy), and
-runs/qwen3-1.7b.{degdens40,degdensrep,degfixdeg}.* for the replication.
+runs/qwen3-1.7b.{degdens40,degdens40hi,degdensrep,degfixdeg}.* for the replication.
 
-Conventions are the paper's: pair two conditions on the shared graph within
-(arm, task, density); drop the pair if either generation hit the budget; exact
-match; exact McNemar; 95% intervals from a bootstrap over graphs, stratified by
-density.
+Conventions: rule R1 (graphtalk/outcomes.py). Two conditions are paired on the
+shared graph within (arm, task, density) and every pair is kept; a response
+that hit the budget is truncated, never correct; an effect is the change in the
+correct share, printed with the change in the truncated share. Answer
+descriptions (MAE, yes-rate, false alarms, routes, wording) use finished
+responses only. Exact McNemar; 95% intervals from a bootstrap over graphs,
+stratified by density.
 
   PYTHONPATH=. python scripts/primer_findings.py
   PYTHONPATH=. python scripts/primer_findings.py --csv-dir csv2/raw-trends
 """
 import argparse
 import glob
+from decimal import ROUND_HALF_EVEN, Decimal
 import json
 import os
 import re
@@ -27,7 +32,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-from graphtalk import scoring
+from graphtalk import outcomes, scoring
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import analyze_primer_window as apw  # noqa: E402  (cells(): the window table's rule)
@@ -88,46 +93,75 @@ def reports_discrepancy(text):
 
 
 # ------------------------------------------------------------------ helpers
+def with_outcomes(f):
+  """Add R1's 0/1 columns: `correct` and `truncated`."""
+  f = f.copy()
+  o = outcomes.outcome(f.exact, f.hit_cap)
+  f["correct"] = (o == outcomes.CORRECT).astype(int)
+  f["truncated"] = (o == outcomes.TRUNCATED).astype(int)
+  return f
+
+
 def pairs(f, arm, task, a, b, dens):
+  """Every graph that has both conditions, joined as *_a / *_b. Nothing is
+  dropped; code that describes answers calls finished() itself."""
   d = f[(f.arm == arm) & (f.task == task) & f.density_class.isin(dens)]
-  x = d[d.condition == a].set_index(["density_class", "graph_id"])
-  y = d[d.condition == b].set_index(["density_class", "graph_id"])
-  j = x.join(y, lsuffix="_a", rsuffix="_b", how="inner")
-  return j[(j.hit_cap_a == 0) & (j.hit_cap_b == 0)]
-
-
-def pairs_as_error(f, arm, task, a, b, dens):
-  """All pairs, with a generation that reaches the budget scored as wrong."""
-  d = f[(f.arm == arm) & (f.task == task) & f.density_class.isin(dens)].copy()
-  d["exact"] = np.where(d.hit_cap == 1, 0, d.exact)
   x = d[d.condition == a].set_index(["density_class", "graph_id"])
   y = d[d.condition == b].set_index(["density_class", "graph_id"])
   return x.join(y, lsuffix="_a", rsuffix="_b", how="inner")
 
 
+def finished(j):
+  """The pairs in which both responses finished within the budget."""
+  return j[(j.hit_cap_a == 0) & (j.hit_cap_b == 0)]
+
+
+def boot_positions(j):
+  """Row positions of each density group, groups in sorted density order."""
+  level = j.index.get_level_values(0)
+  return [np.flatnonzero(level == d) for d in sorted(level.unique())]
+
+
 def boot(j, stat):
-  """95% interval of stat(j) over graphs resampled within each density."""
-  groups = [g for _, g in j.groupby(level=0)]
+  """95% interval of stat(j) over graphs resampled within each density. One
+  iloc per resample over the same random draws, in the same order, as a
+  per-group pd.concat (tests pin the two to identical intervals)."""
+  groups = boot_positions(j)
   rng = np.random.default_rng(SEED)
   vals = []
   for _ in range(B):
-    vals.append(stat(pd.concat([g.iloc[rng.integers(0, len(g), len(g))]
-                                for g in groups])))
+    idx = np.concatenate([g[rng.integers(0, len(g), len(g))] for g in groups])
+    vals.append(stat(j.iloc[idx]))
   return np.percentile(vals, [2.5, 97.5])
 
 
-def effect(j, col="exact"):
-  """Paired effect in points, its interval, broke/fixed and exact McNemar p."""
+def effect(j, col="correct"):
+  """Paired effect in points, its interval, broke/fixed, exact McNemar p, n, and
+  (for the correct share) the change in the truncated share in points."""
   a, b = j[col + "_a"].astype(bool), j[col + "_b"].astype(bool)
   m = scoring.mcnemar(a.to_numpy(), b.to_numpy())
   d = 100 * (b.mean() - a.mean())
   lo, hi = boot(j, lambda s: 100 * (s[col + "_b"].mean() - s[col + "_a"].mean()))
-  return d, lo, hi, m["b"], m["c"], m["p_value"], len(j)
+  dt = (100 * (j.truncated_b.mean() - j.truncated_a.mean())
+        if col == "correct" else np.nan)
+  return d, lo, hi, m["b"], m["c"], m["p_value"], len(j), dt
+
+
+def f1(x, sign=True):
+  """x to one decimal, ties to even on its decimal value: 2.55 (stored as
+  2.5499...) and -5.75 round the same way, and float noise cannot tip a tie."""
+  if x != x:
+    return "nan"
+  q = Decimal(repr(round(float(x), 9))).quantize(Decimal("0.1"), rounding=ROUND_HALF_EVEN)
+  return f"{q:+}" if sign else f"{q}"
 
 
 def fmt(e):
-  d, lo, hi, broke, fixed, p, n = e
-  return f"{d:+.1f} [{lo:+.1f}, {hi:+.1f}] broke {broke} fixed {fixed} p={p:.2g} n={n}"
+  d, lo, hi, broke, fixed, p, n, dt = e
+  s = f"{f1(d)} [{f1(lo)}, {f1(hi)}] broke {broke} fixed {fixed} p={p:.2g} n={n}"
+  if not np.isnan(dt):
+    s += f" | truncated {f1(dt)}, wrong {f1(-d - dt)}"
+  return s
 
 
 def bh(p):
@@ -138,6 +172,14 @@ def bh(p):
   q = np.empty(len(p))
   q[o] = np.clip(r, 0, 1)
   return q
+
+
+def record_correct(r):
+  """R1 on one raw run record: 1 when it finished and its answer is exact."""
+  if r.get("hit_cap"):
+    return 0
+  pred = scoring.extract_answer(r["response"] or "", r["task"])
+  return int(scoring.score_one(pred, r["gold"], r["task"])["exact"])
 
 
 def load_runs(pattern, tasks=None, conds=None):
@@ -155,13 +197,41 @@ def load_runs(pattern, tasks=None, conds=None):
 
 # ------------------------------------------------------------------ analyses
 def band_table(f, bars):
+  """Effects binned by each cell's own no-primer accuracy. The bands use the cells
+  under the truncation flag, where that accuracy is accuracy: in a flagged cell
+  the correct share mostly measures finishing within the budget. Flagged cells
+  are listed on their own ([flagged]), and [bandsens] shows the bands at other
+  thresholds, so every cell is reported once and the threshold is visible.
+  Returns the cells under the flag."""
   t = apw.cells(f, bars)
-  print(f"[cells] {len(t)} cells with >=50 untruncated pairs; "
-        f"{int(t.carries.sum())} answer-carrying, {int((~t.carries).sum())} side")
-  print("[bands] mean effect by baseline band (answer-carrying | side information)")
+  t["tmax"] = t[["trunc_a", "trunc_b"]].max(axis=1)
+  u = t[~t.flagged]
+  print(f"[cells] {len(t)} (arm, task, density, primer) cells over the four tasks whose "
+        f"gold varies ({t.groupby(['arm', 'task', 'density']).ngroups} (arm, task, density) x "
+        f"{t.condition.nunique()} primers); {int(t.flagged.sum())} flagged (truncated share >= 15%), "
+        f"{len(u)} under the flag: {int(u.carries.sum())} answer-carrying, "
+        f"{int((~u.carries).sum())} side")
+  print("[bands] mean effect by baseline band, cells under the truncation flag "
+        "(answer-carrying | side information)")
   # round(., 9) first: a band mean that is exactly a half (-23/4) arrives as
   # -5.7499999... and would otherwise print as -5.7.
-  print(apw.window(t).round(9).to_string(index=False, float_format=lambda x: f"{x:+.1f}"))
+  print(apw.window(u).to_string(index=False, float_format=f1))
+  print("[bandsens] band means, answer-carrying (cells) / side (cells), keeping cells "
+        "whose larger truncated share is below each threshold")
+  for thr in (0.05, 0.10, 0.15, 0.30, 0.50, 1.01):
+    w = apw.window(t[t.tmax < thr])
+    label = "all cells" if thr > 1 else f"below {thr:.2f}"
+    print(f"  {label}: " + " | ".join(
+        f"{r.band} {f1(r.d_carries)} ({r.n_carries}) / {f1(r.d_side)} ({r.n_side})"
+        for r in w.itertuples()))
+  print("[flagged] cells at or above the truncation flag: none correct/wrong/truncated % "
+        "-> primer correct/wrong/truncated %, change in correct share")
+  for r in t[t.flagged].sort_values(["arm", "task", "condition", "density"]).itertuples():
+    ca, ta, cb, tb = 100 * r.baseline, 100 * r.trunc_a, 100 * r.acc, 100 * r.trunc_b
+    print(f"  {r.arm} {r.task} p={r.density:.2f} {r.condition}: "
+          f"{ca:.0f}/{100 - ca - ta:.0f}/{ta:.0f} -> {cb:.0f}/{100 - cb - tb:.0f}/{tb:.0f}, "
+          f"{r.delta:+.0f}")
+  t = u
   side = t[~t.carries]
   print(f"[bands] side-information cells at or above 0.90: "
         f"{int((side.baseline >= 0.90).sum())} of {len(side)}; at 1.00: "
@@ -173,17 +243,17 @@ def band_table(f, bars):
   s = t[(~t.carries) & (t.baseline >= lo) & (t.baseline < hi)]
   g = s.groupby("condition").delta.agg(["mean", "size"])
   print(f"[bands] side information by primer, baseline {lo}-{hi}: "
-        + ", ".join(f"{c} {r['mean']:+.1f} ({int(r['size'])})" for c, r in g.iterrows()))
+        + ", ".join(f"{c} {f1(r['mean'])} ({int(r['size'])})" for c, r in g.iterrows()))
   deg = s.condition.isin(["degree", "all"])
   print(f"[bands] side information, baseline {lo}-{hi}: degree and all "
-        f"{s[deg].delta.mean():+.1f} ({int(deg.sum())} cells, "
+        f"{f1(s[deg].delta.mean())} ({int(deg.sum())} cells, "
         f"{', '.join(sorted(set(s[deg].task)))}); components, clustering and rwse "
-        f"{s[~deg].delta.mean():+.1f} ({int((~deg).sum())} cells)")
+        f"{f1(s[~deg].delta.mean())} ({int((~deg).sum())} cells)")
   w = t[t.carries & (t.baseline >= lo) & (t.baseline < hi)]
   print(f"[window] answer-carrying cells, baseline {lo}-{hi}: {len(w)} "
         f"({', '.join(sorted(set(w.task)))}), effects {w.delta.min():+.0f} to "
         f"{w.delta.max():+.0f}; by arm " + ", ".join(
-            f"{a} {int(r['size'])} at {r['mean']:+.1f}"
+            f"{a} {int(r['size'])} at {f1(r['mean'])}"
             for a, r in w.groupby("arm").delta.agg(["size", "mean"]).iterrows()))
 
   # Regression to the mean: bin each cell on half its graphs, measure on the other.
@@ -193,9 +263,9 @@ def band_table(f, bars):
       for dens in sorted(f.density_class.unique()):
         for c in PRIMERS:
           j = pairs(f, arm, task, "none", c, [dens])
-          if len(j) >= 50:
+          if max(j.truncated_a.mean(), j.truncated_b.mean()) < outcomes.FLAG:
             cells.append((bars.get(f"{task}/{c}", 0) >= apw.CARRIES,
-                          j.exact_a.to_numpy(float), j.exact_b.to_numpy(float)))
+                          j.correct_a.to_numpy(float), j.correct_b.to_numpy(float)))
   rng = np.random.default_rng(7)
   acc = {k: [] for k in range(len(apw.BANDS))}
   for _ in range(400):
@@ -211,16 +281,16 @@ def band_table(f, bars):
       m = (b1 >= blo) & (b1 < bhi)
       acc[k].append((dx[m & car].mean() if (m & car).any() else np.nan,
                      dx[m & ~car].mean() if (m & ~car).any() else np.nan))
-  print("[splithalf] binned on half the graphs, effect on the other half:")
+  print("[splithalf] cells under the truncation flag, binned on half the graphs, effect on the other half:")
   for k, (blo, bhi) in enumerate(apw.BANDS):
     a = np.nanmean(np.array(acc[k]), axis=0)
-    print(f"  {blo:.2f}-{min(bhi, 1):.2f}: carrying {a[0]:+.1f} side {a[1]:+.1f}")
+    print(f"  {blo:.2f}-{min(bhi, 1):.2f}: carrying {f1(a[0])} side {f1(a[1])}")
   return t
 
 
 def per_arm(t):
   lo, hi = BAND
-  print(f"[arms] median baseline and cells with baseline in [{lo}, {hi})")
+  print(f"[arms] cells under the truncation flag: median baseline and cells with baseline in [{lo}, {hi})")
   for arm in ARMS:
     a = t[t.arm == arm]
     w = a[(a.baseline >= lo) & (a.baseline < hi)]
@@ -247,10 +317,10 @@ def sign_flip(f):
   for c in ["degree", "all"]:
     for dens in DENS4 + DENSHI:
       j = pairs(f, "qwen3-4b", "node_degree", "none", c, [dens])
-      m = scoring.mcnemar(j.exact_a.astype(bool).to_numpy(),
-                          j.exact_b.astype(bool).to_numpy())
-      print(f"  {c:6s} p={dens:.2f} base {100 * j.exact_a.mean():5.1f} "
-            f"delta {100 * (j.exact_b.mean() - j.exact_a.mean()):+5.1f} "
+      m = scoring.mcnemar(j.correct_a.astype(bool).to_numpy(),
+                          j.correct_b.astype(bool).to_numpy())
+      print(f"  {c:6s} p={dens:.2f} base {100 * j.correct_a.mean():5.1f} "
+            f"delta {100 * (j.correct_b.mean() - j.correct_a.mean()):+5.1f} "
             f"broke {m['b']} fixed {m['c']} p={m['p_value']:.2g}")
   d = f[(f.arm == "qwen3-4b") & (f.task == "node_degree") & (f.density_class == 0.5)
         & (f.hit_cap == 0)]
@@ -296,6 +366,14 @@ def procedure(f):
           f"at {100 * o.exact.mean():.0f}%, opens {100 * o.opens.notna().mean():.0f}%, "
           f"wrong opening {100 * wrong.mean():.0f}%")
 
+  # The enumerate rule needs five list lines, so a node with fewer than five
+  # neighbours that is listed in full counts as "assert".
+  low = s[s.density_class.isin([0.10, 0.20]) & (s.route == "assert")]
+  full = low[(low.target_degree < 5) & (low.text.apply(lambda x: len(_ENUM_LINE.findall(x or "")))
+                                        == low.target_degree)]
+  print(f"  p<=.20, none and degree: {len(low)} responses classed assert, of which "
+        f"{len(full)} list every neighbour of a node with fewer than five, one per line")
+
   s = nd[nd.arm == "qwen3-1.7b-think"]
   print(f"[verify] qwen3-1.7b-think under degree: retrieves at most "
         f"{100 * max((s[(s.condition == 'degree') & (s.density_class == d)].route == 'retrieve').mean() for d in DENS4 + DENSHI):.0f}%")
@@ -316,11 +394,11 @@ def procedure(f):
         + fmt(effect(pairs(f, "qwen3-1.7b-think", "node_degree", "none", "degree",
                            DENSHI))))
   print("  degree vs none by density: " + ", ".join(
-      f"{100 * (j.exact_b.mean() - j.exact_a.mean()):+.1f}"
+      f"{f1(100 * (j.correct_b.mean() - j.correct_a.mean()))}"
       for j in (pairs(f, "qwen3-1.7b-think", "node_degree", "none", "degree", [p])
                 for p in DENS4 + DENSHI)))
 
-  # The pair rule drops truncated generations, and degree truncates more often.
+  # Truncation is its own outcome, and degree truncates more often.
   t = f[(f.arm == "qwen3-1.7b-think") & (f.task == "node_degree")]
   print("[trunc] qwen3-1.7b-think node_degree generations reaching the budget: " + ", ".join(
       f"{c} {int(t[t.condition == c].hit_cap.sum())}/{int((t.condition == c).sum())} "
@@ -328,16 +406,16 @@ def procedure(f):
   cap = capped[(capped.arm == "qwen3-1.7b-think") & (capped.condition == "degree")]
   print(f"  truncated degree generations reporting a discrepancy: "
         f"{100 * cap.flag.mean():.0f}% (n={len(cap)})")
-  print("  degree vs none, 7 densities, truncation counted as an error: "
-        + fmt(effect(pairs_as_error(f, "qwen3-1.7b-think", "node_degree", "none",
-                                    "degree", DENS4 + DENSHI))))
 
 
 def plain_small(f):
-  print("[plain17] qwen3-1.7b node_degree, degree vs none by density: " + ", ".join(
-      f"p={p:.2f} {e[0]:+.0f} ({e[4]} fixed, {e[3]} broke, p={e[5]:.2g})"
-      for p, e in ((p, effect(pairs(f, "qwen3-1.7b", "node_degree", "none", "degree", [p])))
-                   for p in DENS4 + DENSHI)))
+  print("[plain17] qwen3-1.7b node_degree, degree vs none by density (no-primer correct "
+        "share %): " + ", ".join(
+      f"p={p:.2f} {e[0]:+.0f} (base {100 * j.correct_a.mean():.0f}, {e[4]} fixed, "
+      f"{e[3]} broke, p={e[5]:.2g})"
+      for p, j, e in ((p, j, effect(j)) for p, j in
+                      ((p, pairs(f, "qwen3-1.7b", "node_degree", "none", "degree", [p]))
+                       for p in DENS4 + DENSHI))))
 
 
 def recovery(f):
@@ -346,41 +424,66 @@ def recovery(f):
     for arm in ARMS:
       j = pairs(f, arm, task, "none", "degree", dens)
       if len(j):
-        print(f"  {task:11s} {arm:17s} {j.exact_b.mean():.2f} ({j.exact_a.mean():.2f}) n={len(j)}")
+        print(f"  {task:11s} {arm:17s} {j.correct_b.mean():.2f} ({j.correct_a.mean():.2f}) n={len(j)}")
 
 
 def edge_count(f):
-  print("[edgecount] handshake wording (uses_degree_sum, terminated generations, as "
-        "every procedure share) and exact match, main sweep")
-  for arm in ["qwen3-1.7b", "qwen3-4b"]:
+  print("[edgecount] edge_count, main sweep: correct / wrong / truncated shares of all "
+        "responses; exact among finished; for none and degree, the handshake wording "
+        "(uses_degree_sum) among finished, by density")
+  for arm in ARMS:
     d = f[(f.arm == arm) & (f.task == "edge_count") & f.density_class.isin(DENS4)]
-    for c in ["none", "degree"]:
+    for c in ["none", "filler"] + PRIMERS:
       x = d[d.condition == c]
       t = x[x.hit_cap == 0]
-      print(f"  {arm:10s} {c:6s} wording by density "
-            + ", ".join(f"{100 * t[t.density_class == p].uses_degree_sum.mean():.0f}"
-                        for p in DENS4)
-            + f"%; truncated {100 * x.hit_cap.mean():.0f}%; exact among terminated "
-            f"{100 * x[x.hit_cap == 0].exact.mean():.1f}%")
+      words = ("; wording by density " + ", ".join(
+          f"{100 * w.uses_degree_sum.mean():.0f}%" if len(w) else "n/a"
+          for w in (t[t.density_class == p] for p in DENS4))
+               if c in ("none", "degree") else "")
+      rel = (f"; median relative error of finished {100 * median_relative_error(x):.1f}%"
+             if c in ("none", "degree") and len(t) else "")
+      print(f"  {arm:17s} {c:10s} correct {100 * x.correct.mean():.2f}% wrong "
+            f"{100 * (1 - x.correct.mean() - x.truncated.mean()):.2f}% truncated "
+            f"{100 * x.truncated.mean():.2f}%; exact among finished "
+            f"{f'{100 * t.exact.mean():.1f}%' if len(t) else 'n/a'}{words}{rel}")
     for p in DENS4:
       j = pairs(f, arm, "edge_count", "none", "degree", [p])
-      print(f"    p={p:.2f}: degree-none {100 * (j.exact_b.mean() - j.exact_a.mean()):+.1f} "
+      print(f"    p={p:.2f}: degree-none {f1(100 * (j.correct_b.mean() - j.correct_a.mean()))} "
             f"n={len(j)}")
-    print("    pooled: " + fmt(effect(pairs(f, arm, "edge_count", "none", "degree", DENS4))))
-  j = pairs(f, "qwen3-1.7b", "edge_count", "none", "degree", DENS4)
-  print(f"  qwen3-1.7b mean absolute error none {j.abs_error_a.mean():.1f} -> degree "
+    for c in ["filler"] + PRIMERS:
+      print(f"    pooled {c} vs none: "
+            + fmt(effect(pairs(f, arm, "edge_count", "none", c, DENS4))))
+  j = finished(pairs(f, "qwen3-1.7b", "edge_count", "none", "degree", DENS4))
+  print(f"  qwen3-1.7b mean absolute error, both finished, none {j.abs_error_a.mean():.1f} -> degree "
         f"{j.abs_error_b.mean():.1f} (n={len(j)})")
   x = f[(f.arm == "qwen3-1.7b") & (f.task == "edge_count") & (f.condition == "degree")
         & (f.hit_cap == 0) & (f.uses_degree_sum == 1)]
   print(f"  qwen3-1.7b degree responses using the wording: {len(x)}, exact {100 * x.exact.mean():.1f}%")
 
 
+def collapse_rows(f):
+  """edge_existence per (arm, density, condition): yes-rate and median tokens of
+  finished responses, balanced accuracy over all responses (a truncated one is
+  not correct), and the truncated share."""
+  rows = []
+  e = f[f.task == "edge_existence"]
+  for (arm, dens, c), g in e.groupby(["arm", "density_class", "condition"]):
+    fin = g[g.hit_cap == 0]
+    pos, neg = g[g.gold_is_yes == 1], g[g.gold_is_yes == 0]
+    rows.append(dict(arm=arm, density=dens, condition=c,
+                     yes=(fin.pred == "Yes").mean(),
+                     bacc=0.5 * (pos.correct.mean() + neg.correct.mean()),
+                     truncated=g.truncated.mean(), tokens=fin.n_new_tokens.median()))
+  return pd.DataFrame(rows)
+
+
 def edge_existence(f):
   d = f[(f.task == "edge_existence") & (f.hit_cap == 0)].copy()
   d["yes"] = (d.pred == "Yes").astype(int)
   d["gy"] = d.gold_is_yes.astype(int)
-  print("[fa] edge_existence, pooled over seven densities: hit rate / false-alarm rate")
-  for arm in ["qwen3-1.7b", "qwen3-4b"]:
+  print("[fa] edge_existence, finished responses pooled over seven densities: hit "
+        "rate / false-alarm rate")
+  for arm in ARMS:
     s = d[d.arm == arm]
     hits = s[s.gy == 1].groupby("condition").yes.mean()
     fas = s[s.gy == 0].groupby("condition").yes.mean()
@@ -388,27 +491,26 @@ def edge_existence(f):
     print(f"  {arm}: hits {hits.min():.2f}-{hits.max():.2f}; errors that are false "
           f"alarms {100 * (err.gy == 0).mean():.0f}%")
     for c in ["filler"] + PRIMERS:
-      j = pairs(f.assign(fa=(f.pred == "Yes").astype(int)), arm, "edge_existence",
-                "none", c, DENS4 + DENSHI)
+      j = finished(pairs(f.assign(fa=(f.pred == "Yes").astype(int)), arm,
+                         "edge_existence", "none", c, DENS4 + DENSHI))
       j = j[j.gold_is_yes_a == 0]
       e = effect(j, "fa")
       a = effect(pairs(f, arm, "edge_existence", "none", c, DENS4 + DENSHI))
-      print(f"    {c:10s} FA {fas['none']:.2f} -> {fas[c]:.2f}: dFA {fmt(e)} | accuracy "
-            f"{a[0]:+.1f} [{a[1]:+.1f}, {a[2]:+.1f}]")
+      dfa, lo, hi, removed, added, pv, n, _ = e
+      print(f"    {c:10s} FA rate of all finished {fas['none']:.2f} -> {fas[c]:.2f}; "
+            f"paired, both finished: dFA {f1(dfa)} [{f1(lo)}, {f1(hi)}] FA removed "
+            f"{removed} added {added} p={pv:.2g} n={n} | accuracy "
+            f"{f1(a[0])} [{f1(a[1])}, {f1(a[2])}]")
 
-  s = d[d.arm == "qwen3-1.7b"]
-  rows = []
-  for (dens, c), g in s.groupby(["density_class", "condition"]):
-    pos, neg = g[g.gy == 1], g[g.gy == 0]
-    rows.append(dict(density=dens, condition=c, yes=g.yes.mean(),
-                     bacc=0.5 * (pos.exact.mean() + neg.exact.mean()),
-                     tokens=g.n_new_tokens.median()))
-  cur = pd.DataFrame(rows)
-  print("[collapse] qwen3-1.7b edge_existence by density (yes-rate / balanced acc / median tokens)")
-  for c in ["none", "filler", "components", "clustering", "rwse", "degree", "all"]:
-    x = cur[cur.condition == c].sort_values("density")
-    print(f"  {c:10s} " + " ".join(f"{r.yes:.2f}/{r.bacc:.2f}/{r.tokens:.0f}"
-                                   for r in x.itertuples()))
+  cur = collapse_rows(f)
+  for arm in ARMS:
+    print(f"[collapse] {arm} edge_existence by density: yes-rate of finished / "
+          "balanced accuracy (truncated not correct) / truncated share / median "
+          "tokens of finished")
+    for c in ["none", "filler", "components", "clustering", "rwse", "degree", "all"]:
+      x = cur[(cur.arm == arm) & (cur.condition == c)].sort_values("density")
+      print(f"  {c:10s} " + " ".join(f"{r.yes:.2f}/{r.bacc:.2f}/{r.truncated:.2f}/{r.tokens:.0f}"
+                                     for r in x.itertuples()))
   for c in ["degree", "all", "clustering", "rwse", "filler"]:
     j = pairs(f, "qwen3-1.7b", "edge_existence", "none", c, DENSHI)
 
@@ -416,36 +518,38 @@ def edge_existence(f):
       v = []
       for _, g in jj.groupby(level=0):
         p, n = g[g.gold_is_yes_a == 1], g[g.gold_is_yes_a == 0]
-        v.append(0.5 * (p.exact_b.mean() + n.exact_b.mean())
-                 - 0.5 * (p.exact_a.mean() + n.exact_a.mean()))
+        v.append(0.5 * (p.correct_b.mean() + n.correct_b.mean())
+                 - 0.5 * (p.correct_a.mean() + n.correct_a.mean()))
       return 100 * np.mean(v)
     lo, hi = boot(j, dba)
-    print(f"  balanced accuracy, p>=.65, {c} vs none: {dba(j):+.1f} [{lo:+.1f}, {hi:+.1f}]")
+    print(f"  balanced accuracy, qwen3-1.7b, p>=.65, {c} vs none: {f1(dba(j))} [{f1(lo)}, {f1(hi)}]")
 
 
 def clustering_high(f):
   print("[clusthi] qwen3-4b node_degree vs none, p>=.65 pooled")
   for c in ["clustering", "rwse", "filler", "degree", "all", "components"]:
     print(f"  {c:10s} " + fmt(effect(pairs(f, "qwen3-4b", "node_degree", "none", c, DENSHI))))
+  for band, dens in (("p<=.50", DENS4), ("p>=.65", DENSHI)):
+    print(f"  qwen3-1.7b clustering vs none, {band}: "
+          + fmt(effect(pairs(f, "qwen3-1.7b", "node_degree", "none", "clustering", dens))))
 
 
 def replication():
   print("[replic] qwen3-1.7b node_degree, clustering vs none, dedicated runs")
 
   def contrast(rows, dens_ok, label):
-    diffs, strata = [], []
+    diffs, truncs, strata = [], [], []
     for (iid, c), r in rows.items():
       if c != "clustering":
         continue
       b = rows.get((iid, "none"))
-      if b is None or r.get("hit_cap") or b.get("hit_cap"):
+      if b is None:
         continue
       m = re.search(r"/size(\d+)/p([\d.]+)/", iid)
       if not dens_ok(m):
         continue
-      ex = [scoring.score_one(scoring.extract_answer(x["response"] or "", "node_degree"),
-                              x["gold"], "node_degree")["exact"] for x in (r, b)]
-      diffs.append(int(ex[0]) - int(ex[1]))
+      diffs.append(record_correct(r) - record_correct(b))
+      truncs.append(int(bool(r.get("hit_cap"))) - int(bool(b.get("hit_cap"))))
       strata.append(m.group(0))
     d, st = np.array(diffs), np.array(strata)
     idx = [np.flatnonzero(st == s) for s in np.unique(st)]
@@ -454,9 +558,9 @@ def replication():
     fixed, broke = int((d == 1).sum()), int((d == -1).sum())
     m = scoring.mcnemar(np.array([0] * fixed + [1] * broke, bool),
                         np.array([1] * fixed + [0] * broke, bool))
-    print(f"  {label:34s} {100 * d.mean():+.1f} [{100 * np.percentile(bs, 2.5):+.1f}, "
-          f"{100 * np.percentile(bs, 97.5):+.1f}] fixed {fixed} broke {broke} "
-          f"p={m['p_value']:.2g} n={len(d)}")
+    print(f"  {label:34s} {f1(100 * d.mean())} [{f1(100 * np.percentile(bs, 2.5))}, "
+          f"{f1(100 * np.percentile(bs, 97.5))}] fixed {fixed} broke {broke} "
+          f"p={m['p_value']:.2g} n={len(d)} truncated {f1(100 * np.mean(truncs))}")
 
   main = load_runs("runs/qwen3-1.7b.degdens40.shard*.jsonl")
   contrast(main, lambda m: float(m.group(2)) <= 0.5, "400 graphs per density, p<=.50")
@@ -466,7 +570,7 @@ def replication():
   contrast(new, lambda m: float(m.group(2)) <= 0.5, "the 300 new graphs per density")
   contrast(load_runs("runs/qwen3-1.7b.degdensrep.shard*.jsonl"), lambda m: True,
            "fresh seeds, 1,600 graphs")
-  grid = load_runs("runs/qwen3-1.7b.degfixdeg*.jsonl")
+  grid = load_runs("runs/qwen3-1.7b.degfixdeg.shard*.jsonl")
   contrast(grid, lambda m: True, "fixed mean degree, n in {20..160}")
   sizes = sorted({int(re.search(r"/size(\d+)/", i).group(1)) for i, _ in grid})
   print(f"  grid sizes {sizes}")
@@ -481,7 +585,7 @@ def components(f):
   for dens in DENS4:
     j = pairs(f, "qwen3-4b", "connected_nodes", "none", "components", [dens])
     multi = int((one[one.density_class == dens].n_components > 1).sum())
-    print(f"  p={dens:.2f}: {100 * (j.exact_b.mean() - j.exact_a.mean()):+.1f}; "
+    print(f"  p={dens:.2f}: {f1(100 * (j.correct_b.mean() - j.correct_a.mean()))}; "
           f"multi-component graphs {multi}/100")
   print("  pooled: " + fmt(effect(pairs(f, "qwen3-4b", "connected_nodes", "none",
                                           "components", DENS4))))
@@ -494,19 +598,23 @@ def bundle(f):
     for task in TASKS4:
       for dens in DENS4:
         eff = {}
+        flagged = False
         for c in parts + ["all"]:
           j = pairs(f, arm, task, "none", c, [dens])
-          eff[c] = 100 * (j.exact_b.mean() - j.exact_a.mean()) if len(j) >= 50 else np.nan
-        rows.append(dict(arm=arm, task=task, dens=dens, **eff))
-  t = pd.DataFrame(rows).dropna()
+          eff[c] = 100 * (j.correct_b.mean() - j.correct_a.mean())
+          flagged |= max(j.truncated_a.mean(), j.truncated_b.mean()) >= outcomes.FLAG
+        # R1: a combination with a flagged cell is left out, as in [bands] and [length].
+        if not flagged:
+          rows.append(dict(arm=arm, task=task, dens=dens, **eff))
+  t = pd.DataFrame(rows)
   e = t["all"] - t[parts].mean(axis=1)
   rng = np.random.default_rng(SEED)
   bs = [e.iloc[rng.integers(0, len(e), len(e))].mean() for _ in range(B)]
   print(f"[bundle] all minus the mean of its parts over {len(t)} (arm, task, "
-        f"density) combinations: {e.mean():+.1f} "
-        f"[{np.percentile(bs, 2.5):+.1f}, {np.percentile(bs, 97.5):+.1f}]")
+        f"density) combinations under the truncation flag: {f1(e.mean())} "
+        f"[{f1(np.percentile(bs, 2.5))}, {f1(np.percentile(bs, 97.5))}]")
   print("  qwen3-4b node_degree p>=.65: " + ", ".join(
-      f"{c} {effect(pairs(f, 'qwen3-4b', 'node_degree', 'none', c, DENSHI))[0]:+.1f}"
+      f"{c} {f1(effect(pairs(f, 'qwen3-4b', 'node_degree', 'none', c, DENSHI))[0])}"
       for c in parts + ["all"]))
 
 
@@ -521,22 +629,18 @@ def length(f):
     for task in TASKS4:
       d = f[(f.arm == arm) & (f.task == task) & f.density_class.isin(DENS4)]
       W = d.pivot_table(index=["density_class", "graph_id"], columns="condition",
-                        values="exact")
-      C = d.pivot_table(index=["density_class", "graph_id"], columns="condition",
-                        values="hit_cap")
-      W = W.where(C == 0)
-      # Table 2's rule: a column whose fewest untruncated pairs fall below 100 is
-      # selected on termination, so it is not interpreted (two edge_count columns).
-      if min((W["none"].notna() & W[c].notna()).sum() for c in PRIMERS + ["filler"]) < 100:
+                        values="correct")
+      T = d.pivot_table(index=["density_class", "graph_id"], columns="condition",
+                        values="truncated")
+      # R1: a combination where any condition reaches the truncation flag is not
+      # interpreted (its correct share moves with the budget, not the primer).
+      if (T[["none", "filler"] + PRIMERS].mean() >= outcomes.FLAG).any():
         continue
 
       def fit(w):
-        ds = [100 * (w.loc[w["none"].notna() & w[c].notna(), c].mean()
-                     - w.loc[w["none"].notna() & w[c].notna(), "none"].mean())
-              for c in PRIMERS]
+        ds = [100 * (w[c].mean() - w["none"].mean()) for c in PRIMERS]
         slope, icpt = np.polyfit(x, ds, 1)
-        ok = w["none"].notna() & w["filler"].notna()
-        fil = 100 * (w.loc[ok, "filler"].mean() - w.loc[ok, "none"].mean())
+        fil = 100 * (w["filler"].mean() - w["none"].mean())
         return slope, fil - (icpt + slope * kch["filler"]), np.polyfit(x[:4], ds[:4], 1)[0]
       s, resid, s4 = fit(W)
       rng = np.random.default_rng(SEED)
@@ -547,7 +651,7 @@ def length(f):
   t = pd.DataFrame(rows)
   for size in ["1.7b", "4b"]:
     s = t[t.arm.str.startswith("qwen3-" + size)]
-    print(f"  {size} (Table 2 columns with >=100 pairs): slope positive in "
+    print(f"  {size} (combinations below the truncation flag): slope positive in "
           f"{(s.slope > 0).sum()} of {len(s)} "
           f"({(s.slope_no_all > 0).sum()} without all); range {s.slope.min():+.1f} to "
           f"{s.slope.max():+.1f} points per 1,000 chars")
@@ -576,9 +680,20 @@ def clustering_spread():
 
 def node_count(f):
   d = f[(f.arm == "qwen3-1.7b") & (f.task == "node_count") & (f.hit_cap == 0)]
-  print("[nodecount] qwen3-1.7b share answering 39: " + ", ".join(
+  print("[nodecount] qwen3-1.7b share of finished responses answering 39: " + ", ".join(
       f"{c} {100 * (d[d.condition == c].pred.astype(str) == '39').mean():.1f}%"
       for c in ["none", "rwse", "degree", "components", "filler", "all", "clustering"]))
+  listed = {}
+  for line in open("prompts.densfull40.jsonl", encoding="utf-8"):
+    r = json.loads(line)
+    if r["task"] == "node_count" and r["condition"] == "none":
+      dens = float(re.search(r"/p([\d.]+)/", r["instance_id"]).group(1))
+      listed.setdefault(dens, []).append(nodes_listed(r["prompt"]) == 40)
+  n = d[d.condition == "none"]
+  print("  without a primer, by density: answers 39 / graphs whose encoding gives all 40 "
+        "nodes a line: " + ", ".join(
+            f"p={p:.2f} {100 * (n[n.density_class == p].pred.astype(str) == '39').mean():.0f}% / "
+            f"{sum(v)}/{len(v)}" for p, v in sorted(listed.items())))
 
 
 def measurement(f):
@@ -586,17 +701,17 @@ def measurement(f):
   same, flipped = [], 0
   for arm in ARMS:
     for c in ["filler"] + PRIMERS:
-      j = pairs(f, arm, "connected_nodes", "none", c, DENS4)
-      ex = 100 * (j.exact_b.mean() - j.exact_a.mean())
-      f1 = 100 * (j.f1_b.mean() - j.f1_a.mean())
+      j = finished(pairs(f, arm, "connected_nodes", "none", c, DENS4))
+      ex = 100 * (j.correct_b.mean() - j.correct_a.mean())
+      df1 = 100 * (j.f1_b.mean() - j.f1_a.mean())
       if abs(ex) >= 5:
-        if ex * f1 > 0:
-          same.append(f1 / ex)
+        if ex * df1 > 0:
+          same.append(df1 / ex)
         else:
           flipped += 1
       if arm == "qwen3-4b" and c == "filler":
-        print(f"[f1] qwen3-4b filler on connected_nodes: exact {ex:+.1f}, F1 {f1:+.1f}")
-  print(f"[f1] of {len(same) + flipped} contrasts with |exact| >= 5, F1 moves the same "
+        print(f"[f1] qwen3-4b filler on connected_nodes: exact {f1(ex)}, F1 {f1(df1)}")
+  print(f"[f1] (finished pairs) of {len(same) + flipped} contrasts with |exact| >= 5, F1 moves the same "
         f"way in {len(same)} (by {min(same):.2f} to {max(same):.2f} as much) and "
         f"reverses {flipped}")
   e = f[(f.task == "edge_existence") & (f.arm == "qwen3-1.7b") & (f.condition == "none")]
@@ -605,16 +720,17 @@ def measurement(f):
 
 
 def power(f, t):
-  """Smallest paired effect one cell can detect (80% power, two-sided .05), over all
-  cells and over the side-information cells at baselines 0.25-0.75, where primers act."""
+  """Smallest paired effect one cell of 100 graphs can detect (80% power,
+  two-sided .05), over all cells under the truncation flag and over the
+  side-information cells at baselines 0.25-0.75, where primers act."""
   disc = []
   for arm in ARMS:
     for task in TASKS4:
       for dens in sorted(f.density_class.unique()):
         for c in ["filler"] + PRIMERS:
           j = pairs(f, arm, task, "none", c, [dens])
-          if len(j) >= 100:
-            disc.append((j.exact_a != j.exact_b).mean())
+          if len(j) >= 100 and max(j.truncated_a.mean(), j.truncated_b.mean()) < outcomes.FLAG:
+            disc.append((j.correct_a != j.correct_b).mean())
   z = 1.959964 + 0.841621
   med = float(np.median(disc))
   print(f"[power] median discordance {med:.3f} over {len(disc)} cells -> smallest "
@@ -625,7 +741,7 @@ def power(f, t):
   for r in s.itertuples():
     j = pairs(f, r.arm, r.task, "none", r.condition, [r.density])
     if len(j) >= 100:
-      dm.append((j.exact_a != j.exact_b).mean())
+      dm.append((j.correct_a != j.correct_b).mean())
   med = float(np.median(dm))
   print(f"[power] side-information cells at baselines {lo}-{hi}: median discordance "
         f"{med:.3f} over {len(dm)} cells -> {100 * z * np.sqrt(med / 100):.1f} points")
@@ -716,6 +832,198 @@ def leakage(f):
             f"{chance.sum():.1f} by chance, p={p:.2g}")
 
 
+def nodes_listed(prompt):
+  """How many nodes have their own line in an incident encoding (isolated nodes
+  have none)."""
+  return len(set(re.findall(r"Node (\d+) is connected to", prompt)))
+
+
+def median_relative_error(d):
+  """Median |pred - gold| / gold over finished responses with a numeric answer."""
+  fin = d[d.hit_cap == 0]
+  pred = pd.to_numeric(fin.pred, errors="coerce")
+  gold = pd.to_numeric(fin.gold, errors="coerce")
+  ok = pred.notna() & gold.notna() & (gold != 0)
+  return float(((pred[ok] - gold[ok]).abs() / gold[ok]).median())
+
+
+def neighbour_set(s):
+  """A connected_nodes answer as a set of node ids; None when there is no answer."""
+  if not isinstance(s, str) or not s.strip():
+    return None
+  return set() if "no nodes" in s.lower() else set(map(int, re.findall(r"-?\d+", s)))
+
+
+def joint(f):
+  """Degree and neighbour answers for the same queried node, main sweep (p<=.50).
+  J: both correct (a truncated side is not correct). C: both finished and
+  parsed, a valid neighbour set, and the stated degree equals its size."""
+  cols = ["arm", "condition", "density_class", "graph_id"]
+  nd = f[(f.task == "node_degree") & f.density_class.isin(DENS4)]
+  cn = f[(f.task == "connected_nodes") & f.density_class.isin(DENS4)]
+  j = nd.merge(cn, on=cols, suffixes=("_d", "_n"), validate="one_to_one")
+  gold_sets = j.gold_n.map(neighbour_set)
+  assert (j.gold_d.astype(int) == gold_sets.map(len)).all(), "tasks query different nodes"
+  sets = j.pred_n.map(neighbour_set)
+  valid = sets.map(lambda s: s is not None and all(0 <= v < 40 for v in s))
+  size = sets.map(lambda s: len(s) if s is not None else -1)
+  j["J"] = ((j.correct_d == 1) & (j.correct_n == 1)).astype(int)
+  j["C"] = ((j.hit_cap_d == 0) & (j.hit_cap_n == 0) & (j.parsed_d == 1)
+            & (j.parsed_n == 1) & valid
+            & (pd.to_numeric(j.pred_d, errors="coerce") == size)).astype(int)
+  print("[joint] degree and neighbours of the same node, p<=.50: J both correct, "
+        "C consistent, C-J consistent but not both correct (J is inside C), % of items; "
+        "then J against none, with BH q over the six primers")
+  for arm in ARMS:
+    s = j[j.arm == arm]
+    print(f"  {arm:17s} " + ", ".join(
+        f"{c} J {100 * s[s.condition == c].J.mean():.2f} C {100 * s[s.condition == c].C.mean():.2f}"
+        f" C-J {100 * (s[s.condition == c].C.mean() - s[s.condition == c].J.mean()):.2f}"
+        for c in ["none", "filler"] + PRIMERS))
+    base = s[s.condition == "none"].set_index(["density_class", "graph_id"])
+    effs = []
+    for c in ["filler"] + PRIMERS:
+      x = base.join(s[s.condition == c].set_index(["density_class", "graph_id"]),
+                    lsuffix="_a", rsuffix="_b", how="inner")
+      effs.append((c, effect(x, "J")))
+    for (c, e), q in zip(effs, bh([e[5] for _, e in effs])):
+      print(f"    J {c:10s} " + fmt(e) + f" q={q:.2g}")
+
+
+def rwse_pairs(prompt, instance_id):
+  """The (2-step, 3-step) return probabilities the rwse primer prints, one per node."""
+  found = re.findall(r"Node (\d+) has return probability (\d+\.\d+) after 2 steps "
+                     r"and (\d+\.\d+) after 3 steps", prompt)
+  if len(found) != 40:
+    raise ValueError(f"{instance_id}: {len(found)} rwse sentences, expected 40")
+  return [(a, b) for _, a, b in found]
+
+
+def rwse_resolution():
+  """Distinct printed return-probability pairs per graph against distinct stated
+  degrees, from the saved prompts (the text the model saw), by density."""
+  deg = re.compile(r"Node (\d+) has degree (\d+)")
+  seen = {}
+  for path in ("prompts.densfull40.jsonl", "prompts.densfull40hi.jsonl"):
+    for line in open(path, encoding="utf-8"):
+      r = json.loads(line)
+      if r["task"] != "node_degree" or r["condition"] not in ("rwse", "degree"):
+        continue
+      seen.setdefault(r["instance_id"], {})[r["condition"]] = r["prompt"]
+  by = {}
+  for iid, p in seen.items():
+    pr = rwse_pairs(p["rwse"], iid)
+    counts = pd.Series(pr).value_counts()
+    degrees = {int(d) for _, d in deg.findall(p["degree"])}
+    dens = float(re.search(r"/p([\d.]+)/", iid).group(1))
+    by.setdefault(dens, []).append((len(counts), counts.iloc[0] / 40, len(degrees)))
+  print("[rwse] per graph, by density: distinct printed (2-step, 3-step) pairs / "
+        "modal pair's share of nodes / distinct stated degrees / graphs with fewer "
+        "rwse classes than degrees")
+  for dens, v in sorted(by.items()):
+    a = np.array(v, dtype=float)
+    print(f"  p={dens:.2f}: {a[:, 0].mean():.2f} / {100 * a[:, 1].mean():.2f}% / "
+          f"{a[:, 2].mean():.2f} / {int((a[:, 0] < a[:, 2]).sum())}/{len(a)}")
+
+
+def setup_facts(f):
+  """The facts the setup section states: constant golds, budgets, truncation."""
+  print(f"[setup] {len(f)} responses on {f.groupby(['density_class', 'graph_id']).ngroups} "
+        f"graphs; {f.groupby(['arm', 'task', 'condition', 'density_class']).ngroups} "
+        f"cells of {f.groupby(['arm', 'task', 'condition', 'density_class']).size().min()}"
+        f"-{f.groupby(['arm', 'task', 'condition', 'density_class']).size().max()}")
+  print("  distinct gold values: node_count "
+        f"{sorted(f[f.task == 'node_count'].gold.astype(str).unique())}, cycle_check "
+        f"{sorted(f[f.task == 'cycle_check'].gold.astype(str).unique())}")
+  hi = f.density_class.isin(DENSHI)
+  for label, part in (("main sweep", f[~hi]), ("high-density extension", f[hi])):
+    cap = part[part.hit_cap == 1].groupby("arm").n_new_tokens.max()
+    print(f"  budget reached, {label}: " + ", ".join(f"{a} {int(v)}" for a, v in cap.items()))
+  t = f[~hi].groupby(["arm", "task"]).truncated.mean()
+  print("  nonzero truncated share, main sweep (arm/task): " + ", ".join(
+      f"{a}/{k} {f1(100 * v, sign=False)}%" for (a, k), v in t.items() if v > 0))
+  e = f[(f.task == "edge_existence") & (f.arm == ARMS[0]) & (f.condition == "none")]
+  share = e.groupby("density_class").gold_is_yes.mean()
+  pooled = e[e.density_class.isin(DENS4)].gold_is_yes.mean()
+  print("  majority-class accuracy, edge_existence (share of queried pairs that are "
+        "edges / majority): " + ", ".join(
+            f"p={d:.2f} {100 * v:.0f}%/{100 * max(v, 1 - v):.0f}%" for d, v in share.items())
+        + f"; main sweep pooled {100 * max(pooled, 1 - pooled):.2f}%; cycle_check 100%")
+
+
+def main_table(f):
+  """Every primer against no primer and against the structure-free filler, per arm
+  and task, main sweep (p<=.50): correct shares, paired effect, exact McNemar,
+  Benjamini-Hochberg q within (arm, task, control), change in the truncated share;
+  secondary, over finished pairs: MAE for the integer tasks, set-F1 for
+  connected_nodes."""
+  tasks = ["node_count", "node_degree", "connected_nodes", "edge_count",
+           "edge_existence", "cycle_check"]
+  print("[main] main sweep (p<=.50), per arm and task, condition vs control: correct "
+        "share control -> condition, effect [95% CI], McNemar p, BH q, fixed/broke, n, "
+        "truncated change; MAE or F1 of finished pairs; FLAGGED when either side's "
+        "truncated share is 15% or more")
+  for arm in ARMS:
+    for task in tasks:
+      for control, conds in (("none", ["filler"] + PRIMERS), ("filler", PRIMERS)):
+        rows = []
+        for c in conds:
+          j = pairs(f, arm, task, control, c, DENS4)
+          fin = finished(j)
+          sec = ""
+          if task in ("node_count", "node_degree", "edge_count"):
+            sec = (f"; MAE {fin.abs_error_a.mean():.2f} -> {fin.abs_error_b.mean():.2f} "
+                   f"({len(fin)} finished pairs)")
+          elif task == "connected_nodes":
+            sec = (f"; F1 {fin.f1_a.mean():.3f} -> {fin.f1_b.mean():.3f} "
+                   f"({len(fin)} finished pairs)")
+          if max(j.truncated_a.mean(), j.truncated_b.mean()) >= outcomes.FLAG:
+            sec += " FLAGGED"
+          rows.append((c, j, effect(j), sec))
+        q = bh([e[5] for _, _, e, _ in rows])
+        print(f"  {arm} {task} vs {control}:")
+        for (c, j, e, sec), qq in zip(rows, q):
+          d, lo, hi, broke, fixed, p, n, dt = e
+          print(f"    {c:10s} {100 * j.correct_a.mean():.2f} -> {100 * j.correct_b.mean():.2f}: "
+                f"{f1(d)} [{f1(lo)}, {f1(hi)}] p={p:.2g} q={qq:.2g} fixed {fixed} "
+                f"broke {broke} n={n} truncated {f1(dt)}{sec}")
+
+
+def rwse_fit():
+  """The fitted rwse density rule for edge_existence against the majority answer,
+  on the graphs it was fitted on and on held-out graphs (the solver's settings:
+  300 graphs, fit seed 555555, test seed 777777, rung 3)."""
+  from graphtalk import shortcuts
+  rule = next(r for r in shortcuts.FITTED if r.name == "edge_existence_rwse_density")
+  print("[rwsefit] edge_existence, rwse density rule vs the majority answer (%): "
+        "in-sample / out-of-sample / majority")
+  for dens in DENSHI:
+    fit = shortcuts.generate_n40_corpus(300, 555_555, dens)
+    test = shortcuts.generate_n40_corpus(300, 777_777, dens)
+    res = shortcuts.inflation("rwse", "edge_existence", 3, rule, fit, test)
+    golds = [g for _, g in shortcuts.build_rows(test, "rwse", "edge_existence", 3, seed=6)]
+    maj = max(golds.count(g) for g in set(golds)) / len(golds)
+    print(f"  p={dens:.2f}: {100 * res['in_sample']:.1f} / {100 * res['out_of_sample']:.1f} / "
+          f"{100 * maj:.1f}")
+
+
+def solver_bars(bars):
+  """The graph-blind solver's accuracy per (task, primer), from shortcuts_n40_flat.json."""
+  from graphtalk import shortcuts
+  print(f"[bars] graph-blind solver ({len(shortcuts.THEOREMS)} exact rules, "
+        f"{len(shortcuts.HEURISTICS)} heuristic, {len(shortcuts.FITTED)} fitted on "
+        "disjoint graphs) accuracy (%), n=40: task: none, then each primer")
+  for task in TASKS4:
+    print(f"  {task}: none {100 * bars[f'{task}/none']:.1f}, " + ", ".join(
+        f"{c} {100 * bars[f'{task}/{c}']:.1f}" for c in ["filler"] + PRIMERS))
+  side = {k: v for k, v in bars.items()
+          if k.split("/")[0] in TASKS4 and v < apw.CARRIES}
+  top = max(side, key=side.get)
+  print(f"  carrying (>= {apw.CARRIES}): " + ", ".join(
+      sorted(k for k, v in bars.items() if k.split("/")[0] in TASKS4 and v >= apw.CARRIES))
+      + f"; highest other: {top} {100 * side[top]:.1f}")
+
+
 def rerun():
   """Identical prompts generated twice: degdens40 re-ran the main sweep's graphs."""
   main = load_runs("runs/qwen3-1.7b.densfull40.shard*.jsonl", tasks={"node_degree"})
@@ -727,9 +1035,7 @@ def rerun():
       continue
     n += 1
     same += r["response"] == b["response"]
-    ex = [scoring.score_one(scoring.extract_answer(x["response"] or "", "node_degree"),
-                            x["gold"], "node_degree")["exact"] for x in (r, b)]
-    changed += ex[0] != ex[1]
+    changed += record_correct(r) != record_correct(b)
   print(f"[rerun] qwen3-1.7b node_degree prompts generated twice: {n}; identical "
         f"responses {same} ({100 * same / n:.0f}%); correctness changes on {changed} "
         f"({100 * changed / n:.1f}%)")
@@ -762,7 +1068,7 @@ def other_procedures(f):
   runs = load_runs("runs/qwen3-1.7b.densfull40.shard*.jsonl", tasks={"node_degree"},
                    conds={"degree"})
   j = pairs(f, "qwen3-1.7b", "node_degree", "none", "degree", [0.20, 0.35])
-  fixed = j[(j.exact_a == 0) & (j.exact_b == 1)]
+  fixed = j[(j.correct_a == 0) & (j.correct_b == 1)]
   cites = sum(bool(re.search(rf"[Nn]ode {int(r.target_id_b)}\** has degree", x))
               or reports_discrepancy(x)
               for r in fixed.itertuples()
@@ -780,7 +1086,7 @@ def extraction(f):
         f"{len(term)}, unparsed among them {int((term.parsed == 0).sum())}")
   hi = f[f.density_class.isin(DENSHI)].groupby(["arm", "task"]).hit_cap.mean()
   print(f"[extract] high-density extension: largest truncation rate {100 * hi.max():.1f}% "
-        f"({hi.idxmax()})")
+        f"({hi.idxmax()[0]} {hi.idxmax()[1]})")
 
 
 def route_data(f):
@@ -816,19 +1122,12 @@ def figure_data(f, bars, out):
   ps = []
   for _, r in t.iterrows():
     j = pairs(f, r.arm, r.task, "none", r.condition, [r.density])
-    ps.append(scoring.mcnemar(j.exact_a.astype(bool).to_numpy(),
-                              j.exact_b.astype(bool).to_numpy())["p_value"])
+    ps.append(scoring.mcnemar(j.correct_a.astype(bool).to_numpy(),
+                              j.correct_b.astype(bool).to_numpy())["p_value"])
   t["p"] = ps
   t["q"] = t.groupby(["arm", "task"]).p.transform(lambda s: bh(s.to_numpy()))
   t.to_csv(os.path.join(out, "primer_cells.csv"), index=False)
-  d = f[(f.task == "edge_existence") & (f.hit_cap == 0) & (f.arm == "qwen3-1.7b")]
-  rows = []
-  for (dens, c), g in d.groupby(["density_class", "condition"]):
-    pos, neg = g[g.gold_is_yes == 1], g[g.gold_is_yes == 0]
-    rows.append(dict(density=dens, condition=c, yes=(g.pred == "Yes").mean(),
-                     bacc=0.5 * (pos.exact.mean() + neg.exact.mean()),
-                     tokens=g.n_new_tokens.median()))
-  pd.DataFrame(rows).to_csv(os.path.join(out, "edge_existence_collapse.csv"), index=False)
+  collapse_rows(f).to_csv(os.path.join(out, "edge_existence_collapse.csv"), index=False)
   route_data(f).to_csv(os.path.join(out, "node_degree_routes.csv"), index=False)
   print("wrote primer_cells.csv, edge_existence_collapse.csv and "
         "node_degree_routes.csv to", out)
@@ -841,12 +1140,16 @@ def main():
   ap.add_argument("--figure-data", action="store_true",
                   help="write the two figure CSVs to --csv-dir and stop")
   args = ap.parse_args()
-  f = pd.read_csv(args.frame)
+  f = with_outcomes(pd.read_csv(args.frame))
   bars = json.load(open(BARS, encoding="utf-8"))
   if args.figure_data:
     figure_data(f, bars, args.csv_dir)
     return
   t = band_table(f, bars)
+  setup_facts(f)
+  solver_bars(bars)
+  rwse_fit()
+  main_table(f)
   per_arm(t)
   four_b_think_null(f)
   sign_flip(f)
@@ -855,6 +1158,7 @@ def main():
   recovery(f)
   edge_count(f)
   edge_existence(f)
+  joint(f)
   clustering_high(f)
   replication()
   components(f)
@@ -862,6 +1166,7 @@ def main():
   length(f)
   node_count(f)
   clustering_spread()
+  rwse_resolution()
   measurement(f)
   power(f, t)
   position(f)

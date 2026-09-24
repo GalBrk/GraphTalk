@@ -121,7 +121,7 @@ def mde_for_arms(control_hits, treatment_hits, seed, settings) -> dict:
   to end (see `minimum_detectable_effect_clustered`, which now refuses a
   non-binary vector rather than returning the floor artifact it used to).
   The threshold is `>= 0.9999` -- "recovered the whole set", the same one
-  `scripts/analyze_primer_survival.py` applies for the same reason -- and it
+  `superseded/scripts/analyze_primer_survival.py` applies for the same reason -- and it
   makes the MDE a *stricter* question than the McNemar above it, which still
   scores partial credit. The returned number therefore answers "how large an
   effect on fully-correct answers could this cell have seen", not "on F1".

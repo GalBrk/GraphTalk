@@ -1,28 +1,421 @@
-[cells] 393 cells with >=50 untruncated pairs; 69 answer-carrying, 324 side
-[bands] mean effect by baseline band (answer-carrying | side information)
+[cells] 440 (arm, task, density, primer) cells over the four tasks whose gold varies (88 (arm, task, density) x 5 primers); 56 flagged (truncated share >= 15%), 384 under the flag: 66 answer-carrying, 318 side
+[bands] mean effect by baseline band, cells under the truncation flag (answer-carrying | side information)
      band  n_carries  d_carries  n_side  d_side
-0.00-0.25         19       +7.8      29    -1.8
-0.25-0.50          9      +16.0      20    +2.3
-0.50-0.75          9      +16.7      47    +3.9
-0.75-0.90          4       -5.8      52    +0.6
-0.90-1.00         28       -1.4     176    -0.8
-[bands] side-information cells at or above 0.90: 176 of 324; at 1.00: 73
+0.00-0.25         16       +8.3      23    -1.7
+0.25-0.50         10      +16.1      20    +2.6
+0.50-0.75          8      +12.9      47    +3.9
+0.75-0.90          4       -5.8      51    +0.7
+0.90-1.00         28       -0.9     177    -0.9
+[bandsens] band means, answer-carrying (cells) / side (cells), keeping cells whose larger truncated share is below each threshold
+  below 0.05: 0.00-0.25 +9.5 (14) / -2.0 (21) | 0.25-0.50 +12.4 (8) / +2.6 (20) | 0.50-0.75 +11.6 (5) / +3.9 (47) | 0.75-0.90 -5.8 (4) / +0.7 (51) | 0.90-1.00 -1.2 (25) / -0.9 (163)
+  below 0.10: 0.00-0.25 +8.3 (16) / -1.7 (23) | 0.25-0.50 +15.4 (9) / +2.6 (20) | 0.50-0.75 +12.5 (6) / +3.9 (47) | 0.75-0.90 -5.8 (4) / +0.7 (51) | 0.90-1.00 -0.9 (28) / -0.9 (176)
+  below 0.15: 0.00-0.25 +8.3 (16) / -1.7 (23) | 0.25-0.50 +16.1 (10) / +2.6 (20) | 0.50-0.75 +12.9 (8) / +3.9 (47) | 0.75-0.90 -5.8 (4) / +0.7 (51) | 0.90-1.00 -0.9 (28) / -0.9 (177)
+  below 0.30: 0.00-0.25 +8.2 (17) / -1.7 (24) | 0.25-0.50 +16.1 (10) / +2.6 (20) | 0.50-0.75 +12.9 (8) / +3.9 (47) | 0.75-0.90 -5.8 (4) / +0.7 (51) | 0.90-1.00 -0.9 (28) / -0.9 (177)
+  below 0.50: 0.00-0.25 +7.2 (20) / -1.7 (30) | 0.25-0.50 +16.1 (10) / +2.6 (20) | 0.50-0.75 +12.9 (8) / +3.9 (47) | 0.75-0.90 -5.8 (4) / +0.7 (51) | 0.90-1.00 -0.9 (28) / -0.9 (177)
+  all cells: 0.00-0.25 +8.7 (32) / +0.9 (48) | 0.25-0.50 +5.0 (16) / +6.1 (29) | 0.50-0.75 +12.9 (8) / +3.9 (47) | 0.75-0.90 -5.8 (4) / +0.7 (51) | 0.90-1.00 -0.9 (28) / -0.9 (177)
+[flagged] cells at or above the truncation flag: none correct/wrong/truncated % -> primer correct/wrong/truncated %, change in correct share
+  qwen3-1.7b edge_count p=0.10 all: 3/66/31 -> 0/74/26, -3
+  qwen3-1.7b edge_count p=0.35 all: 0/50/50 -> 4/63/33, +4
+  qwen3-1.7b edge_count p=0.50 all: 0/71/29 -> 3/53/44, +3
+  qwen3-1.7b edge_count p=0.10 clustering: 3/66/31 -> 0/90/10, -3
+  qwen3-1.7b edge_count p=0.35 clustering: 0/50/50 -> 0/74/26, +0
+  qwen3-1.7b edge_count p=0.50 clustering: 0/71/29 -> 0/67/33, +0
+  qwen3-1.7b edge_count p=0.10 components: 3/66/31 -> 0/80/20, -3
+  qwen3-1.7b edge_count p=0.20 components: 2/89/9 -> 1/79/20, -1
+  qwen3-1.7b edge_count p=0.35 components: 0/50/50 -> 0/67/33, +0
+  qwen3-1.7b edge_count p=0.50 components: 0/71/29 -> 0/64/36, +0
+  qwen3-1.7b edge_count p=0.10 degree: 3/66/31 -> 6/84/10, +3
+  qwen3-1.7b edge_count p=0.35 degree: 0/50/50 -> 1/97/2, +1
+  qwen3-1.7b edge_count p=0.50 degree: 0/71/29 -> 7/73/20, +7
+  qwen3-1.7b edge_count p=0.10 rwse: 3/66/31 -> 0/90/10, -3
+  qwen3-1.7b edge_count p=0.35 rwse: 0/50/50 -> 0/79/21, +0
+  qwen3-1.7b edge_count p=0.50 rwse: 0/71/29 -> 0/68/32, +0
+  qwen3-1.7b-think edge_count p=0.10 all: 48/2/50 -> 24/6/70, -24
+  qwen3-1.7b-think edge_count p=0.20 all: 15/8/77 -> 15/7/78, +0
+  qwen3-1.7b-think edge_count p=0.35 all: 0/0/100 -> 22/11/67, +22
+  qwen3-1.7b-think edge_count p=0.50 all: 0/0/100 -> 22/15/63, +22
+  qwen3-1.7b-think edge_count p=0.10 clustering: 48/2/50 -> 31/3/66, -17
+  qwen3-1.7b-think edge_count p=0.20 clustering: 15/8/77 -> 25/7/68, +10
+  qwen3-1.7b-think edge_count p=0.35 clustering: 0/0/100 -> 2/2/96, +2
+  qwen3-1.7b-think edge_count p=0.50 clustering: 0/0/100 -> 0/0/100, +0
+  qwen3-1.7b-think edge_count p=0.10 components: 48/2/50 -> 43/1/56, -5
+  qwen3-1.7b-think edge_count p=0.20 components: 15/8/77 -> 17/10/73, +2
+  qwen3-1.7b-think edge_count p=0.35 components: 0/0/100 -> 0/0/100, +0
+  qwen3-1.7b-think edge_count p=0.50 components: 0/0/100 -> 0/0/100, +0
+  qwen3-1.7b-think edge_count p=0.10 degree: 48/2/50 -> 11/9/80, -37
+  qwen3-1.7b-think edge_count p=0.20 degree: 15/8/77 -> 16/7/77, +1
+  qwen3-1.7b-think edge_count p=0.35 degree: 0/0/100 -> 13/4/83, +13
+  qwen3-1.7b-think edge_count p=0.50 degree: 0/0/100 -> 10/6/84, +10
+  qwen3-1.7b-think edge_count p=0.10 rwse: 48/2/50 -> 39/1/60, -9
+  qwen3-1.7b-think edge_count p=0.20 rwse: 15/8/77 -> 11/2/87, -4
+  qwen3-1.7b-think edge_count p=0.35 rwse: 0/0/100 -> 0/0/100, +0
+  qwen3-1.7b-think edge_count p=0.50 rwse: 0/0/100 -> 0/0/100, +0
+  qwen3-4b-think edge_count p=0.10 all: 39/1/60 -> 34/16/50, -5
+  qwen3-4b-think edge_count p=0.20 all: 34/0/66 -> 28/25/47, -6
+  qwen3-4b-think edge_count p=0.35 all: 7/1/92 -> 14/23/63, +7
+  qwen3-4b-think edge_count p=0.50 all: 0/0/100 -> 11/26/63, +11
+  qwen3-4b-think edge_count p=0.10 clustering: 39/1/60 -> 78/2/20, +39
+  qwen3-4b-think edge_count p=0.20 clustering: 34/0/66 -> 52/1/47, +18
+  qwen3-4b-think edge_count p=0.35 clustering: 7/1/92 -> 45/4/51, +38
+  qwen3-4b-think edge_count p=0.50 clustering: 0/0/100 -> 4/0/96, +4
+  qwen3-4b-think edge_count p=0.10 components: 39/1/60 -> 72/1/27, +33
+  qwen3-4b-think edge_count p=0.20 components: 34/0/66 -> 64/2/34, +30
+  qwen3-4b-think edge_count p=0.35 components: 7/1/92 -> 35/0/65, +28
+  qwen3-4b-think edge_count p=0.50 components: 0/0/100 -> 8/0/92, +8
+  qwen3-4b-think edge_count p=0.10 degree: 39/1/60 -> 28/8/64, -11
+  qwen3-4b-think edge_count p=0.20 degree: 34/0/66 -> 36/12/52, +2
+  qwen3-4b-think edge_count p=0.35 degree: 7/1/92 -> 26/15/59, +19
+  qwen3-4b-think edge_count p=0.50 degree: 0/0/100 -> 24/16/60, +24
+  qwen3-4b-think edge_count p=0.10 rwse: 39/1/60 -> 63/6/31, +24
+  qwen3-4b-think edge_count p=0.20 rwse: 34/0/66 -> 48/4/48, +14
+  qwen3-4b-think edge_count p=0.35 rwse: 7/1/92 -> 9/0/91, +2
+  qwen3-4b-think edge_count p=0.50 rwse: 0/0/100 -> 1/0/99, +1
+[bands] side-information cells at or above 0.90: 177 of 318; at 1.00: 49
 [bands] qwen3-4b answer-carrying cells >=0.90: 8, effects -15, -12, -7, -7, -7, -6, -3, -1
-[bands] side information by primer, baseline 0.25-0.75: all +11.3 (8), clustering +2.2 (17), components -0.8 (17), degree +7.9 (8), rwse +3.1 (17)
-[bands] side information, baseline 0.25-0.75: degree and all +9.6 (16 cells, connected_nodes, edge_existence); components, clustering and rwse +1.5 (51 cells)
-[window] answer-carrying cells, baseline 0.25-0.75: 18 (node_degree), effects -19 to +45; by arm qwen3-1.7b 4 at +10.5, qwen3-1.7b-think 10 at +24.5, qwen3-4b 4 at +1.7
-[splithalf] binned on half the graphs, effect on the other half:
-  0.00-0.25: carrying +7.6 side -1.7
-  0.25-0.50: carrying +13.6 side +2.1
-  0.50-0.75: carrying +19.7 side +3.8
-  0.75-0.90: carrying -4.9 side -0.2
-  0.90-1.00: carrying -1.5 side -0.5
-[arms] median baseline and cells with baseline in [0.25, 0.75)
-  qwen3-1.7b        median  59.0  in band 40/103  below 0.25: 28  median outside edge_count  67.0
-  qwen3-1.7b-think  median  94.9  in band 35/90  below 0.25: 0  median outside edge_count  94.9
-  qwen3-4b          median  87.0  in band 10/110  below 0.25: 20  median outside edge_count  88.9
-  qwen3-4b-think    median 100.0  in band 0/90  below 0.25: 0  median outside edge_count 100.0
-[null4bt] qwen3-4b-think, largest |effect| over five primers on node_degree/edge_existence/connected_nodes (main sweep): 2.1
+[bands] side information by primer, baseline 0.25-0.75: all +11.2 (8), clustering +2.4 (17), components -0.8 (17), degree +7.8 (8), rwse +3.1 (17)
+[bands] side information, baseline 0.25-0.75: degree and all +9.5 (16 cells, connected_nodes, edge_existence); components, clustering and rwse +1.6 (51 cells)
+[window] answer-carrying cells, baseline 0.25-0.75: 18 (node_degree), effects -19 to +40; by arm qwen3-1.7b 4 at +10.5, qwen3-1.7b-think 10 at +21.5, qwen3-4b 4 at +1.8
+[splithalf] cells under the truncation flag, binned on half the graphs, effect on the other half:
+  0.00-0.25: carrying +8.1 side -1.7
+  0.25-0.50: carrying +13.9 side +2.3
+  0.50-0.75: carrying +16.2 side +3.9
+  0.75-0.90: carrying -3.7 side -0.2
+  0.90-1.00: carrying -1.1 side -0.6
+[setup] 84000 responses on 700 graphs; 840 cells of 100-100
+  distinct gold values: node_count ['40'], cycle_check ['Yes, there is a cycle']
+  budget reached, main sweep: qwen3-1.7b 8192, qwen3-1.7b-think 8192, qwen3-4b 8192, qwen3-4b-think 8192
+  budget reached, high-density extension: qwen3-1.7b 2048, qwen3-1.7b-think 8192, qwen3-4b 2048, qwen3-4b-think 8192
+  nonzero truncated share, main sweep (arm/task): qwen3-1.7b/connected_nodes 0.0%, qwen3-1.7b/cycle_check 6.1%, qwen3-1.7b/edge_count 22.4%, qwen3-1.7b/edge_existence 0.0%, qwen3-1.7b/node_degree 0.0%, qwen3-1.7b-think/connected_nodes 0.8%, qwen3-1.7b-think/cycle_check 6.5%, qwen3-1.7b-think/edge_count 81.0%, qwen3-1.7b-think/edge_existence 0.2%, qwen3-1.7b-think/node_count 2.5%, qwen3-1.7b-think/node_degree 1.1%, qwen3-4b/cycle_check 1.0%, qwen3-4b/edge_count 0.6%, qwen3-4b/edge_existence 0.1%, qwen3-4b-think/connected_nodes 3.5%, qwen3-4b-think/cycle_check 1.9%, qwen3-4b-think/edge_count 62.2%, qwen3-4b-think/edge_existence 0.8%, qwen3-4b-think/node_count 0.1%, qwen3-4b-think/node_degree 1.6%
+  majority-class accuracy, edge_existence (share of queried pairs that are edges / majority): p=0.10 10%/90%, p=0.20 18%/82%, p=0.35 31%/69%, p=0.50 48%/52%, p=0.65 66%/66%, p=0.75 76%/76%, p=0.85 85%/85%; main sweep pooled 73.25%; cycle_check 100%
+[bars] graph-blind solver (16 exact rules, 1 heuristic, 8 fitted on disjoint graphs) accuracy (%), n=40: task: none, then each primer
+  edge_existence: none 73.5, filler 73.5, components 73.5, clustering 72.7, rwse 55.4, degree 74.6, all 74.1
+  node_degree: none 14.4, filler 14.4, components 14.4, clustering 14.4, rwse 21.0, degree 100.0, all 100.0
+  connected_nodes: none 0.0, filler 0.0, components 0.0, clustering 0.0, rwse 0.1, degree 0.1, all 0.8
+  edge_count: none 3.0, filler 3.0, components 3.0, clustering 10.4, rwse 3.0, degree 100.0, all 100.0
+  carrying (>= 0.85): edge_count/all, edge_count/degree, node_degree/all, node_degree/degree; highest other: edge_existence/degree 74.6
+[rwsefit] edge_existence, rwse density rule vs the majority answer (%): in-sample / out-of-sample / majority
+  p=0.65: 38.0 / 38.0 / 62.3
+  p=0.75: 48.0 / 48.0 / 74.7
+  p=0.85: 12.0 / 12.0 / 88.0
+[main] main sweep (p<=.50), per arm and task, condition vs control: correct share control -> condition, effect [95% CI], McNemar p, BH q, fixed/broke, n, truncated change; MAE or F1 of finished pairs; FLAGGED when either side's truncated share is 15% or more
+  qwen3-1.7b node_count vs none:
+    filler     31.50 -> 71.25: +39.8 [+36.0, +43.5] p=2.3e-45 q=4.6e-45 fixed 161 broke 2 n=400 truncated +0.0; MAE 0.69 -> 0.29 (400 finished pairs)
+    components 31.50 -> 52.75: +21.2 [+16.2, +26.2] p=2.6e-13 q=4e-13 fixed 113 broke 28 n=400 truncated +0.0; MAE 0.69 -> 0.47 (400 finished pairs)
+    clustering 31.50 -> 98.75: +67.2 [+64.5, +70.0] p=2.1e-81 q=1.3e-80 fixed 269 broke 0 n=400 truncated +0.0; MAE 0.69 -> 0.01 (400 finished pairs)
+    rwse       31.50 -> 33.50: +2.0 [-3.2, +6.8] p=0.59 q=0.59 fixed 87 broke 79 n=400 truncated +0.0; MAE 0.69 -> 0.67 (400 finished pairs)
+    degree     31.50 -> 38.25: +6.8 [+3.2, +10.5] p=0.00058 q=0.0007 fixed 43 broke 16 n=400 truncated +0.0; MAE 0.69 -> 0.62 (400 finished pairs)
+    all        31.50 -> 78.50: +47.0 [+42.5, +51.2] p=1.2e-50 q=3.7e-50 fixed 193 broke 5 n=400 truncated +0.0; MAE 0.69 -> 0.21 (400 finished pairs)
+  qwen3-1.7b node_count vs filler:
+    components 71.25 -> 52.75: -18.5 [-23.5, -13.2] p=4.4e-11 q=5.5e-11 fixed 28 broke 102 n=400 truncated +0.0; MAE 0.29 -> 0.47 (400 finished pairs)
+    clustering 71.25 -> 98.75: +27.5 [+24.5, +30.5] p=1.5e-33 q=7.7e-33 fixed 110 broke 0 n=400 truncated +0.0; MAE 0.29 -> 0.01 (400 finished pairs)
+    rwse       71.25 -> 33.50: -37.8 [-42.8, -33.0] p=3.7e-29 q=6.2e-29 fixed 25 broke 176 n=400 truncated +0.0; MAE 0.29 -> 0.67 (400 finished pairs)
+    degree     71.25 -> 38.25: -33.0 [-37.0, -29.0] p=5.7e-33 q=1.4e-32 fixed 7 broke 139 n=400 truncated +0.0; MAE 0.29 -> 0.62 (400 finished pairs)
+    all        71.25 -> 78.50: +7.2 [+2.8, +11.8] p=0.0093 q=0.0093 fixed 73 broke 44 n=400 truncated +0.0; MAE 0.29 -> 0.21 (400 finished pairs)
+  qwen3-1.7b node_degree vs none:
+    filler     60.50 -> 60.00: -0.5 [-4.2, +3.5] p=0.9 q=0.9 fixed 32 broke 34 n=400 truncated +0.0; MAE 0.94 -> 1.27 (400 finished pairs)
+    components 60.50 -> 62.25: +1.8 [-2.2, +5.8] p=0.46 q=0.55 fixed 36 broke 29 n=400 truncated +0.0; MAE 0.94 -> 0.91 (400 finished pairs)
+    clustering 60.50 -> 63.50: +3.0 [-1.5, +7.5] p=0.26 q=0.38 fixed 53 broke 41 n=400 truncated +0.0; MAE 0.94 -> 0.78 (400 finished pairs)
+    rwse       60.50 -> 64.50: +4.0 [-0.5, +8.5] p=0.11 q=0.23 fixed 53 broke 37 n=400 truncated +0.2; MAE 0.94 -> 0.91 (399 finished pairs)
+    degree     60.50 -> 68.00: +7.5 [+3.0, +11.8] p=0.0014 q=0.0042 fixed 57 broke 27 n=400 truncated +0.0; MAE 0.94 -> 0.67 (400 finished pairs)
+    all        60.50 -> 70.75: +10.2 [+5.2, +15.2] p=0.00014 q=0.00086 fixed 77 broke 36 n=400 truncated +0.0; MAE 0.94 -> 0.91 (400 finished pairs)
+  qwen3-1.7b node_degree vs filler:
+    components 60.00 -> 62.25: +2.2 [-1.8, +6.2] p=0.34 q=0.34 fixed 39 broke 30 n=400 truncated +0.0; MAE 1.27 -> 0.91 (400 finished pairs)
+    clustering 60.00 -> 63.50: +3.5 [-1.2, +8.5] p=0.18 q=0.23 fixed 55 broke 41 n=400 truncated +0.0; MAE 1.27 -> 0.78 (400 finished pairs)
+    rwse       60.00 -> 64.50: +4.5 [-0.2, +9.0] p=0.069 q=0.12 fixed 53 broke 35 n=400 truncated +0.2; MAE 1.28 -> 0.91 (399 finished pairs)
+    degree     60.00 -> 68.00: +8.0 [+3.5, +12.8] p=0.00097 q=0.0024 fixed 61 broke 29 n=400 truncated +0.0; MAE 1.27 -> 0.67 (400 finished pairs)
+    all        60.00 -> 70.75: +10.8 [+5.8, +15.8] p=3.3e-05 q=0.00016 fixed 74 broke 31 n=400 truncated +0.0; MAE 1.27 -> 0.91 (400 finished pairs)
+  qwen3-1.7b connected_nodes vs none:
+    filler     72.50 -> 66.25: -6.2 [-10.5, -2.2] p=0.0041 q=0.024 fixed 23 broke 48 n=400 truncated +0.0; F1 0.972 -> 0.962 (400 finished pairs)
+    components 72.50 -> 73.25: +0.8 [-2.5, +4.5] p=0.79 q=0.79 fixed 29 broke 26 n=400 truncated +0.0; F1 0.972 -> 0.972 (400 finished pairs)
+    clustering 72.50 -> 73.75: +1.2 [-3.0, +5.5] p=0.65 q=0.79 fixed 41 broke 36 n=400 truncated +0.0; F1 0.972 -> 0.972 (400 finished pairs)
+    rwse       72.50 -> 73.50: +1.0 [-3.2, +5.2] p=0.73 q=0.79 fixed 41 broke 37 n=400 truncated +0.0; F1 0.972 -> 0.970 (400 finished pairs)
+    degree     72.50 -> 76.00: +3.5 [-0.5, +7.2] p=0.12 q=0.36 fixed 42 broke 28 n=400 truncated +0.0; F1 0.972 -> 0.979 (400 finished pairs)
+    all        72.50 -> 74.50: +2.0 [-2.5, +6.5] p=0.47 q=0.79 fixed 50 broke 42 n=400 truncated +0.2; F1 0.975 -> 0.965 (399 finished pairs)
+  qwen3-1.7b connected_nodes vs filler:
+    components 66.25 -> 73.25: +7.0 [+3.0, +11.0] p=0.0018 q=0.0018 fixed 52 broke 24 n=400 truncated +0.0; F1 0.962 -> 0.972 (400 finished pairs)
+    clustering 66.25 -> 73.75: +7.5 [+3.5, +11.5] p=0.00029 q=0.00065 fixed 48 broke 18 n=400 truncated +0.0; F1 0.962 -> 0.972 (400 finished pairs)
+    rwse       66.25 -> 73.50: +7.2 [+3.5, +11.2] p=0.00052 q=0.00065 fixed 48 broke 19 n=400 truncated +0.0; F1 0.962 -> 0.970 (400 finished pairs)
+    degree     66.25 -> 76.00: +9.8 [+6.0, +13.5] p=2.6e-06 q=1.3e-05 fixed 54 broke 15 n=400 truncated +0.0; F1 0.962 -> 0.979 (400 finished pairs)
+    all        66.25 -> 74.50: +8.2 [+3.8, +12.5] p=0.00045 q=0.00065 fixed 59 broke 26 n=400 truncated +0.2; F1 0.965 -> 0.965 (399 finished pairs)
+  qwen3-1.7b edge_count vs none:
+    filler     1.25 -> 0.75: -0.5 [-1.8, +0.8] p=0.69 q=0.73 fixed 2 broke 4 n=400 truncated -3.5; MAE 128.18 -> 204.32 (224 finished pairs) FLAGGED
+    components 1.25 -> 0.25: -1.0 [-2.2, +0.0] p=0.22 q=0.66 fixed 1 broke 5 n=400 truncated -2.5; MAE 136.05 -> 91.55 (211 finished pairs) FLAGGED
+    clustering 1.25 -> 0.75: -0.5 [-2.0, +1.0] p=0.73 q=0.73 fixed 3 broke 5 n=400 truncated -11.8; MAE 124.57 -> 86.99 (238 finished pairs) FLAGGED
+    rwse       1.25 -> 0.50: -0.8 [-2.0, +0.5] p=0.45 q=0.73 fixed 2 broke 5 n=400 truncated -11.8; MAE 110.85 -> 71.80 (239 finished pairs) FLAGGED
+    degree     1.25 -> 4.25: +3.0 [+0.8, +5.2] p=0.017 q=0.1 fixed 17 broke 5 n=400 truncated -20.2; MAE 135.85 -> 40.17 (253 finished pairs) FLAGGED
+    all        1.25 -> 2.00: +0.8 [-1.0, +2.5] p=0.58 q=0.73 fixed 8 broke 5 n=400 truncated -1.8; MAE 117.46 -> 99.85 (211 finished pairs) FLAGGED
+  qwen3-1.7b edge_count vs filler:
+    components 0.75 -> 0.25: -0.5 [-1.5, +0.5] p=0.62 q=1 fixed 1 broke 3 n=400 truncated +1.0; MAE 144.87 -> 92.15 (230 finished pairs) FLAGGED
+    clustering 0.75 -> 0.75: +0.0 [-0.8, +0.8] p=1 q=1 fixed 1 broke 1 n=400 truncated -8.2; MAE 161.46 -> 98.75 (252 finished pairs) FLAGGED
+    rwse       0.75 -> 0.50: -0.2 [-1.2, +0.5] p=1 q=1 fixed 1 broke 2 n=400 truncated -8.2; MAE 176.40 -> 74.50 (250 finished pairs) FLAGGED
+    degree     0.75 -> 4.25: +3.5 [+1.5, +5.5] p=0.0013 q=0.0066 fixed 16 broke 2 n=400 truncated -16.8; MAE 182.35 -> 39.19 (269 finished pairs) FLAGGED
+    all        0.75 -> 2.00: +1.2 [-0.2, +3.0] p=0.23 q=0.57 fixed 8 broke 3 n=400 truncated +1.8; MAE 129.20 -> 79.03 (223 finished pairs) FLAGGED
+  qwen3-1.7b edge_existence vs none:
+    filler     70.50 -> 54.75: -15.8 [-20.0, -11.8] p=5.8e-13 q=3.5e-12 fixed 10 broke 73 n=400 truncated +0.0
+    components 70.50 -> 62.25: -8.2 [-11.8, -4.8] p=8.7e-06 q=1.7e-05 fixed 11 broke 44 n=400 truncated +0.0
+    clustering 70.50 -> 74.25: +3.8 [-0.5, +8.0] p=0.12 q=0.12 fixed 48 broke 33 n=400 truncated +0.0
+    rwse       70.50 -> 75.50: +5.0 [+0.2, +9.5] p=0.045 q=0.067 fixed 55 broke 35 n=400 truncated +0.2
+    degree     70.50 -> 74.50: +4.0 [-0.2, +8.2] p=0.097 q=0.12 fixed 49 broke 33 n=400 truncated +0.0
+    all        70.50 -> 82.00: +11.5 [+6.2, +16.5] p=7.4e-06 q=1.7e-05 fixed 75 broke 29 n=400 truncated +0.0
+  qwen3-1.7b edge_existence vs filler:
+    components 54.75 -> 62.25: +7.5 [+4.2, +10.5] p=9.2e-06 q=9.2e-06 fixed 38 broke 8 n=400 truncated +0.0
+    clustering 54.75 -> 74.25: +19.5 [+15.5, +23.8] p=3.6e-17 q=9.1e-17 fixed 87 broke 9 n=400 truncated +0.0
+    rwse       54.75 -> 75.50: +20.8 [+16.2, +25.2] p=8.3e-17 q=1.4e-16 fixed 96 broke 13 n=400 truncated +0.2
+    degree     54.75 -> 74.50: +19.8 [+15.5, +24.2] p=3.5e-16 q=4.3e-16 fixed 91 broke 12 n=400 truncated +0.0
+    all        54.75 -> 82.00: +27.2 [+22.5, +32.0] p=7.9e-25 q=3.9e-24 fixed 119 broke 10 n=400 truncated +0.0
+  qwen3-1.7b cycle_check vs none:
+    filler     90.75 -> 93.75: +3.0 [-0.8, +6.8] p=0.15 q=0.22 fixed 35 broke 23 n=400 truncated -2.8
+    components 90.75 -> 92.75: +2.0 [-1.5, +5.3] p=0.33 q=0.4 fixed 30 broke 22 n=400 truncated -2.5
+    clustering 90.75 -> 99.25: +8.5 [+5.8, +11.2] p=5.4e-09 q=1.6e-08 fixed 36 broke 2 n=400 truncated -8.2
+    rwse       90.75 -> 90.50: -0.2 [-4.2, +3.5] p=1 q=1 fixed 33 broke 34 n=400 truncated -7.2
+    degree     90.75 -> 73.25: -17.5 [-23.0, -12.2] p=5.4e-10 q=3.3e-09 fixed 30 broke 100 n=400 truncated +8.2 FLAGGED
+    all        90.75 -> 97.75: +7.0 [+4.0, +10.2] p=1.5e-05 q=3e-05 fixed 35 broke 7 n=400 truncated -8.0
+  qwen3-1.7b cycle_check vs filler:
+    components 93.75 -> 92.75: -1.0 [-4.5, +2.2] p=0.67 q=0.67 fixed 23 broke 27 n=400 truncated +0.2
+    clustering 93.75 -> 99.25: +5.5 [+3.2, +8.0] p=1e-05 q=2.6e-05 fixed 24 broke 2 n=400 truncated -5.5
+    rwse       93.75 -> 90.50: -3.2 [-7.0, +0.2] p=0.11 q=0.14 fixed 22 broke 35 n=400 truncated -4.5
+    degree     93.75 -> 73.25: -20.5 [-25.5, -15.8] p=3.5e-14 q=1.7e-13 fixed 21 broke 103 n=400 truncated +11.0 FLAGGED
+    all        93.75 -> 97.75: +4.0 [+1.2, +6.8] p=0.007 q=0.012 fixed 24 broke 8 n=400 truncated -5.2
+  qwen3-1.7b-think node_count vs none:
+    filler     91.00 -> 100.00: +9.0 [+6.5, +11.8] p=2.9e-11 q=4.4e-11 fixed 36 broke 0 n=400 truncated -7.8; MAE 0.02 -> 0.00 (369 finished pairs)
+    components 91.00 -> 92.50: +1.5 [-2.2, +5.0] p=0.52 q=0.52 fixed 33 broke 27 n=400 truncated -0.5; MAE 0.02 -> 0.00 (342 finished pairs)
+    clustering 91.00 -> 100.00: +9.0 [+6.5, +11.8] p=2.9e-11 q=4.4e-11 fixed 36 broke 0 n=400 truncated -7.8; MAE 0.02 -> 0.00 (369 finished pairs)
+    rwse       91.00 -> 100.00: +9.0 [+6.5, +11.8] p=2.9e-11 q=4.4e-11 fixed 36 broke 0 n=400 truncated -7.8; MAE 0.02 -> 0.00 (369 finished pairs)
+    degree     91.00 -> 96.50: +5.5 [+2.5, +8.5] p=0.0013 q=0.0015 fixed 33 broke 11 n=400 truncated -5.0; MAE 0.03 -> 0.01 (360 finished pairs)
+    all        91.00 -> 100.00: +9.0 [+6.5, +11.8] p=2.9e-11 q=4.4e-11 fixed 36 broke 0 n=400 truncated -7.8; MAE 0.02 -> 0.00 (369 finished pairs)
+  qwen3-1.7b-think node_count vs filler:
+    components 100.00 -> 92.50: -7.5 [-10.2, -5.0] p=1.9e-09 q=9.3e-09 fixed 0 broke 30 n=400 truncated +7.2; MAE 0.00 -> 0.00 (371 finished pairs)
+    clustering 100.00 -> 100.00: +0.0 [+0.0, +0.0] p=1 q=1 fixed 0 broke 0 n=400 truncated +0.0; MAE 0.00 -> 0.00 (400 finished pairs)
+    rwse       100.00 -> 100.00: +0.0 [+0.0, +0.0] p=1 q=1 fixed 0 broke 0 n=400 truncated +0.0; MAE 0.00 -> 0.00 (400 finished pairs)
+    degree     100.00 -> 96.50: -3.5 [-5.2, -1.8] p=0.00012 q=0.00031 fixed 0 broke 14 n=400 truncated +2.8; MAE 0.00 -> 0.01 (389 finished pairs)
+    all        100.00 -> 100.00: +0.0 [+0.0, +0.0] p=1 q=1 fixed 0 broke 0 n=400 truncated +0.0; MAE 0.00 -> 0.00 (400 finished pairs)
+  qwen3-1.7b-think node_degree vs none:
+    filler     76.25 -> 73.25: -3.0 [-7.0, +0.8] p=0.18 q=0.35 fixed 27 broke 39 n=400 truncated -0.5; MAE 0.37 -> 0.39 (396 finished pairs)
+    components 76.25 -> 75.25: -1.0 [-4.2, +2.5] p=0.67 q=0.67 fixed 22 broke 26 n=400 truncated -0.2; MAE 0.36 -> 0.41 (395 finished pairs)
+    clustering 76.25 -> 77.75: +1.5 [-2.5, +5.5] p=0.53 q=0.63 fixed 34 broke 28 n=400 truncated -0.5; MAE 0.37 -> 0.36 (396 finished pairs)
+    rwse       76.25 -> 78.75: +2.5 [-2.0, +6.8] p=0.31 q=0.46 fixed 44 broke 34 n=400 truncated +0.0; MAE 0.37 -> 0.32 (394 finished pairs)
+    degree     76.25 -> 85.00: +8.8 [+4.2, +13.2] p=0.00027 q=0.0008 fixed 62 broke 27 n=400 truncated +4.5; MAE 0.36 -> 0.15 (376 finished pairs)
+    all        76.25 -> 88.50: +12.2 [+8.0, +16.5] p=5.6e-08 q=3.4e-07 fixed 66 broke 17 n=400 truncated -0.5; MAE 0.36 -> 0.18 (396 finished pairs)
+  qwen3-1.7b-think node_degree vs filler:
+    components 73.25 -> 75.25: +2.0 [-2.2, +6.0] p=0.41 q=0.41 fixed 40 broke 32 n=400 truncated +0.2; MAE 0.39 -> 0.41 (398 finished pairs)
+    clustering 73.25 -> 77.75: +4.5 [+0.5, +8.5] p=0.036 q=0.044 fixed 42 broke 24 n=400 truncated +0.0; MAE 0.39 -> 0.36 (398 finished pairs)
+    rwse       73.25 -> 78.75: +5.5 [+1.5, +9.5] p=0.01 q=0.017 fixed 45 broke 23 n=400 truncated +0.5; MAE 0.38 -> 0.32 (396 finished pairs)
+    degree     73.25 -> 85.00: +11.8 [+7.5, +16.0] p=1.1e-06 q=2.8e-06 fixed 70 broke 23 n=400 truncated +5.0; MAE 0.37 -> 0.15 (378 finished pairs)
+    all        73.25 -> 88.50: +15.2 [+11.0, +19.2] p=1.6e-11 q=8e-11 fixed 74 broke 13 n=400 truncated +0.0; MAE 0.39 -> 0.18 (398 finished pairs)
+  qwen3-1.7b-think connected_nodes vs none:
+    filler     78.75 -> 81.25: +2.5 [-1.0, +6.0] p=0.22 q=0.33 fixed 32 broke 22 n=400 truncated -0.8; F1 0.986 -> 0.982 (394 finished pairs)
+    components 78.75 -> 81.25: +2.5 [-0.8, +6.0] p=0.18 q=0.33 fixed 28 broke 18 n=400 truncated -0.2; F1 0.986 -> 0.985 (392 finished pairs)
+    clustering 78.75 -> 80.75: +2.0 [-2.0, +6.0] p=0.4 q=0.48 fixed 39 broke 31 n=400 truncated -1.0; F1 0.986 -> 0.986 (394 finished pairs)
+    rwse       78.75 -> 79.00: +0.2 [-3.5, +4.0] p=1 q=1 fixed 33 broke 32 n=400 truncated -0.8; F1 0.986 -> 0.965 (393 finished pairs)
+    degree     78.75 -> 85.00: +6.2 [+2.8, +10.0] p=0.0026 q=0.0079 fixed 45 broke 20 n=400 truncated +0.2; F1 0.985 -> 0.980 (390 finished pairs)
+    all        78.75 -> 85.00: +6.2 [+2.5, +10.0] p=0.0026 q=0.0079 fixed 45 broke 20 n=400 truncated -0.5; F1 0.985 -> 0.980 (392 finished pairs)
+  qwen3-1.7b-think connected_nodes vs filler:
+    components 81.25 -> 81.25: +0.0 [-3.5, +3.0] p=1 q=1 fixed 22 broke 22 n=400 truncated +0.5; F1 0.982 -> 0.983 (394 finished pairs)
+    clustering 81.25 -> 80.75: -0.5 [-4.2, +2.8] p=0.89 q=1 fixed 24 broke 26 n=400 truncated -0.2; F1 0.982 -> 0.986 (397 finished pairs)
+    rwse       81.25 -> 79.00: -2.2 [-6.5, +1.5] p=0.31 q=0.51 fixed 26 broke 35 n=400 truncated +0.0; F1 0.982 -> 0.962 (396 finished pairs)
+    degree     81.25 -> 85.00: +3.8 [+0.0, +7.8] p=0.072 q=0.18 fixed 38 broke 23 n=400 truncated +1.0; F1 0.984 -> 0.977 (393 finished pairs)
+    all        81.25 -> 85.00: +3.8 [+0.5, +7.2] p=0.053 q=0.18 fixed 34 broke 19 n=400 truncated +0.2; F1 0.982 -> 0.981 (395 finished pairs)
+  qwen3-1.7b-think edge_count vs none:
+    filler     15.75 -> 14.25: -1.5 [-5.5, +2.5] p=0.56 q=0.79 fixed 33 broke 39 n=400 truncated +1.2; MAE 0.62 -> 0.10 (29 finished pairs) FLAGGED
+    components 15.75 -> 15.00: -0.8 [-5.0, +3.8] p=0.82 q=0.82 fixed 37 broke 40 n=400 truncated +0.5; MAE 0.15 -> 0.07 (27 finished pairs) FLAGGED
+    clustering 15.75 -> 14.50: -1.2 [-5.5, +3.0] p=0.66 q=0.79 fixed 39 broke 44 n=400 truncated +0.8; MAE 0.04 -> 3.13 (23 finished pairs) FLAGGED
+    rwse       15.75 -> 12.50: -3.2 [-7.2, +0.5] p=0.14 q=0.41 fixed 26 broke 39 n=400 truncated +5.0; MAE 0.00 -> 0.64 (25 finished pairs) FLAGGED
+    degree     15.75 -> 12.50: -3.2 [-7.8, +1.2] p=0.24 q=0.47 fixed 45 broke 58 n=400 truncated -0.8; MAE 0.00 -> 5.08 (13 finished pairs) FLAGGED
+    all        15.75 -> 20.75: +5.0 [+0.2, +10.0] p=0.07 q=0.41 fixed 65 broke 45 n=400 truncated -12.2; MAE 0.12 -> 0.33 (24 finished pairs) FLAGGED
+  qwen3-1.7b-think edge_count vs filler:
+    components 14.25 -> 15.00: +0.8 [-2.8, +4.5] p=0.8 q=1 fixed 32 broke 29 n=400 truncated -0.8; MAE 1.14 -> 0.46 (37 finished pairs) FLAGGED
+    clustering 14.25 -> 14.50: +0.2 [-3.8, +4.5] p=1 q=1 fixed 38 broke 37 n=400 truncated -0.5; MAE 0.12 -> 1.33 (24 finished pairs) FLAGGED
+    rwse       14.25 -> 12.50: -1.8 [-5.5, +2.2] p=0.46 q=0.88 fixed 30 broke 37 n=400 truncated +3.8; MAE 0.26 -> 0.00 (23 finished pairs) FLAGGED
+    degree     14.25 -> 12.50: -1.8 [-6.0, +2.8] p=0.53 q=0.88 fixed 41 broke 48 n=400 truncated -2.0; MAE 0.19 -> 1.81 (16 finished pairs) FLAGGED
+    all        14.25 -> 20.75: +6.5 [+1.5, +11.5] p=0.026 q=0.13 fixed 76 broke 50 n=400 truncated -13.5; MAE 0.39 -> 1.44 (18 finished pairs) FLAGGED
+  qwen3-1.7b-think edge_existence vs none:
+    filler     99.00 -> 98.50: -0.5 [-2.0, +1.0] p=0.75 q=0.75 fixed 4 broke 6 n=400 truncated -0.2
+    components 99.00 -> 98.25: -0.8 [-2.5, +0.8] p=0.55 q=0.66 fixed 4 broke 7 n=400 truncated +0.0
+    clustering 99.00 -> 98.00: -1.0 [-2.8, +0.5] p=0.34 q=0.52 fixed 3 broke 7 n=400 truncated +0.0
+    rwse       99.00 -> 97.75: -1.2 [-3.0, +0.5] p=0.27 q=0.52 fixed 4 broke 9 n=400 truncated +0.0
+    degree     99.00 -> 96.50: -2.5 [-4.5, -0.8] p=0.021 q=0.13 fixed 3 broke 13 n=400 truncated +0.2
+    all        99.00 -> 97.25: -1.8 [-3.8, +0.0] p=0.092 q=0.28 fixed 3 broke 10 n=400 truncated -0.2
+  qwen3-1.7b-think edge_existence vs filler:
+    components 98.50 -> 98.25: -0.2 [-1.8, +1.2] p=1 q=1 fixed 5 broke 6 n=400 truncated +0.2
+    clustering 98.50 -> 98.00: -0.5 [-2.2, +1.2] p=0.77 q=0.97 fixed 5 broke 7 n=400 truncated +0.2
+    rwse       98.50 -> 97.75: -0.8 [-2.5, +1.0] p=0.58 q=0.97 fixed 5 broke 8 n=400 truncated +0.2
+    degree     98.50 -> 96.50: -2.0 [-4.2, +0.0] p=0.096 q=0.48 fixed 5 broke 13 n=400 truncated +0.5
+    all        98.50 -> 97.25: -1.2 [-3.2, +0.5] p=0.3 q=0.75 fixed 5 broke 10 n=400 truncated +0.0
+  qwen3-1.7b-think cycle_check vs none:
+    filler     97.00 -> 100.00: +3.0 [+1.5, +4.8] p=0.00049 q=0.00098 fixed 12 broke 0 n=400 truncated -3.0
+    components 97.00 -> 89.50: -7.5 [-11.0, -4.2] p=5.2e-05 q=0.00016 fixed 12 broke 42 n=400 truncated +7.5
+    clustering 97.00 -> 96.50: -0.5 [-2.8, +1.8] p=0.83 q=0.83 fixed 10 broke 12 n=400 truncated +0.5
+    rwse       97.00 -> 99.25: +2.2 [+0.5, +4.0] p=0.022 q=0.034 fixed 11 broke 2 n=400 truncated -2.2
+    degree     97.00 -> 75.25: -21.8 [-26.5, -17.5] p=5.1e-20 q=3.1e-19 fixed 8 broke 95 n=400 truncated +21.2 FLAGGED
+    all        97.00 -> 96.25: -0.8 [-3.2, +1.8] p=0.7 q=0.83 fixed 12 broke 15 n=400 truncated +0.8
+  qwen3-1.7b-think cycle_check vs filler:
+    components 100.00 -> 89.50: -10.5 [-13.5, -7.5] p=4.5e-13 q=1.1e-12 fixed 0 broke 42 n=400 truncated +10.5
+    clustering 100.00 -> 96.50: -3.5 [-5.5, -1.8] p=0.00012 q=0.00015 fixed 0 broke 14 n=400 truncated +3.5
+    rwse       100.00 -> 99.25: -0.8 [-1.8, +0.0] p=0.25 q=0.25 fixed 0 broke 3 n=400 truncated +0.8
+    degree     100.00 -> 75.25: -24.8 [-28.8, -20.5] p=3.2e-30 q=1.6e-29 fixed 0 broke 99 n=400 truncated +24.2 FLAGGED
+    all        100.00 -> 96.25: -3.8 [-5.8, -2.0] p=6.1e-05 q=0.0001 fixed 0 broke 15 n=400 truncated +3.8
+  qwen3-4b node_count vs none:
+    filler     90.25 -> 99.50: +9.2 [+6.8, +11.8] p=1.5e-11 q=4.4e-11 fixed 37 broke 0 n=400 truncated +0.0; MAE 0.10 -> 0.01 (400 finished pairs)
+    components 90.25 -> 99.25: +9.0 [+6.5, +11.8] p=2.8e-10 q=5.7e-10 fixed 37 broke 1 n=400 truncated +0.0; MAE 0.10 -> 0.01 (400 finished pairs)
+    clustering 90.25 -> 99.00: +8.8 [+6.0, +11.5] p=1e-08 q=1.3e-08 fixed 38 broke 3 n=400 truncated +0.0; MAE 0.10 -> 0.01 (400 finished pairs)
+    rwse       90.25 -> 99.50: +9.2 [+6.5, +12.0] p=7.8e-10 q=1.2e-09 fixed 39 broke 2 n=400 truncated +0.0; MAE 0.10 -> 0.01 (400 finished pairs)
+    degree     90.25 -> 98.25: +8.0 [+5.2, +10.8] p=4.4e-07 q=4.4e-07 fixed 37 broke 5 n=400 truncated +0.0; MAE 0.10 -> 0.02 (400 finished pairs)
+    all        90.25 -> 100.00: +9.8 [+7.2, +12.5] p=3.6e-12 q=2.2e-11 fixed 39 broke 0 n=400 truncated +0.0; MAE 0.10 -> 0.00 (400 finished pairs)
+  qwen3-4b node_count vs filler:
+    components 99.50 -> 99.25: -0.2 [-1.0, +0.5] p=1 q=1 fixed 1 broke 2 n=400 truncated +0.0; MAE 0.01 -> 0.01 (400 finished pairs)
+    clustering 99.50 -> 99.00: -0.5 [-1.8, +0.8] p=0.69 q=1 fixed 2 broke 4 n=400 truncated +0.0; MAE 0.01 -> 0.01 (400 finished pairs)
+    rwse       99.50 -> 99.50: +0.0 [-1.0, +1.0] p=1 q=1 fixed 2 broke 2 n=400 truncated +0.0; MAE 0.01 -> 0.01 (400 finished pairs)
+    degree     99.50 -> 98.25: -1.2 [-2.5, +0.0] p=0.12 q=0.62 fixed 1 broke 6 n=400 truncated +0.0; MAE 0.01 -> 0.02 (400 finished pairs)
+    all        99.50 -> 100.00: +0.5 [+0.0, +1.2] p=0.5 q=1 fixed 2 broke 0 n=400 truncated +0.0; MAE 0.01 -> 0.00 (400 finished pairs)
+  qwen3-4b node_degree vs none:
+    filler     99.25 -> 98.75: -0.5 [-2.0, +1.0] p=0.73 q=0.87 fixed 3 broke 5 n=400 truncated +0.0; MAE 0.01 -> 0.01 (400 finished pairs)
+    components 99.25 -> 99.50: +0.2 [+0.0, +0.8] p=1 q=1 fixed 1 broke 0 n=400 truncated +0.0; MAE 0.01 -> 0.01 (400 finished pairs)
+    clustering 99.25 -> 98.75: -0.5 [-2.0, +0.8] p=0.73 q=0.87 fixed 3 broke 5 n=400 truncated +0.0; MAE 0.01 -> 0.01 (400 finished pairs)
+    rwse       99.25 -> 97.00: -2.2 [-4.2, -0.5] p=0.022 q=0.045 fixed 2 broke 11 n=400 truncated +0.0; MAE 0.01 -> 0.05 (400 finished pairs)
+    degree     99.25 -> 92.75: -6.5 [-9.2, -4.0] p=2.6e-06 q=7.7e-06 fixed 3 broke 29 n=400 truncated +0.0; MAE 0.01 -> 0.14 (400 finished pairs)
+    all        99.25 -> 91.25: -8.0 [-11.0, -5.2] p=1.9e-08 q=1.2e-07 fixed 2 broke 34 n=400 truncated +0.0; MAE 0.01 -> 0.48 (400 finished pairs)
+  qwen3-4b node_degree vs filler:
+    components 98.75 -> 99.50: +0.8 [-0.5, +2.0] p=0.45 q=0.57 fixed 5 broke 2 n=400 truncated +0.0; MAE 0.01 -> 0.01 (400 finished pairs)
+    clustering 98.75 -> 98.75: +0.0 [-1.2, +1.2] p=1 q=1 fixed 3 broke 3 n=400 truncated +0.0; MAE 0.01 -> 0.01 (400 finished pairs)
+    rwse       98.75 -> 97.00: -1.8 [-3.8, +0.2] p=0.14 q=0.24 fixed 5 broke 12 n=400 truncated +0.0; MAE 0.01 -> 0.05 (400 finished pairs)
+    degree     98.75 -> 92.75: -6.0 [-8.8, -3.2] p=1.9e-05 q=4.8e-05 fixed 4 broke 28 n=400 truncated +0.0; MAE 0.01 -> 0.14 (400 finished pairs)
+    all        98.75 -> 91.25: -7.5 [-10.2, -4.8] p=6.9e-08 q=3.5e-07 fixed 2 broke 32 n=400 truncated +0.0; MAE 0.01 -> 0.48 (400 finished pairs)
+  qwen3-4b connected_nodes vs none:
+    filler     86.00 -> 73.50: -12.5 [-17.2, -7.8] p=1.6e-07 q=4.9e-07 fixed 21 broke 71 n=400 truncated +0.0; F1 0.987 -> 0.966 (400 finished pairs)
+    components 86.00 -> 95.25: +9.2 [+6.0, +12.8] p=1.2e-07 q=4.9e-07 fixed 44 broke 7 n=400 truncated +0.0; F1 0.987 -> 0.998 (400 finished pairs)
+    clustering 86.00 -> 87.00: +1.0 [-2.8, +4.8] p=0.7 q=0.84 fixed 33 broke 29 n=400 truncated +0.0; F1 0.987 -> 0.984 (400 finished pairs)
+    rwse       86.00 -> 86.00: +0.0 [-3.8, +4.0] p=1 q=1 fixed 34 broke 34 n=400 truncated +0.0; F1 0.987 -> 0.978 (400 finished pairs)
+    degree     86.00 -> 83.00: -3.0 [-7.0, +1.0] p=0.19 q=0.37 fixed 30 broke 42 n=400 truncated +0.0; F1 0.987 -> 0.977 (400 finished pairs)
+    all        86.00 -> 83.25: -2.8 [-7.0, +1.8] p=0.25 q=0.37 fixed 32 broke 43 n=400 truncated +0.0; F1 0.987 -> 0.974 (400 finished pairs)
+  qwen3-4b connected_nodes vs filler:
+    components 73.50 -> 95.25: +21.8 [+17.2, +26.2] p=1.6e-19 q=8.2e-19 fixed 96 broke 9 n=400 truncated +0.0; F1 0.966 -> 0.998 (400 finished pairs)
+    clustering 73.50 -> 87.00: +13.5 [+9.0, +18.0] p=2.7e-08 q=4.5e-08 fixed 75 broke 21 n=400 truncated +0.0; F1 0.966 -> 0.984 (400 finished pairs)
+    rwse       73.50 -> 86.00: +12.5 [+8.2, +16.8] p=1.4e-08 q=3.5e-08 fixed 65 broke 15 n=400 truncated +0.0; F1 0.966 -> 0.978 (400 finished pairs)
+    degree     73.50 -> 83.00: +9.5 [+4.8, +14.5] p=0.00025 q=0.00025 fixed 71 broke 33 n=400 truncated +0.0; F1 0.966 -> 0.977 (400 finished pairs)
+    all        73.50 -> 83.25: +9.8 [+5.0, +14.2] p=7.8e-05 q=9.8e-05 fixed 67 broke 28 n=400 truncated +0.0; F1 0.966 -> 0.974 (400 finished pairs)
+  qwen3-4b edge_count vs none:
+    filler     2.00 -> 3.25: +1.2 [-0.8, +3.0] p=0.3 q=0.3 fixed 10 broke 5 n=400 truncated +0.0; MAE 39.23 -> 29.29 (400 finished pairs)
+    components 2.00 -> 0.75: -1.2 [-2.8, +0.0] p=0.18 q=0.27 fixed 2 broke 7 n=400 truncated +0.8; MAE 39.25 -> 40.10 (397 finished pairs)
+    clustering 2.00 -> 0.75: -1.2 [-3.0, +0.2] p=0.23 q=0.27 fixed 3 broke 8 n=400 truncated +0.2; MAE 39.30 -> 43.43 (399 finished pairs)
+    rwse       2.00 -> 0.50: -1.5 [-3.0, -0.2] p=0.07 q=0.14 fixed 1 broke 7 n=400 truncated +0.5; MAE 39.41 -> 55.97 (398 finished pairs)
+    degree     2.00 -> 29.25: +27.2 [+22.8, +32.0] p=5.7e-28 q=3.4e-27 fixed 114 broke 5 n=400 truncated +1.8; MAE 39.14 -> 40.39 (393 finished pairs)
+    all        2.00 -> 5.75: +3.8 [+1.2, +6.2] p=0.0059 q=0.018 fixed 21 broke 6 n=400 truncated +0.8; MAE 38.79 -> 28.11 (397 finished pairs)
+  qwen3-4b edge_count vs filler:
+    components 3.25 -> 0.75: -2.5 [-4.2, -0.8] p=0.021 q=0.027 fixed 3 broke 13 n=400 truncated +0.8; MAE 28.97 -> 40.10 (397 finished pairs)
+    clustering 3.25 -> 0.75: -2.5 [-4.5, -0.8] p=0.021 q=0.027 fixed 3 broke 13 n=400 truncated +0.2; MAE 29.36 -> 43.43 (399 finished pairs)
+    rwse       3.25 -> 0.50: -2.8 [-4.8, -1.0] p=0.0074 q=0.018 fixed 2 broke 13 n=400 truncated +0.5; MAE 29.40 -> 55.97 (398 finished pairs)
+    degree     3.25 -> 29.25: +26.0 [+21.5, +30.8] p=1.7e-23 q=8.4e-23 fixed 114 broke 10 n=400 truncated +1.8; MAE 29.47 -> 40.39 (393 finished pairs)
+    all        3.25 -> 5.75: +2.5 [+0.0, +5.2] p=0.11 q=0.11 fixed 21 broke 11 n=400 truncated +0.8; MAE 28.80 -> 28.11 (397 finished pairs)
+  qwen3-4b edge_existence vs none:
+    filler     90.50 -> 83.50: -7.0 [-10.5, -3.5] p=0.00023 q=0.00047 fixed 14 broke 42 n=400 truncated +0.0
+    components 90.50 -> 87.75: -2.8 [-5.8, +0.2] p=0.13 q=0.13 fixed 16 broke 27 n=400 truncated +0.0
+    clustering 90.50 -> 94.50: +4.0 [+1.0, +7.0] p=0.017 q=0.02 fixed 28 broke 12 n=400 truncated +0.0
+    rwse       90.50 -> 80.50: -10.0 [-13.8, -6.2] p=7.2e-07 q=4.3e-06 fixed 13 broke 53 n=400 truncated +0.0
+    degree     90.50 -> 85.75: -4.8 [-7.8, -1.5] p=0.0094 q=0.014 fixed 15 broke 34 n=400 truncated +0.5
+    all        90.50 -> 80.50: -10.0 [-14.0, -6.0] p=1.7e-06 q=5e-06 fixed 15 broke 55 n=400 truncated +0.2
+  qwen3-4b edge_existence vs filler:
+    components 83.50 -> 87.75: +4.2 [+0.8, +7.5] p=0.014 q=0.034 fixed 30 broke 13 n=400 truncated +0.0
+    clustering 83.50 -> 94.50: +11.0 [+7.5, +14.5] p=5.2e-09 q=2.6e-08 fixed 52 broke 8 n=400 truncated +0.0
+    rwse       83.50 -> 80.50: -3.0 [-6.8, +0.8] p=0.16 q=0.19 fixed 24 broke 36 n=400 truncated +0.0
+    degree     83.50 -> 85.75: +2.2 [-1.2, +5.8] p=0.27 q=0.27 fixed 31 broke 22 n=400 truncated +0.5
+    all        83.50 -> 80.50: -3.0 [-6.8, +0.8] p=0.15 q=0.19 fixed 23 broke 35 n=400 truncated +0.2
+  qwen3-4b cycle_check vs none:
+    filler     99.00 -> 98.50: -0.5 [-2.0, +0.8] p=0.73 q=1 fixed 3 broke 5 n=400 truncated +0.5
+    components 99.00 -> 97.00: -2.0 [-4.0, -0.2] p=0.077 q=0.23 fixed 4 broke 12 n=400 truncated +0.8
+    clustering 99.00 -> 99.50: +0.5 [-0.5, +1.8] p=0.69 q=1 fixed 4 broke 2 n=400 truncated -0.2
+    rwse       99.00 -> 98.75: -0.2 [-1.8, +1.2] p=1 q=1 fixed 4 broke 5 n=400 truncated +0.5
+    degree     99.00 -> 96.75: -2.2 [-4.2, -0.5] p=0.035 q=0.21 fixed 3 broke 12 n=400 truncated +0.8
+    all        99.00 -> 98.75: -0.2 [-1.8, +1.0] p=1 q=1 fixed 4 broke 5 n=400 truncated -0.2
+  qwen3-4b cycle_check vs filler:
+    components 98.50 -> 97.00: -1.5 [-3.5, +0.5] p=0.24 q=0.48 fixed 6 broke 12 n=400 truncated +0.2
+    clustering 98.50 -> 99.50: +1.0 [-0.2, +2.5] p=0.29 q=0.48 fixed 6 broke 2 n=400 truncated -0.8
+    rwse       98.50 -> 98.75: +0.2 [-1.2, +1.8] p=1 q=1 fixed 5 broke 4 n=400 truncated +0.0
+    degree     98.50 -> 96.75: -1.8 [-3.8, +0.2] p=0.14 q=0.48 fixed 5 broke 12 n=400 truncated +0.2
+    all        98.50 -> 98.75: +0.2 [-1.2, +2.0] p=1 q=1 fixed 6 broke 5 n=400 truncated -0.8
+  qwen3-4b-think node_count vs none:
+    filler     99.50 -> 100.00: +0.5 [+0.0, +1.2] p=0.5 q=1 fixed 2 broke 0 n=400 truncated +0.0; MAE 0.01 -> 0.00 (400 finished pairs)
+    components 99.50 -> 99.50: +0.0 [-1.0, +1.0] p=1 q=1 fixed 2 broke 2 n=400 truncated +0.0; MAE 0.01 -> 0.10 (400 finished pairs)
+    clustering 99.50 -> 99.75: +0.2 [-0.5, +1.2] p=1 q=1 fixed 2 broke 1 n=400 truncated +0.2; MAE 0.01 -> 0.00 (399 finished pairs)
+    rwse       99.50 -> 99.75: +0.2 [-0.5, +1.2] p=1 q=1 fixed 2 broke 1 n=400 truncated +0.2; MAE 0.01 -> 0.00 (399 finished pairs)
+    degree     99.50 -> 99.75: +0.2 [-0.5, +1.2] p=1 q=1 fixed 2 broke 1 n=400 truncated +0.2; MAE 0.01 -> 0.00 (399 finished pairs)
+    all        99.50 -> 100.00: +0.5 [+0.0, +1.2] p=0.5 q=1 fixed 2 broke 0 n=400 truncated +0.0; MAE 0.01 -> 0.00 (400 finished pairs)
+  qwen3-4b-think node_count vs filler:
+    components 100.00 -> 99.50: -0.5 [-1.2, +0.0] p=0.5 q=1 fixed 0 broke 2 n=400 truncated +0.0; MAE 0.00 -> 0.10 (400 finished pairs)
+    clustering 100.00 -> 99.75: -0.2 [-0.8, +0.0] p=1 q=1 fixed 0 broke 1 n=400 truncated +0.2; MAE 0.00 -> 0.00 (399 finished pairs)
+    rwse       100.00 -> 99.75: -0.2 [-0.8, +0.0] p=1 q=1 fixed 0 broke 1 n=400 truncated +0.2; MAE 0.00 -> 0.00 (399 finished pairs)
+    degree     100.00 -> 99.75: -0.2 [-0.8, +0.0] p=1 q=1 fixed 0 broke 1 n=400 truncated +0.2; MAE 0.00 -> 0.00 (399 finished pairs)
+    all        100.00 -> 100.00: +0.0 [+0.0, +0.0] p=1 q=1 fixed 0 broke 0 n=400 truncated +0.0; MAE 0.00 -> 0.00 (400 finished pairs)
+  qwen3-4b-think node_degree vs none:
+    filler     97.00 -> 99.00: +2.0 [+0.5, +3.8] p=0.039 q=0.12 fixed 10 broke 2 n=400 truncated -1.8; MAE 0.00 -> 0.00 (386 finished pairs)
+    components 97.00 -> 97.25: +0.2 [-1.8, +2.5] p=1 q=1 fixed 10 broke 9 n=400 truncated -0.5; MAE 0.00 -> 0.00 (380 finished pairs)
+    clustering 97.00 -> 98.75: +1.8 [-0.2, +3.8] p=0.14 q=0.29 fixed 12 broke 5 n=400 truncated -2.0; MAE 0.00 -> 0.01 (386 finished pairs)
+    rwse       97.00 -> 95.75: -1.2 [-3.8, +1.0] p=0.42 q=0.64 fixed 10 broke 15 n=400 truncated -0.5; MAE 0.00 -> 0.08 (381 finished pairs)
+    degree     97.00 -> 99.50: +2.5 [+0.8, +4.2] p=0.013 q=0.078 fixed 12 broke 2 n=400 truncated -2.5; MAE 0.00 -> 0.00 (388 finished pairs)
+    all        97.00 -> 97.50: +0.5 [-1.5, +2.8] p=0.81 q=0.98 fixed 10 broke 8 n=400 truncated -1.0; MAE 0.00 -> 0.01 (383 finished pairs)
+  qwen3-4b-think node_degree vs filler:
+    components 99.00 -> 97.25: -1.8 [-3.5, +0.0] p=0.092 q=0.23 fixed 3 broke 10 n=400 truncated +1.2; MAE 0.00 -> 0.01 (388 finished pairs)
+    clustering 99.00 -> 98.75: -0.2 [-1.5, +1.0] p=1 q=1 fixed 3 broke 4 n=400 truncated -0.2; MAE 0.00 -> 0.00 (393 finished pairs)
+    rwse       99.00 -> 95.75: -3.2 [-5.5, -1.2] p=0.0044 q=0.022 fixed 3 broke 16 n=400 truncated +1.2; MAE 0.00 -> 0.08 (388 finished pairs)
+    degree     99.00 -> 99.50: +0.5 [-0.5, +1.8] p=0.69 q=0.86 fixed 4 broke 2 n=400 truncated -0.8; MAE 0.00 -> 0.00 (395 finished pairs)
+    all        99.00 -> 97.50: -1.5 [-3.2, +0.2] p=0.15 q=0.24 fixed 3 broke 9 n=400 truncated +0.8; MAE 0.00 -> 0.01 (390 finished pairs)
+  qwen3-4b-think connected_nodes vs none:
+    filler     95.50 -> 96.75: +1.2 [-1.0, +3.5] p=0.38 q=0.86 fixed 13 broke 8 n=400 truncated -0.5; F1 0.997 -> 1.000 (379 finished pairs)
+    components 95.50 -> 96.00: +0.5 [-1.8, +2.8] p=0.83 q=0.86 fixed 12 broke 10 n=400 truncated +0.2; F1 0.996 -> 0.999 (377 finished pairs)
+    clustering 95.50 -> 94.75: -0.8 [-3.2, +1.8] p=0.7 q=0.86 fixed 12 broke 15 n=400 truncated +1.2; F1 0.997 -> 0.999 (373 finished pairs)
+    rwse       95.50 -> 96.00: +0.5 [-1.8, +3.0] p=0.84 q=0.86 fixed 13 broke 11 n=400 truncated -0.2; F1 0.997 -> 0.998 (379 finished pairs)
+    degree     95.50 -> 96.00: +0.5 [-2.2, +3.2] p=0.86 q=0.86 fixed 16 broke 14 n=400 truncated -0.2; F1 0.997 -> 0.998 (376 finished pairs)
+    all        95.50 -> 94.25: -1.2 [-3.8, +1.2] p=0.44 q=0.86 fixed 11 broke 16 n=400 truncated +1.0; F1 0.996 -> 0.997 (375 finished pairs)
+  qwen3-4b-think connected_nodes vs filler:
+    components 96.75 -> 96.00: -0.8 [-3.0, +1.5] p=0.66 q=0.68 fixed 9 broke 12 n=400 truncated +0.8; F1 1.000 -> 1.000 (377 finished pairs)
+    clustering 96.75 -> 94.75: -2.0 [-4.2, +0.2] p=0.13 q=0.33 fixed 7 broke 15 n=400 truncated +1.8; F1 0.999 -> 1.000 (376 finished pairs)
+    rwse       96.75 -> 96.00: -0.8 [-3.2, +1.5] p=0.68 q=0.68 fixed 10 broke 13 n=400 truncated +0.2; F1 0.999 -> 0.998 (380 finished pairs)
+    degree     96.75 -> 96.00: -0.8 [-2.8, +1.2] p=0.65 q=0.68 fixed 8 broke 11 n=400 truncated +0.2; F1 0.999 -> 0.998 (382 finished pairs)
+    all        96.75 -> 94.25: -2.5 [-4.8, -0.2] p=0.064 q=0.32 fixed 7 broke 17 n=400 truncated +1.5; F1 0.999 -> 0.999 (376 finished pairs)
+  qwen3-4b-think edge_count vs none:
+    filler     20.00 -> 32.25: +12.2 [+7.2, +17.0] p=3.7e-06 q=7.4e-06 fixed 80 broke 31 n=400 truncated -13.0; MAE 0.00 -> 0.04 (50 finished pairs) FLAGGED
+    components 20.00 -> 44.75: +24.8 [+19.8, +30.0] p=4.8e-18 q=2.9e-17 fixed 120 broke 21 n=400 truncated -25.0; MAE 0.03 -> 0.00 (60 finished pairs) FLAGGED
+    clustering 20.00 -> 44.75: +24.8 [+19.5, +30.2] p=3.2e-17 q=9.5e-17 fixed 123 broke 24 n=400 truncated -26.0; MAE 0.25 -> 0.02 (59 finished pairs) FLAGGED
+    rwse       20.00 -> 30.25: +10.2 [+5.5, +15.0] p=9.2e-05 q=0.00014 fixed 74 broke 33 n=400 truncated -12.2; MAE 0.04 -> 0.20 (49 finished pairs) FLAGGED
+    degree     20.00 -> 28.50: +8.5 [+3.2, +14.2] p=0.0054 q=0.0065 fixed 88 broke 54 n=400 truncated -20.8; MAE 0.00 -> 0.35 (34 finished pairs) FLAGGED
+    all        20.00 -> 21.75: +1.8 [-3.5, +7.2] p=0.58 q=0.58 fixed 63 broke 56 n=400 truncated -23.8; MAE 0.00 -> 0.61 (41 finished pairs) FLAGGED
+  qwen3-4b-think edge_count vs filler:
+    components 32.25 -> 44.75: +12.5 [+6.8, +18.2] p=3.8e-05 q=9.4e-05 fixed 97 broke 47 n=400 truncated -12.0; MAE 4.88 -> 0.03 (88 finished pairs) FLAGGED
+    clustering 32.25 -> 44.75: +12.5 [+7.5, +17.8] p=4.7e-06 q=2.4e-05 fixed 84 broke 34 n=400 truncated -13.0; MAE 0.23 -> 1.26 (99 finished pairs) FLAGGED
+    rwse       32.25 -> 30.25: -2.0 [-7.2, +3.2] p=0.51 q=0.51 fixed 53 broke 61 n=400 truncated +0.8; MAE 5.28 -> 3.34 (79 finished pairs) FLAGGED
+    degree     32.25 -> 28.50: -3.8 [-9.2, +2.0] p=0.26 q=0.32 fixed 69 broke 84 n=400 truncated -7.8; MAE 0.21 -> 0.42 (57 finished pairs) FLAGGED
+    all        32.25 -> 21.75: -10.5 [-15.8, -5.2] p=0.00053 q=0.00089 fixed 50 broke 92 n=400 truncated -10.8; MAE 0.27 -> 0.94 (66 finished pairs) FLAGGED
+  qwen3-4b-think edge_existence vs none:
+    filler     99.75 -> 99.75: +0.0 [+0.0, +0.0] p=1 q=1 fixed 0 broke 0 n=400 truncated +0.0
+    components 99.75 -> 99.25: -0.5 [-1.5, +0.5] p=0.62 q=0.94 fixed 1 broke 3 n=400 truncated +0.5
+    clustering 99.75 -> 99.00: -0.8 [-1.8, +0.0] p=0.25 q=0.5 fixed 0 broke 3 n=400 truncated +0.8
+    rwse       99.75 -> 98.50: -1.2 [-2.5, +0.0] p=0.12 q=0.5 fixed 1 broke 6 n=400 truncated +1.2
+    degree     99.75 -> 99.75: +0.0 [-0.8, +0.8] p=1 q=1 fixed 1 broke 1 n=400 truncated +0.0
+    all        99.75 -> 98.75: -1.0 [-2.2, +0.0] p=0.22 q=0.5 fixed 1 broke 5 n=400 truncated +1.0
+  qwen3-4b-think edge_existence vs filler:
+    components 99.75 -> 99.25: -0.5 [-1.8, +0.5] p=0.62 q=0.78 fixed 1 broke 3 n=400 truncated +0.5
+    clustering 99.75 -> 99.00: -0.8 [-1.8, +0.0] p=0.25 q=0.42 fixed 0 broke 3 n=400 truncated +0.8
+    rwse       99.75 -> 98.50: -1.2 [-2.5, +0.0] p=0.12 q=0.42 fixed 1 broke 6 n=400 truncated +1.2
+    degree     99.75 -> 99.75: +0.0 [-0.8, +0.8] p=1 q=1 fixed 1 broke 1 n=400 truncated +0.0
+    all        99.75 -> 98.75: -1.0 [-2.2, +0.0] p=0.22 q=0.42 fixed 1 broke 5 n=400 truncated +1.0
+  qwen3-4b-think cycle_check vs none:
+    filler     99.25 -> 99.75: +0.5 [-0.5, +1.5] p=0.62 q=1 fixed 3 broke 1 n=400 truncated -0.5
+    components 99.25 -> 96.00: -3.2 [-5.2, -1.2] p=0.0044 q=0.013 fixed 3 broke 16 n=400 truncated +3.2
+    clustering 99.25 -> 99.25: +0.0 [-1.2, +1.2] p=1 q=1 fixed 3 broke 3 n=400 truncated +0.0
+    rwse       99.25 -> 99.50: +0.2 [-0.8, +1.5] p=1 q=1 fixed 3 broke 2 n=400 truncated -0.2
+    degree     99.25 -> 93.75: -5.5 [-8.0, -3.0] p=2.7e-05 q=0.00016 fixed 3 broke 25 n=400 truncated +4.8
+    all        99.25 -> 98.75: -0.5 [-2.0, +0.8] p=0.73 q=1 fixed 3 broke 5 n=400 truncated +0.5
+  qwen3-4b-think cycle_check vs filler:
+    components 99.75 -> 96.00: -3.8 [-5.8, -1.8] p=0.00027 q=0.00069 fixed 1 broke 16 n=400 truncated +3.8
+    clustering 99.75 -> 99.25: -0.5 [-1.5, +0.5] p=0.62 q=0.78 fixed 1 broke 3 n=400 truncated +0.5
+    rwse       99.75 -> 99.50: -0.2 [-1.0, +0.5] p=1 q=1 fixed 1 broke 2 n=400 truncated +0.2
+    degree     99.75 -> 93.75: -6.0 [-8.5, -3.8] p=8e-07 q=4e-06 fixed 1 broke 25 n=400 truncated +5.2
+    all        99.75 -> 98.75: -1.0 [-2.2, +0.2] p=0.22 q=0.36 fixed 1 broke 5 n=400 truncated +1.0
+[arms] cells under the truncation flag: median baseline and cells with baseline in [0.25, 0.75)
+  qwen3-1.7b        median  66.0  in band 40/94  below 0.25: 19  median outside edge_count  67.0
+  qwen3-1.7b-think  median  93.5  in band 35/90  below 0.25: 0  median outside edge_count  93.5
+  qwen3-4b          median  87.0  in band 10/110  below 0.25: 20  median outside edge_count  89.0
+  qwen3-4b-think    median  97.5  in band 0/90  below 0.25: 0  median outside edge_count  97.5
+[null4bt] qwen3-4b-think, largest |effect| over five primers on node_degree/edge_existence/connected_nodes (main sweep): 2.5
 [flip] qwen3-4b node_degree, degree and all vs none, by density
   degree p=0.10 base 100.0 delta  -6.0 broke 6 fixed 0 p=0.031
   degree p=0.20 base  99.0 delta  -1.0 broke 2 fixed 1 p=1
@@ -50,107 +443,239 @@
    p=0.65: none  82.0 (enumerates 94%) | retrieves 71% at 88.7% | enumerates 2% | rest 29% at 45%, opens 86%, wrong opening 72%
    p=0.75: none  50.0 (enumerates 85%) | retrieves 64% at 73.4% | enumerates 1% | rest 36% at 28%, opens 92%, wrong opening 89%
    p=0.85: none  33.0 (enumerates 44%) | retrieves 69% at 79.7% | enumerates 0% | rest 31% at 16%, opens 90%, wrong opening 81%
+  p<=.20, none and degree: 245 responses classed assert, of which 0 list every neighbour of a node with fewer than five, one per line
 [verify] qwen3-1.7b-think under degree: retrieves at most 2%
 [verify] qwen3-1.7b-think under degree, p>=.35: enumerate 90%; by density 76, 91, 90, 98, 96
   none   p<=.50: discrepancy reported in 0.3% (n=397); correct when stated 0%
   degree p<=.50: discrepancy reported in 23.2% (n=379); correct when stated 61%
   none   p>=.65: discrepancy reported in 4.4% (n=295); correct when stated 38%
   degree p>=.65: discrepancy reported in 48.5% (n=268); correct when stated 69%
-  degree vs none, 7 densities: +19.9 [+16.3, +23.6] broke 29 fixed 156 p=3.1e-22 n=639
-  degree vs none, p>=.65:     +31.6 [+24.7, +38.0] broke 14 fixed 97 p=1.9e-16 n=263
-  degree vs none by density: +5.2, -1.0, +22.8, +21.3, +23.3, +25.0, +45.2
+  degree vs none, 7 densities: +16.0 [+12.0, +19.7] broke 50 fixed 162 p=5.5e-15 n=700 | truncated +6.4, wrong -22.4
+  degree vs none, p>=.65:     +25.7 [+19.3, +32.0] broke 23 fixed 100 p=1.2e-12 n=300 | truncated +9.0, wrong -34.7
+  degree vs none by density: +8.0, -3.0, +17.0, +13.0, +15.0, +22.0, +40.0
 [trunc] qwen3-1.7b-think node_degree generations reaching the budget: none 8/700 (1.1%), degree 53/700 (7.6%), all 6/700 (0.9%)
   truncated degree generations reporting a discrepancy: 96% (n=53)
-  degree vs none, 7 densities, truncation counted as an error: +16.0 [+12.0, +19.7] broke 50 fixed 162 p=5.5e-15 n=700
-[plain17] qwen3-1.7b node_degree, degree vs none by density: p=0.10 +3 (5 fixed, 2 broke, p=0.45), p=0.20 +10 (12 fixed, 2 broke, p=0.013), p=0.35 +18 (27 fixed, 9 broke, p=0.0039), p=0.50 -1 (13 fixed, 14 broke, p=1), p=0.65 +0 (7 fixed, 7 broke, p=1), p=0.75 -1 (12 fixed, 13 broke, p=1), p=0.85 +2 (7 fixed, 5 broke, p=0.77)
+[plain17] qwen3-1.7b node_degree, degree vs none by density (no-primer correct share %): p=0.10 +3 (base 91, 5 fixed, 2 broke, p=0.45), p=0.20 +10 (base 80, 12 fixed, 2 broke, p=0.013), p=0.35 +18 (base 41, 27 fixed, 9 broke, p=0.0039), p=0.50 -1 (base 30, 13 fixed, 14 broke, p=1), p=0.65 +0 (base 8, 7 fixed, 7 broke, p=1), p=0.75 -1 (base 16, 12 fixed, 13 broke, p=1), p=0.85 +2 (base 5, 7 fixed, 5 broke, p=0.77)
 [recover] accuracy under degree (none) where the solver scores 1.00
-  node_degree qwen3-1.7b        0.43 (0.39) n=699
-  node_degree qwen3-1.7b-think  0.86 (0.66) n=639
+  node_degree qwen3-1.7b        0.43 (0.39) n=700
+  node_degree qwen3-1.7b-think  0.79 (0.63) n=700
   node_degree qwen3-4b          0.81 (0.80) n=700
-  node_degree qwen3-4b-think    0.99 (0.99) n=685
-  edge_count  qwen3-1.7b        0.05 (0.01) n=253
-  edge_count  qwen3-1.7b-think  0.38 (1.00) n=13
-  edge_count  qwen3-4b          0.30 (0.02) n=393
-  edge_count  qwen3-4b-think    0.76 (1.00) n=34
-[edgecount] handshake wording (uses_degree_sum, terminated generations, as every procedure share) and exact match, main sweep
-  qwen3-1.7b none   wording by density 64, 45, 52, 8%; truncated 30%; exact among terminated 1.8%
-  qwen3-1.7b degree wording by density 99, 100, 100, 100%; truncated 10%; exact among terminated 4.7%
-    p=0.10: degree-none +6.5 n=62
-    p=0.20: degree-none +1.2 n=86
-    p=0.35: degree-none +0.0 n=49
-    p=0.50: degree-none +8.9 n=56
-    pooled: +4.0 [+0.8, +7.1] broke 3 fixed 13 p=0.021 n=253
-  qwen3-4b   none   wording by density 96, 99, 100, 100%; truncated 0%; exact among terminated 2.0%
-  qwen3-4b   degree wording by density 100, 100, 100, 100%; truncated 2%; exact among terminated 29.8%
-    p=0.10: degree-none +22.7 n=97
-    p=0.20: degree-none +30.3 n=99
-    p=0.35: degree-none +24.2 n=99
-    p=0.50: degree-none +33.7 n=98
-    pooled: +27.7 [+23.2, +32.3] broke 5 fixed 114 p=5.7e-28 n=393
-  qwen3-1.7b mean absolute error none 135.8 -> degree 40.2 (n=253)
+  node_degree qwen3-4b-think    0.98 (0.97) n=700
+  edge_count  qwen3-1.7b        0.04 (0.01) n=400
+  edge_count  qwen3-1.7b-think  0.12 (0.16) n=400
+  edge_count  qwen3-4b          0.29 (0.02) n=400
+  edge_count  qwen3-4b-think    0.28 (0.20) n=400
+[edgecount] edge_count, main sweep: correct / wrong / truncated shares of all responses; exact among finished; for none and degree, the handshake wording (uses_degree_sum) among finished, by density
+  qwen3-1.7b        none       correct 1.25% wrong 69.00% truncated 29.75%; exact among finished 1.8%; wording by density 64%, 45%, 52%, 8%; median relative error of finished 28.5%
+  qwen3-1.7b        filler     correct 0.75% wrong 73.00% truncated 26.25%; exact among finished 1.0%
+  qwen3-1.7b        components correct 0.25% wrong 72.50% truncated 27.25%; exact among finished 0.3%
+  qwen3-1.7b        clustering correct 0.75% wrong 81.25% truncated 18.00%; exact among finished 0.9%
+  qwen3-1.7b        rwse       correct 0.50% wrong 81.50% truncated 18.00%; exact among finished 0.6%
+  qwen3-1.7b        degree     correct 4.25% wrong 86.25% truncated 9.50%; exact among finished 4.7%; wording by density 99%, 100%, 100%, 100%; median relative error of finished 14.4%
+  qwen3-1.7b        all        correct 2.00% wrong 70.00% truncated 28.00%; exact among finished 2.8%
+    p=0.10: degree-none +3.0 n=100
+    p=0.20: degree-none +1.0 n=100
+    p=0.35: degree-none +1.0 n=100
+    p=0.50: degree-none +7.0 n=100
+    pooled filler vs none: -0.5 [-1.8, +0.8] broke 4 fixed 2 p=0.69 n=400 | truncated -3.5, wrong +4.0
+    pooled components vs none: -1.0 [-2.2, +0.0] broke 5 fixed 1 p=0.22 n=400 | truncated -2.5, wrong +3.5
+    pooled clustering vs none: -0.5 [-2.0, +1.0] broke 5 fixed 3 p=0.73 n=400 | truncated -11.8, wrong +12.2
+    pooled rwse vs none: -0.8 [-2.0, +0.5] broke 5 fixed 2 p=0.45 n=400 | truncated -11.8, wrong +12.5
+    pooled degree vs none: +3.0 [+0.8, +5.2] broke 5 fixed 17 p=0.017 n=400 | truncated -20.2, wrong +17.2
+    pooled all vs none: +0.8 [-1.0, +2.5] broke 5 fixed 8 p=0.58 n=400 | truncated -1.8, wrong +1.0
+  qwen3-1.7b-think  none       correct 15.75% wrong 2.50% truncated 81.75%; exact among finished 86.3%; wording by density 100%, 100%, n/a, n/a; median relative error of finished 0.0%
+  qwen3-1.7b-think  filler     correct 14.25% wrong 2.75% truncated 83.00%; exact among finished 83.8%
+  qwen3-1.7b-think  components correct 15.00% wrong 2.75% truncated 82.25%; exact among finished 84.5%
+  qwen3-1.7b-think  clustering correct 14.50% wrong 3.00% truncated 82.50%; exact among finished 82.9%
+  qwen3-1.7b-think  rwse       correct 12.50% wrong 0.75% truncated 86.75%; exact among finished 94.3%
+  qwen3-1.7b-think  degree     correct 12.50% wrong 6.50% truncated 81.00%; exact among finished 65.8%; wording by density 100%, 100%, 100%, 100%; median relative error of finished 0.0%
+  qwen3-1.7b-think  all        correct 20.75% wrong 9.75% truncated 69.50%; exact among finished 68.0%
+    p=0.10: degree-none -37.0 n=100
+    p=0.20: degree-none +1.0 n=100
+    p=0.35: degree-none +13.0 n=100
+    p=0.50: degree-none +10.0 n=100
+    pooled filler vs none: -1.5 [-5.5, +2.5] broke 39 fixed 33 p=0.56 n=400 | truncated +1.2, wrong +0.2
+    pooled components vs none: -0.8 [-5.0, +3.8] broke 40 fixed 37 p=0.82 n=400 | truncated +0.5, wrong +0.2
+    pooled clustering vs none: -1.2 [-5.5, +3.0] broke 44 fixed 39 p=0.66 n=400 | truncated +0.8, wrong +0.5
+    pooled rwse vs none: -3.2 [-7.2, +0.5] broke 39 fixed 26 p=0.14 n=400 | truncated +5.0, wrong -1.8
+    pooled degree vs none: -3.2 [-7.8, +1.2] broke 58 fixed 45 p=0.24 n=400 | truncated -0.8, wrong +4.0
+    pooled all vs none: +5.0 [+0.2, +10.0] broke 45 fixed 65 p=0.07 n=400 | truncated -12.2, wrong +7.2
+  qwen3-4b          none       correct 2.00% wrong 98.00% truncated 0.00%; exact among finished 2.0%; wording by density 96%, 99%, 100%, 100%; median relative error of finished 10.9%
+  qwen3-4b          filler     correct 3.25% wrong 96.75% truncated 0.00%; exact among finished 3.2%
+  qwen3-4b          components correct 0.75% wrong 98.50% truncated 0.75%; exact among finished 0.8%
+  qwen3-4b          clustering correct 0.75% wrong 99.00% truncated 0.25%; exact among finished 0.8%
+  qwen3-4b          rwse       correct 0.50% wrong 99.00% truncated 0.50%; exact among finished 0.5%
+  qwen3-4b          degree     correct 29.25% wrong 69.00% truncated 1.75%; exact among finished 29.8%; wording by density 100%, 100%, 100%, 100%; median relative error of finished 5.7%
+  qwen3-4b          all        correct 5.75% wrong 93.50% truncated 0.75%; exact among finished 5.8%
+    p=0.10: degree-none +22.0 n=100
+    p=0.20: degree-none +30.0 n=100
+    p=0.35: degree-none +24.0 n=100
+    p=0.50: degree-none +33.0 n=100
+    pooled filler vs none: +1.2 [-0.8, +3.0] broke 5 fixed 10 p=0.3 n=400 | truncated +0.0, wrong -1.2
+    pooled components vs none: -1.2 [-2.8, +0.0] broke 7 fixed 2 p=0.18 n=400 | truncated +0.8, wrong +0.5
+    pooled clustering vs none: -1.2 [-3.0, +0.2] broke 8 fixed 3 p=0.23 n=400 | truncated +0.2, wrong +1.0
+    pooled rwse vs none: -1.5 [-3.0, -0.2] broke 7 fixed 1 p=0.07 n=400 | truncated +0.5, wrong +1.0
+    pooled degree vs none: +27.2 [+22.8, +32.0] broke 5 fixed 114 p=5.7e-28 n=400 | truncated +1.8, wrong -29.0
+    pooled all vs none: +3.8 [+1.2, +6.2] broke 6 fixed 21 p=0.0059 n=400 | truncated +0.8, wrong -4.5
+  qwen3-4b-think    none       correct 20.00% wrong 0.50% truncated 79.50%; exact among finished 97.6%; wording by density 100%, 100%, 100%, n/a; median relative error of finished 0.0%
+  qwen3-4b-think    filler     correct 32.25% wrong 1.25% truncated 66.50%; exact among finished 96.3%
+  qwen3-4b-think    components correct 44.75% wrong 0.75% truncated 54.50%; exact among finished 98.4%
+  qwen3-4b-think    clustering correct 44.75% wrong 1.75% truncated 53.50%; exact among finished 96.2%
+  qwen3-4b-think    rwse       correct 30.25% wrong 2.50% truncated 67.25%; exact among finished 92.4%
+  qwen3-4b-think    degree     correct 28.50% wrong 12.75% truncated 58.75%; exact among finished 69.1%; wording by density 100%, 100%, 100%, 100%; median relative error of finished 0.0%
+  qwen3-4b-think    all        correct 21.75% wrong 22.50% truncated 55.75%; exact among finished 49.2%
+    p=0.10: degree-none -11.0 n=100
+    p=0.20: degree-none +2.0 n=100
+    p=0.35: degree-none +19.0 n=100
+    p=0.50: degree-none +24.0 n=100
+    pooled filler vs none: +12.2 [+7.2, +17.0] broke 31 fixed 80 p=3.7e-06 n=400 | truncated -13.0, wrong +0.8
+    pooled components vs none: +24.8 [+19.8, +30.0] broke 21 fixed 120 p=4.8e-18 n=400 | truncated -25.0, wrong +0.2
+    pooled clustering vs none: +24.8 [+19.5, +30.2] broke 24 fixed 123 p=3.2e-17 n=400 | truncated -26.0, wrong +1.2
+    pooled rwse vs none: +10.2 [+5.5, +15.0] broke 33 fixed 74 p=9.2e-05 n=400 | truncated -12.2, wrong +2.0
+    pooled degree vs none: +8.5 [+3.2, +14.2] broke 54 fixed 88 p=0.0054 n=400 | truncated -20.8, wrong +12.2
+    pooled all vs none: +1.8 [-3.5, +7.2] broke 56 fixed 63 p=0.58 n=400 | truncated -23.8, wrong +22.0
+  qwen3-1.7b mean absolute error, both finished, none 135.8 -> degree 40.2 (n=253)
   qwen3-1.7b degree responses using the wording: 361, exact 4.7%
-[fa] edge_existence, pooled over seven densities: hit rate / false-alarm rate
+[fa] edge_existence, finished responses pooled over seven densities: hit rate / false-alarm rate
   qwen3-1.7b: hits 0.98-1.00; errors that are false alarms 99%
-    filler     FA 0.51 -> 0.69: dFA +18.3 [+13.9, +22.7] broke 10 fixed 77 p=5.9e-14 n=366 | accuracy -9.6 [-12.1, -7.3]
-    components FA 0.51 -> 0.61: dFA +9.8 [+6.0, +13.7] broke 11 fixed 47 p=2e-06 n=366 | accuracy -5.1 [-7.3, -3.1]
-    clustering FA 0.51 -> 0.45: dFA -5.7 [-10.7, -0.8] broke 57 fixed 36 p=0.038 n=366 | accuracy +2.7 [+0.0, +5.6]
-    rwse       FA 0.51 -> 0.44: dFA -7.1 [-12.1, -1.9] broke 62 fixed 36 p=0.011 n=365 | accuracy +3.4 [+0.7, +6.0]
-    degree     FA 0.51 -> 0.43: dFA -8.5 [-13.1, -3.6] broke 64 fixed 33 p=0.0022 n=366 | accuracy +3.7 [+1.0, +6.5]
-    all        FA 0.51 -> 0.33: dFA -18.6 [-24.0, -13.1] broke 98 fixed 30 p=1.3e-09 n=366 | accuracy +9.4 [+6.4, +12.6]
+    filler     FA rate of all finished 0.51 -> 0.69; paired, both finished: dFA +18.3 [+13.9, +22.7] FA removed 10 added 77 p=5.9e-14 n=366 | accuracy -9.6 [-12.1, -7.3]
+    components FA rate of all finished 0.51 -> 0.61; paired, both finished: dFA +9.8 [+6.0, +13.7] FA removed 11 added 47 p=2e-06 n=366 | accuracy -5.1 [-7.3, -3.1]
+    clustering FA rate of all finished 0.51 -> 0.45; paired, both finished: dFA -5.7 [-10.7, -0.8] FA removed 57 added 36 p=0.038 n=366 | accuracy +2.7 [+0.0, +5.6]
+    rwse       FA rate of all finished 0.51 -> 0.44; paired, both finished: dFA -7.1 [-12.1, -1.9] FA removed 62 added 36 p=0.011 n=365 | accuracy +3.3 [+0.6, +6.0]
+    degree     FA rate of all finished 0.51 -> 0.43; paired, both finished: dFA -8.5 [-13.1, -3.6] FA removed 64 added 33 p=0.0022 n=366 | accuracy +3.1 [+0.4, +5.9]
+    all        FA rate of all finished 0.51 -> 0.33; paired, both finished: dFA -18.6 [-24.0, -13.1] FA removed 98 added 30 p=1.3e-09 n=366 | accuracy +9.4 [+6.4, +12.6]
+  qwen3-1.7b-think: hits 0.99-1.00; errors that are false alarms 74%
+    filler     FA rate of all finished 0.01 -> 0.02; paired, both finished: dFA +1.1 [-0.3, +2.7] FA removed 2 added 6 p=0.29 n=365 | accuracy -0.6 [-1.7, +0.6]
+    components FA rate of all finished 0.01 -> 0.02; paired, both finished: dFA +1.1 [-0.3, +2.7] FA removed 2 added 6 p=0.29 n=364 | accuracy -0.4 [-1.6, +0.7]
+    clustering FA rate of all finished 0.01 -> 0.02; paired, both finished: dFA +1.6 [+0.3, +3.3] FA removed 1 added 7 p=0.07 n=364 | accuracy -0.7 [-1.9, +0.4]
+    rwse       FA rate of all finished 0.01 -> 0.02; paired, both finished: dFA +1.9 [+0.3, +3.6] FA removed 2 added 9 p=0.065 n=364 | accuracy -0.6 [-1.9, +0.6]
+    degree     FA rate of all finished 0.01 -> 0.04; paired, both finished: dFA +3.3 [+1.4, +5.2] FA removed 1 added 13 p=0.0018 n=363 | accuracy -1.7 [-3.1, -0.4]
+    all        FA rate of all finished 0.01 -> 0.04; paired, both finished: dFA +3.3 [+1.6, +5.5] FA removed 1 added 13 p=0.0018 n=365 | accuracy -1.3 [-2.7, +0.0]
   qwen3-4b: hits 0.97-0.99; errors that are false alarms 94%
-    filler     FA 0.16 -> 0.30: dFA +13.4 [+8.7, +17.8] broke 14 fixed 63 p=1.4e-08 n=366 | accuracy -6.7 [-9.1, -4.3]
-    components FA 0.16 -> 0.22: dFA +6.6 [+2.5, +10.7] broke 20 fixed 44 p=0.0037 n=365 | accuracy -3.0 [-5.4, -0.6]
-    clustering FA 0.16 -> 0.08: dFA -7.9 [-12.0, -3.8] broke 46 fixed 17 p=0.00034 n=366 | accuracy +4.6 [+2.3, +6.9]
-    rwse       FA 0.16 -> 0.28: dFA +12.0 [+7.4, +16.9] broke 25 fixed 69 p=6.3e-06 n=366 | accuracy -6.0 [-8.7, -3.3]
-    degree     FA 0.16 -> 0.25: dFA +8.8 [+5.0, +13.2] broke 17 fixed 49 p=0.0001 n=363 | accuracy -3.7 [-6.2, -1.3]
-    all        FA 0.16 -> 0.30: dFA +14.3 [+9.6, +19.2] broke 20 fixed 72 p=4.6e-08 n=364 | accuracy -6.4 [-9.2, -3.9]
-[collapse] qwen3-1.7b edge_existence by density (yes-rate / balanced acc / median tokens)
-  none       0.21/0.94/180 0.45/0.84/216 0.65/0.75/238 0.94/0.56/206 0.98/0.53/50 0.99/0.52/48 0.99/0.53/120
-  filler     0.26/0.91/150 0.65/0.71/169 0.97/0.52/176 1.00/0.50/171 1.00/0.50/167 1.00/0.50/66 1.00/0.50/41
-  components 0.24/0.92/162 0.56/0.77/192 0.81/0.64/207 0.97/0.53/220 1.00/0.50/157 0.99/0.52/54 1.00/0.50/47
-  clustering 0.26/0.91/200 0.44/0.84/242 0.59/0.80/275 0.81/0.68/268 0.99/0.51/259 0.90/0.65/319 0.99/0.53/314
-  rwse       0.18/0.96/218 0.48/0.78/276 0.53/0.82/306 0.81/0.68/288 0.96/0.56/304 0.99/0.52/320 0.98/0.57/378
-  degree     0.27/0.91/160 0.48/0.82/210 0.64/0.76/272 0.68/0.79/294 0.95/0.57/265 0.88/0.67/358 0.95/0.63/350
-  all        0.21/0.94/232 0.37/0.88/292 0.53/0.84/363 0.68/0.81/352 0.90/0.65/372 0.88/0.72/376 0.94/0.66/404
-  balanced accuracy, p>=.65, degree vs none: +9.5 [+4.5, +15.0]
-  balanced accuracy, p>=.65, all vs none: +14.9 [+8.7, +21.4]
-  balanced accuracy, p>=.65, clustering vs none: +3.9 [-0.2, +8.1]
-  balanced accuracy, p>=.65, rwse vs none: +2.1 [-2.9, +7.1]
-  balanced accuracy, p>=.65, filler vs none: -2.8 [-6.0, -0.5]
+    filler     FA rate of all finished 0.16 -> 0.30; paired, both finished: dFA +13.4 [+8.7, +17.8] FA removed 14 added 63 p=1.4e-08 n=366 | accuracy -6.7 [-9.1, -4.3]
+    components FA rate of all finished 0.16 -> 0.22; paired, both finished: dFA +6.6 [+2.5, +10.7] FA removed 20 added 44 p=0.0037 n=365 | accuracy -3.0 [-5.3, -0.7]
+    clustering FA rate of all finished 0.16 -> 0.08; paired, both finished: dFA -7.9 [-12.0, -3.8] FA removed 46 added 17 p=0.00034 n=366 | accuracy +4.6 [+2.3, +6.9]
+    rwse       FA rate of all finished 0.16 -> 0.28; paired, both finished: dFA +12.0 [+7.4, +16.9] FA removed 25 added 69 p=6.3e-06 n=366 | accuracy -6.0 [-8.7, -3.3]
+    degree     FA rate of all finished 0.16 -> 0.25; paired, both finished: dFA +8.8 [+5.0, +13.2] FA removed 17 added 49 p=0.0001 n=363 | accuracy -4.1 [-6.6, -1.9]
+    all        FA rate of all finished 0.16 -> 0.30; paired, both finished: dFA +14.3 [+9.6, +19.2] FA removed 20 added 72 p=4.6e-08 n=364 | accuracy -6.7 [-9.6, -4.0]
+  qwen3-4b-think: hits 0.99-1.00; errors that are false alarms 25%
+    filler     FA rate of all finished 0.00 -> 0.00; paired, both finished: dFA +0.0 [+0.0, +0.0] FA removed 0 added 0 p=1 n=365 | accuracy +0.3 [+0.0, +0.7]
+    components FA rate of all finished 0.00 -> 0.00; paired, both finished: dFA +0.0 [+0.0, +0.0] FA removed 0 added 0 p=1 n=362 | accuracy +0.0 [-0.7, +0.7]
+    clustering FA rate of all finished 0.00 -> 0.00; paired, both finished: dFA +0.0 [+0.0, +0.0] FA removed 0 added 0 p=1 n=362 | accuracy -0.1 [-0.7, +0.4]
+    rwse       FA rate of all finished 0.00 -> 0.00; paired, both finished: dFA +0.0 [+0.0, +0.0] FA removed 0 added 0 p=1 n=360 | accuracy -0.6 [-1.4, +0.3]
+    degree     FA rate of all finished 0.00 -> 0.00; paired, both finished: dFA +0.0 [+0.0, +0.0] FA removed 0 added 0 p=1 n=364 | accuracy +0.3 [-0.3, +0.9]
+    all        FA rate of all finished 0.00 -> 0.00; paired, both finished: dFA +0.3 [+0.0, +0.8] FA removed 0 added 1 p=1 n=360 | accuracy -0.4 [-1.3, +0.4]
+[collapse] qwen3-1.7b edge_existence by density: yes-rate of finished / balanced accuracy (truncated not correct) / truncated share / median tokens of finished
+  none       0.21/0.94/0.00/180 0.45/0.84/0.00/216 0.65/0.75/0.00/238 0.94/0.56/0.00/206 0.98/0.53/0.00/50 0.99/0.52/0.00/48 0.99/0.53/0.00/120
+  filler     0.26/0.91/0.00/150 0.65/0.71/0.00/169 0.97/0.52/0.00/176 1.00/0.50/0.00/171 1.00/0.50/0.00/167 1.00/0.50/0.00/66 1.00/0.50/0.00/41
+  components 0.24/0.92/0.00/162 0.56/0.77/0.00/192 0.81/0.64/0.00/207 0.97/0.53/0.00/220 1.00/0.50/0.00/157 0.99/0.52/0.00/54 1.00/0.50/0.00/47
+  clustering 0.26/0.91/0.00/200 0.44/0.84/0.00/242 0.59/0.80/0.00/275 0.81/0.68/0.00/268 0.99/0.51/0.00/259 0.90/0.65/0.00/319 0.99/0.53/0.00/314
+  rwse       0.18/0.95/0.01/218 0.48/0.78/0.00/276 0.53/0.82/0.00/306 0.81/0.68/0.00/288 0.96/0.56/0.00/304 0.99/0.52/0.00/320 0.98/0.57/0.00/378
+  degree     0.27/0.91/0.00/160 0.48/0.82/0.00/210 0.64/0.76/0.00/272 0.68/0.79/0.00/294 0.95/0.57/0.00/265 0.88/0.64/0.04/358 0.95/0.63/0.00/350
+  all        0.21/0.94/0.00/232 0.37/0.88/0.00/292 0.53/0.84/0.00/363 0.68/0.81/0.00/352 0.90/0.65/0.00/372 0.88/0.72/0.00/376 0.94/0.66/0.00/404
+[collapse] qwen3-1.7b-think edge_existence by density: yes-rate of finished / balanced accuracy (truncated not correct) / truncated share / median tokens of finished
+  none       0.10/0.99/0.01/684 0.18/1.00/0.00/878 0.32/0.97/0.00/1096 0.48/1.00/0.00/1116 0.65/0.99/0.00/1152 0.74/0.99/0.00/1108 0.85/1.00/0.00/1100
+  filler     0.13/0.98/0.00/616 0.20/0.99/0.00/728 0.31/1.00/0.00/982 0.47/0.99/0.00/1194 0.65/0.99/0.00/1124 0.75/0.99/0.00/1055 0.84/0.95/0.00/1028
+  components 0.11/0.99/0.01/736 0.21/0.98/0.00/924 0.33/0.99/0.00/1118 0.48/1.00/0.00/1140 0.65/0.99/0.00/1120 0.74/0.99/0.00/1004 0.85/1.00/0.00/1034
+  clustering 0.12/0.98/0.01/667 0.20/0.99/0.00/868 0.32/0.99/0.00/1092 0.50/0.98/0.00/1074 0.67/0.99/0.00/1017 0.76/1.00/0.00/959 0.82/0.98/0.00/1034
+  rwse       0.10/1.00/0.00/824 0.21/0.95/0.00/1018 0.34/0.98/0.00/1234 0.48/0.99/0.01/1179 0.66/1.00/0.00/1166 0.77/0.98/0.00/1046 0.86/0.97/0.00/1022
+  degree     0.13/0.98/0.01/785 0.23/0.97/0.00/930 0.34/0.98/0.00/1257 0.49/0.98/0.01/1432 0.66/1.00/0.00/1225 0.76/0.97/0.00/1352 0.84/0.95/0.00/1222
+  all        0.14/0.98/0.00/746 0.22/0.98/0.00/940 0.34/0.98/0.00/1166 0.48/1.00/0.00/1127 0.69/0.96/0.00/1029 0.75/0.99/0.00/1076 0.84/0.99/0.00/978
+[collapse] qwen3-4b edge_existence by density: yes-rate of finished / balanced accuracy (truncated not correct) / truncated share / median tokens of finished
+  none       0.14/0.98/0.00/100 0.23/0.94/0.00/122 0.48/0.88/0.00/136 0.58/0.90/0.00/158 0.73/0.83/0.00/172 0.81/0.79/0.00/185 0.87/0.89/0.00/202
+  filler     0.14/0.98/0.00/71 0.34/0.90/0.00/90 0.56/0.82/0.00/174 0.69/0.80/0.00/148 0.83/0.66/0.00/170 0.87/0.72/0.00/179 0.92/0.73/0.00/194
+  components 0.11/0.99/0.00/108 0.24/0.96/0.00/120 0.56/0.82/0.00/140 0.65/0.84/0.00/153 0.83/0.71/0.00/168 0.82/0.79/0.01/183 0.90/0.79/0.00/198
+  clustering 0.13/0.98/0.00/91 0.20/0.99/0.00/118 0.42/0.92/0.00/146 0.54/0.94/0.00/166 0.69/0.93/0.00/187 0.76/0.95/0.00/198 0.84/0.92/0.00/210
+  rwse       0.14/0.98/0.00/101 0.29/0.93/0.00/134 0.61/0.78/0.00/145 0.81/0.68/0.00/156 0.74/0.86/0.00/182 0.82/0.79/0.00/195 0.89/0.75/0.00/206
+  degree     0.11/0.99/0.00/105 0.26/0.95/0.01/134 0.52/0.85/0.00/138 0.74/0.75/0.01/157 0.83/0.73/0.01/173 0.87/0.74/0.00/188 0.91/0.76/0.00/198
+  all        0.14/0.97/0.01/98 0.34/0.90/0.00/128 0.61/0.78/0.00/158 0.75/0.74/0.00/157 0.78/0.82/0.00/174 0.89/0.70/0.01/186 0.93/0.69/0.00/198
+[collapse] qwen3-4b-think edge_existence by density: yes-rate of finished / balanced accuracy (truncated not correct) / truncated share / median tokens of finished
+  none       0.10/0.99/0.01/575 0.18/1.00/0.00/706 0.31/1.00/0.00/876 0.48/1.00/0.00/776 0.66/1.00/0.00/732 0.76/1.00/0.00/779 0.83/0.99/0.00/896
+  filler     0.10/0.99/0.01/535 0.18/1.00/0.00/670 0.31/1.00/0.00/775 0.48/1.00/0.00/784 0.66/1.00/0.00/672 0.76/1.00/0.00/742 0.85/1.00/0.00/761
+  components 0.10/0.99/0.01/692 0.18/0.99/0.01/752 0.31/1.00/0.00/944 0.48/0.99/0.01/909 0.66/1.00/0.00/926 0.76/1.00/0.00/990 0.85/1.00/0.00/1026
+  clustering 0.10/0.98/0.03/588 0.18/0.99/0.01/661 0.31/1.00/0.00/800 0.48/1.00/0.00/801 0.66/1.00/0.00/754 0.76/1.00/0.00/818 0.85/1.00/0.00/762
+  rwse       0.10/0.98/0.04/604 0.17/0.97/0.02/738 0.31/1.00/0.00/750 0.48/1.00/0.00/770 0.66/1.00/0.00/793 0.76/1.00/0.00/826 0.84/0.99/0.00/807
+  degree     0.10/0.99/0.01/626 0.18/1.00/0.00/704 0.31/1.00/0.00/855 0.48/1.00/0.00/803 0.66/1.00/0.00/676 0.76/1.00/0.00/729 0.85/1.00/0.00/804
+  all        0.10/0.98/0.04/562 0.18/0.99/0.01/622 0.31/1.00/0.00/723 0.48/1.00/0.00/738 0.66/1.00/0.00/762 0.76/1.00/0.00/821 0.86/0.97/0.00/788
+  balanced accuracy, qwen3-1.7b, p>=.65, degree vs none: +8.6 [+3.5, +14.3]
+  balanced accuracy, qwen3-1.7b, p>=.65, all vs none: +14.9 [+8.7, +21.4]
+  balanced accuracy, qwen3-1.7b, p>=.65, clustering vs none: +3.9 [-0.2, +8.1]
+  balanced accuracy, qwen3-1.7b, p>=.65, rwse vs none: +2.1 [-2.9, +7.1]
+  balanced accuracy, qwen3-1.7b, p>=.65, filler vs none: -2.8 [-6.0, -0.5]
+[joint] degree and neighbours of the same node, p<=.50: J both correct, C consistent, C-J consistent but not both correct (J is inside C), % of items; then J against none, with BH q over the six primers
+  qwen3-1.7b        none J 54.00 C 62.25 C-J 8.25, filler J 52.00 C 62.50 C-J 10.50, components J 54.50 C 63.25 C-J 8.75, clustering J 58.00 C 67.00 C-J 9.00, rwse J 58.25 C 63.25 C-J 5.00, degree J 62.50 C 73.00 C-J 10.50, all J 61.75 C 68.00 C-J 6.25
+    J filler     -2.0 [-5.5, +1.8] broke 34 fixed 26 p=0.37 n=400 q=0.44
+    J components +0.5 [-3.3, +4.2] broke 29 fixed 31 p=0.9 n=400 q=0.9
+    J clustering +4.0 [-0.8, +8.5] broke 39 fixed 55 p=0.12 n=400 q=0.18
+    J rwse       +4.2 [+0.0, +8.5] broke 34 fixed 51 p=0.082 n=400 q=0.16
+    J degree     +8.5 [+4.2, +12.8] broke 24 fixed 58 p=0.00022 n=400 q=0.0013
+    J all        +7.8 [+2.8, +12.5] broke 39 fixed 70 p=0.0039 n=400 q=0.012
+  qwen3-1.7b-think  none J 71.00 C 81.00 C-J 10.00, filler J 69.50 C 77.25 C-J 7.75, components J 71.75 C 80.75 C-J 9.00, clustering J 72.75 C 83.25 C-J 10.50, rwse J 71.75 C 80.25 C-J 8.50, degree J 76.50 C 81.00 C-J 4.50, all J 79.50 C 83.50 C-J 4.00
+    J filler     -1.5 [-5.0, +2.0] broke 32 fixed 26 p=0.51 n=400 q=0.77
+    J components +0.8 [-2.8, +4.0] broke 23 fixed 26 p=0.78 n=400 q=0.83
+    J clustering +1.8 [-2.5, +5.8] broke 30 fixed 37 p=0.46 n=400 q=0.77
+    J rwse       +0.8 [-3.8, +5.2] broke 40 fixed 43 p=0.83 n=400 q=0.83
+    J degree     +5.5 [+0.8, +10.0] broke 34 fixed 56 p=0.026 n=400 q=0.079
+    J all        +8.5 [+4.5, +12.8] broke 22 fixed 56 p=0.00015 n=400 q=0.0009
+  qwen3-4b          none J 85.75 C 87.00 C-J 1.25, filler J 72.50 C 75.50 C-J 3.00, components J 95.00 C 95.50 C-J 0.50, clustering J 86.25 C 89.50 C-J 3.25, rwse J 83.75 C 85.25 C-J 1.50, degree J 76.50 C 81.00 C-J 4.50, all J 77.50 C 80.00 C-J 2.50
+    J filler     -13.2 [-18.0, -8.8] broke 74 fixed 21 p=4.2e-08 n=400 q=2.5e-07
+    J components +9.2 [+6.0, +13.0] broke 7 fixed 44 p=1.2e-07 n=400 q=3.6e-07
+    J clustering +0.5 [-3.5, +4.5] broke 32 fixed 34 p=0.9 n=400 q=0.9
+    J rwse       -2.0 [-6.0, +2.2] broke 41 fixed 33 p=0.42 n=400 q=0.5
+    J degree     -9.2 [-13.8, -4.5] broke 65 fixed 28 p=0.00016 n=400 q=0.00032
+    J all        -8.2 [-12.8, -4.0] broke 60 fixed 27 p=0.00052 n=400 q=0.00079
+  qwen3-4b-think    none J 93.75 C 94.00 C-J 0.25, filler J 96.00 C 96.00 C-J 0.00, components J 94.50 C 94.50 C-J 0.00, clustering J 94.25 C 94.50 C-J 0.25, rwse J 93.00 C 93.00 C-J 0.00, degree J 95.75 C 96.00 C-J 0.25, all J 93.25 C 93.75 C-J 0.50
+    J filler     +2.2 [-0.2, +4.8] broke 8 fixed 17 p=0.11 n=400 q=0.65
+    J components +0.8 [-2.0, +3.5] broke 15 fixed 18 p=0.73 n=400 q=0.87
+    J clustering +0.5 [-2.5, +3.2] broke 16 fixed 18 p=0.86 n=400 q=0.87
+    J rwse       -0.8 [-4.0, +2.2] broke 22 fixed 19 p=0.76 n=400 q=0.87
+    J degree     +2.0 [-1.0, +5.0] broke 15 fixed 23 p=0.26 n=400 q=0.77
+    J all        -0.5 [-3.2, +2.2] broke 19 fixed 17 p=0.87 n=400 q=0.87
 [clusthi] qwen3-4b node_degree vs none, p>=.65 pooled
-  clustering +11.3 [+6.7, +16.3] broke 12 fixed 46 p=8.2e-06 n=300
-  rwse       +7.7 [+3.0, +12.3] broke 17 fixed 40 p=0.0032 n=300
-  filler     +2.0 [-3.3, +6.7] broke 23 fixed 29 p=0.49 n=300
-  degree     +9.3 [+2.0, +17.3] broke 54 fixed 82 p=0.02 n=300
-  all        -21.3 [-28.3, -14.0] broke 98 fixed 34 p=2.2e-08 n=300
-  components -1.0 [-5.3, +3.0] broke 24 fixed 21 p=0.77 n=300
+  clustering +11.3 [+6.7, +16.3] broke 12 fixed 46 p=8.2e-06 n=300 | truncated +0.0, wrong -11.3
+  rwse       +7.7 [+3.0, +12.3] broke 17 fixed 40 p=0.0032 n=300 | truncated +0.0, wrong -7.7
+  filler     +2.0 [-3.3, +6.7] broke 23 fixed 29 p=0.49 n=300 | truncated +0.0, wrong -2.0
+  degree     +9.3 [+2.0, +17.3] broke 54 fixed 82 p=0.02 n=300 | truncated +0.0, wrong -9.3
+  all        -21.3 [-28.3, -14.0] broke 98 fixed 34 p=2.2e-08 n=300 | truncated +0.0, wrong +21.3
+  components -1.0 [-5.3, +3.0] broke 24 fixed 21 p=0.77 n=300 | truncated +0.0, wrong +1.0
+  qwen3-1.7b clustering vs none, p<=.50: +3.0 [-1.5, +7.5] broke 41 fixed 53 p=0.26 n=400 | truncated +0.0, wrong -3.0
+  qwen3-1.7b clustering vs none, p>=.65: -3.3 [-7.7, +0.7] broke 24 fixed 14 p=0.14 n=300 | truncated -0.3, wrong +3.7
 [replic] qwen3-1.7b node_degree, clustering vs none, dedicated runs
-  400 graphs per density, p<=.50     +3.8 [+1.6, +6.1] fixed 215 broke 154 p=0.0017 n=1600
-  the 300 new graphs per density     +4.0 [+1.2, +6.8] fixed 163 broke 115 p=0.0047 n=1200
-  fresh seeds, 1,600 graphs          +4.2 [+1.8, +6.6] fixed 223 broke 155 p=0.00055 n=1600
-  fixed mean degree, n in {20..160}  +6.2 [+4.4, +7.9] fixed 504 broke 306 p=3.5e-12 n=3191
+  400 graphs per density, p<=.50     +3.8 [+1.6, +6.1] fixed 215 broke 154 p=0.0017 n=1600 truncated +0.0
+  the 300 new graphs per density     +4.0 [+1.2, +6.8] fixed 163 broke 115 p=0.0047 n=1200 truncated +0.0
+  fresh seeds, 1,600 graphs          +4.2 [+1.8, +6.6] fixed 223 broke 155 p=0.00055 n=1600 truncated +0.0
+  fixed mean degree, n in {20..160}  +6.2 [+4.5, +7.9] fixed 506 broke 306 p=2.2e-12 n=3200 truncated -0.3
   grid sizes [20, 40, 80, 160]
-  400 graphs per density, p>=.65     -0.7 [-2.8, +1.2] fixed 71 broke 79 p=0.57 n=1200
+  400 graphs per density, p>=.65     -0.7 [-2.8, +1.2] fixed 71 broke 79 p=0.57 n=1200 truncated +0.0
 [comp] qwen3-4b connected_nodes, components vs none by density; graphs with >1 component
   p=0.10: +7.0; multi-component graphs 52/100
   p=0.20: +11.0; multi-component graphs 0/100
   p=0.35: +10.0; multi-component graphs 0/100
   p=0.50: +9.0; multi-component graphs 0/100
-  pooled: +9.3 [+6.0, +12.8] broke 7 fixed 44 p=1.2e-07 n=400
-[bundle] all minus the mean of its parts over 54 (arm, task, density) combinations: +0.2 [-1.1, +1.6]
+  pooled: +9.2 [+6.0, +12.8] broke 7 fixed 44 p=1.2e-07 n=400 | truncated +0.0, wrong -9.2
+[bundle] all minus the mean of its parts over 53 (arm, task, density) combinations under the truncation flag: +0.3 [-1.2, +1.7]
   qwen3-4b node_degree p>=.65: degree +9.3, clustering +11.3, rwse +7.7, all -21.3
 [length] mean primer characters (main sweep): components 37, degree 891, clustering 1,629, rwse 2,949, all 4,691, filler 1,829
-  1.7b (Table 2 columns with >=100 pairs): slope positive in 6 of 7 (2 without all); range -0.1 to +3.4 points per 1,000 chars
-  4b (Table 2 columns with >=100 pairs): slope positive in 0 of 7 (0 without all); range -2.0 to +0.0 points per 1,000 chars
-  all: mean -0.02; CI excludes 0 in 8 of 14
-  filler below the fitted line: qwen3-1.7b/edge_existence 18.3, qwen3-4b/connected_nodes 13.8
-[nodecount] qwen3-1.7b share answering 39: none 68.5%, rwse 66.5%, degree 61.8%, components 47.2%, filler 28.7%, all 21.5%, clustering 1.2%
+  1.7b (combinations below the truncation flag): slope positive in 5 of 6 (4 without all); range -0.1 to +3.4 points per 1,000 chars
+  4b (combinations below the truncation flag): slope positive in 0 of 7 (0 without all); range -2.0 to -0.2 points per 1,000 chars
+  all: mean -0.02; CI excludes 0 in 7 of 13
+  filler below the fitted line: qwen3-1.7b/edge_existence 18.2, qwen3-4b/connected_nodes 13.8
+[nodecount] qwen3-1.7b share of finished responses answering 39: none 68.5%, rwse 66.5%, degree 61.8%, components 47.2%, filler 28.7%, all 21.5%, clustering 1.2%
+  without a primer, by density: answers 39 / graphs whose encoding gives all 40 nodes a line: p=0.10 98% / 49/100, p=0.20 100% / 100/100, p=0.35 72% / 100/100, p=0.50 4% / 100/100
 [cluster] mean within-graph SD of printed clustering values: p=0.10 0.157, p=0.20 0.094, p=0.35 0.051, p=0.50 0.033, p=0.65 0.021, p=0.75 0.015, p=0.85 0.009
+[rwse] per graph, by density: distinct printed (2-step, 3-step) pairs / modal pair's share of nodes / distinct stated degrees / graphs with fewer rwse classes than degrees
+  p=0.10: 30.14 / 9.17% / 8.50 / 0/100
+  p=0.20: 18.81 / 15.82% / 10.48 / 0/100
+  p=0.35: 6.74 / 44.03% / 11.98 / 100/100
+  p=0.50: 3.30 / 62.68% / 12.50 / 100/100
+  p=0.65: 2.08 / 63.63% / 12.04 / 100/100
+  p=0.75: 2.72 / 55.02% / 11.38 / 100/100
+  p=0.85: 2.00 / 58.05% / 9.53 / 100/100
 [f1] qwen3-4b filler on connected_nodes: exact -12.5, F1 -2.1
-[f1] of 5 contrasts with |exact| >= 5, F1 moves the same way in 3 (by 0.11 to 0.17 as much) and reverses 2
+[f1] (finished pairs) of 5 contrasts with |exact| >= 5, F1 moves the same way in 3 (by 0.11 to 0.17 as much) and reverses 2
 [goldshare] share of queried pairs that are edges: p=0.10 10%, p=0.20 18%, p=0.35 31%, p=0.50 48%, p=0.65 66%, p=0.75 76%, p=0.85 85%
-[power] median discordance 0.080 over 307 cells -> smallest detectable effect 7.9 points at 100 graphs
-[power] side-information cells at baselines 0.25-0.75: median discordance 0.235 over 50 cells -> 13.6 points
+[power] median discordance 0.070 over 461 cells -> smallest detectable effect 7.4 points at 100 graphs
+[power] side-information cells at baselines 0.25-0.75: median discordance 0.240 over 67 cells -> 13.7 points
 [position] qwen3-4b degree, retrievals: accuracy for queried nodes 0-9 95.7% (n=138) vs 10-39 83.1% (n=302); within density +11.8 points, permutation p=0.0005; by decade of the node id 95.7 / 81.6 / 86.5 / 81.5%
 [position] qwen3-4b all, retrievals: accuracy for queried nodes 0-9 88.5% (n=87) vs 10-39 53.4% (n=118); within density +29.6 points, permutation p=0.0005; by decade of the node id 88.5 / 45.0 / 60.3 / 50.0%
 [leak] gold read off the saved prompts (the queried node's degree sentence; half the sum of all 40): edge_count/all 400/400, edge_count/degree 400/400, node_degree/all 700/700, node_degree/degree 700/700
@@ -163,5 +688,5 @@
 [clustproc] qwen3-4b node_degree p>=.65: clustering retrieve/assert/enumerate 0/31/69%, median 332 tokens; none retrieve/assert/enumerate 0/26/74%, median 329 tokens
 [plaincite] qwen3-1.7b items degree fixes at p=.20/.35: 39; citing the stated degree or reporting a discrepancy: 0
 [extract] parsed 99.84% of 84000; unparsed 133, of which truncated 132, cycle_check 128; terminated 78538, unparsed among them 1
-[extract] high-density extension: largest truncation rate 2.5% (('qwen3-1.7b-think', 'node_degree'))
+[extract] high-density extension: largest truncation rate 2.5% (qwen3-1.7b-think node_degree)
 wrote primer_cells.csv, edge_existence_collapse.csv and node_degree_routes.csv to csv2/raw-trends

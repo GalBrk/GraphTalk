@@ -1,0 +1,129 @@
+"""Build figure F1: cross-fitted delta vs baseline, route vs no-route,
+all four densfull40 arms plus the densfull40hi extension.
+
+This is the scatter behind analyze_baseline_law.py's `--test crossfit`:
+baseline and delta are estimated from disjoint halves of the paired graphs
+(see that script's module docstring for why), so the negative slope in the
+route group can't be regression to the mean by construction. Reads the
+scored runs directly, via the same functions the table numbers come from,
+so the figure cannot drift from them.
+
+Route classification uses shortcuts_n40_flat.json (the n=40 refit, mean
+over densities -- scripts/shortcut_table_n40.py), not the published-split
+shortcuts.json: at n=40 edge_existence's `none` baseline is already close
+to every other condition's blind-solver bar (class imbalance alone gets
+most of the way there), so every edge_existence condition reclassifies
+from "route" to "no route" once the bars are refit on the right graph
+size. See superseded/docs/paper-revision-handoff.md plan step 2.
+
+  PYTHONPATH=. python superseded/paper/make_figure_f1.py
+"""
+import json
+import sys
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+sys.path[:0] = ["superseded/scripts", "scripts"]  # archived full copies first
+import analyze_baseline_law as abl
+
+CORPORA = ("densfull40", "densfull40hi")
+MARKERS = {"qwen3-1.7b": "o", "qwen3-1.7b-think": "s",
+          "qwen3-4b": "^", "qwen3-4b-think": "D"}
+# Same edges as the binned table in the appendix, so the overlay and that
+# table bin the same way (the overlay is cross-fitted, the table is naive).
+BINS = (0.0, 0.25, 0.50, 0.75, 0.95, 1.0)
+
+
+def binned_means(cells):
+    """-> ([bin centre], [mean delta]) over BINS, skipping empty bins."""
+    xs, ys = [], []
+    for lo, hi in zip(BINS, BINS[1:]):
+        vals = [c["delta"] for c in cells
+                if lo <= c["baseline"] <= hi if c["baseline"] > lo or lo == 0.0]
+        if vals:
+            xs.append((lo + hi) / 2)
+            ys.append(sum(vals) / len(vals))
+    return xs, ys
+
+
+def route_only(cells):
+    return [c for c in cells
+            if c["task"] not in abl.DEGENERATE_TASKS and c["route"]]
+
+
+def no_route_only(cells):
+    return [c for c in cells
+            if c["task"] not in abl.DEGENERATE_TASKS and not c["route"]]
+
+
+def main():
+    with open("shortcuts_n40_flat.json", encoding="utf-8") as fh:
+        bars = json.load(fh)
+
+    cross = []
+    for arm in abl.DENSFULL_ARMS:
+        for corpus in CORPORA:
+            patterns = [f"runs/{arm}.{corpus}.shard*.jsonl"]
+            cross += abl.arm_cells_crossfit(arm, patterns, bars)
+
+    route, no_route = route_only(cross), no_route_only(cross)
+
+    fig, (ax_r, ax_n) = plt.subplots(1, 2, figsize=(3.5, 2.0), sharey=True)
+    for ax, cells, title in ((ax_r, route, "substitute route"),
+                             (ax_n, no_route, "no route")):
+        for arm in abl.DENSFULL_ARMS:
+            pts = [c for c in cells if c["arm"] == arm]
+            if not pts:
+                continue
+            ax.scatter([c["baseline"] for c in pts], [c["delta"] for c in pts],
+                       marker=MARKERS[arm], s=4, alpha=0.6, label=arm,
+                       edgecolors="none")
+        if len(cells) >= 4:
+            xs, ys = [c["baseline"] for c in cells], [c["delta"] for c in cells]
+            slope, intercept = abl.fit_line(xs, ys)
+            r, p = abl.pearson(xs, ys)
+            lo, hi = min(xs), max(xs)
+            ax.plot([lo, hi], [slope * lo + intercept, slope * hi + intercept],
+                    color="black", linewidth=0.9, zorder=0)
+            # Each cell appears once per fold direction, so len(cells) double-
+            # counts and a Pearson p on it is anticonservative; label unique
+            # cells and leave inference to the block bootstrap in the text.
+            n_cells = len({(c["arm"], c["task"], c["density"], c["condition"])
+                           for c in cells})
+            title += f"\n$r$={r:+.2f}, {n_cells} cells"
+        # The trend is hard to read off ~500 overplotted points, so bin it.
+        bx, by = binned_means(cells)
+        ax.plot(bx, by, color="black", marker="o", markersize=3.4,
+                markerfacecolor="white", markeredgewidth=0.9, linewidth=1.1,
+                linestyle=":", zorder=5)
+        ax.axhline(0, color="#bbbbbb", linewidth=0.7, zorder=0)
+        ax.set_title(title, fontsize=6.5)
+        ax.tick_params(labelsize=5.5)
+        ax.grid(alpha=0.25, linewidth=0.5)
+    ax_r.set_ylabel(r"paired $\Delta$ (points)", fontsize=6)
+
+    # The paper's headline estimate, read from the file that computes it.
+    with open("superseded/review_checks.json", encoding="utf-8") as fh:
+        inter = json.load(fh)["interaction"]["crossfit_both"]["interaction"]
+    lo, hi = inter["ci"]
+    ax_r.text(0.04, 0.04,
+              "route $\\times$ baseline\n"
+              f"{inter['estimate']:+.1f} pp [{lo:+.1f}, {hi:+.1f}]",
+              transform=ax_r.transAxes, fontsize=5.5, va="bottom", ha="left",
+              bbox=dict(boxstyle="round,pad=0.25", facecolor="white",
+                        edgecolor="#cccccc", linewidth=0.5))
+
+    fig.tight_layout(rect=(0, 0.14, 1, 1))
+    fig.supxlabel("cross-fitted baseline", fontsize=6, y=0.115)
+    # Below the panels: the route panel is crowded at the top.
+    fig.legend(*ax_r.get_legend_handles_labels(), fontsize=5.5, ncol=4,
+               loc="lower center", frameon=False, handletextpad=0.1,
+               columnspacing=0.8, markerscale=1.8)
+    fig.savefig("superseded/paper/crossfit.pdf", bbox_inches="tight")
+    print("wrote superseded/paper/crossfit.pdf")
+
+
+if __name__ == "__main__":
+    main()

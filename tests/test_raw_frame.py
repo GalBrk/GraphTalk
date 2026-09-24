@@ -1,6 +1,6 @@
 """One runnable check behind `scripts/build_raw_frame.py`.
 
-The frame is the single input to every number in `docs/raw-trends-large-graph.md`,
+The frame is the single input to every number in `docs/results/n40-sweep.md`,
 and its two load-bearing claims are (a) the corpus can be regenerated exactly from
 an `instance_id`, and (b) one graph serves all six tasks, so `graph_id` -- not
 `instance_id` -- is the graph identity. Both are asserted here, plus the strategy

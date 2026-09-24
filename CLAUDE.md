@@ -130,19 +130,17 @@ and a Benjamini-Hochberg correction — for both main-sweep accuracy and thinkin
 non-termination rate. Pass `--out <path.csv>` to save the printed rows instead of only
 seeing them in the terminal.
 
-Reproduce the baseline-accuracy result the paper's Results section rests on
-(the shortcut-bar split, the density continuum, the held-out arms, and the
-negative control that bounds the claim):
+Reproduce every number in the main experiment's results document,
+`docs/results/n40-sweep.md` (the 40-node sweep):
 
 ```bash
-PYTHONPATH=. python scripts/analyze_baseline_law.py --shortcuts shortcuts.json
+PYTHONPATH=. python scripts/build_raw_frame.py
+PYTHONPATH=. python scripts/primer_findings.py --csv-dir csv2/raw-trends > csv2/raw-trends/primer_findings.txt
+PYTHONPATH=. python scripts/legacy_claims.py > csv2/raw-trends/legacy_claims.txt
 ```
 
-Each of the four tests can be run alone with `--test split|continuum|heldout|
-instrument`. It reads `runs/` directly and needs no frame built first; see
-`docs/primer-effects-and-power.md`'s "Is the primer effect organised by
-baseline accuracy?" section for what each one establishes and for the n=40
-bar correction it applies, which is the part that is easy to get wrong.
+`tests/test_results_docs.py` checks every number a doc in `docs/results/` cites
+against these outputs.
 
 Other one-off scripts:
 
@@ -225,29 +223,25 @@ python scripts/measure_real_rows.py                           # re-measures corp
   actually runs on the TAU CS cluster (partitions, memory sizing, driver
   incompatibilities, chained-job submission for jobs that exceed the 24h
   partition limit).
-- `docs/` — **`primer-effects-and-power.md` is the current results document and
-  the one to read first**; it supersedes `sweep-findings.md` (the 5-19 node
-  corpus, kept for its retractions). Two rules from it govern every number
-  elsewhere in the repo: read effects against `bar(cond) - bar(none)` from
-  `shortcuts.json` rather than against zero, and against a length-matched
-  control rather than `none` — a content-free primer of the same length costs a
-  thinking model 11.7 points on dense graphs, which is larger than most measured
-  primer effects. Every other file in `docs/` (and `docs/plans/`), so nothing
-  here is only discoverable by grepping:
+- `docs/results/` — **the current results, read first**: one document per
+  family of runs, each stating only what its script's committed output shows;
+  start at `docs/results/README.md`. The main experiment is the 40-node sweep,
+  `docs/results/n40-sweep.md`. Every earlier paper version, analysis and doc
+  those documents replace is in `superseded/` (see `superseded/README.md`).
+  Families not yet consolidated into `docs/results/` are still described in
+  `docs/primer-effects-and-power.md`. Other files in `docs/` and
+  `docs/plans/`:
 
   | File | Status | What it's for |
   |---|---|---|
   | `DATA.md` | current | Authority on every tracked file's schema, the `(instance_id, condition, style)` pairing key, and per-row caveats (truncated/`hit_cap` rows, CPU- vs GPU-generated rows, the `filler`/`edge_existence` rewording) |
   | `sweep-findings.md` | retracted | The original 5-19 node analysis; kept for its retractions, not its conclusions |
   | `rq3-leads.md` | current | CPU-only forensics on the `clustering`/`node_degree` effect (selection artifacts, heterogeneity, error shape, response behaviour); GPU follow-up design lives in `plans/rq3-gpu-tests.md` |
-  | `candidate-analyses.md` | working notes | Six directions considered for the paper, run against existing `runs/` data, each with an adopt/reject verdict |
   | `difficulty-scaling.md` | current | Four additive eval-pipeline changes (larger synthetic graphs, denser topology, a `reachability` task, an overflow guard) via `--graph-source diverse` |
   | `features-considered.md` | current | Which graph features were evaluated for the primer (degree, clustering, RWSE, components) and why the rest were rejected, against a four-test selection criterion |
-  | `full-task-density-sweep.md` | current | Full per-task, per-density tables behind the `densfull40` sweep summarized in `primer-effects-and-power.md` |
   | `ladder-and-rewiring.md` | current | Design notes for the shared `(n, mean_degree)` ladder and the rewiring experiment; read before `ladder-and-retrieval-results.md` |
   | `ladder-and-retrieval-results.md` | current | First results pass over the ladder design above, plus the reading-limit retrieval probe |
   | `collaborator-access.md` | current | How a teammate gets at the data and cached models — off-cluster clone vs. reading in place on the TAU cluster |
-  | `paper-revision-handoff.md` | done | Log of rewriting the paper to a single ACL source: what changed, what was cut for page budget, and where to pick it back up |
   | `plans/primer-computation.md` | executed | Original design for `primers.py`'s statistics and renderer; record of why, not current behaviour — read `graphtalk/primers.py` for that |
   | `plans/shortcut-ceilings.md` | executed | Original design for `shortcuts.py`'s theorem/heuristic/fitted rules |
   | `plans/run_improved_tests.md` | partially executed, still live | Phased plan for statistical-power work across GOT/integer sweeps; phases 1-2 landed, later phases are outstanding — follow its instructions rather than treating it as history |

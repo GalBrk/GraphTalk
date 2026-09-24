@@ -1,38 +1,10 @@
-"""Reproduce the three tests behind the paper's baseline-accuracy result.
+"""The density continuum: one arm, one task, one primer, seven pinned densities
+(`--test continuum`), so difficulty is manipulated rather than observed.
 
-The claim is that a primer's effect is organised by the model's own accuracy
-without it, not by parameter count -- and that this holds only for primers
-that make the answer recoverable from the primer text alone. One pooled
-correlation cannot establish that, because the baseline and the effect are
-measured on the same responses, so regression to the mean produces a slope
-for free. This script runs the three tests that separate the claim from that
-artifact, and the one that fails.
-
-  1. `--test split`      the graph-blind shortcut solver used as an
-                         instrument: cells are split by whether the primer
-                         offers a substitute route to the answer, and the
-                         two groups are compared at matched baselines.
-  2. `--test continuum`  difficulty manipulated rather than observed: one
-                         arm, one task, one primer, seven pinned densities.
-  3. `--test heldout`    the same split on model arms that were not used to
-                         formulate the claim, including a second family.
-  4. `--test instrument` the negative control: the baseline on the x-axis is
-                         replaced by the OTHER arms' accuracy on the same
-                         cell, so it shares no observation with the effect.
-  5. `--test crossfit`   baseline and delta estimated from disjoint halves of
-                         the paired graphs (so the correlation can no longer
-                         be regression to the mean by construction), with a
-                         cluster-bootstrap CI that resamples whole (arm,
-                         task, density) blocks rather than individual cells,
-                         plus a mixed-effects (random intercept per arm)
-                         robustness check. Covers densfull40hi as well as
-                         densfull40, unlike tests 1-4.
-  6. `--test ceiling`    accuracy under `none` per held-out arm -- the
-                         near-universal ceiling that motivates reporting
-                         these arms as a headroom argument rather than a
-                         primer-effect one.
-
-Run them all:
+The route-split, held-out, instrument, cross-fit and ceiling tests that this
+script also ran are in superseded/scripts/analyze_baseline_law.py; they back
+claims the results no longer make. The helpers here are imported by other
+live scripts.
 
     PYTHONPATH=. python scripts/analyze_baseline_law.py --shortcuts shortcuts.json
 
@@ -56,8 +28,7 @@ from graphtalk import scoring
 # past the sparsest level. A blind solver scores ~1.00 on them under EVERY
 # condition, so a shortcut bar fitted on the published split's small graphs
 # reports content the primer does not actually add here. Both are excluded
-# from the split rather than mis-classified by it; the paper reports them
-# separately as tasks where content-free text moves accuracy.
+# from the split rather than mis-classified by it.
 DEGENERATE_TASKS = ("node_count", "cycle_check")
 
 # A primer is treated as offering a substitute route when the blind solver
@@ -315,52 +286,6 @@ def cells_from_scores_crossfit(scores, control="none", min_pairs=10):
   return out
 
 
-def cluster_bootstrap_r_slope(cells, block_key, n_boot=2000, seed=0):
-  """Percentile bootstrap CI for r and slope, resampling whole blocks.
-
-  Conditions at the same (arm, task, density) share one `none` sample, so
-  they are correlated observations, not independent cells -- resampling
-  individual cells with replacement would understate the CI by treating
-  them as if they weren't. This resamples at the block level instead: each
-  bootstrap draw keeps every cell in a sampled block together or drops it
-  together.
-  """
-  import random as _random
-
-  blocks = collections.defaultdict(list)
-  for cell in cells:
-    blocks[block_key(cell)].append(cell)
-  keys = list(blocks)
-  rng = _random.Random(seed)
-  rs, slopes = [], []
-  for _ in range(n_boot):
-    sample = []
-    for _ in range(len(keys)):
-      sample.extend(blocks[keys[rng.randrange(len(keys))]])
-    xs = [c["baseline"] for c in sample]
-    ys = [c["delta"] for c in sample]
-    r, _ = pearson(xs, ys)
-    slope, _ = fit_line(xs, ys)
-    if not math.isnan(r):
-      rs.append(r)
-    if not math.isnan(slope):
-      slopes.append(slope)
-  rs.sort()
-  slopes.sort()
-
-  def _pctile(sorted_vals, p):
-    if not sorted_vals:
-      return float("nan")
-    idx = min(len(sorted_vals) - 1, max(0, int(round(p * (len(sorted_vals) - 1)))))
-    return sorted_vals[idx]
-
-  return {
-      "r_ci": (_pctile(rs, 0.025), _pctile(rs, 0.975)),
-      "slope_ci": (_pctile(slopes, 0.025), _pctile(slopes, 0.975)),
-      "n_boot_used": len(rs),
-  }
-
-
 def cells_from_scores(scores, control="none", min_pairs=10):
   """Turn {(task, density, instance_id, condition): score|None} into one
   record per (task, density, condition != control), paired on instance_id
@@ -422,81 +347,9 @@ def score_run(patterns, by_density=True, task_filter=None,
   return out
 
 
-def arm_cells(arm, patterns, bars, **kwargs):
-  cells = cells_from_scores(score_run(patterns, **kwargs))
-  for cell in cells:
-    cell["arm"] = arm
-    cell["gain"] = route_gain(bars, cell["task"], cell["condition"])
-    cell["route"] = cell["gain"] > ROUTE_GAIN_THRESHOLD
-  return cells
-
-
-def arm_cells_crossfit(arm, patterns, bars, **kwargs):
-  cells = cells_from_scores_crossfit(score_run(patterns, **kwargs))
-  for cell in cells:
-    cell["arm"] = arm
-    cell["gain"] = route_gain(bars, cell["task"], cell["condition"])
-    cell["route"] = cell["gain"] > ROUTE_GAIN_THRESHOLD
-  return cells
-
-
 # --------------------------------------------------------------------------
 # reports
 # --------------------------------------------------------------------------
-
-def _describe(cells, label):
-  if len(cells) < 8:
-    print(f"  {label:<40} k={len(cells)} (too few)")
-    return
-  xs = [c["baseline"] for c in cells]
-  ys = [c["delta"] for c in cells]
-  r, p = pearson(xs, ys)
-  slope, intercept = fit_line(xs, ys)
-  cross = -intercept / slope if slope else float("nan")
-  print(f"  {label:<40} k={len(cells):>4}  r={r:+.3f}  p={p:<9.2g}"
-        f"  slope={slope:+7.1f}  crosses at {cross:.3f}")
-
-
-def _split_report(cells, title):
-  print(f"\n{title}")
-  keep = [c for c in cells if c["task"] not in DEGENERATE_TASKS]
-  route = [c for c in keep if c["route"]]
-  plain = [c for c in keep if not c["route"]]
-  _describe(keep, "all primers")
-  _describe(route, "primer offers a substitute route")
-  _describe(plain, "primer offers none")
-  _describe([c for c in plain if c["condition"] == "filler"],
-            "  of which filler (pure length)")
-  for label, group in (("route", route), ("no route", plain)):
-    if group:
-      mean = sum(c["baseline"] for c in group) / len(group)
-      sd = math.sqrt(sum((c["baseline"] - mean) ** 2
-                         for c in group) / len(group))
-      print(f"    baseline distribution, {label:<9} "
-            f"k={len(group):>4}  {mean:.3f} +- {sd:.3f}")
-  return route, plain
-
-
-def test_split(args, bars):
-  cells = []
-  for arm in DENSFULL_ARMS:
-    cells += arm_cells(arm, [f"{args.runs}/{arm}.densfull40.shard*of25.jsonl"],
-                       bars)
-  if not cells:
-    print("\n[split] no densfull40 runs found; skipped")
-    return
-  route, plain = _split_report(
-      cells, "TEST 1  the shortcut bar as an instrument (densfull40)")
-  print("\n  mean delta by baseline bin:")
-  print(f"    {'baseline':<14}{'route k':>9}{'delta':>9}"
-        f"{'no-route k':>12}{'delta':>9}")
-  for lo, hi in ((0, .25), (.25, .5), (.5, .75), (.75, .95), (.95, 1.001)):
-    a = [c["delta"] for c in route if lo <= c["baseline"] < hi]
-    b = [c["delta"] for c in plain if lo <= c["baseline"] < hi]
-    print(f"    {f'{lo:.2f}-{hi:.2f}':<14}{len(a):>9}"
-          f"{(sum(a) / len(a) if a else float('nan')):>9.1f}{len(b):>12}"
-          f"{(sum(b) / len(b) if b else float('nan')):>9.1f}")
-
 
 def test_continuum(args, bars):
   print("\nTEST 2  difficulty manipulated, not observed"
@@ -545,182 +398,7 @@ def test_continuum(args, bars):
               f"-{max(b for b, _ in pts):.2f}")
 
 
-def test_heldout(args, bars):
-  cells = []
-  for arm, patterns in HELDOUT_GLOBS.items():
-    got = arm_cells(arm, [f"{args.runs}/{os.path.basename(p)}" for p in patterns],
-                    bars, by_density=False)
-    for cell in got:
-      cell["params"] = PARAMS_B[arm.split("/")[0].removesuffix("-think")]
-      cell["think"] = float("-think" in arm)
-    cells += got
-  if not cells:
-    print("\n[heldout] no held-out runs found; skipped")
-    return
-  route, _ = _split_report(
-      cells, "TEST 3  the same split on arms held out of the claim")
-  print(f"\n  regression on the {len(route)} substitute-route cells:")
-  rows = [([c["baseline"], math.log(c["params"]), c["think"]], c["delta"])
-          for c in route]
-  for name, coef, se, t in ols(rows, ["baseline", "log params", "think"]):
-    p = _t_sf(abs(t), len(rows) - 4) * 2
-    print(f"    {name:<12} {coef:+8.2f}  se {se:5.2f}  t={t:+6.2f}  p={p:.3g}")
-
-
-def test_instrument(args, bars):
-  """The negative control. Replace each cell's own baseline with the other
-  arms' accuracy on the same cell, so nothing is shared with the effect.
-  """
-  scores = {arm: score_run([f"{args.runs}/{arm}.densfull40.shard*of25.jsonl"])
-            for arm in DENSFULL_ARMS}
-  if not any(scores.values()):
-    print("\n[instrument] no densfull40 runs found; skipped")
-    return
-  control = {}
-  for arm, table in scores.items():
-    for (task, dens, iid, cond), value in table.items():
-      if cond == "none" and value is not None:
-        control.setdefault((arm, task, dens), []).append(value)
-
-  print("\nTEST 4  negative control: an independent difficulty estimate")
-  own, loo = [], []
-  for arm in DENSFULL_ARMS:
-    for cell in arm_cells(arm, [f"{args.runs}/{arm}.densfull40.shard*of25.jsonl"],
-                          bars):
-      if cell["task"] in DEGENERATE_TASKS or not cell["route"]:
-        continue
-      other = [v for a in DENSFULL_ARMS if a != arm
-               for v in control.get((a, cell["task"], cell["density"]), [])]
-      if not other:
-        continue
-      own.append((cell["baseline"], cell["delta"]))
-      loo.append((sum(other) / len(other), cell["delta"]))
-  for label, pts in (("this arm's own baseline", own),
-                     ("the other arms' baseline", loo)):
-    r, p = pearson([x for x, _ in pts], [y for _, y in pts])
-    print(f"  {label:<28} k={len(pts):>4}  r={r:+.3f}  p={p:.3g}")
-  print("  A relation that survives only the first is a property of the\n"
-        "  arm's own competence, not of the items' difficulty.")
-
-
-def test_crossfit(args, bars):
-  """TEST 5: does the baseline-delta relation survive when baseline and delta
-  are estimated from disjoint graphs, and when the block structure (several
-  conditions sharing one `none` sample) is respected in the CI?
-
-  Runs on densfull40 AND densfull40hi (the plan's "include densfull40hi"),
-  unlike tests 1-4 which predate the high-density extension.
-  """
-  print("\nTEST 5  cross-fitted baseline, cluster-bootstrap CI"
-        " (densfull40 + densfull40hi)")
-  corpora = ("densfull40", "densfull40hi")
-  naive, cross = [], []
-  for arm in DENSFULL_ARMS:
-    for corpus in corpora:
-      patterns = [f"{args.runs}/{arm}.{corpus}.shard*.jsonl"]
-      naive += arm_cells(arm, patterns, bars)
-      cross += arm_cells_crossfit(arm, patterns, bars)
-  if not naive:
-    print("  no densfull40/densfull40hi runs found; skipped")
-    return
-
-  def route_only(cells):
-    return [c for c in cells if c["task"] not in DEGENERATE_TASKS and c["route"]]
-
-  naive_route, cross_route = route_only(naive), route_only(cross)
-  print(f"\n  {'':<32}{'k':>6}  {'r':>8}  {'p':>10}  {'slope':>9}")
-  _describe(naive_route, "naive (shared sample)")
-  _describe(cross_route, "cross-fitted (disjoint halves)")
-
-  if cross_route:
-    boot = cluster_bootstrap_r_slope(
-        cross_route, block_key=lambda c: (c["arm"], c["task"], c["density"]),
-        n_boot=2000, seed=0,
-    )
-    r, p = pearson([c["baseline"] for c in cross_route],
-                   [c["delta"] for c in cross_route])
-    slope, _ = fit_line([c["baseline"] for c in cross_route],
-                         [c["delta"] for c in cross_route])
-    print(f"\n  cross-fitted r={r:+.3f}  95% cluster-bootstrap CI "
-          f"[{boot['r_ci'][0]:+.3f}, {boot['r_ci'][1]:+.3f}]"
-          f"  ({boot['n_boot_used']} of 2000 resamples usable)")
-    print(f"  cross-fitted slope={slope:+.1f}  95% cluster-bootstrap CI "
-          f"[{boot['slope_ci'][0]:+.1f}, {boot['slope_ci'][1]:+.1f}]")
-
-  try:
-    import statsmodels.formula.api as smf
-    import pandas as pd
-  except ImportError:
-    print("\n  (statsmodels/pandas not available; skipping mixed-model check)")
-    return
-
-  df = pd.DataFrame([
-      {"delta": c["delta"], "baseline": c["baseline"], "arm": c["arm"]}
-      for c in cross_route
-  ])
-  if df["arm"].nunique() < 2 or len(df) < 10:
-    print("\n  (too few arms/cells for a mixed model; skipping)")
-    return
-  import warnings
-  with warnings.catch_warnings(record=True) as caught:
-    warnings.simplefilter("always")
-    model = smf.mixedlm("delta ~ baseline", df, groups=df["arm"])
-    result = model.fit(method="lbfgs")
-  print("\n  mixed-effects robustness check (delta ~ baseline, random"
-        " intercept per arm):")
-  print(f"    baseline coef {result.params['baseline']:+.2f}  "
-        f"se {result.bse['baseline']:.2f}  "
-        f"p={result.pvalues['baseline']:.3g}")
-  print("  (a fixed-slope OLS pretends every arm's cells are independent;"
-        " this lets each arm keep its own intercept instead.)")
-  if caught:
-    print(f"    caveat: only {df['arm'].nunique()} arms (groups) -- the "
-          f"random-intercept variance is weakly identified with this few "
-          f"clusters ({len(caught)} convergence/singularity warning(s) from "
-          f"statsmodels). Read the coefficient as a consistency check "
-          f"against the OLS slope above, not as an independently powered "
-          f"confirmatory test.")
-
-
-def ceiling_by_arm(scores_by_arm):
-  """Mean accuracy under `none`, per arm, given each arm's already-scored
-  {(task, density, instance_id, condition): score|None} table.
-
-  The paper's earlier-collected-models section leans on near-universal
-  ceilings (e.g. gemma4-12b at ~99%) as evidence for its headroom argument;
-  this is the table that claim reads off of.
-  """
-  out = {}
-  for arm, scores in scores_by_arm.items():
-    vals = [v for (_task, _dens, _iid, cond), v in scores.items()
-            if cond == "none" and v is not None]
-    if vals:
-      out[arm] = (sum(vals) / len(vals), len(vals))
-  return out
-
-
-def test_ceiling(args, bars):
-  scores_by_arm = {
-      arm: score_run([f"{args.runs}/{os.path.basename(p)}" for p in patterns],
-                     by_density=False)
-      for arm, patterns in HELDOUT_GLOBS.items()
-  }
-  table = ceiling_by_arm(scores_by_arm)
-  if not table:
-    print("\n[ceiling] no held-out runs found; skipped")
-    return
-  print("\nTEST 6  ceiling saturation on the earlier-collected arms"
-        " (`none` accuracy, published split + probe100)")
-  for arm, (acc, n) in sorted(table.items(), key=lambda kv: -kv[1][0]):
-    print(f"    {arm:<20}{n:>6} pairs  {acc:>7.3f}")
-  accs = [acc for acc, _ in table.values()]
-  print(f"    mean={sum(accs) / len(accs):.3f}  min={min(accs):.3f}"
-        f"  max={max(accs):.3f}  over {len(accs)} arms")
-
-
-TESTS = {"split": test_split, "continuum": test_continuum,
-         "heldout": test_heldout, "instrument": test_instrument,
-         "crossfit": test_crossfit, "ceiling": test_ceiling}
+TESTS = {"continuum": test_continuum}
 
 
 def main():
@@ -734,8 +412,7 @@ def main():
 
   with open(args.shortcuts, encoding="utf-8") as handle:
     bars = json.load(handle)
-  for name in args.test or ["split", "continuum", "heldout", "instrument",
-                            "crossfit", "ceiling"]:
+  for name in args.test or ["continuum"]:
     TESTS[name](args, bars)
 
 
