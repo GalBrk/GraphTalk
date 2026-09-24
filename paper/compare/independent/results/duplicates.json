@@ -1,0 +1,24 @@
+[
+  {
+    "key": [
+      "qwen3-1.7b",
+      "connected_nodes/size40/p0.5/29",
+      "clustering",
+      "zero_shot"
+    ],
+    "first": "runs/qwen3-1.7b.densfull40.shard17of25.jsonl:550",
+    "second": "runs/qwen3-1.7b.densfull40.shard17of25.jsonl:551",
+    "different_fields": []
+  },
+  {
+    "key": [
+      "qwen3-1.7b",
+      "edge_count/size40/p0.5/2",
+      "clustering",
+      "zero_shot"
+    ],
+    "first": "runs/qwen3-1.7b.densfull40.shard19of25.jsonl:509",
+    "second": "runs/qwen3-1.7b.densfull40.shard19of25.jsonl:510",
+    "different_fields": []
+  }
+]

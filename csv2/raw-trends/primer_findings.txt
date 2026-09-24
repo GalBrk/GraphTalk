@@ -130,6 +130,7 @@
   fresh seeds, 1,600 graphs          +4.2 [+1.8, +6.6] fixed 223 broke 155 p=0.00055 n=1600
   fixed mean degree, n in {20..160}  +6.2 [+4.4, +7.9] fixed 504 broke 306 p=3.5e-12 n=3191
   grid sizes [20, 40, 80, 160]
+  400 graphs per density, p>=.65     -0.7 [-2.8, +1.2] fixed 71 broke 79 p=0.57 n=1200
 [comp] qwen3-4b connected_nodes, components vs none by density; graphs with >1 component
   p=0.10: +7.0; multi-component graphs 52/100
   p=0.20: +11.0; multi-component graphs 0/100
@@ -152,6 +153,11 @@
 [power] side-information cells at baselines 0.25-0.75: median discordance 0.235 over 50 cells -> 13.6 points
 [position] qwen3-4b degree, retrievals: accuracy for queried nodes 0-9 95.7% (n=138) vs 10-39 83.1% (n=302); within density +11.8 points, permutation p=0.0005; by decade of the node id 95.7 / 81.6 / 86.5 / 81.5%
 [position] qwen3-4b all, retrievals: accuracy for queried nodes 0-9 88.5% (n=87) vs 10-39 53.4% (n=118); within density +29.6 points, permutation p=0.0005; by decade of the node id 88.5 / 45.0 / 60.3 / 50.0%
+[leak] gold read off the saved prompts (the queried node's degree sentence; half the sum of all 40): edge_count/all 400/400, edge_count/degree 400/400, node_degree/all 700/700, node_degree/degree 700/700
+[copyerr] qwen3-4b degree, wrong retrievals (n=57): within 1 of gold 42%, within 3 68%; equal to the degree stated for node k-1 or k+1 17 vs 10.4 by chance, p=0.017
+[copyerr] qwen3-4b degree, wrong all routes (n=136): within 1 of gold 37%, within 3 65%; equal to the degree stated for node k-1 or k+1 27 vs 17.8 by chance, p=0.016
+[copyerr] qwen3-4b all, wrong retrievals (n=65): within 1 of gold 32%, within 3 51%; equal to the degree stated for node k-1 or k+1 12 vs 8.2 by chance, p=0.11
+[copyerr] qwen3-4b all, wrong all routes (n=234): within 1 of gold 26%, within 3 50%; equal to the degree stated for node k-1 or k+1 30 vs 21.6 by chance, p=0.034
 [rerun] qwen3-1.7b node_degree prompts generated twice: 1200; identical responses 722 (60%); correctness changes on 64 (5.3%)
 [compproc] qwen3-4b connected_nodes, share restating the queried node's line (accuracy of those): none 63.0% (92%), components 98.5% (95%), filler 21.8% (84%)
 [clustproc] qwen3-4b node_degree p>=.65: clustering retrieve/assert/enumerate 0/31/69%, median 332 tokens; none retrieve/assert/enumerate 0/26/74%, median 329 tokens

@@ -1,0 +1,500 @@
+% ACL 2023 format: 5-page body, then Limitations, Ethics and references.
+% Synthesises talk_like_a_graph.v3 (procedure, graph-blind solver) and
+% compare/independent (target-verified rescoring, C/J, RWSE resolution).
+% Every number is taken from one of those two sources: ../NUMBERS.md (v3,
+% terminated pairs) and ../compare/independent/CLAIM_INDEX.md (S, capped =
+% failure).
+\documentclass[11pt]{article}
+
+\usepackage{acl2023}
+
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+
+\newcommand{\task}[1]{\texttt{#1}}
+\newcommand{\cond}[1]{\texttt{#1}}
+
+\title{Structural Primers Trigger Procedural Shortcuts in LLMs:\\
+Answer Leakage, Invariants and Feature Resolution on Graphs}
+
+\author{
+  Gal Barak \\
+  Tel Aviv University \\
+  \footnotesize\texttt{github.com/GalBrk} \\\And
+  Nitzan Zacharia \\
+  Tel Aviv University \\
+  \footnotesize\texttt{github.com/NitzanZacharia} \\\And
+  Inbal Moryles \\
+  Tel Aviv University \\
+  \footnotesize\texttt{github.com/iinbal} \\
+}
+
+\begin{document}
+\maketitle
+\raggedbottom
+
+\begin{abstract}
+Graph neural networks routinely receive structural encodings such as node
+degree, clustering and random-walk return probabilities as input features.
+We serialize the same descriptors as a textual \emph{primer} before a graph
+given to a language model. Does the primer change how the model executes a
+graph algorithm, and which structural distinctions survive serialization? We evaluate Qwen3-1.7B and Qwen3-4B,
+with plain and thinking modes, on 40-node Erd\H{o}s--R\'enyi graphs at seven
+edge densities ($p{=}.10$ to $.85$), over 84,000 generations with gold
+answers verified against reconstructed graphs. Two controls separate access to an answer from its use: a graph-blind
+solver flags primers that leak the answer, and a paired diagnostic checks
+a model's degree and neighborhood answers for one node against each other. A degree primer lifts plain
+Qwen3-4B's edge counting from 2.00\% to 29.25\%, yet lowers its joint
+degree--neighborhood correctness from 85.75\% to 76.50\%. On degree queries
+the same model skips the neighbor list in 44--74\% of responses. It gains
+27 points at $p{=}.85$, where its own count is 33\% accurate, and loses up
+to 12 where the count is 99\% accurate. Qwen3-1.7B with thinking instead
+keeps counting and uses the primer as a check (+16.0 points). Printed to two
+decimals, random-walk features take on average 3.30 distinct values across a
+graph's 40 nodes at $p{=}.50$, fewer than degree alone. A leaked answer can
+change which procedure a model runs, and its effect follows the accuracy of
+the procedure it displaces. Neither route is evidence of graph
+understanding.
+\end{abstract}
+
+\section{Introduction}
+
+A language model (LLM) reads a graph given as text token by token. To
+answer ``what is the degree of node 16?'' it must find node 16's adjacency
+line and count it. \citet{fatemi2023talklikeagraph} showed that accuracy on
+such GraphQA tasks depends strongly on the textual encoding. Graph learning
+has a standard remedy for a model that cannot easily compute a structural
+quantity: supply it. Degree, clustering and random-walk structural encodings
+(RWSE) are input features of graph neural networks (GNNs) and graph
+transformers \citep{dwivedi2022graph,rampasek2022recipe}. We study the
+textual analogue, a \emph{structural primer}: one sentence per node, placed
+before the graph, stating its degree, clustering coefficient or RWSE.
+
+\paragraph{Research question.} \emph{How do textual structural primers alter
+an LLM's procedural execution of graph tasks, and what are the expressivity
+limits of these primers in preserving structural invariants?} Aggregate
+accuracy cannot answer it: it conflates \emph{access} to a
+text feature that already states the answer, \emph{execution} of the
+algorithm the task requires, and \emph{consistency} with relations any
+correct answer must satisfy. A primer that states every degree turns
+\task{node\_degree} into lookup, so a gain there says nothing about whether
+the model counts. A model that looks up one answer and counts another can
+violate the identity $d_v{=}|N(v)|$, which holds on every simple graph. Nor
+does accuracy show whether a printed feature still separates the nodes its
+exact values separate, which bounds what a primer can convey at all.
+
+\paragraph{Contributions.} (1)~A \emph{graph-blind solver} that reads only the
+rendered primer and node/edge counts and marks where a primer leaks the answer
+(\S\ref{sec:solver}). (2)~A \emph{paired consistency diagnostic} that scores
+a model's degree and neighborhood answers for the same node against
+$d_v{=}|N(v)|$, separating agreement ($C$) from joint correctness ($J$)
+(\S\ref{sec:cj}). (3)~A classification of responses into retrieval and
+enumeration, which shows the primer replacing or checking the counting
+procedure (\S\ref{sec:procedure}). (4)~A count of the distinct values a
+two-decimal RWSE primer takes per graph, which from $p{=}.35$ falls below
+that of degree (\S\ref{sec:resolution}).
+
+\section{Related Work}
+
+\paragraph{Graphs as text.} GraphQA \citep{fatemi2023talklikeagraph}, NLGraph
+\citep{wang2023nlgraph}, GPT4Graph \citep{guo2023gpt4graph} and GraphArena
+\citep{tang2025grapharena} vary encodings, prompts and tasks; NLGift
+\citep{zhang2024nlgift} asks whether gains from tuning on synthetic graph
+data generalize. \citet{sanford2024understanding} show that a single-layer
+transformer can represent node degree and edge count, suggesting that
+difficulty lies in execution, not architectural capacity.
+\citet{huang2024can} find that neighborhood text helps node classification
+through label-relevant phrases rather than structure.
+\citet{dziri2023faithandfate} show that transformers solve compositional
+tasks through shortcut subgraphs of the computation. Graph-QA evaluations
+mostly score final answers. We know of none that records the procedure
+behind an answer or checks two answers about one node against each other.
+
+\paragraph{Structural encodings.} Message-passing GNNs are bounded by the
+1-WL test \citep{xu2019powerful}, whose first refinement round assigns each
+node its degree. RWSE and related encodings add information beyond that
+bound \citep{dwivedi2022graph,rampasek2022recipe}. A GNN receives them as
+real-valued vectors, in which small differences between nodes of equal
+degree stay distinct. GraphToken \citep{perozzi2024letyourgraph} instead
+learns a graph encoder for a frozen LLM. A textual primer needs no training,
+but it passes every value through the tokenizer as a fixed-precision digit
+string. We know of no measurement of how much node-level resolution this
+serialization keeps.
+
+\paragraph{Shortcuts and partial inputs.} Shortcut learning
+\citep{geirhos2020shortcut} and hypothesis-only baselines
+\citep{gururangan2018annotation,poliak2018hypothesis} show that high accuracy
+can come from cues that do not require the intended computation. A partial
+input's failure does not rule a shortcut out \citep{feng2019misleading}. We
+apply the partial-input idea to an intervention (the primer) rather than a
+dataset. Added text can itself degrade reasoning
+\citep{shi2023distracted,levy2024sametask}, so we include a content-free
+length control.
+
+\section{Method}
+
+\subsection{Corpus and models}
+\label{sec:corpus}
+
+Graphs are Erd\H{o}s--R\'enyi $G(n,p)$
+\citep{erdosrenyi1959random,gilbert1959random} with $n{=}40$, 100
+independently seeded graphs per density. The main sweep covers
+$p\in\{.10,.20,.35,.50\}$, six GraphQA tasks and seven conditions (67,200
+generations). An extension adds $p\in\{.65,.75,.85\}$ for \task{node\_degree}
+and \task{edge\_existence} only (16,800). \task{node\_degree},
+\task{connected\_nodes} and \task{edge\_existence} query the same node of a
+graph. Four arms answer every prompt: Qwen3-1.7B and Qwen3-4B
+\citep{qwen2025qwen3} with thinking off (1.7B, 4B) and on (1.7B-T, 4B-T).
+Decoding is greedy with an 8,192-token budget (2,048 for the plain arms in the
+extension). Every saved gold answer matches the graph rebuilt from its
+seed; the 84,000 unique generations form 840 cells of 100. Every graph here has 40 nodes and a cycle, so \task{node\_count} and
+\task{cycle\_check} have a constant gold and are excluded from comparisons.
+
+\subsection{Primers}
+
+A prompt consists of the primer, the graph in the \texttt{incident} encoding
+of \citet{fatemi2023talklikeagraph}, and the question. All seven conditions
+share one renderer (Table~\ref{tab:conditions}). Clustering and RWSE, the
+return probabilities $(P^2_{vv},P^3_{vv})$ of the random walk $P{=}D^{-1}A$
+(0 for isolated nodes), are printed to two decimals.
+\cond{filler} restates the node set (``Node $i$ is simply present within the
+graph $G$''), which the encoding already lists, at 12\% above the length of
+\cond{clustering}.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{2.4pt}
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+Condition & States & Chars & deg. & e.cnt \\
+\midrule
+\cond{none}       & no primer                   & --    & 14.4 & 3.0 \\
+\cond{filler}     & ``Node $i$ is simply present'' & 1,829 & 14.4 & 3.0 \\
+\cond{components} & component count (graph)     & 37    & 14.4 & 3.0 \\
+\cond{clustering} & clustering coefficient      & 1,629 & 14.4 & 10.4 \\
+\cond{rwse}       & return prob., 2 and 3 steps & 2,949 & 21.0 & 3.0 \\
+\cond{degree}     & degree                      & 891   & \textbf{100} & \textbf{100} \\
+\cond{all}        & the three rows above        & 4,691 & \textbf{100} & \textbf{100} \\
+\bottomrule
+\end{tabular}
+\caption{Conditions (per node unless marked), mean length, and graph-blind
+solver accuracy (\%) on \task{node\_degree} (deg.) and \task{edge\_count} (e.cnt),
+over seven densities, 300 held-out graphs each. \textbf{Bold}:
+answer-carrying. No condition exceeds 0.81\% on \task{connected\_nodes} or
+74.6\% on \task{edge\_existence}.}
+\label{tab:conditions}
+\end{table}
+
+\subsection{Graph-blind solver}
+\label{sec:solver}
+
+The solver reads the rendered primer text and the graph's node and edge
+counts (except the count a task asks for), never the edge list. It applies
+16 exact rules where they exist, and otherwise one heuristic or 8 rules
+fitted on graphs disjoint from those scored. Its accuracy is therefore a
+lower bound on what the primer and counts determine. A primer is
+\emph{answer-carrying} on a task when the solver scores at least 85\% there,
+and \emph{side information} otherwise. Any threshold in $(74.6,100]$ gives
+the same split. Only \cond{degree} and \cond{all} carry answers, on
+\task{node\_degree} (the queried degree) and \task{edge\_count}
+($|E|{=}\tfrac12\sum_v d_v$).
+
+\subsection{Scoring and inference}
+
+The primary outcome is $S{=}\mathbf{1}[\hat y{=}y]\cdot\mathbf{1}[\text{not
+capped}]$: exact match (set equality for neighbors), with a generation that
+reaches its budget scored as a failure. Main-sweep effects pool the four
+densities ($n{=}400$ paired graphs). Other effects and all response shares
+(\S\ref{sec:procedure}, \S\ref{sec:side}) use terminated generations,
+dropping a pair when either generation is capped; this coincides with $S$
+wherever nothing is capped, as for plain 4B on \task{node\_degree}. Effects
+are paired differences in percentage points (pp) against \cond{none}, with
+exact McNemar tests \citep{mcnemar1947note} and Benjamini--Hochberg
+adjustment \citep{benjaminihochberg1995controlling} over the six primer
+contrasts per (arm, task), or (arm, metric) for $C$ and $J$. Intervals are
+95\% paired bootstrap intervals over graphs, stratified by density
+\citep{efron1979bootstrap}. All tests are exploratory; intervals are not
+simultaneous.
+
+\subsection{Cross-query consistency}
+\label{sec:cj}
+
+For node $v$ let $\hat d_v$ and $\hat N_v$ be the model's answers to the
+separate \task{node\_degree} and \task{connected\_nodes} prompts. $C_v{=}1$
+when both complete, $\hat d_v$ parses as an integer, the predicted neighbors
+are valid node ids, and $\hat d_v{=}|\hat N_v|$. In that case the two answers
+satisfy the degree identity. $J_v{=}S_{v,\text{deg}}\,S_{v,\text{nbr}}$ is
+joint correctness. Since $J_v\le C_v$, $C{-}J$ is the rate of
+\emph{consistent but wrong} pairs. $C$ tests a necessary relational
+invariant at the output level, not an internal graph representation.
+
+\subsection{Procedure classification}
+\label{sec:procedure-def}
+
+An \emph{enumerating} \task{node\_degree} response restates the queried node's neighbor list and
+itemizes at least five entries, one per line. A \emph{retrieving} response
+answers without restating the list. A retrieval need not return the stated
+degree; accuracy among retrievals measures how often it does. A thinking
+response \emph{reports a discrepancy} when it uses a discrepancy word
+(discrepancy, contradiction, conflict, inconsistency) outside a
+hypothetical. Without a primer there is nothing to retrieve, so accuracy
+under \cond{none} is the accuracy of the model's own count.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{density_diagnostics.pdf}
+\caption{Density diagnostics (100 graphs per point; shading: the $p\ge.65$
+extension, plain-arm budget 2,048 tokens). (a)~Plain 4B \task{node\_degree}
+success, \cond{none} and \cond{degree}. (b)~Plain 1.7B
+\task{edge\_existence}, no primer: raw, balanced and majority-label success.
+(c)~Mean distinct RWSE pairs among a graph's 40 nodes at 2, 4 or 6
+decimals; models saw two decimals.}
+\label{fig:density}
+\end{figure*}
+
+\section{Results}
+
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{1.5pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}llrrrrrrr@{}}
+\toprule
+Arm & Task & None & Fill. & Comp. & Clust. & RWSE & Deg. & All \\
+\midrule
+1.7B & Deg & 60.50 & $-0.50$ & 1.75 & 3.00 & 4.00 & 7.50$^{*}$ & 10.25$^{*}$ \\
+ & Nbr & 72.50 & $-6.25^{*}$ & 0.75 & 1.25 & 1.00 & 3.50 & 2.00 \\
+ & EE & 70.50 & $-15.75^{*}$ & $-8.25^{*}$ & 3.75 & 5.00 & 4.00 & 11.50$^{*}$ \\
+ & EC & 1.25 & $-0.50$ & $-1.00$ & $-0.50$ & $-0.75$ & 3.00 & 0.75 \\
+\addlinespace[2pt]
+1.7B-T & Deg & 76.25 & $-3.00$ & $-1.00$ & 1.50 & 2.50 & 8.75$^{*}$ & 12.25$^{*}$ \\
+ & Nbr & 78.75 & 2.50 & 2.50 & 2.00 & 0.25 & 6.25$^{*}$ & 6.25$^{*}$ \\
+ & EE & 99.00 & $-0.50$ & $-0.75$ & $-1.00$ & $-1.25$ & $-2.50$ & $-1.75$ \\
+ & EC & 15.75 & $-1.50$ & $-0.75$ & $-1.25$ & $-3.25$ & $-3.25$ & 5.00 \\
+\addlinespace[2pt]
+4B & Deg & 99.25 & $-0.50$ & 0.25 & $-0.50$ & $-2.25^{*}$ & $-6.50^{*}$ & $-8.00^{*}$ \\
+ & Nbr & 86.00 & $-12.50^{*}$ & 9.25$^{*}$ & 1.00 & 0.00 & $-3.00$ & $-2.75$ \\
+ & EE & 90.50 & $-7.00^{*}$ & $-2.75$ & 4.00$^{*}$ & $-10.00^{*}$ & $-4.75^{*}$ & $-10.00^{*}$ \\
+ & EC & 2.00 & 1.25 & $-1.25$ & $-1.25$ & $-1.50$ & 27.25$^{*}$ & 3.75$^{*}$ \\
+\addlinespace[2pt]
+4B-T & Deg & 97.00 & 2.00 & 0.25 & 1.75 & $-1.25$ & 2.50 & 0.50 \\
+ & Nbr & 95.50 & 1.25 & 0.50 & $-0.75$ & 0.50 & 0.50 & $-1.25$ \\
+ & EE & 99.75 & 0.00 & $-0.50$ & $-0.75$ & $-1.25$ & 0.00 & $-1.00$ \\
+ & EC & 20.00 & 12.25$^{*}$ & 24.75$^{*}$ & 24.75$^{*}$ & 10.25$^{*}$ & 8.50$^{*}$ & 1.75 \\
+\bottomrule
+\end{tabular}}
+\caption{Main sweep ($p\le.50$, $n{=}400$ per cell): success $S$ (\%;
+capped = 0) under \cond{none} and paired effects (pp) on
+\task{node\_degree} (Deg), \task{connected\_nodes} (Nbr),
+\task{edge\_existence} (EE) and \task{edge\_count} (EC). $^{*}$: BH-adjusted $q<.05$.}
+\label{tab:main}
+\end{table}
+
+\subsection{Answer access is not answer use}
+
+Table~\ref{tab:main} shows that an answer-carrying primer does not
+reliably raise accuracy on the task it leaks. \cond{degree} reduces
+\task{edge\_count} to a 40-term sum. Plain 4B sets out to sum degrees in
+96--100\% of responses even without a primer. With \cond{degree} it goes
+from 2.00\% to 29.25\% (+27.25 [22.75, 31.75]; 114 graphs fixed, 5 broken).
+Plain 1.7B gains only +3.00 ($q{=}.101$). Its sums move closer (mean
+absolute error 136 to 40 edges, terminated generations) but are rarely
+exact. 1.7B-T changes by $-3.25$. The thinking arms rarely complete an edge count. Without a primer 4B-T
+finishes 20.50\% of generations and is correct on 97.56\% of those, for
+20.00\% success. Under \cond{degree} it completes 41.25\% but succeeds on
+only 28.50\%. \cond{components} and \cond{clustering} carry no edge count
+(solver 3.0\% and 10.4\%), yet both reach 44.75\%, 12.50 pp above
+\cond{filler} (32.25\%; intervals [6.75, 18.01] and [7.50, 17.75]).
+\cond{components} states one component for every graph at $p\ge.20$, and
+there it still beats \cond{filler} (64/35/8\% against 46/22/1\% at
+$p{=}.20/.35/.50$). Its gain acts mainly on whether the thinking
+arm completes (45.50\% against 33.50\% under \cond{filler}), not on
+graph-specific content.
+
+\subsection{Primers replace or check the counting procedure}
+\label{sec:procedure}
+
+Table~\ref{tab:procedure} follows plain 4B on \task{node\_degree} across all
+seven densities. Without a primer its count is 99--100\% accurate up to
+$p{=}.50$ and falls to 33\% at $.85$. Under
+\cond{degree} it often skips the neighbor list, retrieving in 44--74\% of responses
+at 73--98\% accuracy. At $p{=}.35$--$.75$, enumeration falls from
+85--100\% of responses to at most 8\%. The primer's effect follows the accuracy of
+the count it replaces: $-6$, $-1$, $-7$, $-12$ and $-6$ pp at
+$p{=}.10$--$.65$, then $+7$ and $+27$ at $.75$ and $.85$ (100 graphs each;
+Figure~\ref{fig:density}a). At $p{=}.50$ the primer turns 13 correct answers
+into errors and corrects one. \cond{filler}, twice as long, costs 2 pp, so
+the loss is not a cost of added text. From $p{=}.50$ the responses that do
+not retrieve are only 79\%, 45\%, 28\% and 16\% accurate: 68--92\% of them
+open with an answer, usually not the stated degree, and then recount.
+Under \cond{all}, which states the degree among two other statistics,
+retrieval falls to 15--51\% and accuracy drops at every density, by up to 37 pp at
+$p{=}.65$.
+
+The same primer induces a different procedure in 1.7B-T. It retrieves in at
+most 2\% of responses and, from $p{=}.35$, enumerates in 76--98\%. It uses a
+discrepancy word in 23\% of responses up to $p{=}.50$ and 49\% beyond (0.3\%
+and 4\% without a primer), and is correct on 61\% and 69\% of those. Over the
+seven densities \cond{degree} adds +16.0 pp [12.0, 19.7] with capped
+generations scored as errors (+19.9 [16.3, 23.6] over terminated pairs). It
+also raises capping from 1.1\% to 7.6\%. Plain 1.7B retrieves in at most 4\%
+of responses. It gains +10 and +18 pp only at $p{=}.20$ and $.35$, where its
+own count is 80\% and 41\% accurate. From $p{=}.50$, with baselines of
+5--30\%, it stays within 2 pp. As a \emph{replacement}, the leaked answer
+helps or hurts according to the accuracy of the count it displaces. As a
+\emph{check} on a count 1.7B-T still executes, it helps.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{2.6pt}
+\begin{tabular}{lrrrrrrr}
+\toprule
+$p$ & .10 & .20 & .35 & .50 & .65 & .75 & .85 \\
+\midrule
+acc., \cond{none}      & 100 & 99 & 99 & 99 & 82 & 50 & 33 \\
+\quad enumerates       & 1 & 34 & 95 & 100 & 94 & 85 & 44 \\
+acc., \cond{degree}    & 94 & 98 & 92 & 87 & 76 & 57 & 60 \\
+\quad retrieves        & 44 & 56 & 74 & 62 & 71 & 64 & 69 \\
+\quad acc.\ retrievals & 89 & 98 & 91 & 92 & 89 & 73 & 80 \\
+\quad acc.\ the rest   & 98 & 98 & 96 & 79 & 45 & 28 & 16 \\
+\quad enumerates       & 2 & 16 & 6 & 8 & 2 & 1 & 0 \\
+\bottomrule
+\end{tabular}
+\caption{Plain Qwen3-4B on \task{node\_degree} by density (\%, 100 graphs
+each, none capped). Procedures as in \S\ref{sec:procedure-def}; the five-entry
+rule undercounts enumeration at $p\le.20$. \emph{The rest}: responses that
+do not retrieve.}
+\label{tab:procedure}
+\end{table}
+
+\subsection{Agreement does not certify correctness}
+\label{sec:invariants}
+
+For plain 4B (Table~\ref{tab:cj}), \cond{degree} lowers $J$ from 85.75\% to 76.50\%
+($-9.25$ [$-13.75$, $-4.75$]; 28 nodes fixed, 65 broken) and $C$ from
+87.00\% to 81.00\%. The degree task carries the larger share ($-6.50$,
+against $-3.00$ on neighbors). The answer-carrying primer thus buys a leaked
+global gain on \task{edge\_count} while local joint correctness falls,
+though by no more than under the length control. \cond{filler} lowers $J$
+by 13.25 pp, through the neighborhood task ($-12.50$). \cond{components}, a
+37-character sentence, raises $J$ to 95.00\% (+9.25 [6.00, 12.75]). For
+plain 1.7B, \cond{degree} raises $J$ by 8.50 pp [4.25, 12.75], but $C$ rises
+further, to 73.00\% against $J$ of 62.50\%. So 10.50\% of pairs satisfy
+$d_v{=}|N(v)|$ with at least one wrong answer: agreement overstates
+correctness. For 4B-T, whose $J$ is 93.75\% without a primer, \cond{degree}
+adds 2.00 [$-1.25$, 5.00].
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrr}
+\toprule
+Arm & None & Degree & All \\
+\midrule
+1.7B   & 62.25/54.00 & 73.00/62.50 & 68.00/61.75 \\
+1.7B-T & 81.00/71.00 & 81.00/76.50 & 83.50/79.50 \\
+4B     & 87.00/85.75 & 81.00/76.50 & 80.00/77.50 \\
+4B-T   & 94.00/93.75 & 96.00/95.75 & 93.75/93.25 \\
+\bottomrule
+\end{tabular}
+\caption{Degree--neighborhood agreement / joint correctness ($C$/$J$, \%;
+400 queried nodes per cell, $p\le.50$).}
+\label{tab:cj}
+\end{table}
+
+\subsection{Side information acts through global cues}
+\label{sec:side}
+
+On \task{edge\_existence} the share of queried pairs that are edges rises
+with density, from 10\% at $p{=}.10$ to 85\% at $.85$. Pooled over densities,
+the plain arms answer ``yes'' to 97--100\% of true edges under every
+condition, and 94--99\% of their errors are false alarms. Plain 1.7B's
+success without a primer rises from 54\% at $p{=}.50$ to 86\% at $.85$, but
+it answers ``yes'' to 94\% and 99\% of queries there. Its balanced success
+is 55.77\% and 53.33\%; always answering ``yes'' scores 85\% at $.85$
+(Figure~\ref{fig:density}b). Primers move this label bias rather than
+edge recall. Pooled over the seven densities, \cond{all} lowers 1.7B's
+false-alarm rate from 51\% to 33\% ($-18.6$ [$-24.0$, $-13.1$]).
+\cond{filler}, which states nothing about edges, raises it to 69\% (+18.3
+[13.9, 22.7]). Where counting degrades, \cond{clustering} adds 11.3 pp [6.7, 16.3] to
+plain 4B on \task{node\_degree} above $p{=}.50$. The model keeps enumerating
+(69\% of responses, against 74\% without a primer). The printed coefficients
+barely vary within a graph (mean within-graph SD at most
+0.021), so any gain rests at most on a graph-level value. On these cells
+\cond{degree}, \cond{clustering} and \cond{rwse} gain 9.3, 11.3 and 7.7 pp,
+but \cond{all}, which combines them, loses 21.3.
+
+\subsection{Two decimals collapse RWSE resolution}
+\label{sec:resolution}
+
+In a GNN, RWSE is useful partly because its continuous values can separate
+nodes of equal degree, which the first 1-WL round cannot tell apart. In a
+prompt, each value becomes a fixed-precision digit string, and values that
+round alike become identical token strings. Printed to two decimals, the
+$(P^2_{vv}, P^3_{vv})$ pairs
+of the 40 nodes take on average 30.14 distinct values at $p{=}.10$, 6.74 at
+$.35$, 3.30 at $.50$ and 2.00 at $.85$ (Figure~\ref{fig:density}c). At
+$p{=}.50$ the most common pair is shared by 62.68\% of nodes. From
+$p{=}.35$ the \cond{degree} primer takes more distinct values than
+the RWSE primer (11.98 against 6.74 at $p{=}.35$; 12.50 against 3.30 at
+$.50$). There, the printed encoding separates fewer node classes than the
+first 1-WL round, although RWSE is meant to add information beyond 1-WL.
+The loss occurs at the printed precision, not in the graph: at six decimals the same
+features take 40.00 distinct values at $p{=}.50$ and 39.99 at $.85$. Without a higher-precision condition, we
+attribute no accuracy change to the loss.
+
+\section{Discussion and Conclusion}
+
+Where a primer carries the answer, a model can change procedure, and the
+sign of the effect depends on what is displaced. Where traceable, side
+information acts via completion and ``yes'' bias.
+Agreement overstates correctness, and a leaked answer can lower joint
+correctness while raising a global count. From $p{=}.35$, two-decimal
+RWSE separates fewer node classes than 1-WL's first round.
+
+For graph ML evaluation, gains from a structural interface should be reported
+with (i)~a graph-blind score, to separate leakage from use; (ii)~per-cell
+baselines, on which a leaked answer's effect depends; (iii)~joint correctness and $C{-}J$, not
+agreement alone; (iv)~balanced accuracy where density
+changes label prevalence; (v)~a content-free length control; and (vi)~the
+number of distinct printed feature values per graph. On this corpus,
+structural primers trigger procedural shortcuts that help where the model's
+own count partly fails, harm where the count succeeds, and act as a check
+only for a model that still counts. None of these routes shows general
+graph understanding.
+
+\section*{Limitations}
+
+We evaluate two sizes of one model family on synthetic Erd\H{o}s--R\'enyi
+graphs, with one encoding, node order, primer position and prompt template.
+Node position matters: retrieval is more accurate for nodes 0--9 (96\% against
+83\%) \citep{liu2024lostinthemiddle,ge2025graph}. Decoding is greedy. The
+extension's 2,048-token plain-arm budget confounds density with budget above
+$p{=}.50$, and the thinking arms' completion effects may be specific to our
+budgets. Per-density effects rest on 100 graphs each. \cond{filler} is an
+approximate, not token-matched, length control. Procedures are classified
+by surface patterns, for plain 4B, 1.7B and 1.7B-T only, and a model may
+follow a procedure it does not state \citep{turpin2023unfaithful}. A
+targeted, non-exhaustive audit of the reused answer extractor (52
+responses) moves $C$ and $J$ by at most 1.25 pp per cell. We test
+graph-query primitives, not node classification or link prediction.
+
+\section*{Ethics Statement}
+
+Open-weight models on synthetic graphs; no human subjects, personal data or
+annotation.
+
+\bibliographystyle{acl_natbib}
+\bibliography{custom}
+
+\end{document}
