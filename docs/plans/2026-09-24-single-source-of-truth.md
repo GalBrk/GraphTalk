@@ -1,6 +1,6 @@
 # One source of truth per family of runs — design
 
-Status: **design, awaiting review** (2026-09-24). Branch `results-sot`, based on
+Status: **design, approved** (2026-09-24). Branch `results-sot`, based on
 `7037749`. The implementation plan will be written next to this file once the
 design is approved. Both files move to `superseded/docs/plans/` when executed.
 
@@ -35,22 +35,30 @@ in four docs; the qwen3-1.7b reading limit is ~2,505 and ~1,509 tokens in two).
 
 ## Repo-wide rules
 
-**R1 — truncation.** The 5–19-node rule, as implemented in
-`graphtalk/analysis.py::build_frame` since `b86b743`, applies to every family:
+**R1 — truncation is its own outcome.** Every response has exactly one outcome:
+`correct`, `wrong` or `truncated`. A response that hit the token budget is
+`truncated`, whatever its abandoned text says; it is never labelled wrong and
+never dropped. The same rule applies to every family:
 
-- accuracy (`exact`, `primary`): a response that hit the token budget scores
-  wrong, even when its abandoned text happens to contain the gold answer; it is
-  never dropped from a pair. A `truncated_but_correct` flag records the override;
-- error magnitude (MAE): a truncated response's error is imputed with the task's
-  median absolute error among wrong, terminated responses
-  (`scripts/check_significance.py::_mae_imputation_table`);
-- every table reports how many responses per condition were forced to wrong, and
-  flags a cell where that share of pairs is 15% or more;
-- descriptions of response text (route, discrepancy reports, wording) use
-  terminated responses only, and say so.
+- every cell reports the three outcomes as shares of all its responses; they sum
+  to 100%;
+- a primer's effect is the paired change in each share on the same graphs. The
+  headline is the change in the correct share, with its bootstrap interval
+  (graphs resampled within density) and exact McNemar test on correct versus not
+  correct; the changes in the wrong and truncated shares are reported next to it,
+  so a reader sees whether answers moved from wrong to correct or from correct to
+  truncated;
+- a `truncated_but_correct` flag records a truncated response whose abandoned
+  text contained the gold answer;
+- quantities that describe an answer (error magnitude/MAE, yes-rate, false
+  alarms, off-by-k) and descriptions of response text (route, discrepancy
+  reports, wording) use finished responses only, and state their n;
+- a cell whose truncated share is 15% or more is flagged.
 
-R1 is implemented once, in `graphtalk/`, and every current script calls it. A
-script that drops truncated rows today is switched.
+R1 is implemented once, in `graphtalk/`, and every current script calls it.
+Scripts that drop truncated rows or force them to wrong today are switched,
+including `graphtalk/analysis.py::build_frame` and `check_significance.py`
+(which force them to wrong and impute their MAE).
 
 **R2 — metrics.** Exact match is the primary metric for every task.
 `connected_nodes` is scored by exact set match, with set-F1 as a secondary
@@ -122,10 +130,11 @@ commit.
 - **Pipeline:** `build_raw_frame.py` → `csv2/raw-trends/frame.csv` →
   `primer_findings.py` (with `analyze_primer_window.cells()`), plus
   `shortcut_table_n40.py` → `shortcuts_n40{,_flat}.json` for the solver bars.
-- **R1 change:** `pairs()` and `cells()` keep truncated pairs and score them
-  wrong; `pairs_as_error()` is deleted; the `cells()` rule of at least 50
-  untruncated pairs is removed; MAE claims use the R1 imputation;
-  `tests/test_primer_findings.py`'s pairing test is updated.
+- **R1 change:** `pairs()` and `cells()` keep every pair and report the three
+  outcome shares; `pairs_as_error()` is deleted; the `cells()` rule of at least
+  50 untruncated pairs is replaced by the 15% truncation flag; MAE, yes-rate and
+  false-alarm claims use finished responses; `tests/test_primer_findings.py`'s
+  pairing test is updated.
 - **Additions still needed** (`[leak]`, `[copyerr]` and the high-density
   `[replic]` line landed in `7037749`): `[joint]` degree/neighbour joint
   correctness and consistency per arm and condition, with paired effects;
@@ -191,7 +200,9 @@ commit.
 
 ### Phase 3 — 5–19-node sweep (main arms and `.rerun.` files), GoT naming (`got`, `got.count500`)
 
-- **Pipeline:** `build_sweep_frame.py` → `check_significance.py` (already R1);
+- **Pipeline:** `build_sweep_frame.py` → `check_significance.py`, both switched
+  to R1 (`build_frame` stops forcing truncated responses to wrong;
+  `check_significance.py` drops its forced-wrong columns and MAE imputation);
   `score_sweep.py` for per-cell accuracy, switched to R1; `naming_effect.py` for
   GoT; the `got.count500` investigation scripts (`check_old_vs_new_subsample.py`,
   `diff_shared_instances.py`, `extract_graph_topology.py`,
