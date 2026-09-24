@@ -42,6 +42,8 @@ solver scores), so multiply those by 100.
 | `degree` profile −6, −1, −7, −12, −6, +7, +27; 13 broken / 1 fixed; `filler` −2 at p=.50; `all` down at every density, by up to 37 | `[flip]` |
 | `qwen3-4b` count 99–100% to p=.50, then 82 / 50 / 33%; under `degree` retrieves (no restated list) 44–74% of responses at 73–98% accuracy, below the count to p=.50 and above it from .65; enumeration 85–100% to at most 8% at p=.35–.75; from p=.50 the other responses open with an answer in 68–92%, usually a wrong one, and are 79 / 45 / 28 / 16% accurate; under `all` retrieves 15–51% at 49–96%, the rest 32 / 12 / 5% accurate from p=.65 | `[route]`, `node_degree_routes.csv` (Appendix Table 4) |
 | retrieval for nodes 0–9: 96% vs 83%, +12 within density, permutation p<.001; by decade of the node id 96 / 82 / 86 / 82% (95.7 / 81.6 / 86.5 / 81.5; the third is 83/96 = 86.46%), so no fall with position after node 10 (nodes 0–9 are also the only single-digit ids) | `[position]` |
+| the saved prompts give the gold away: 700/700 `node_degree` and 400/400 `edge_count`, under both `degree` and `all` | `[leak]` |
+| `qwen3-4b` wrong retrievals under `degree`: 57, 42% within 1 of gold, 68% within 3; 17 equal the degree stated for node k±1 vs 10.4 by chance (p=.017) | `[copyerr]` |
 | `qwen3-1.7b-think`: retrieves at most 2%; enumerates 76–98% from p=.35; discrepancy 23% / 49% vs 0.3% / 4% without a primer; correct when reported 61% / 69%; +19.9 [16.3, 23.6]; +31.6 above p=.50; +5.2 and −1.0 at p=.10, .20 | `[verify]`, `node_degree_routes.csv` |
 | `qwen3-1.7b-think` truncation under `degree` 7.6% (8%) vs 1.1% (1%) under `none`; 96% of truncated report a discrepancy; truncation as error +16.0 [12.0, 19.7] | `[trunc]` |
 | `qwen3-1.7b` retrieves at most 4%; +10 and +18 at p=.20 and .35 (count 80% and 41%); within 2 points from p=.50, baseline 5–30% | `[plain17]`, `node_degree_routes.csv` |
@@ -50,6 +52,7 @@ solver scores), so multiply those by 100.
 | yes-rate 98–99%, 48–120 tokens, balanced accuracy 52–53%; 259–404 tokens; +9.5 [4.5, 15.0], +14.9 [8.7, 21.4]; `filler` 97% vs 65% at p=.35 | `[collapse]`, `edge_existence_collapse.csv` (Figure 2) |
 | `clustering` +11.3 [6.7, 16.3], 46 / 12; `rwse` +7.7; `filler` +2.0; under `clustering` 69% enumerate vs 74% without a primer; mean within-graph SD of printed clustering values at most 0.02 from p=.65 | `[clusthi]`, `[clustproc]`, `[cluster]` |
 | replication +4.0 on the 300 new graphs per density (p=.0047), +4.2, +6.2; each p ≤ .005; +3.0 in the main sweep | `[replic]`, Table 2 |
+| no `clustering` gain at p ≥ .65: −0.7 [−2.8, +1.2] on 400 graphs per density (n=1,200) | `[replic]` (last line) |
 | `components` +7, +11, +10, +9; connected graphs at p ≥ .20 | `[comp]` |
 | bundle vs mean of parts +0.2 [−1.1, 1.6] (bootstrap over the 54 combinations); `all` −21.3 where each part gains (+9.3 / +11.3 / +7.7, not printed) | `[bundle]` |
 | length slopes over Table 2's columns with ≥100 pairs: −2.0 to +3.4, positive 6 of 7 (1.7B) and 0 of 7 (4B), 2 and 0 of 7 without `all`; `filler` 18.3 and 13.8 below the line | `[length]` |

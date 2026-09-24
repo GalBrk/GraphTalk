@@ -470,6 +470,8 @@ def replication():
   contrast(grid, lambda m: True, "fixed mean degree, n in {20..160}")
   sizes = sorted({int(re.search(r"/size(\d+)/", i).group(1)) for i, _ in grid})
   print(f"  grid sizes {sizes}")
+  contrast(load_runs("runs/qwen3-1.7b.degdens40hi.shard*.jsonl"), lambda m: True,
+           "400 graphs per density, p>=.65")
 
 
 def components(f):
@@ -665,6 +667,55 @@ def position(f):
                        for k in range(4)) + "%")
 
 
+def leakage(f):
+  """What the degree sentences of the saved prompts give away, and what plain
+  qwen3-4b's wrong answers under them look like. Sentences are in node order, so
+  the ones next to node k's are k-1's and k+1's; chance is the rate at which the
+  other nodes' stated degrees equal the wrong answer."""
+  deg = re.compile(r"Node (\d+) has degree (\d+)")
+  stated, hits = {}, {}
+  for path in ["prompts.densfull40.jsonl", "prompts.densfull40hi.jsonl"]:
+    for line in open(path, encoding="utf-8"):
+      r = json.loads(line)
+      if r["condition"] not in ("degree", "all") or r["task"] not in ("node_degree", "edge_count"):
+        continue
+      d = {int(a): int(b) for a, b in deg.findall(r["prompt"])}
+      stated[(r["instance_id"], r["condition"])] = d
+      ans = (d[int(re.findall(r"degree of node (\d+)", r["prompt"])[-1])]
+             if r["task"] == "node_degree" else sum(d.values()) // 2)
+      h, n = hits.get((r["task"], r["condition"]), (0, 0))
+      hits[(r["task"], r["condition"])] = (h + (str(ans) == r["gold"].strip()), n + 1)
+  print("[leak] gold read off the saved prompts (the queried node's degree sentence; half "
+        "the sum of all 40): " + ", ".join(f"{t}/{c} {h}/{n}" for (t, c), (h, n) in sorted(hits.items())))
+
+  runs = load_runs("runs/qwen3-4b.densfull40*.shard*.jsonl", tasks={"node_degree"},
+                   conds={"degree", "all"})
+  d = f[(f.arm == "qwen3-4b") & (f.task == "node_degree") & (f.hit_cap == 0)
+        & f.condition.isin(["degree", "all"]) & (f.exact == 0) & f.pred.notna()].copy()
+  d["route"] = [route(runs[(i, c)]["response"], int(t))
+                for i, c, t in zip(d.instance_id, d.condition, d.target_id)]
+  rng = np.random.default_rng(SEED)
+  for c in ["degree", "all"]:
+    for label, s in [("retrievals", d[(d.condition == c) & (d.route == "retrieve")]),
+                     ("all routes", d[d.condition == c])]:
+      copied, chance, off = 0, [], []
+      for i, k, v, g in zip(s.instance_id, s.target_id.astype(int),
+                            s.pred.astype(float).astype(int), s.gold.astype(int)):
+        sd = stated[(i, c)]
+        near = [j for j in (k - 1, k + 1) if j in sd]
+        copied += any(sd[j] == v for j in near)
+        q = np.mean([sd[j] == v for j in sd if j != k and j not in near])
+        chance.append(1 - (1 - q) ** len(near))
+        off.append(abs(v - g))
+      chance, off = np.array(chance), np.array(off)
+      sims = (rng.random((B, len(chance))) < chance).sum(1)
+      p = (np.sum(sims >= copied) + 1) / (B + 1)
+      print(f"[copyerr] qwen3-4b {c}, wrong {label} (n={len(s)}): within 1 of gold "
+            f"{100 * np.mean(off <= 1):.0f}%, within 3 {100 * np.mean(off <= 3):.0f}%; "
+            f"equal to the degree stated for node k-1 or k+1 {copied} vs "
+            f"{chance.sum():.1f} by chance, p={p:.2g}")
+
+
 def rerun():
   """Identical prompts generated twice: degdens40 re-ran the main sweep's graphs."""
   main = load_runs("runs/qwen3-1.7b.densfull40.shard*.jsonl", tasks={"node_degree"})
@@ -814,6 +865,7 @@ def main():
   measurement(f)
   power(f, t)
   position(f)
+  leakage(f)
   rerun()
   other_procedures(f)
   extraction(f)
