@@ -9,7 +9,8 @@ room to fall"; neither is evidence about primers.
 Readability is applied as a second, independent filter, because an informative
 rung above the model's reading limit measures reading rather than primer
 content: at the density where the plain arm collapses, the `degree` control --
-which writes the answer verbatim into the prompt -- was worth +0.7pp. Rungs that
+which writes the answer verbatim into the prompt -- was worth +1.2pp, not
+significant. Rungs that
 are informative but unreadable are reported in their own column rather than
 dropped, since a model with many of those and no valid rung is itself the
 finding.

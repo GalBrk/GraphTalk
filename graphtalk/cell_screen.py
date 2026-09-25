@@ -17,7 +17,7 @@ samples alone:
   * **unreadable** -- prompt tokens beyond the model's measured reading limit.
     A hard cell above that limit measures reading, not primers: at the density
     where the plain arm collapses, the `degree` control -- which writes the
-    answer verbatim into the prompt -- was worth +0.7pp. A primer cannot beat a
+    answer verbatim into the prompt -- was worth +1.2pp, not significant. A primer cannot beat a
     reading failure.
 
 `clu_sd` is reported both raw and after degree-preserving rewiring, because

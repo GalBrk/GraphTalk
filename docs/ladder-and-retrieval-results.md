@@ -313,7 +313,7 @@ The goal this section answers: pick a `(n, k̄)` cell per model where `none`
 is informative (not ceiling, not floor) with enough margin that `filler` —
 the length-matched, content-free placebo — is expected to stay informative
 too rather than being dragged to floor by the length cost alone
-(`docs/primer-effects-and-power.md`'s `filler` finding: −11.7pp on dense
+(`docs/results/density-followups.md` §5, the `filler` finding: −11.4pp on dense
 graphs from length alone). **There is no single `k̄` that works for every
 model** — that's the whole reason the ladder has 18 rungs instead of one
 cell; the table below is per model, not a project-wide default.

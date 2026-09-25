@@ -36,7 +36,7 @@ Run them all:
 
     PYTHONPATH=. python superseded/scripts/analyze_baseline_law.py --shortcuts shortcuts.json
 
-Scoring rules match `scripts/score_full_density_sweep.py`: `hit_cap` rows are
+Scoring rules match `superseded/scripts/score_full_density_sweep.py`: `hit_cap` rows are
 dropped rather than scored zero, dropped on both sides of a pair, and cells
 are keyed by (arm, task, density, condition).
 """

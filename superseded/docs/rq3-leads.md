@@ -4,8 +4,8 @@
 generations. Reproduce with
 
 ```bash
-PYTHONPATH=. python scripts/analyze_rq3_leads.py          # -> rq3_leads.json
-PYTHONPATH=. python scripts/analyze_rq3_leads.py --test selection
+PYTHONPATH=. python superseded/scripts/analyze_rq3_leads.py          # -> superseded/rq3_leads.json
+PYTHONPATH=. python superseded/scripts/analyze_rq3_leads.py --test selection
 ```
 
 Data: `qwen3-1.7b`, `node_degree`, the dedicated sweep (`degdens40`,
@@ -57,7 +57,7 @@ paper wording, that `clustering` "exceeds both controls only at p = .35
 and .50", rested on uncorrected per-density p-values.
 
 **What the data do support** is one pooled test over the intermediate
-range (`selection.mid_pooled` in `rq3_leads.json`; this is what the paper
+range (`selection.mid_pooled` in `superseded/rq3_leads.json`; this is what the paper
 now reports):
 
 | p = .35 and .50 pooled | Δ | 95% CI | p | n |
@@ -196,7 +196,7 @@ account.
   2 comparisons × 2 scopes). The position pattern is the only one tested
   out of sample (replication seed), and it held.
 - The transcription parser reads the *first* neighbour list a response
-  writes. Parser checks are in `tests/test_analyze_rq3_leads.py`. It
+  writes. Parser checks are in `superseded/tests/test_analyze_rq3_leads_superseded.py`. It
   classifies every non-truncated response in these runs, but a response
   that revises its list later is judged on the first version.
 - One model, one task, Erdős–Rényi graphs only.

@@ -441,7 +441,7 @@ the control's damage — filler−none on that cell runs −5, −20, −32, −
 `:684` · **[edit]**
 
 Clustering−none across seven densities: +0.3, +3.3, **+7.5, +4.3**, −2.0, +0.5,
-−0.5. The `.35`–`.50` window is exactly the top two. `docs/rq3-leads.md:72-76`
+−0.5. The `.35`–`.50` window is exactly the top two. `superseded/docs/rq3-leads.md:72-76`
 already states it: *"The range was chosen after seeing the default seed."*
 
 Add one sentence saying so; report the pre-specified all-density estimate

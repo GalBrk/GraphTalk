@@ -625,5 +625,7 @@ def mcnemar(control_hits, treatment_hits) -> dict:
     return {"b": b, "c": c, "discordant": 0, "p_value": 1.0}
   smaller = min(b, c)
   tail = sum(math.comb(discordant, k) for k in range(smaller + 1))
-  p_value = min(1.0, 2.0 * tail / (2 ** discordant))
+  # Integer true division is correctly rounded at any size; 2.0 * tail
+  # overflowed a float past ~1,023 discordant pairs.
+  p_value = min(1.0, 2 * tail / 2 ** discordant)
   return {"b": b, "c": c, "discordant": discordant, "p_value": p_value}

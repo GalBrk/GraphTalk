@@ -114,7 +114,7 @@ and yields a nonsense count.
 
 ### Finding 2 — the n80 "truncation" is input overflow, not output truncation
 
-`docs/node_degree-density-and-size.md` reports 16.7–20% truncation at n80 and reads it as
+`superseded/docs/node_degree-density-and-size.md` reports 16.7–20% truncation at n80 and reads it as
 output truncation. It isn't.
 
 ```python
@@ -221,7 +221,7 @@ design must say so:
 - Prompt length is a function of n and m, so **every density sweep is also a prompt-length
   sweep**.
 - The repo already measured that confound: `filler` (length-only control) costs **-11.7pp**
-  on dense graphs, per `docs/node_degree-density-and-size.md` Part B.
+  on dense graphs, per `superseded/docs/node_degree-density-and-size.md` Part B.
 
 **Mitigation planned:** carry prompt tokens as a covariate, keep `filler` as the length
 control, and have the design module emit a report of which property pairs are
@@ -393,7 +393,7 @@ relying on any of it travelling.
 ## 10. Kickoff prompt for the new terminal
 
 ```
-Continuing a design session. Read docs/handoff-structural-sweep.md first — it has four
+Continuing a design session. Read superseded/docs/handoff-structural-sweep.md first — it has four
 empirical findings (all re-verified on the TAU cluster 2026-09-10), the locked decisions,
 and three open questions.
 

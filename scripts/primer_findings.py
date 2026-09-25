@@ -36,6 +36,7 @@ from graphtalk import outcomes, scoring
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import analyze_primer_window as apw  # noqa: E402  (cells(): the window table's rule)
+import score_density_sweep as sds  # noqa: E402  ([replic]: one effect computation)
 
 FRAME = "csv2/raw-trends/frame.csv"
 BARS = "shortcuts_n40_flat.json"
@@ -47,6 +48,8 @@ DENSHI = [0.65, 0.75, 0.85]
 BAND = (0.25, 0.75)          # where both kinds of primer gain (Table 2's bins)
 # Every bootstrap restarts from SEED, so an interval does not depend on which
 # analyses ran before it (a shared generator shifted them whenever one was added).
+# [replic] is the exception: it runs through score_density_sweep.effect, with
+# that module's own seed, so its lines equal the density follow-ups' output.
 SEED = 20260923
 B = 2000
 
@@ -535,46 +538,32 @@ def clustering_high(f):
 
 
 def replication():
+  """The dedicated runs' pooled clustering-vs-none effects, computed by the
+  density scorer (score_density_sweep.effect), so these lines and the density
+  follow-ups' pooled lines are one computation."""
   print("[replic] qwen3-1.7b node_degree, clustering vs none, dedicated runs")
 
-  def contrast(rows, dens_ok, label):
-    diffs, truncs, strata = [], [], []
-    for (iid, c), r in rows.items():
-      if c != "clustering":
-        continue
-      b = rows.get((iid, "none"))
-      if b is None:
-        continue
-      m = re.search(r"/size(\d+)/p([\d.]+)/", iid)
-      if not dens_ok(m):
-        continue
-      diffs.append(record_correct(r) - record_correct(b))
-      truncs.append(int(bool(r.get("hit_cap"))) - int(bool(b.get("hit_cap"))))
-      strata.append(m.group(0))
-    d, st = np.array(diffs), np.array(strata)
-    idx = [np.flatnonzero(st == s) for s in np.unique(st)]
-    rng = np.random.default_rng(SEED)
-    bs = [np.mean(np.concatenate([d[rng.choice(i, len(i))] for i in idx])) for _ in range(B)]
-    fixed, broke = int((d == 1).sum()), int((d == -1).sum())
-    m = scoring.mcnemar(np.array([0] * fixed + [1] * broke, bool),
-                        np.array([1] * fixed + [0] * broke, bool))
-    print(f"  {label:34s} {f1(100 * d.mean())} [{f1(100 * np.percentile(bs, 2.5))}, "
-          f"{f1(100 * np.percentile(bs, 97.5))}] fixed {fixed} broke {broke} "
-          f"p={m['p_value']:.2g} n={len(d)} truncated {f1(100 * np.mean(truncs))}")
+  def contrast(records, label):
+    s = sds.summarize(records, "cell")
+    flagged = sds.flagged_levels(s["cells"], "clustering", "none")
+    ok = {lvl for lvl, _ in s["cells"]} - flagged
+    e = sds.effect(sds.pairs_for(s["paired"], "clustering", ok, "none"))
+    print(f"  {label:34s} {f1(e['d'])} [{f1(e['lo'])}, {f1(e['hi'])}] fixed {e['fixed']} "
+          f"broke {e['broke']} p={e['p']:.2g} n={e['n']} truncated {f1(e['dt'])}"
+          + sds._left_out(flagged))
 
-  main = load_runs("runs/qwen3-1.7b.degdens40.shard*.jsonl")
-  contrast(main, lambda m: float(m.group(2)) <= 0.5, "400 graphs per density, p<=.50")
+  main = sds.load(["runs/qwen3-1.7b.degdens40.shard*.jsonl"])
+  contrast(main, "400 graphs per density, p<=.50")
   # Indices 0-99 at each density are the main sweep's own graphs; the other 300
   # are new, so they are the part of this run that replicates independently.
-  new = {k: v for k, v in main.items() if int(k[0].rsplit("/", 1)[1]) >= 100}
-  contrast(new, lambda m: float(m.group(2)) <= 0.5, "the 300 new graphs per density")
-  contrast(load_runs("runs/qwen3-1.7b.degdensrep.shard*.jsonl"), lambda m: True,
-           "fresh seeds, 1,600 graphs")
-  grid = load_runs("runs/qwen3-1.7b.degfixdeg.shard*.jsonl")
-  contrast(grid, lambda m: True, "fixed mean degree, n in {20..160}")
-  sizes = sorted({int(re.search(r"/size(\d+)/", i).group(1)) for i, _ in grid})
+  contrast([r for r in main if int(r["instance_id"].rsplit("/", 1)[1]) >= 100],
+           "the 300 new graphs per density")
+  contrast(sds.load(["runs/qwen3-1.7b.degdensrep.shard*.jsonl"]), "fresh seeds, 1,600 graphs")
+  grid = sds.load(["runs/qwen3-1.7b.degfixdeg.shard*.jsonl"])
+  contrast(grid, "fixed mean degree, n in {20..160}")
+  sizes = sorted({int(re.search(r"/size(\d+)/", r["instance_id"]).group(1)) for r in grid})
   print(f"  grid sizes {sizes}")
-  contrast(load_runs("runs/qwen3-1.7b.degdens40hi.shard*.jsonl"), lambda m: True,
+  contrast(sds.load(["runs/qwen3-1.7b.degdens40hi.shard*.jsonl"]),
            "400 graphs per density, p>=.65")
 
 

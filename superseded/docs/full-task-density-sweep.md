@@ -14,7 +14,7 @@ opposite on purpose: **n=40, all 4 density levels {0.10, 0.20, 0.35, 0.50},
 all 7 conditions, all 6 tasks, 100 graphs/cell** -- 16,800 prompts
 (`prompts.densfull40.jsonl`), tag `densfull40`.
 
-Scored with `scripts/score_full_density_sweep.py` (added alongside this run),
+Scored with `superseded/scripts/score_full_density_sweep.py` (added alongside this run),
 which extends `score_density_sweep.py` with `task` as a third grouping key --
 pooling all 6 tasks into one (density, condition) cell, which the older
 script does, mixes `node_count` exact-match with `connected_nodes` F1 into a
@@ -28,19 +28,19 @@ landed 2026-09-16 (`b202998`), after the two 1.7B arms.
 Reproduce:
 
 ```bash
-PYTHONPATH=. python scripts/score_full_density_sweep.py \
+PYTHONPATH=. python superseded/scripts/score_full_density_sweep.py \
     --responses "runs/qwen3-1.7b.densfull40.shard*of25.jsonl" \
     --shortcuts shortcuts.json
 
-PYTHONPATH=. python scripts/score_full_density_sweep.py \
+PYTHONPATH=. python superseded/scripts/score_full_density_sweep.py \
     --responses "runs/qwen3-1.7b-think.densfull40.shard*of25.jsonl" \
     --shortcuts shortcuts.json
 
-PYTHONPATH=. python scripts/score_full_density_sweep.py \
+PYTHONPATH=. python superseded/scripts/score_full_density_sweep.py \
     --responses "runs/qwen3-4b.densfull40.shard*of25.jsonl" \
     --shortcuts shortcuts.json
 
-PYTHONPATH=. python scripts/score_full_density_sweep.py \
+PYTHONPATH=. python superseded/scripts/score_full_density_sweep.py \
     --responses "runs/qwen3-4b-think.densfull40.shard*of25.jsonl" \
     --shortcuts shortcuts.json
 ```

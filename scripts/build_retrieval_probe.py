@@ -9,7 +9,7 @@ mechanism rather than three:
   correctly, answers 39, and never consults the `"Node 29 has degree 32."`
   sentence sitting in its own prompt;
 - the `filler` penalty -- 1,831 characters of irrelevant text cost the thinking
-  arm 11.7 pp on dense graphs.
+  arm 11.4 pp on dense graphs.
 
 All three are consistent with "this model loses a stated fact as the prompt
 grows". That hypothesis is about *reading*, not about graphs, so it can be

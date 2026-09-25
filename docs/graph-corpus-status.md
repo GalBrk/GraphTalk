@@ -19,11 +19,12 @@ a primer to help:
 - **Mean degree (`k_bar`) drives magnitude-limited difficulty.** The model
   reads the graph correctly and miscounts. This is the regime a primer can
   act in — job 871263 measured the `degree` control (states the answer
-  verbatim) worth **+6.8pp** at p=0.50.
+  verbatim) worth **+6.8pp** at p=0.50 (`docs/results/density-followups.md` §3).
 - **Prompt length, past a model-specific *reading limit*, drives
   length-limited difficulty.** The model cannot reliably use even a fact
   stated outright. No primer can repair this — the same `degree` control was
-  worth only **+0.7pp** once the plain arm had collapsed on length. Job
+  worth only **+1.2pp** (p=0.33) at p≥0.65, once the plain arm had collapsed
+  on length (job 866492; `docs/results/density-followups.md` §3). Job
   871909 measured this directly, with **no graph in the design at all**: a
   plain list of `"Node X has degree Y."` statements retrieves perfectly to
   ~1,500 tokens, then collapses — at 6,305 tokens the model finds a fact at
@@ -32,8 +33,8 @@ a primer to help:
 - **Edge count / density is not an independent driver.** Job 871262 held mean
   degree fixed (at 8 and at 16) while varying `n` 20→160, so density fell 8x
   and edges + prompt length grew 8x with the answer distribution unchanged.
-  Accuracy fell *monotonically in both blocks* (0.912→0.624 at k=8,
-  0.575→0.224 at k=16) — the opposite of what "density drives difficulty"
+  Accuracy fell *monotonically in both blocks* (0.912→0.615 at k=8,
+  0.575→0.222 at k=16; `docs/results/density-followups.md` §6) — the opposite of what "density drives difficulty"
   predicts. Every "denser is harder" reading anywhere in this project's
   history was density standing in for mean degree or edge count seen through
   a correlated proxy.
@@ -132,7 +133,9 @@ grid.
   size.** A single ER graph is connected with probability ≈1.00 at every
   density worth testing on any of the tasks here, so `components` cannot
   move — confirmed independently in `docs/primer-effects-and-power.md`
-  (inert on `ec500`, +0.1pp pooled p=0.95 across the density sweep) and
+  (inert on `ec500`) and `docs/results/density-followups.md` (+0.1pp, p=0.95,
+  plain at p≤0.50; its one measured effect is a cost to the thinking arm at
+  p≥0.65, −3.0pp, p=0.035) and
   `docs/plans/finding-graphs-that-make-primer-effects-measurable.md` (plan
   §"secondary"). Don't re-run it on ER; it's structurally silent until
   `plant_components` (the disjoint-block generator in the plan, not yet
@@ -156,7 +159,7 @@ grid.
   `graphtalk/ladder.py`'s module docstring) before spending the expensive
   stage on it.
 - **The 72-cell family-contrast grid** (regular/ER/WS/BA/SBM at matched
-  `(n, m)`) proposed in the now-deleted `docs/handoff-structural-sweep.md`.
+  `(n, m)`) proposed in the archived `superseded/docs/handoff-structural-sweep.md`.
   Never built, and already decided against: swapping the *generator* moves
   `maj_base` by up to 6x on its own (0.15–1.000 across five families at
   matched `(n, m)`, per `docs/ladder-and-rewiring.md`), which swamps any
@@ -192,15 +195,16 @@ grid.
   tails haven't been measured on the harder ladder rungs. Worth a histogram
   before trusting a "no truncation" read on their `rewire`-stage runs.
 
-## Superseded — deleted alongside this doc
+## Superseded — archived in `superseded/docs/`
 
-- **`docs/node_degree-density-and-size.md`** — its "Combined takeaways"
+The current numbers for the runs these docs describe are in `docs/results/density-followups.md`.
+
+- **`superseded/docs/node_degree-density-and-size.md`** — its "Combined takeaways"
   concluded *"both size and density are real, independent difficulty
   knobs."* They aren't, independently — see "The mechanism, corrected"
   above. Its underlying numbers were transcribed from
-  `docs/primer-effects-and-power.md` ("Density at a fixed size"), which is
-  still tracked and correct, so nothing is lost.
-- **`docs/primer-impact-and-truncation-density-n40.md`** — its raw numbers
+  `docs/primer-effects-and-power.md` ("Density at a fixed size").
+- **`superseded/docs/primer-impact-and-truncation-density-n40.md`** — its raw numbers
   are the same `node_degree`-at-n40-density data already in
   `docs/primer-effects-and-power.md` (its own header says as much: "cross-checked
   against their published tables... they agree to within rounding"). Its one
@@ -209,7 +213,7 @@ grid.
   `classify_band` + the per-model status table above, which does the same
   classification on the causally-correct axis (`k_bar`) and across models
   rather than one density sweep on one model.
-- **`docs/handoff-structural-sweep.md`** — a design-session log. Its still-true
+- **`superseded/docs/handoff-structural-sweep.md`** — a design-session log. Its still-true
   findings (the chars/token bug, the overflow-vs-hit_cap distinction, the
   measured output budgets) are folded into this doc and
   `docs/graph-design-requirements.md`; its proposed 72-cell family grid was
@@ -225,9 +229,11 @@ grid.
   its writing, and the mean-degree-vs-edge-count-vs-length derivation in full.
 - `docs/ladder-and-rewiring.md` — why a ladder, why two axes, the
   degree-preserving rewiring mechanics, how to run it.
-- `docs/primer-effects-and-power.md` — source of jobs 871262 (density vs edge
-  count), 871263 (the `degree` ceiling), 871909 (the reading limit measured
-  without a graph), and every other primer-effect number this doc cites.
+- `docs/results/density-followups.md` — the current numbers for jobs 871262
+  (density vs edge count, at fixed mean degree) and 871263 (the `degree`
+  ceiling), and for the `filler` and plain-`degree` figures above.
+- `docs/primer-effects-and-power.md` — source of job 871909 (the reading limit
+  measured without a graph).
 - `docs/primer-impact-and-truncation.md` — per-task, per-size recommended
   ranges for the six tasks the ladder hasn't reached yet.
 - `docs/sweep-findings.md` — "Truncation impersonates a finding," "Target the

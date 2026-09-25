@@ -71,7 +71,7 @@ finely"), so it was not overclaiming in the way first alleged.
 
 `runs/qwen3-8b.degfixdeg.*` gives −1.0 pooled where `qwen3-1.7b` gives +6.2
 on the same grid. This looked damaging. It is not, per
-`scripts/score_fixed_degree_sweep.py`:
+`superseded/scripts/score_fixed_degree_sweep.py`:
 
 | cell | 1.7b `none` | 8b `none` | 1.7b Δ | 8b Δ |
 |---|---|---|---|---|
@@ -253,7 +253,7 @@ the prose itself (body prose is only ~2,550 words).
   0.107. The prose above the table already hedges correctly, so this is only
   a question of whether the table should match the paper's own standard.
 - Whether a mechanism for the `clustering` effect can be stated at all.
-  `docs/rq3-leads.md` proposes a retrieval/position account. Checked
+  `superseded/docs/rq3-leads.md` proposes a retrieval/position account. Checked
   independently and it does **not** hold up: the favoured covariate loses to
   degree-z out of sample under the doc's own continuous model (pos −1.33
   p=.19 vs degree-z +3.00 p=.022); the "held-out" seed had already been used

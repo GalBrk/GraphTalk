@@ -1,4 +1,4 @@
-"""Tests for the pure pairing logic in scripts/analyze_headline_robustness.py."""
+"""Tests for the pure pairing logic in superseded/scripts/analyze_headline_robustness.py."""
 
 import importlib.util
 import pathlib

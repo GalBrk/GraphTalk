@@ -1,6 +1,6 @@
 # Primer impact on success rate, and truncation among all rows — density at n=40
 
-Companion to [`primer-impact-and-truncation.md`](primer-impact-and-truncation.md),
+Companion to [`primer-impact-and-truncation.md`](../../docs/primer-impact-and-truncation.md),
 same questions (success rate, truncation-as-%-of-all-rows, per primer, and a
 range recommendation) but varying **density** instead of **size**. Node count is
 pinned at n=40; density (`p`) moves. Source data: a collaborator's checkout,
@@ -82,7 +82,7 @@ matches the collaborator's own published tables to the reported precision
 (e.g. plain `none` at p=0.10/0.20/0.35/0.50 reads 92.2%/76.5%/39.2%/29.5% here
 and there). **One expected discrepancy**: the think arm's `none` at p=0.85
 reads 48.8% here vs. their published 49.4%. This is not a scoring
-disagreement — their `scripts/score_density_sweep.py` **drops** `hit_cap` rows
+disagreement — their `superseded/scripts/score_density_sweep.py` **drops** `hit_cap` rows
 from the accuracy denominator (scores only completed rows), while this
 document scores every row, `hit_cap` or not, as its `primary` metric would
 score it (i.e. counts a capped row as wrong if unparseable, consistent with

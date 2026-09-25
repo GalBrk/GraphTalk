@@ -1,4 +1,4 @@
-"""Tests for the MDE/CSV additions to `scripts/score_full_density_sweep.py`.
+"""Tests for the MDE/CSV additions to `superseded/scripts/score_full_density_sweep.py`.
 
 `mde_for_arms` pins that each (control, treatment) pair here is its own
 cluster -- a full-task density sweep pair is one graph at one density,
