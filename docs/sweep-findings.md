@@ -1,5 +1,11 @@
 # First full sweep: results, and what the design cannot yet answer
 
+> **Status (2026-09-25): not re-verified.** This document predates the
+> current scoring rule (a truncated response is its own outcome, never
+> counted as wrong or dropped), has not been re-checked under it, and is
+> not cited by the paper. Current results, and the status of every family
+> of runs: [results index](results/README.md).
+
 Four models over the 1,260-prompt file, 5,040 generations. Verified complete and
 clean: every model has all 1,260 unique `(instance_id, condition, style)` keys,
 with no duplicates, no gaps and no empty responses, across several preemptions and

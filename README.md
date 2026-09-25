@@ -3,28 +3,12 @@
 Course project building on
 [Talk like a Graph: Encoding Graphs for Large Language Models](https://arxiv.org/abs/2310.04560).
 
-**Results live in [docs/results/](docs/results/README.md)**, one document per
-family of runs, each checked against its script's committed output; the main
-experiment is the 40-node sweep ([n40-sweep.md](docs/results/n40-sweep.md)).
-Families not yet moved there are described in
-[docs/primer-effects-and-power.md](docs/primer-effects-and-power.md), and
-`docs/sweep-findings.md` analyses the 5-19 node corpus and is kept for its
-retractions. In one paragraph:
-
-Primers are not one intervention. On `node_degree` at n=40, `clustering` is
-worth **+3.8 pp** (p=0.0017) to plain `qwen3-1.7b` at p ≤ .50, and that
-replicated on 400 fresh graphs per level (**+4.2 pp**, p=0.00055)
-([density-followups.md](docs/results/density-followups.md)); `components` does
-nothing at p ≤ .50 and costs the thinking arm 3.0 pp at p ≥ .65; `rwse` costs
-`qwen3-8b` **13.7 pp** on `edge_count`. Two controls decide
-how to read any of it. A primer-only solver that never sees the graph
-(`shortcuts.json`) scores 1.00 on three tasks for the `degree` primer, so effects
-must be read as `bar(cond) - bar(none)`, not against zero. And a *length-matched*
-placebo carrying no structure costs a thinking model **11.4 pp** on dense
-graphs (p ≥ .65), so an effect measured against `none` is content minus length,
-with the two terms comparable in size. Turning reasoning mode on, from the
-same checkpoint, is worth **+24.8 pp** without a primer, from +1.5 pp (not
-significant) at p = .10 to +43.5 pp at p = .85.
+**Results live in [docs/results/](docs/results/README.md)**: one document per
+family of runs, each checked against its script's committed output. The main
+experiment is the 40-node sweep ([n40-sweep.md](docs/results/n40-sweep.md)),
+and its `node_degree` follow-ups are in
+[density-followups.md](docs/results/density-followups.md). The index also lists
+every earlier family of runs with its document and status.
 
 `talk_like_a_graph/` is a vendored copy of Google Research's reference
 implementation. See [talk_like_a_graph/UPSTREAM.md](talk_like_a_graph/UPSTREAM.md)

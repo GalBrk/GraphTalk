@@ -1,10 +1,16 @@
 # Task-scoped screen: GOT vs. integer naming, side by side
 
+> **Status (2026-09-25): not re-verified.** This document predates the
+> current scoring rule (a truncated response is its own outcome, never
+> counted as wrong or dropped), has not been re-checked under it, and is
+> not cited by the paper. Current results, and the status of every family
+> of runs: [results index](../docs/results/README.md).
+
 `docs/plans/run_improved_tests.md` Phase 2. Union of every `(model,
 condition, task)` cell either scheme's `scripts/task_scoped_screen.py` run
 flagged at `p <= 0.10` (the screening threshold, not a significance
 claim), computed at `--n-perm 3000 --n-boot 3000` against
-`analysis/sweep_frame.got.csv` and `analysis/sweep_frame.csv`
+`csv2/sweep-small-graph/sweep_frame.got.csv` and `csv2/sweep-small-graph/sweep_frame.csv`
 respectively:
 
 | model | condition | task | GOT delta | GOT p | integer delta | integer p |
@@ -75,9 +81,9 @@ pre-registration -- it's a reason not to *extend* it to GOT.
 
 ```bash
 PYTHONPATH=. .venv/bin/python scripts/task_scoped_screen.py \
-    --frame analysis/sweep_frame.got.csv --n-perm 3000 --n-boot 3000 \
-    --out analysis/task_scoped_screen.got.csv
+    --frame csv2/sweep-small-graph/sweep_frame.got.csv --n-perm 3000 --n-boot 3000 \
+    --out csv2/sweep-small-graph/task_scoped_screen.got.csv
 PYTHONPATH=. .venv/bin/python scripts/task_scoped_screen.py \
-    --frame analysis/sweep_frame.csv --n-perm 3000 --n-boot 3000 \
-    --out analysis/task_scoped_screen.csv
+    --frame csv2/sweep-small-graph/sweep_frame.csv --n-perm 3000 --n-boot 3000 \
+    --out csv2/sweep-small-graph/task_scoped_screen.csv
 ```
