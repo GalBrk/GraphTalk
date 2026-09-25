@@ -1,0 +1,75 @@
+\begin{table*}[t]
+\centering
+\begin{minipage}[t]{.48\textwidth}
+\centering\footnotesize\setlength{\tabcolsep}{2.1pt}
+\textbf{(a) Neighbor-set Set-F1}\par\smallskip
+\begin{tabular}{llrrr}
+\toprule
+Arm & Primer & None & With & $\Delta$; $q$\\
+\midrule
+1.7P & filler & 0.9721 & 0.9624 & $-0.0096$; 0.3114\\ % [metric-audit-f1]
+1.7P & components & 0.9721 & 0.9716 & $-0.0004$; 0.9503\\ % [metric-audit-f1]
+1.7P & clustering & 0.9721 & 0.9724 & $+0.0003$; 0.9503\\ % [metric-audit-f1]
+1.7P & rwse & 0.9721 & 0.9702 & $-0.0018$; 0.9503\\ % [metric-audit-f1]
+1.7P & degree & 0.9721 & 0.9794 & $+0.0074$; 0.3352\\ % [metric-audit-f1]
+1.7P & all & 0.9721 & 0.9626 & $-0.0094$; 0.3846\\ % [metric-audit-f1]
+\addlinespace[2pt]
+1.7T & filler & 0.9732 & 0.9769 & $+0.0037$; 0.8851\\ % [metric-audit-f1]
+1.7T & components & 0.9732 & 0.9726 & $-0.0006$; 0.9942\\ % [metric-audit-f1]
+1.7T & clustering & 0.9732 & 0.9830 & $+0.0098$; 0.4254\\ % [metric-audit-f1]
+1.7T & rwse & 0.9732 & 0.9577 & $-0.0156$; 0.4254\\ % [metric-audit-f1]
+1.7T & degree & 0.9732 & 0.9627 & $-0.0105$; 0.4254\\ % [metric-audit-f1]
+1.7T & all & 0.9732 & 0.9733 & $+0.0001$; 0.9942\\ % [metric-audit-f1]
+\addlinespace[2pt]
+4P & filler & 0.9871 & 0.9660 & $-0.0212$; 0.0001\\ % [metric-audit-f1]
+4P & components & 0.9871 & 0.9976 & $+0.0105$; 0.0001\\ % [metric-audit-f1]
+4P & clustering & 0.9871 & 0.9845 & $-0.0026$; 0.5411\\ % [metric-audit-f1]
+4P & rwse & 0.9871 & 0.9776 & $-0.0095$; 0.0681\\ % [metric-audit-f1]
+4P & degree & 0.9871 & 0.9768 & $-0.0103$; 0.0379\\ % [metric-audit-f1]
+4P & all & 0.9871 & 0.9743 & $-0.0128$; 0.0209\\ % [metric-audit-f1]
+\addlinespace[2pt]
+4T & filler & 0.9636 & 0.9720 & $+0.0084$; 0.8279\\ % [metric-audit-f1]
+4T & components & 0.9636 & 0.9641 & $+0.0006$; 0.8956\\ % [metric-audit-f1]
+4T & clustering & 0.9636 & 0.9544 & $-0.0092$; 0.8279\\ % [metric-audit-f1]
+4T & rwse & 0.9636 & 0.9676 & $+0.0041$; 0.8279\\ % [metric-audit-f1]
+4T & degree & 0.9636 & 0.9685 & $+0.0050$; 0.8279\\ % [metric-audit-f1]
+4T & all & 0.9636 & 0.9551 & $-0.0084$; 0.8279\\ % [metric-audit-f1]
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[t]{.48\textwidth}
+\centering\footnotesize\setlength{\tabcolsep}{2.0pt}
+\textbf{(b) Edge-existence decisions}\par\smallskip
+\begin{tabular}{llrrrr}
+\toprule
+Arm & Primer & Raw & Bal. & Yes & Trunc.\\
+\midrule
+1.7P & none & 0.705 & 0.799 & 0.562 & 0.000\\ % [metric-audit-edge-main]
+1.7P & degree & 0.745 & 0.823 & 0.517 & 0.000\\ % [metric-audit-edge-main]
+1.7P & clustering & 0.743 & 0.824 & 0.525 & 0.000\\ % [metric-audit-edge-main]
+1.7P & rwse & 0.755 & 0.827 & 0.501 & 0.003\\ % [metric-audit-edge-main]
+1.7P & all & 0.820 & 0.877 & 0.448 & 0.000\\ % [metric-audit-edge-main]
+\addlinespace[2pt]
+1.7T & none & 0.990 & 0.990 & 0.271 & 0.003\\ % [metric-audit-edge-main]
+1.7T & degree & 0.965 & 0.976 & 0.299 & 0.005\\ % [metric-audit-edge-main]
+1.7T & clustering & 0.980 & 0.986 & 0.286 & 0.003\\ % [metric-audit-edge-main]
+1.7T & rwse & 0.978 & 0.982 & 0.283 & 0.003\\ % [metric-audit-edge-main]
+1.7T & all & 0.973 & 0.981 & 0.295 & 0.000\\ % [metric-audit-edge-main]
+\addlinespace[2pt]
+4P & none & 0.905 & 0.932 & 0.357 & 0.000\\ % [metric-audit-edge-main]
+4P & degree & 0.858 & 0.903 & 0.407 & 0.005\\ % [metric-audit-edge-main]
+4P & clustering & 0.945 & 0.963 & 0.323 & 0.000\\ % [metric-audit-edge-main]
+4P & rwse & 0.805 & 0.867 & 0.463 & 0.000\\ % [metric-audit-edge-main]
+4P & all & 0.805 & 0.867 & 0.461 & 0.003\\ % [metric-audit-edge-main]
+\addlinespace[2pt]
+4T & none & 0.998 & 0.998 & 0.268 & 0.003\\ % [metric-audit-edge-main]
+4T & degree & 0.998 & 0.998 & 0.268 & 0.003\\ % [metric-audit-edge-main]
+4T & clustering & 0.990 & 0.993 & 0.270 & 0.010\\ % [metric-audit-edge-main]
+4T & rwse & 0.985 & 0.987 & 0.269 & 0.015\\ % [metric-audit-edge-main]
+4T & all & 0.988 & 0.992 & 0.271 & 0.013\\ % [metric-audit-edge-main]
+\bottomrule
+\end{tabular}
+\end{minipage}
+\caption{Primary-metric audit on the same $400$ main-sweep prompts per arm and condition. (a) Neighbor-set Set-F1, with truncations scored zero: each row gives the no-primer baseline, the primer score and paired difference; $q$ adjusts six contrasts per arm. Components and filler are diagnostics. (b) Edge-existence raw and balanced accuracy (Bal.) and truncation (Trunc.) use all prompts; yes-rate (Yes) uses finished answers. Compare each primer row with its arm's none row. Only raw-accuracy contrasts have BH tests in Table~\ref{tab:matrix}; other edge measures are descriptive. P/T: plain/thinking.} % [metric-audit-f1] [metric-audit-edge-main]
+\label{tab:primarymetrics}
+\end{table*}

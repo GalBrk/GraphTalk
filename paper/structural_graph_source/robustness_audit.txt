@@ -1,0 +1,11 @@
+[interaction] 40-node dedicated paired follow-ups; high minus low change in all-prompt correct share (points). Welch p and BH q over three exploratory interactions; bootstrap CI resamples graphs within density. Truncated answers are not correct.
+  1.7B plain: clustering: low +3.81, high -0.67; interaction -4.48 [-7.62, -1.42], p=0.0044466, q=0.0044466; n=1600/1200
+  1.7B thinking: clustering: low +2.50, high -5.42; interaction -7.92 [-11.75, -4.04], p=5.0704e-05, q=7.6056e-05; n=1600/1200
+  1.7B thinking: degree: low +11.31, high +24.75; interaction +13.44 [+9.12, +17.71], p=4.9094e-10, q=1.4728e-09; n=1600/1200
+[bundle-direct] Plain 4B node degree p>=.65 (n=300 paired per contrast): high-density all minus comparator, correct share of every prompt; exact McNemar p and BH q over six alternatives. All cells have zero truncations; the plain dense arm uses 2048 output tokens.
+  all vs none: 55.00 -> 33.67; delta -21.33 [-28.33, -14.33], p=2.2257e-08 q=2.2257e-08 fixed 34 broke 98
+  all vs clustering: 66.33 -> 33.67; delta -32.67 [-39.33, -25.67], p=2.9236e-17 q=8.7707e-17 fixed 23 broke 121
+  all vs degree: 64.33 -> 33.67; delta -30.67 [-37.33, -24.00], p=2.6541e-17 q=8.7707e-17 fixed 18 broke 110
+  all vs rwse: 62.67 -> 33.67; delta -29.00 [-35.67, -22.33], p=4.7783e-15 q=9.5565e-15 fixed 22 broke 109
+  all vs components: 54.00 -> 33.67; delta -20.33 [-27.00, -13.67], p=1.3661e-08 q=1.6394e-08 fixed 28 broke 89
+  all vs filler: 57.00 -> 33.67; delta -23.33 [-30.00, -16.33], p=7.5571e-10 q=1.1336e-09 fixed 31 broke 101

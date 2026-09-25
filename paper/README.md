@@ -1,7 +1,8 @@
 # Paper
 
-There is no current paper source here yet. This directory holds what the next
-one needs, and this file says how to write it from the repo.
+The current paper is `structured_graph.pdf`, built from
+`structural_graph_source/` (its README says how to compile it). This file
+says how to write the paper from the repo.
 
 - `acl2023.sty`, `acl.sty`, `acl_natbib.bst`: the ACL style files.
 - `custom.bib`: the bibliography.
