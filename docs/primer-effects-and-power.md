@@ -1,5 +1,15 @@
 # Where primers actually help, and why the design has not yet been able to tell
 
+> **Superseded for two families of runs.** The 40-node sweep (`densfull40`,
+> `densfull40hi`) and its `node_degree` follow-ups (`degdens*`, `degceil`,
+> `degfixdeg`, `density40`) have current results documents:
+> [results/n40-sweep.md](results/n40-sweep.md) and
+> [results/density-followups.md](results/density-followups.md). Where this
+> document reports those runs, its numbers predate the current scoring rule (a
+> truncated response is its own outcome, never dropped) and are replaced by
+> those documents. Its other sections stand until their families are
+> consolidated.
+
 Written 2026-09-05, after adding `qwen3-0.6b`/`qwen3-1.7b`/`qwen35-2b` to the
 suite and probing at `--count 100` on the `none`/`degree` conditions.
 
@@ -989,13 +999,13 @@ like next to a stated answer.
 Reproduced from the committed rows with:
 
 ```bash
-PYTHONPATH=. python scripts/score_density_sweep.py \
+PYTHONPATH=. python superseded/scripts/score_density_sweep.py \
     --responses "runs/qwen3-1.7b.degdens40.shard*of5.jsonl"
 ```
 
 `scripts/score_sweep.py` will *not* give these numbers -- it groups by (task,
 style) and averages the four density levels into one cell, which is exactly the
-variable this run manipulates. `tests/test_score_density_sweep.py` pins the two
+variable this run manipulates. `superseded/tests/test_score_density_sweep_superseded.py` pins the two
 decisions that would otherwise fail silently: `hit_cap` rows are dropped rather
 than scored zero, and dropping a row drops its pair so the McNemar arms cannot
 drift out of alignment.
@@ -1140,7 +1150,7 @@ this is a direction to test, not a result to cite.
 Reproduce the table with:
 
 ```bash
-PYTHONPATH=. python scripts/score_density_sweep.py \
+PYTHONPATH=. python superseded/scripts/score_density_sweep.py \
     --responses "runs/qwen3-1.7b.degdens40.shard*of5.jsonl" \
                 "runs/qwen3-1.7b.degdens40hi.shard*of5.jsonl" \
     --trend-max 0.50
@@ -1292,7 +1302,7 @@ in the table above.
 Score it with:
 
 ```bash
-PYTHONPATH=. python scripts/score_density_sweep.py \
+PYTHONPATH=. python superseded/scripts/score_density_sweep.py \
     --responses "runs/qwen3-1.7b-think.degdensthink.shard*of7.jsonl" \
     --trend-max 0.50
 ```
@@ -1397,7 +1407,7 @@ has a `filler` arm.
 Score it with:
 
 ```bash
-PYTHONPATH=. python scripts/score_density_sweep.py \
+PYTHONPATH=. python superseded/scripts/score_density_sweep.py \
     --responses "runs/qwen3-1.7b.degdensrep.shard*of5.jsonl" --trend-max 0.50
 ```
 
@@ -1661,7 +1671,7 @@ Every earlier density-at-fixed-n run above narrowed to one or two tasks and 2-4
 conditions (see "Density at a fixed size"). This one does the opposite: **n=40,
 densities {0.10, 0.20, 0.35, 0.50}, all 7 conditions, all 6 tasks, 100
 graphs/cell** -- 16,800 prompts (`prompts.densfull40.jsonl`), tag `densfull40`.
-Scored with `scripts/score_full_density_sweep.py`, which adds `task` as a
+Scored with `superseded/scripts/score_full_density_sweep.py`, which adds `task` as a
 grouping key so exact match and F1 are never averaged together.
 
 **Status: all four arms complete** (2026-09-16), 16,800/16,800 rows each --
@@ -1752,7 +1762,7 @@ answer and still well short of the 100% it makes available.
 Per-cell tables for any arm:
 
 ```bash
-PYTHONPATH=. python scripts/score_full_density_sweep.py \
+PYTHONPATH=. python superseded/scripts/score_full_density_sweep.py \
     --responses "runs/qwen3-4b.densfull40.shard*of25.jsonl" \
     --shortcuts shortcuts.json
 ```
@@ -1825,7 +1835,7 @@ denser graph.
 Reproduce with the same scorer, e.g.:
 
 ```bash
-PYTHONPATH=. python scripts/score_full_density_sweep.py \
+PYTHONPATH=. python superseded/scripts/score_full_density_sweep.py \
     --responses "runs/qwen3-4b.densfull40hi.shard*of11.jsonl" \
     --shortcuts shortcuts.json
 ```

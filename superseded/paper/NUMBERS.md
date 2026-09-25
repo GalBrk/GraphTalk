@@ -139,7 +139,7 @@ that paper's section numbers. Tables `\input{main_table.tex}` and
 
 ## Section 5.5 (clustering headline, Table 7, Figure 2)
 
-- Table 7: `scripts/analyze_headline_robustness.py`
+- Table 7: `superseded/scripts/analyze_headline_robustness.py`
 - "53 helped, 41 hurt": `superseded/scripts/analyze_churn_and_length.py` ->
   `superseded/churn_len_densfull40.json["qwen3-1.7b"]`, node_degree/clustering rows, summed.
 - densfull40hi cross-scale replication (+11.3/+9.3 etc., all globally BH-sig):
@@ -164,7 +164,7 @@ that paper's section numbers. Tables `\input{main_table.tex}` and
 ## Section 5.8 (power)
 
 - MDE null-cell coverage counts: `mde_qwen3-*.csv` (from
-  `scripts/score_full_density_sweep.py --mde --csv`), counted by
+  `superseded/scripts/score_full_density_sweep.py --mde --csv`), counted by
   `bh_significant == False` and the `mde_note` column. These *counts* are
   unaffected by the 2026-09-22 MDE fix (see Section 5.7 below); the *medians*
   are not.
@@ -200,7 +200,7 @@ one top-level key per `--test`:
   bisecting to its floor, and `mde_for_arms` binarizes at `>= 0.9999` first --
   `connected_nodes` is the only set-F1 task here, and feeding graded F1 to a
   Bernoulli injector is what produced the superseded 5.6/10.0. Regenerate with
-  `scripts/score_full_density_sweep.py --responses "runs/<arm>.densfull40.shard*of25.jsonl"
+  `superseded/scripts/score_full_density_sweep.py --responses "runs/<arm>.densfull40.shard*of25.jsonl"
   --shortcuts shortcuts.json --tasks connected_nodes --control {none,filler} --mde --csv <out>`.
   The **counts were unchanged** by the fix; only the medians moved, and only via those
   six rows per arm (for `qwen3-4b` they were 10.0-13.1pp and are now 4.8-8.1pp, which

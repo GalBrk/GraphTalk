@@ -18,8 +18,9 @@ older analysis of the 5-19 node corpus and is kept for its retractions rather
 than its conclusions. Two things in it decide how every other number should be
 read: effects are judged against `bar(cond) - bar(none)` from `shortcuts.json`
 rather than against zero, and against a *length-matched* control rather than
-against `none`, since a content-free primer of the same length costs a thinking
-model up to 11.7 points on its own.
+against `none`, since a structure-free primer of about the same length costs a
+thinking model 11.4 points at p >= .65 on its own
+([results/density-followups.md](results/density-followups.md) §5).
 
 ## On the TAU CS cluster: read in place
 

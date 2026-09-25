@@ -23,9 +23,10 @@ The two ways a graph can be hard have opposite implications, and only one of
 them leaves room for a primer:
 
 - **Length-limited** (low `k_bar`, long prompt). The model cannot read the
-  graph, and cannot read a primer either. At p=0.85 the `degree` control --
-  which writes the answer *verbatim* into the prompt -- was worth **+0.7 pp**
-  (job 871263). A primer cannot repair a reading failure.
+  graph, and cannot read a primer either. At p≥0.65 the `degree` control --
+  which writes the answer *verbatim* into the prompt -- was worth **+1.2 pp**,
+  not significant (job 866492; `docs/results/density-followups.md` §3). A primer cannot repair a reading
+  failure.
 - **Magnitude-limited** (high `k_bar`). The model reads everything and
   miscounts. The same control was worth **+6.8 pp** at p=0.50. This is the
   only regime where a primer has anything to do.
@@ -257,8 +258,8 @@ says "`k_bar` up **or** `n` down". Test 3 breaks that (all 18 rungs, `n` and
 
 The zero-confound test already exists and costs nothing. **Query a low-degree
 vs a high-degree node on a byte-identical prompt** -- same graph, same length,
-same edges, only the answer's magnitude differs. Job 871262 measured 0.624 vs
-0.225 at matched edge counts. It is pre-registered as a stratifier over the
+same edges, only the answer's magnitude differs. Job 871262 measured 0.615 vs
+0.225 at matched edge counts (`docs/results/density-followups.md` §6). It is pre-registered as a stratifier over the
 Stage 3 data rather than a separate run, so it settles the question with
 nothing left to confound and no extra generation.
 

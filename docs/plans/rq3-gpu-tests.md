@@ -1,26 +1,30 @@
 # RQ3 GPU tests: shuffled/reversed/placebo primers on `clustering`
 
 **Status:** planned, not run. No GPU work has happened yet; this documents
-the design so it is reachable outside any one conversation. CPU-only
-findings that motivate this plan are in `docs/rq3-leads.md`; read that
-first for what "the effect" is and what has already been ruled out.
+the design so it is reachable outside any one conversation. The CPU-only
+findings that motivate this plan are in `docs/results/density-followups.md`
+(§2 for the effect, §8 for its selection check and the position mechanism);
+read that first. The earlier notes, with the numbered leads this plan
+implements, are in `superseded/docs/rq3-leads.md`.
 
 ## Why 1.7B, plain arm only
 
 Yes, this is still worth running even restricted to one arm:
 
-- The `clustering` effect on `node_degree` exists only in the 1.7B plain
-  arm at the pooled level. The thinking arms show nothing at intermediate
-  density. 4B shows an effect only on the dense extension (+11.3), not the
+- The `clustering` effect on `node_degree` is a 1.7B plain-arm effect. The
+  1.7B thinking arm gains +2.5 at p≤.50, carried by p=.20 (+5.2), and nothing
+  at p=.35 or .50 (+3.2 and −0.8, neither significant;
+  `docs/results/density-followups.md` §4). 4B shows an effect only on the dense extension (+11.3), not the
   main sweep.
 - Skipping thinking mode is a large saving, not just a convenience: a
   thinking run needs an 8,192-token budget against ~141 tokens/answer for
-  the plain arm, and there is no effect in the thinking arms to explain.
+  the plain arm, and the thinking arm has no effect at these densities to
+  explain.
 - The cost of restricting to one arm is generality, not correctness: this
   tells you the mechanism in one model, not whether it holds elsewhere.
   The paper already limits the claim to "one model, one task."
 - A later check on 4B's existing dense-graph rows (position split) needs
-  no new GPU time — see "CPU follow-ups" in `docs/rq3-leads.md`.
+  no new GPU time — see "CPU follow-ups" in `superseded/docs/rq3-leads.md`.
 
 ## Design
 
@@ -32,7 +36,8 @@ verify zero `instance_id` collisions before running, as
 
 **Conditions:** `none` and `clustering` as anchors, plus the new primers
 below. `filler` is dropped — it already equals `none` at these densities
-(−0.5, `rq3_leads.json`'s `selection.mid_pooled.filler_none`).
+(−0.5, `mid_pooled.filler_none` under `[rqselection]` in
+`csv2/density-followups/density_followups.txt`).
 
 **Why rerun the anchors instead of pairing with existing rows:**
 `graphtalk/hf_backend.py` hardcodes `dtype=torch.bfloat16`. Older GPUs
@@ -41,7 +46,7 @@ old-GPU run would use fp16 or fp32 and produce different greedy outputs —
 the existing bf16 rows can't be paired with them. Since the anchors have
 to be regenerated anyway, running them on the fresh seed above gives a
 third out-of-sample check of the pooled effect, with the hypotheses fixed
-before the run (satisfying lead #5 in `docs/rq3-leads.md`, the
+before the run (satisfying lead #5 in `superseded/docs/rq3-leads.md`, the
 pre-registered confirmation).
 
 ### New primer conditions
@@ -80,11 +85,12 @@ pre-registered confirmation).
 ### Power
 
 - 1,200 pairs/condition gives a 95% CI of about ±3.4 points on
-  `shuffled` − `clustering` — enough to rule out losing the full +5.9
-  effect.
+  `shuffled` − `clustering` — enough to rule out losing the full effect at
+  these densities (5.88 points, `docs/results/density-followups.md` §8).
 - The reversed-order test has ~0.8 power to detect a full sign flip of
   the position gradient, ~0.6 power to detect the original low/high
-  tercile gap (~9 points) reappearing. A continuous slope model gains
+  tercile gap (11.57 against 2.63 points, `docs/results/density-followups.md`
+  §8) reappearing. A continuous slope model gains
   power over the tercile split used in the CPU analysis.
 
 ## Time estimate on an old GPU
@@ -119,7 +125,7 @@ pre-registered confirmation).
   sweep.
 - Build and spot-check the new prompts before submitting the pilot.
 
-## Relationship to `docs/rq3-leads.md`
+## Relationship to `superseded/docs/rq3-leads.md`
 
 This plan implements leads 1–4 of that document's "Leads" section; lead 5
 (pre-registered confirmation) is folded into this design via the fixed

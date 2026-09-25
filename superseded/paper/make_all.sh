@@ -21,7 +21,7 @@ PYTHONPATH=. "$PY" superseded/ci_all.py
 PYTHONPATH=. "$PY" superseded/ci_all.py --corpus densfull40hi --out superseded/ci_all_hi.json
 
 echo "== headline-cell robustness (Section 5.5, Table 7) =="
-PYTHONPATH=. "$PY" scripts/analyze_headline_robustness.py
+PYTHONPATH=. "$PY" superseded/scripts/analyze_headline_robustness.py
 
 echo "== route split / crossfit / held-out / ceiling (Section 5.4, 5.7) =="
 PYTHONPATH=. "$PY" superseded/scripts/analyze_baseline_law.py --shortcuts shortcuts_n40_flat.json \
@@ -58,9 +58,9 @@ echo "== review checks: interaction, logit, headline split, SDT, budget, prior, 
 # without it the `tokens` check is skipped and the other checks still run.
 PYTHONPATH=. "$PY" superseded/scripts/analyze_review_checks.py ${QWEN3_TOKENIZER:+--tokenizer "$QWEN3_TOKENIZER"}
 
-echo "== RQ3 leads: selection, heterogeneity, error shape, transcription (docs/rq3-leads.md) =="
+echo "== RQ3 leads: selection, heterogeneity, error shape, transcription (superseded/docs/rq3-leads.md) =="
 # The `hetero` test's regression needs statsmodels.
-PYTHONPATH=. "$PY" scripts/analyze_rq3_leads.py
+PYTHONPATH=. "$PY" superseded/scripts/analyze_rq3_leads.py
 
 echo "== tables and figures =="
 PYTHONPATH=. "$PY" superseded/paper/make_main_table.py

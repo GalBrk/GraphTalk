@@ -6,8 +6,8 @@ that a density sweep confounds, and it tests `clustering` on a grid that played
 no part in selecting that condition. It appears in no document.
 
 Numbers come from `graphtalk.scoring.mcnemar`, the same function
-`scripts/score_fixed_degree_sweep.py` uses; `main()` asserts the pooled figure
-against that script's committed output (`analysis/tables/degfixdeg.1.7b.txt`)
+`superseded/scripts/score_fixed_degree_sweep.py` uses; `main()` asserts the pooled figure
+against that script's committed output (`superseded/analysis/tables/degfixdeg.1.7b.txt`)
 so this table cannot silently disagree with the scorer.
 
 Cells are keyed on the (size, density) pair, not density alone: two of the

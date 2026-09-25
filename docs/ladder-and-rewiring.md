@@ -35,7 +35,7 @@ identical. `tests/test_rewiring.py` asserts each of those.
 
 This gives a **within-instance paired design**: the same graph, rewired, same
 question, same answer. It is what defuses the length confound *by construction* —
-`filler` prices prompt length at −11.7pp on dense graphs, larger than most primer
+`filler` prices prompt length at −11.4pp on dense graphs (`docs/results/density-followups.md` §5), larger than most primer
 effects, so a design that lets length drift inherits that confound.
 
 ### Two implementation points that are correctness, not tuning
@@ -84,7 +84,8 @@ implications for primers:
 
 - **Length-limited**: the model cannot read the graph, and cannot use a primer
   either. Where the plain arm collapses, the `degree` control that writes the
-  answer *verbatim* into the prompt is worth **+0.7pp**.
+  answer *verbatim* into the prompt is worth **+1.2pp**, not significant
+  (`docs/results/density-followups.md` §3).
 - **Magnitude-limited**: the model reads everything and miscounts — the work a
   primer short-circuits. The same control is worth **+6.8pp** there.
 

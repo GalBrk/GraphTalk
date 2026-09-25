@@ -1,4 +1,4 @@
-"""Tests for `scripts/score_fixed_degree_sweep.py`.
+"""Tests for `superseded/scripts/score_fixed_degree_sweep.py`.
 
 The one thing this script exists to get right that `score_density_sweep.py`
 gets wrong on this design: two cells sharing a density value must not be pooled

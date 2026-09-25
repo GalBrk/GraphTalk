@@ -11,7 +11,7 @@ scored zero), effects read against `shortcuts.json`'s bar rather than against
 zero, and per-task Benjamini-Hochberg across conditions rather than one
 family across all 42 (task, condition) cells.
 
-  PYTHONPATH=. python scripts/score_full_density_sweep.py \
+  PYTHONPATH=. python superseded/scripts/score_full_density_sweep.py \
       --responses "runs/qwen3-1.7b.densfull40.shard*of25.jsonl" \
       --shortcuts shortcuts.json
 """

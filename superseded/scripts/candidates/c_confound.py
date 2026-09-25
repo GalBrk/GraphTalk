@@ -1,6 +1,6 @@
 """(c) Is Table 4's 'difficulty' graph structure, or just answer magnitude?"""
 import json, glob, sys, collections
-sys.path.insert(0, "scripts")
+sys.path[:0] = ["superseded/scripts", "scripts"]
 import analyze_baseline_law as abl
 from graphtalk import scoring
 

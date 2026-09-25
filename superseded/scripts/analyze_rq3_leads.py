@@ -14,7 +14,7 @@ before any analysis uses it.
   behaviour  -- response length, and whether errors are transcription
                 (wrong neighbour list) or counting (right list, wrong count)
 
-  PYTHONPATH=. python scripts/analyze_rq3_leads.py [--test NAME ...]
+  PYTHONPATH=. python superseded/scripts/analyze_rq3_leads.py [--test NAME ...]
 """
 import argparse
 import glob
@@ -25,19 +25,19 @@ import sys
 
 import networkx as nx
 
-from graphtalk import graphqa, outcomes, prompts, scoring
+from graphtalk import graphqa, prompts, scoring
 from graphtalk import diverse_corpus
 
-sys.path.insert(0, "scripts")
+sys.path[:0] = ["superseded/scripts", "scripts"]
 import analyze_baseline_law as abl  # noqa: E402
 import build_size_sweep as bss  # noqa: E402
-import score_density_sweep as sds  # noqa: E402  (summary: one effect computation)
 
 ARM, TASK, N = "qwen3-1.7b", "node_degree", 40
 REP_SEED = 20760906
 GLOBS = [f"runs/{ARM}.{c}.shard*of5.jsonl"
          for c in ("degdens40", "degdens40hi", "degdensfill", "degdensrep")]
 CONDS = ("none", "clustering", "filler", "components")
+OUT = "superseded/rq3_leads.json"
 
 
 # ---------------------------------------------------------------- data
@@ -53,21 +53,6 @@ def rebuild(iid):
   return g, int(re.search(r"node (\d+)\?", row["task_description"]).group(1)), row["gold"]
 
 
-def record(r):
-  """One run record, scored under R1 (graphtalk/outcomes.py): a truncated
-  response is its own outcome, never correct."""
-  answer = scoring.extract_answer(r["response"] or "", TASK)
-  exact = int(scoring.score_one(answer, r["gold"], TASK)["exact"])
-  try:
-    pred = int(str(answer).strip())
-  except (TypeError, ValueError):
-    pred = None
-  o = outcomes.outcome(exact, bool(r.get("hit_cap")))
-  return dict(pred=pred, gold=int(r["gold"]), cap=o == outcomes.TRUNCATED, exact=exact,
-              correct=int(o == outcomes.CORRECT), resp=r["response"],
-              ntok=r.get("n_new_tokens"))
-
-
 def load():
   rows, seen = {}, set()
   for pattern in GLOBS:
@@ -81,7 +66,14 @@ def load():
           if k in seen:
             continue
           seen.add(k)
-          rows[k] = record(r)
+          pred = scoring.extract_answer(r["response"], TASK)
+          try:
+            pred = int(str(pred).strip())
+          except (TypeError, ValueError):
+            pred = None
+          rows[k] = dict(pred=pred, gold=int(r["gold"]), cap=bool(r.get("hit_cap")),
+                         exact=int(pred == int(r["gold"])), resp=r["response"],
+                         ntok=r.get("n_new_tokens"))
   graphs = {}
   for iid in {i for i, _ in rows}:
     g, v, gold = rebuild(iid)
@@ -93,32 +85,29 @@ def load():
 
 
 def pairs(rows, a, b, pred=lambda i: True):
-  """[(iid, correct_a, correct_b, truncated_a, truncated_b)] over every pair; a
-  truncated response is kept and counts as not correct (R1)."""
+  """[(iid, score_a, score_b)] over non-capped pairs."""
   out = []
   for (i, c) in rows:
     if c != a or (i, b) not in rows or not pred(i):
       continue
     ra, rb = rows[(i, a)], rows[(i, b)]
-    out.append((i, ra["correct"], rb["correct"], int(ra["cap"]), int(rb["cap"])))
+    if ra["cap"] or rb["cap"]:
+      continue
+    out.append((i, ra["exact"], rb["exact"]))
   return out
 
 
-def summary(ps):
-  """Paired effect (first minus second condition, points) as
-  score_density_sweep.effect computes it: a bootstrap over instances within
-  density, exact McNemar, n, and -- when the pairs carry truncation -- the change
-  in the truncated share."""
+def summary(ps, n_boot=2000, seed=0):
   if not ps:
     return None
-  trunc = len(ps[0]) == 5
-  e = sds.effect([(abl.density_of(p[0]), (p[2], p[4] if trunc else 0), (p[1], p[3] if trunc else 0))
-                  for p in ps])
-  out = dict(delta=round(e["d"], 2), ci=[round(e["lo"], 2), round(e["hi"], 2)], p=e["p"],
-             n=e["n"])
-  if trunc:
-    out["truncated_change"] = round(e["dt"], 2)
-  return out
+  d = [a - b for _, a, b in ps]
+  rng = random.Random(seed)
+  means = sorted(sum(d[rng.randrange(len(d))] for _ in d) / len(d) for _ in range(n_boot))
+  return dict(delta=round(100 * sum(d) / len(d), 2),
+              ci=[round(100 * means[int(0.025 * (n_boot - 1))], 2),
+                  round(100 * means[int(0.975 * (n_boot - 1))], 2)],
+              p=scoring.mcnemar([b for _, _, b in ps], [a for _, a, _ in ps])["p_value"],
+              n=len(ps))
 
 
 def is_rep(i):
@@ -154,17 +143,16 @@ def test_selection(rows, graphs):
   fresh = lambda i: not is_rep(i) and i not in main
   out = dict(
       screen_cells=len(cand),
+      screen_cells_by_density=len(cand) * 4,
       dedicated_ids_in_screen=sum(1 for i in graphs if in_screen(i)),
       identical_prompts=shared,
       screened_graphs=dict(clust_none=summary(pairs(rows, "clustering", "none", in_screen)),
                            clust_filler=summary(pairs(rows, "clustering", "filler", in_screen))),
       unscreened_graphs=dict(clust_none=summary(pairs(rows, "clustering", "none", fresh)),
                              clust_filler=summary(pairs(rows, "clustering", "filler", fresh))),
+      replication=summary(pairs(rows, "clustering", "none", is_rep)),
   )
-  # The replication effect itself is printed once, by primer_findings.py
-  # [replic]; only its p-value is needed here.
-  rep_p = summary(pairs(rows, "clustering", "none", is_rep))["p"]
-  out["replication_p"] = rep_p
+  rep_p = out["replication"]["p"]
   out["replication_bonferroni_over_screen"] = min(1.0, rep_p * len(cand))
   # The paper's pooled estimate at the intermediate densities. The range was
   # chosen from the default seed, so the replication seed is its
@@ -205,7 +193,7 @@ def _terciles(rows, graphs, a, b, key, pred):
   """Within-density terciles of a covariate, so density cannot drive them."""
   groups = {0: [], 1: [], 2: []}
   by_p = {}
-  for i, x, y, *_ in pairs(rows, a, b, pred):
+  for i, x, y in pairs(rows, a, b, pred):
     by_p.setdefault(abl.density_of(i), []).append((covariates(*graphs[i])[key], i, x, y))
   for vals in by_p.values():
     vals.sort()
@@ -216,9 +204,9 @@ def _terciles(rows, graphs, a, b, key, pred):
 
 def _ols(rows, graphs, a, b, pred):
   ps = pairs(rows, a, b, pred)
-  levels = sorted({abl.density_of(p[0]) for p in ps})
+  levels = sorted({abl.density_of(i) for i, _, _ in ps})
   data, names = [], ["z", "c", "pos"] + [f"p{p:g}" for p in levels]
-  for i, x, y, *_ in ps:
+  for i, x, y in ps:
     cv = covariates(*graphs[i])
     data.append([100 * (x - y), cv["z"], 10 * cv["c"], cv["pos"] / 10]
                 + [1.0 * (abl.density_of(i) == p) for p in levels])
@@ -252,8 +240,8 @@ def test_hetero(rows, graphs):
     acc = {}
     for label, lo, hi in (("low", 0, 13), ("mid", 14, 26), ("high", 27, 39)):
       rs = [r for (i, c), r in rows.items() if c == "none" and pred(i)
-            and lo <= graphs[i][1] <= hi]
-      acc[label] = round(100 * sum(r["correct"] for r in rs) / len(rs), 1)
+            and not r["cap"] and lo <= graphs[i][1] <= hi]
+      acc[label] = round(100 * sum(r["exact"] for r in rs) / len(rs), 1)
     out[f"none_accuracy_by_pos/{sname}"] = acc
   return out
 
@@ -273,7 +261,7 @@ def test_errors(rows, graphs):
       errs = [r["pred"] - r["gold"] for r in rs if r["pred"] is not None]
       n = len(rs)
       out[f"{band}/{c}"] = dict(
-          n=n, exact_among_finished=round(100 * sum(r["exact"] for r in rs) / n, 1),
+          n=n, acc=round(100 * sum(r["exact"] for r in rs) / n, 1),
           unparsed=round(100 * (n - len(errs)) / n, 1),
           off_by_1=round(100 * sum(abs(e) == 1 for e in errs) / n, 1),
           off_by_2=round(100 * sum(abs(e) == 2 for e in errs) / n, 1),
@@ -355,9 +343,7 @@ def test_behaviour(rows, graphs):
   # Paired: among instances wrong under none and right under clustering,
   # what kind of error did none make? (what clustering fixes)
   fixed, broke = {}, {}
-  for i, a, b, ta, tb in pairs(rows, "clustering", "none", lambda i: not is_rep(i)):
-    if ta or tb:
-      continue
+  for i, a, b in pairs(rows, "clustering", "none", lambda i: not is_rep(i)):
     if a > b:
       k = classify(rows[(i, "none")], *graphs[i])
       fixed[k] = fixed.get(k, 0) + 1
@@ -385,7 +371,7 @@ def test_behaviour(rows, graphs):
       kinds[k] = kinds.get(k, 0) + 1
     n_err = sum(kinds.values())
     out[f"mid_transcription/{c}"] = dict(
-        n=n_all, errors=n_err, mean_missing_neighbours=round(missing / n_all, 2),
+        errors=n_err, mean_missing_neighbours=round(missing / n_all, 2),
         **{f"pct_{k}": round(100 * v / n_err, 1) for k, v in sorted(kinds.items())})
   return out
 
@@ -394,42 +380,20 @@ TESTS = dict(selection=test_selection, hetero=test_hetero, errors=test_errors,
              behaviour=test_behaviour)
 
 
-def tidy(obj, key=""):
-  """p-values (keys p, holm, *_p, *bonferroni*) to two significant digits, so a
-  results doc can cite them as printed; every other value unchanged."""
-  if isinstance(obj, dict):
-    return {k: tidy(v, k) for k, v in obj.items()}
-  if isinstance(obj, float) and (key in ("p", "holm") or key.endswith("_p")
-                                 or "bonferroni" in key):
-    return float(f"{obj:.2g}")
-  return obj
-
-
-TITLES = dict(
-    selection="qwen3-1.7b node_degree clustering: screen size, graph overlap, "
-              "screened vs unscreened effects",
-    hetero="effect by queried-node degree, clustering and list position "
-           "(within-density terciles, OLS)",
-    errors="error shape of finished responses (off-by-k), by density band and condition",
-    behaviour="finished responses: length, transcription vs counting errors, "
-              "what clustering fixes")
-
-
 def main():
   _check_transcribed()
   ap = argparse.ArgumentParser(description=__doc__)
   ap.add_argument("--test", action="append", choices=list(TESTS))
-  ap.add_argument("--out", default=None, help="also write the results as JSON here")
+  ap.add_argument("--out", default=OUT)
   args = ap.parse_args()
   rows, graphs = load()
   print(f"loaded {len(rows)} rows, {len(graphs)} graphs (all rebuilt golds match)")
   results = {}
   for name in args.test or TESTS:
     results[name] = TESTS[name](rows, graphs)
-    print(f"[rq{name}] {TITLES[name]}\n" + json.dumps(tidy(results[name]), indent=1))
-    if args.out:
-      with open(args.out, "w") as fh:
-        json.dump(results, fh, indent=1)
+    print(f"\n== {name}\n" + json.dumps(results[name], indent=1))
+    with open(args.out, "w") as fh:
+      json.dump(results, fh, indent=1)
 
 
 if __name__ == "__main__":

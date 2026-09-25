@@ -608,7 +608,7 @@ from M3 decisively and were out of scope here (no new GPU runs).
 
 Done last, deliberately, so nothing above was anchored to it.
 
-**Strong independent replication.** `docs/node_degree-density-and-size.md` reports
+**Strong independent replication.** `superseded/docs/node_degree-density-and-size.md` reports
 a *separate* 400-graph-per-level sweep of `node_degree` across the same seven
 densities. Against this 100-graph rebuild (`qwen3-1.7b-think`, `degree`):
 
@@ -642,7 +642,7 @@ matches decision 1 here.
 7. The failure-to-ignore table, and the finding that irrelevant content disturbs
    no more than a content-free preamble of the same length.
 
-`docs/node_degree-density-and-size.md` already notes that `degree` on `node_degree`
+`superseded/docs/node_degree-density-and-size.md` already notes that `degree` on `node_degree`
 "measures whether the model uses a stated fact, not primer-aided reasoning". This
 document supplies the mechanism for why it often fails to: position-dependent
 retrieval, and a length collapse that replaces counting with lookup.

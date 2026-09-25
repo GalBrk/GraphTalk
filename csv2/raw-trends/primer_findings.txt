@@ -642,11 +642,11 @@
   qwen3-1.7b clustering vs none, p>=.65: -3.3 [-7.7, +0.7] broke 24 fixed 14 p=0.14 n=300 | truncated -0.3, wrong +3.7
 [replic] qwen3-1.7b node_degree, clustering vs none, dedicated runs
   400 graphs per density, p<=.50     +3.8 [+1.6, +6.1] fixed 215 broke 154 p=0.0017 n=1600 truncated +0.0
-  the 300 new graphs per density     +4.0 [+1.2, +6.8] fixed 163 broke 115 p=0.0047 n=1200 truncated +0.0
-  fresh seeds, 1,600 graphs          +4.2 [+1.8, +6.6] fixed 223 broke 155 p=0.00055 n=1600 truncated +0.0
-  fixed mean degree, n in {20..160}  +6.2 [+4.5, +7.9] fixed 506 broke 306 p=2.2e-12 n=3200 truncated -0.3
+  the 300 new graphs per density     +4.0 [+1.3, +6.6] fixed 163 broke 115 p=0.0047 n=1200 truncated +0.0
+  fresh seeds, 1,600 graphs          +4.2 [+1.8, +6.8] fixed 223 broke 155 p=0.00055 n=1600 truncated +0.0
+  fixed mean degree, n in {20..160}  +6.2 [+4.4, +7.9] fixed 506 broke 306 p=2.2e-12 n=3200 truncated -0.3
   grid sizes [20, 40, 80, 160]
-  400 graphs per density, p>=.65     -0.7 [-2.8, +1.2] fixed 71 broke 79 p=0.57 n=1200 truncated +0.0
+  400 graphs per density, p>=.65     -0.7 [-2.7, +1.4] fixed 71 broke 79 p=0.57 n=1200 truncated +0.0
 [comp] qwen3-4b connected_nodes, components vs none by density; graphs with >1 component
   p=0.10: +7.0; multi-component graphs 52/100
   p=0.20: +11.0; multi-component graphs 0/100

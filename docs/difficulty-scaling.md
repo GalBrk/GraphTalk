@@ -129,9 +129,10 @@ alongside:
 - **Density works as a difficulty knob at fixed size.** Holding n=40 and moving
   ER density alone, `qwen3-1.7b` on `node_degree` falls 0.922 -> 0.295 across
   p=0.10 -> 0.50, while the blind baseline barely moves (0.230 -> 0.147).
-- **The knob has a floor.** From p=0.65 up the plain model scores *below* the
-  modal-degree baseline and answers 39 -- the complete-graph degree -- in 61% of
-  rows. A primer stating the answer verbatim is worth +0.7 pp there, which is
+- **The knob has a floor.** From p=0.65 up the plain model answers 39 -- the
+  complete-graph degree -- in 24% to 61% of finished responses, and at p=0.75
+  and 0.85 it scores *below* the modal-degree baseline. A primer stating the
+  answer verbatim is worth +1.2 pp there, not significant (`docs/results/density-followups.md` §3), which is
   what proves the cells are uninformative rather than primer-negative. **Density
   sweeps at n=40 should stop at p=0.50.**
 - **`--graph-source diverse` is the wrong vehicle for this.** The

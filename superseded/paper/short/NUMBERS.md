@@ -26,7 +26,7 @@ PYTHONPATH=. python superseded/paper/short/make_degfixdeg_table.py  # Table 2
 
 Both read `runs/*.jsonl` directly, so a table cannot drift from the
 generations. `make_degfixdeg_table.py` asserts its pooled figure against
-`scripts/score_fixed_degree_sweep.py`'s committed output and fails loudly if
+`superseded/scripts/score_fixed_degree_sweep.py`'s committed output and fails loudly if
 they disagree.
 
 ## Section 2 — method
@@ -81,9 +81,9 @@ they disagree.
 | exactly two non-route primers beat both controls | exhaustive scan of `superseded/vs_controls_densfull40.json` over non-route conditions with `bh_global_reject` on both controls |
 | `qwen3-4b`/`connected_nodes`/`components`: +9.2 vs `none`, +21.8 vs `filler`, n=400, p≈1e-4 | `superseded/vs_controls_densfull40.json`; **not reported in the 8-page paper**, and it falsifies that paper's "the only primer that…" claim |
 | `clustering`/`node_degree` +5.9 [2.1, 9.8]; replication +5.5; main sweep +3.0 p=0.26 | audit §1 verified the whole block |
-| Table 2 in full, pooled +6.2, n=3,191, 504 helped / 306 hurt, p<1e-4, 6/8 cells BH | `superseded/paper/short/make_degfixdeg_table.py`, asserted against `analysis/tables/degfixdeg.1.7b.txt` |
-| +8.2 at mean degree ≈16 vs +4.2 at ≈8 | `analysis/tables/degfixdeg.1.7b.txt`, "pooled per mean-degree block" |
-| `qwen3-8b` 0.998–0.802, shows nothing | `analysis/tables/degfixdeg.8b.txt`; Table 2 columns 6–7 |
+| Table 2 in full, pooled +6.2, n=3,191, 504 helped / 306 hurt, p<1e-4, 6/8 cells BH | `superseded/paper/short/make_degfixdeg_table.py`, asserted against `superseded/analysis/tables/degfixdeg.1.7b.txt` |
+| +8.2 at mean degree ≈16 vs +4.2 at ≈8 | `superseded/analysis/tables/degfixdeg.1.7b.txt`, "pooled per mean-degree block" |
+| `qwen3-8b` 0.998–0.802, shows nothing | `superseded/analysis/tables/degfixdeg.8b.txt`; Table 2 columns 6–7 |
 | n 20→160 costs 29 points and saturates; doubling mean degree costs 33–42 at every size | Table 2, `none` column |
 
 ## Limitations / Ethics

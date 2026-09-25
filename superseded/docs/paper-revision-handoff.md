@@ -255,7 +255,7 @@ Reuse:
 - `graphtalk/scoring.py` (`extract_answer`, `score_one`) and `graphtalk/significance.py`
   (paired tests, BH).
 - `superseded/scripts/analyze_baseline_law.py` (`cells_from_scores`, `score_run`, `pearson`, `ols`).
-- `scripts/score_full_density_sweep.py`, `superseded/ci_all.py`.
+- `superseded/scripts/score_full_density_sweep.py`, `superseded/ci_all.py`.
 - `scripts/analyze_rewiring_sweep.py` (main).
 - `scripts/candidates/*.py` (promote the adopted ones).
 - `scripts/shortcut_table.py` / `graphtalk/shortcuts.py`.

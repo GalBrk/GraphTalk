@@ -1,7 +1,7 @@
 """Bonus: does the `clustering` headline replicate across graph SIZE?
 degfixdeg pins mean degree and sweeps n = 20..160."""
 import json, glob, sys, collections, math
-sys.path.insert(0, "scripts")
+sys.path[:0] = ["superseded/scripts", "scripts"]
 from graphtalk import scoring
 
 rows = {}

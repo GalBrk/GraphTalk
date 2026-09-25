@@ -7,8 +7,10 @@ number can still be traced to the file and code that produced it.
 - **Current results** live in [`docs/results/`](../docs/results/README.md).
 - **Why the earlier versions disagreed:** [`paper/CLAIMS_LEDGER.md`](paper/CLAIMS_LEDGER.md)
   checks every claim of every earlier paper version against the raw runs.
-- **Exact rebuild** of anything here, as it stood: `git checkout 7037749`, then run
-  it from its original path (the "Original path" column).
+- **Exact rebuild** of anything here, as it stood: `git checkout 7037749` for the
+  40-node sweep's material (every section before "Density follow-ups"), `git
+  checkout 70e6a8d` for the density follow-ups' (that section); then run it from
+  its original path (the "Original path" column).
 - **Path-fixed runs:** the layout mirrors the original one (`superseded/<original
   path>`), and paths inside these files were rewritten to point at their new
   locations, so the scripts also run from here (from the repo root, with
@@ -86,7 +88,7 @@ Each is a second analysis of the 40-node runs, replaced by
 | `scripts/analyze_churn_and_length.py`, `scripts/analyze_error_taxonomy.py`, `scripts/analyze_nontermination.py` | churn, error shape, truncation (v1, v2) |
 | `scripts/candidates/a_routegap.py`, `a_transfer.py` | candidate analyses, rejected |
 | `scripts/reproduce_cut_claims.py` (new) | recomputes the drafts' values for the claims the ledger cut or found wrong, from the archived outputs; output in `paper/cut_claims_reproduced.txt` |
-| `scripts/analyze_baseline_law.py` (copy) | the full version, with the `split`, `heldout`, `instrument`, `crossfit` and `ceiling` tests; the live copy keeps only `continuum` and the shared helpers |
+| `scripts/analyze_baseline_law.py` (copy) | the full version, with the `split`, `heldout`, `instrument`, `crossfit`, `ceiling` and `continuum` tests; the live copy keeps only the shared helpers (the continuum is now `score_density_sweep.py`'s `continuum` line) |
 | `scripts/analyze_primer_window.py` (copy) | the version v3 used, with its own report (`window`, `by_primer`, `gap`, `--tex`); the live copy keeps only `cells()` and `window()` |
 | `tests/test_analyze_*.py`, `tests/test_test_vs_controls.py`, `tests/test_analyze_baseline_law_superseded.py` | tests of the scripts above; run with `python -m pytest superseded/tests` |
 
@@ -126,3 +128,64 @@ Replaced by [`docs/results/n40-sweep.md`](../docs/results/n40-sweep.md).
 | `docs/primer-effects-paper-draft.md` | a draft of the results section |
 | `docs/candidate-analyses.md` | six candidate analyses with adopt/reject verdicts |
 | `docs/paper-claim-audit.md`, `docs/paper-revision-handoff.md`, `docs/paper-v2-consolidation.md`, `docs/paper-v3-review.md`, `docs/paper-v3-review-fixes.md` | review and revision logs of v1–v3 |
+
+## Density follow-ups
+
+The dedicated `node_degree` runs (`degdens40`, `degceil`, `degdens40hi`,
+`degdensfill`, `degdensthink`, `degdensfillT`, `degdensrep`, `degfixdeg`) and
+the `density40` pilot. Replaced by
+[`docs/results/density-followups.md`](../docs/results/density-followups.md),
+whose pipeline is `scripts/density_followups.py` (output:
+`csv2/density-followups/density_followups.txt`).
+
+### Scripts and their tests
+
+| Original path | What it computed |
+|---|---|
+| `scripts/score_density_sweep.py` (copy) | the per-density scorer before truncation became its own outcome (it dropped `hit_cap` rows); the live file is its rewrite |
+| `scripts/analyze_rq3_leads.py` (copy) | the `clustering` forensics before truncation became its own outcome (capped pairs were dropped); the live file is its rewrite |
+| `scripts/score_fixed_degree_sweep.py` | `degfixdeg` per (size, density) cell; now `score_density_sweep.py`'s `cell` grouping |
+| `scripts/score_full_density_sweep.py` | the (task, density) scorer, used for `density40` and for the 40-node sweep's first analysis; now the `task` grouping |
+| `scripts/analyze_headline_robustness.py` | `clustering` against `none` and `filler` at seven densities (v1's Table 7) |
+| `scripts/candidates/c_confound.py`, `scripts/candidates/f_clustering_size.py` | density against answer magnitude; `clustering` across graph size |
+| `tests/test_score_fixed_degree_sweep.py`, `tests/test_score_full_density_sweep.py`, `tests/test_analyze_headline_robustness.py` | tests of the scripts above; run with `python -m pytest superseded/tests` |
+| `tests/test_score_density_sweep.py`, `tests/test_analyze_rq3_leads.py` (copies, as `*_superseded.py`) | the tests of the two copied scripts, as they were |
+| `tests/test_analyze_baseline_law.py` (copy, as `test_analyze_baseline_law_helpers_superseded.py`) | the tests of the helpers the live `analyze_baseline_law.py` no longer has (`cells_from_scores`, the cross-fit, `fit_line`, `ols`); they run against the archived full copy |
+
+### Outputs
+
+| Original path | Producer |
+|---|---|
+| `csv2/degdens-probes/*.tests.csv` (5) | `score_density_sweep.py` (copy) `--mde --csv` |
+| `csv2/degdens-probes/*.cells.csv`, `*.trend.csv` | an uncommitted variant of `score_density_sweep.py`; no surviving producer |
+| `csv2/degdens-probes/qwen3-1.7b.degfixdeg.*` | `score_density_sweep.py` (copy), grouped by density alone, which merges the two p = 0.101 cells of the fixed-mean-degree grid; kept, not valid |
+| `csv2/degdens-probes/degfixdeg.qwen3-8b.csv`, `analysis/tables/degfixdeg.{1.7b,8b}.txt`, `analysis/rerun/degfixdeg.qwen3-8b.txt` (a byte-identical copy of `tables/degfixdeg.8b.txt`) | `score_fixed_degree_sweep.py` (the tables without `--csv`, the CSV with it) |
+| `csv2/one-offs/qwen3-1.7b.density40.bytask.csv` | `score_full_density_sweep.py --csv` |
+| `rq3_leads.json` | `analyze_rq3_leads.py` (copy) |
+
+Rerunning each producer regenerates its committed output byte-identically
+(line endings aside), except: the `*.cells.csv` and `*.trend.csv` files, which
+have no producer, and the five `*.tests.csv` files, whose effect columns (n, wins,
+losses, delta, p, BH) reproduce but whose MDE columns (a seeded simulation)
+match neither the fast nor the `--mde` preset of the archived script.
+
+### Docs
+
+| Original path | What it was |
+|---|---|
+| `docs/rq3-leads.md` | CPU forensics of the `clustering` effect, with the numbered leads that `docs/plans/rq3-gpu-tests.md` implements |
+| `docs/primer-impact-and-truncation-density-n40.md` | per-density accuracy and truncation tables for the plain and thinking arms |
+| `docs/node_degree-density-and-size.md` | density and size as difficulty knobs (its Part A covers the size sweep) |
+| `docs/handoff-structural-sweep.md` | a design-session log for a structural sweep that was not built |
+
+### Claims that cannot be recomputed from the repo
+
+- The graph-blind solver bars quoted for these graphs (0.08 for the
+  non-answer primers, 1.00 for `degree`) come from the 40-node sweep's own
+  corpus, not from these graphs; the current document reports the per-level
+  blind bar the scorer prints instead.
+- `density40` prompt-length medians in `docs/primer-effects-and-power.md`
+  (2,099 to 6,542 characters) do not reproduce from `prompts.density40.jsonl`
+  (`[d40setup]` prints the current values).
+- A thinking-arm token cost of "20–40×" the plain arm's: the output prints the
+  ratio of medians per density and condition (`[ddgap]`), which is lower.

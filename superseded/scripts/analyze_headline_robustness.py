@@ -13,7 +13,7 @@ reach the extra densities added by `degdens40hi`.
   degdensrep   (p=.10-.50, independent seed /s<seed>/): none, clustering
                -- the replication sample; never pooled with the above.
 
-  PYTHONPATH=. python scripts/analyze_headline_robustness.py
+  PYTHONPATH=. python superseded/scripts/analyze_headline_robustness.py
 """
 import glob
 import json

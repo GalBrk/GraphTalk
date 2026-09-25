@@ -16,7 +16,7 @@ This script groups by the (size, density) pair instead
 (`node_degree/size80/p0.101/17` -> (80, 0.101)), which is unique across every
 cell in this design even though density alone is not.
 
-  PYTHONPATH=. python scripts/score_fixed_degree_sweep.py \
+  PYTHONPATH=. python superseded/scripts/score_fixed_degree_sweep.py \
       --responses "runs/qwen3-1.7b.degfixdeg.shard*of5.jsonl" \
                   "runs/qwen3-1.7b.degfixdegfill.shard*of5.jsonl"       --csv csv2/sweep-large-graph/degfixdeg.1.7b.csv
 

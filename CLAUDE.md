@@ -101,18 +101,20 @@ PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500 --json shor
 PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.json
 ```
 
-Runs from `build_size_sweep.py --densities` are scored by density level instead,
-since `score_sweep.py` groups by (task, style) and would average the levels
-together:
+Runs from `build_size_sweep.py --densities` are scored by level instead, since
+`score_sweep.py` groups by (task, style) and would average the levels together.
+Reproduce every number in `docs/results/density-followups.md` (the density
+follow-up runs) with:
 
 ```bash
-PYTHONPATH=. python scripts/score_density_sweep.py \
-    --responses "runs/qwen3-1.7b.degdens40.shard*of5.jsonl"
+PYTHONPATH=. python scripts/density_followups.py > csv2/density-followups/density_followups.txt
 ```
 
-It drops `hit_cap` rows rather than scoring them zero, prints the count dropped
-per cell, and separates the pooled test from the per-level family so a pooled
-p-value cannot drag a per-level one under the threshold.
+It needs `statsmodels` (the `analysis` extra) for the forensics. It runs
+each run set through `scripts/score_density_sweep.py` (levels are the
+density, the (size, density) cell, or the (task, density) pair; a truncated
+response is its own outcome, never dropped) and `scripts/analyze_rq3_leads.py`
+(the `clustering` forensics).
 
 Check statistical significance beyond `score_sweep.py`'s per-cell McNemar (that test is
 underpowered at 30 pairs/cell — see `docs/sweep-findings.md`). Needs the `analysis` extra
@@ -210,11 +212,8 @@ python scripts/measure_real_rows.py                           # re-measures corp
   `score_density_sweep.py` are the size/density pair: the first generates
   graphs at chosen sizes and pinned ER densities, the second scores them
   grouped by density level rather than by (task, style), which is the grouping
-  `score_sweep.py` collapses. `score_full_density_sweep.py` extends that
-  scorer with `task` as a third grouping key, for a density sweep that (unlike
-  every earlier one) covers more than one or two tasks at once -- see
-  `docs/primer-effects-and-power.md`'s "full-task, full-condition density
-  sweep" section. The directory holds ~40 further one-off analysis scripts
+  `score_sweep.py` collapses; `density_followups.py` runs the density
+  follow-up family through it. The directory holds ~40 further one-off analysis scripts
   (`analyze_*.py`, `check_*.py`, `validate_*.py`, and similar); each belongs to
   a specific finding and is referenced from the `docs/*.md` file that reports
   that finding, rather than listed individually here — grep `docs/` for a
@@ -226,7 +225,9 @@ python scripts/measure_real_rows.py                           # re-measures corp
 - `docs/results/` — **the current results, read first**: one document per
   family of runs, each stating only what its script's committed output shows;
   start at `docs/results/README.md`. The main experiment is the 40-node sweep,
-  `docs/results/n40-sweep.md`. Every earlier paper version, analysis and doc
+  `docs/results/n40-sweep.md`; its `node_degree` follow-ups (dedicated density,
+  thinking, filler, replication and fixed-mean-degree runs) are in
+  `docs/results/density-followups.md`. Every earlier paper version, analysis and doc
   those documents replace is in `superseded/` (see `superseded/README.md`).
   Families not yet consolidated into `docs/results/` are still described in
   `docs/primer-effects-and-power.md`. Other files in `docs/` and
@@ -236,7 +237,6 @@ python scripts/measure_real_rows.py                           # re-measures corp
   |---|---|---|
   | `DATA.md` | current | Authority on every tracked file's schema, the `(instance_id, condition, style)` pairing key, and per-row caveats (truncated/`hit_cap` rows, CPU- vs GPU-generated rows, the `filler`/`edge_existence` rewording) |
   | `sweep-findings.md` | retracted | The original 5-19 node analysis; kept for its retractions, not its conclusions |
-  | `rq3-leads.md` | current | CPU-only forensics on the `clustering`/`node_degree` effect (selection artifacts, heterogeneity, error shape, response behaviour); GPU follow-up design lives in `plans/rq3-gpu-tests.md` |
   | `difficulty-scaling.md` | current | Four additive eval-pipeline changes (larger synthetic graphs, denser topology, a `reachability` task, an overflow guard) via `--graph-source diverse` |
   | `features-considered.md` | current | Which graph features were evaluated for the primer (degree, clustering, RWSE, components) and why the rest were rejected, against a four-test selection criterion |
   | `ladder-and-rewiring.md` | current | Design notes for the shared `(n, mean_degree)` ladder and the rewiring experiment; read before `ladder-and-retrieval-results.md` |
@@ -246,7 +246,7 @@ python scripts/measure_real_rows.py                           # re-measures corp
   | `plans/shortcut-ceilings.md` | executed | Original design for `shortcuts.py`'s theorem/heuristic/fitted rules |
   | `plans/run_improved_tests.md` | partially executed, still live | Phased plan for statistical-power work across GOT/integer sweeps; phases 1-2 landed, later phases are outstanding — follow its instructions rather than treating it as history |
   | `plans/scale-vs-topology-investigation.md` | done | Investigation into whether a GOT-naming effect's significance flip at n=500 was added power or a real effect shift |
-  | `plans/rq3-gpu-tests.md` | planned, not run | GPU test design for the `clustering` effect (shuffled/reversed-order primers); see `rq3-leads.md` for the CPU findings that motivate it |
+  | `plans/rq3-gpu-tests.md` | planned, not run | GPU test design for the `clustering` effect (shuffled/reversed-order primers); the CPU findings that motivate it are in `results/density-followups.md` |
 
   Read `sweep-findings.md` and `docs/plans/` (`shortcut-ceilings.md`,
   `primer-computation.md`) before interpreting a new sweep result — they
