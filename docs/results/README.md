@@ -28,6 +28,25 @@ grid (with Qwen3-8B).
 | 40-node sweep (main experiment) | `runs/*.densfull40*`, `runs/*.densfull40hi*`; its `clustering` replication also reads `runs/qwen3-1.7b.{degdens40,degdens40hi,degdensrep,degfixdeg}.*` | [n40-sweep.md](n40-sweep.md) | `scripts/build_raw_frame.py` → `scripts/primer_findings.py`, `scripts/legacy_claims.py` | `csv2/raw-trends/primer_findings.txt`, `csv2/raw-trends/legacy_claims.txt` |
 | Density follow-ups (`node_degree`: dedicated densities, thinking, `filler`, replication, fixed mean degree, the `density40` pilot) | `runs/qwen3-1.7b.{degdens40,degceil,degdens40hi,degdensfill,degdensrep,degfixdeg,density40}.*`, `runs/qwen3-1.7b-think.{degdensthink,degdensfillT}.*`, `runs/qwen3-8b.degfixdeg.*` | [density-followups.md](density-followups.md) | `scripts/density_followups.py` → `scripts/score_density_sweep.py`, `scripts/analyze_rq3_leads.py` | `csv2/density-followups/density_followups.txt` |
 
+## Earlier stages
+
+Runs from before the main experiment. The paper cites none of their numbers;
+it states only the pilot's outcome, given here. A family with one reference
+document and no known contradiction is listed as current, though its numbers
+carry no tags and the doc test does not check them. The others carry a banner
+saying they have not been re-verified.
+
+| Family of runs | Runs | Document | Pipeline | Status |
+|---|---|---|---|---|
+| Pilot: the published GraphQA graphs (5–19 nodes), Gemma 4 E4B and 12B, Qwen3-8B and 14B, each with and without thinking | `runs/{gemma4-e4b,gemma4-12b,qwen3-8b,qwen3-14b}[-think]*.jsonl`, including their `.rerun.` files | this row | `scripts/score_sweep.py` | Without a primer most arms are near ceiling on four of the five tasks, and only `edge_count` separates them; this is why the main experiment moved to 40-node graphs. Earlier analyses, not re-verified: `docs/sweep-findings.md` (retracted), `analysis/README.md`, `analysis/primer_task_shortcut_audit.md` |
+| Ladder screen and retrieval probe | `runs/*.ladder_screen*`, `runs/*.retrieval_locate*` | [ladder-and-retrieval-results.md](../ladder-and-retrieval-results.md) (design: [ladder-and-rewiring.md](../ladder-and-rewiring.md)) | `scripts/analyze_ladder.py`, `scripts/analyze_retrieval.py` | current |
+| GoT node naming | `runs/*.got*` | `analysis/README.md`, `analysis/task_scoped_screen_comparison.md`, `docs/plans/scale-vs-topology-investigation.md` | `scripts/naming_effect.py`, `scripts/task_scoped_screen.py` | not re-verified |
+| Published-split probes and clean-condition cells | `runs/*.probe100*`, `runs/*.cc500*`, `runs/*.ec500*` | [primer-effects-and-power.md](../primer-effects-and-power.md) | `scripts/score_sweep.py` | not re-verified |
+| Size sweep (20, 40 and 80 nodes, no primer) | `runs/*.size*` | [primer-effects-and-power.md](../primer-effects-and-power.md), "Does size break them?" | — | not re-verified |
+| Retrieval extensions | `runs/*.retrieval_extend*`, `runs/*.retrieval.*`, `runs/*.retrieval_threshold*` | none | — | no results document |
+| Rewiring | `runs/*.rewire_shared*`, `runs/qwen35-2b.rewire_extra.jsonl` | none (design: [ladder-and-rewiring.md](../ladder-and-rewiring.md)) | `scripts/analyze_rewiring_sweep.py` | no results document |
+| An older size sweep (20 to 80 nodes) | removed in `b49ce3b` | [primer-impact-and-truncation.md](../primer-impact-and-truncation.md) | — | not reproducible from this tree |
+
 ## From the proposal to what was run
 
 | Proposal | What was run in the main experiment | Where |

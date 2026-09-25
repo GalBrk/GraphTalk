@@ -1,5 +1,11 @@
 # Scale vs. topology: why `qwen3-8b`/`degree` (GOT) became globally significant at n=500
 
+> **Status (2026-09-25): not re-verified.** This document predates the
+> current scoring rule (a truncated response is its own outcome, never
+> counted as wrong or dropped), has not been re-checked under it, and is
+> not cited by the paper. Current results, and the status of every family
+> of runs: [results index](../results/README.md).
+
 ## Context
 
 Commit `30fa9ed` replicated `qwen3-8b`/`degree` (GOT node-naming) at

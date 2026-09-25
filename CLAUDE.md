@@ -229,14 +229,18 @@ python scripts/measure_real_rows.py                           # re-measures corp
   thinking, filler, replication and fixed-mean-degree runs) are in
   `docs/results/density-followups.md`. Every earlier paper version, analysis and doc
   those documents replace is in `superseded/` (see `superseded/README.md`).
-  Families not yet consolidated into `docs/results/` are still described in
-  `docs/primer-effects-and-power.md`. Other files in `docs/` and
-  `docs/plans/`:
+  `docs/results/README.md` also lists every earlier family of runs with its
+  document and status. Other files in `docs/` and `docs/plans/`:
 
   | File | Status | What it's for |
   |---|---|---|
   | `DATA.md` | current | Authority on every tracked file's schema, the `(instance_id, condition, style)` pairing key, and per-row caveats (truncated/`hit_cap` rows, CPU- vs GPU-generated rows, the `filler`/`edge_existence` rewording) |
   | `sweep-findings.md` | retracted | The original 5-19 node analysis; kept for its retractions, not its conclusions |
+  | `primer-effects-and-power.md` | not re-verified | Earlier results for the published-split probes, the small models, the size sweep and the clean-condition cells; its 40-node sections are replaced by `results/` |
+  | `primer-impact-and-truncation.md` | not reproducible | A size sweep whose runs were removed in `b49ce3b` |
+  | `repo-scope.md` | current | Map of the repo's scope and how the n=40 work relates to the paper's 5-19 node benchmark |
+  | `graph-corpus-status.md` | current | Which graph to generate, for which model, for a fair primer test |
+  | `graph-design-requirements.md` | current | The four requirements a graph corpus must meet to be a valid primer test |
   | `difficulty-scaling.md` | current | Four additive eval-pipeline changes (larger synthetic graphs, denser topology, a `reachability` task, an overflow guard) via `--graph-source diverse` |
   | `features-considered.md` | current | Which graph features were evaluated for the primer (degree, clustering, RWSE, components) and why the rest were rejected, against a four-test selection criterion |
   | `ladder-and-rewiring.md` | current | Design notes for the shared `(n, mean_degree)` ladder and the rewiring experiment; read before `ladder-and-retrieval-results.md` |
@@ -245,10 +249,12 @@ python scripts/measure_real_rows.py                           # re-measures corp
   | `plans/primer-computation.md` | executed | Original design for `primers.py`'s statistics and renderer; record of why, not current behaviour — read `graphtalk/primers.py` for that |
   | `plans/shortcut-ceilings.md` | executed | Original design for `shortcuts.py`'s theorem/heuristic/fitted rules |
   | `plans/run_improved_tests.md` | partially executed, still live | Phased plan for statistical-power work across GOT/integer sweeps; phases 1-2 landed, later phases are outstanding — follow its instructions rather than treating it as history |
-  | `plans/scale-vs-topology-investigation.md` | done | Investigation into whether a GOT-naming effect's significance flip at n=500 was added power or a real effect shift |
+  | `plans/scale-vs-topology-investigation.md` | done, not re-verified | Investigation into whether a GOT-naming effect's significance flip at n=500 was added power or a real effect shift |
+  | `plans/finding-graphs-that-make-primer-effects-measurable.md` | superseded | A brief realised as the ladder/rewiring design |
+  | `plans/2026-09-2*-single-source-of-truth*.md` | executed | The design and phase plans of the one-source-of-truth cleanup that produced `results/` and `superseded/` |
   | `plans/rq3-gpu-tests.md` | planned, not run | GPU test design for the `clustering` effect (shuffled/reversed-order primers); the CPU findings that motivate it are in `results/density-followups.md` |
 
-  Read `sweep-findings.md` and `docs/plans/` (`shortcut-ceilings.md`,
+  Read `docs/results/README.md` and `docs/plans/` (`shortcut-ceilings.md`,
   `primer-computation.md`) before interpreting a new sweep result — they
   explain what the measured numbers mean.
 

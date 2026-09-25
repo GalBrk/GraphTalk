@@ -1,13 +1,14 @@
 # Measurement artefacts
 
-> **Every primer delta in this file is measured against `none`, which is a
-> *shorter* prompt.** Measured 2026-09-09, a length-matched placebo (`filler`,
-> shortcut bar identical to `none`) costs a thinking model 6.3 points pooled and
-> 11.7 on dense graphs purely for its characters. So each delta below is content
-> minus length, the two terms are comparable in size, and the ranking of primers
-> by `none`-delta can differ from the ranking by content. `components` adds 40
-> characters and is barely affected; `clustering` and `all` add ~1,600 and are.
-> See `../docs/primer-effects-and-power.md`, "The `filler` control".
+> **Status (2026-09-25): not re-verified.** This document predates the
+> current scoring rule (a truncated response is its own outcome, never
+> counted as wrong or dropped), has not been re-checked under it, and is
+> not cited by the paper. Current results, and the status of every family
+> of runs: [results index](../docs/results/README.md).
+>
+> Every primer delta in this file is measured against `none`, a shorter
+> prompt, so it is content minus length; the length cost is measured in
+> [density-followups.md](../docs/results/density-followups.md) §5.
 
 
 Small, expensive-to-reproduce measurements that decisions in this project rest
@@ -398,8 +399,8 @@ anything) and both call sites now include non-terminating rows, matching
 Covers both the `integer` and `got` `node_naming` schemes automatically --
 no scheme-specific code exists anywhere in this phase, since `node_naming`
 is carried as data throughout the pipeline, never branched on (see
-`README.md#node-naming`). Both `analysis/sweep_frame.csv` and
-`analysis/sweep_frame.got.csv`, and both `analysis/significance_report.csv`
+`README.md#node-naming`). Both `csv2/sweep-small-graph/sweep_frame.csv` and
+`csv2/sweep-small-graph/sweep_frame.got.csv`, and both `analysis/significance_report.csv`
 and `analysis/significance_report.got.csv`, were regenerated together
 under this phase.
 
@@ -560,7 +561,7 @@ follow-up. That follow-up happened:
 `analysis/confirmatory_got_degree.json` pre-registered the cell, a fresh
 `--count 500` GoT sweep was generated (single-stream -- see "The batching
 baseline" below, batching was measured and rejected as too costly at this
-effect size), and `analysis/significance_report.count500.got.csv` is the
+effect size), and `csv2/sweep-small-graph/significance_report.count500.got.csv` is the
 result:
 
 |  | `--count 30` (original) | `--count 500` (replication) |
@@ -824,7 +825,7 @@ than restructuring `check_significance.py`.
 
 Real result: `PYTHONPATH=. .venv/bin/python scripts/recommend_count.py
 --report analysis/significance_report.got.csv --frame
-analysis/sweep_frame.got.csv` now recommends **515 graphs** (up from 180
+csv2/sweep-small-graph/sweep_frame.got.csv` now recommends **515 graphs** (up from 180
 clusters today) for `qwen3-8b`/`degree` -- just over the published
 500-graph cap. `analysis/confirmatory_got_degree.json` pre-registers this
 cell as confirmatory ahead of any follow-up run that uses it.
@@ -911,7 +912,7 @@ The three cells below all test arithmetic/counting-shortcut execution
 reliability, not graph reasoning (see the relabel note in "Phase A1
 candidates" above) -- kept, not discarded, because that is still a real
 question, but no longer the flagship track. The higher-priority track --
-screening `analysis/task_scoped_screen.got.csv`/`.csv`'s `shortcut_flag
+screening `csv2/sweep-small-graph/task_scoped_screen.got.csv`/`.csv`'s `shortcut_flag
 == "none"` cells for an actual reasoning candidate -- was run and came
 back **null**: at the current `--count 30`, not one `none`-flagged cell
 in either scheme clears even the loose `p <= 0.10` screen. The closest is
