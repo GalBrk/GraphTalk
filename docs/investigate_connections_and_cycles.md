@@ -20,7 +20,6 @@ check it. Every number names its source:
 | **P** `[tag]` | `csv2/raw-trends/primer_findings.txt` (`scripts/primer_findings.py`), or `csv2/raw-trends/primer_cells.csv` |
 | **D** `[tag]` | `csv2/density-followups/density_followups.txt` (`scripts/density_followups.py`) |
 | **C** `[tag]` | `csv2/raw-trends/check_cycle_claims.txt` (`scripts/check_cycle_claims.py`); per-claim rows in `cycle_claims.csv` and `response_claims.csv` |
-| **S** | computed in-session from `csv2/raw-trends/frame.csv`, `runs/` or the CSVs above; not saved by a script |
 
 Throughout: an *effect* is the paired change in % correct against no primer on
 the same graphs, in percentage points; *significant* is Benjamini–Hochberg
@@ -80,20 +79,20 @@ cannot compute it well itself; statistics that do not state it add about
 ## 2. Every primer against no primer
 
 Each primer against no primer on 24 pairings (4 models × 6 tasks), main sweep
-(p ≤ .50, 400 graphs per pairing), from P `[main]`. `node_count` and
+(p ≤ .50, 400 graphs per pairing; effects as in P `[main]`). `node_count` and
 `cycle_check` count like any task: the model does not know their answer is
 constant. A significant change is *truncation-driven* when the share of
-responses hitting the budget moves by at least half the effect (S, from
-`[main]`).
+responses hitting the budget moves against it by at least half the effect
+(C `[pvn]`).
 
 | | filler | components | clustering | rwse | degree | all |
 |:--|:-:|:-:|:-:|:-:|:-:|:-:|
 | Sig. gain, primer states the answer | – | – | – | – | 3 | 3 |
 | Sig. gain, primer does not state it | 2 | 3 | 3 | 1 | 3 | 4 |
 | Sig. gain, truncation-driven | 3 | 1 | 3 | 3 | 2 | 2 |
-| Gain, not significant | 5 | 4 | 6 | 4 | 4 | 3 |
-| Neutral (within ±1) | 8 | 10 | 10 | 9 | 3 | 7 |
-| Loss, not significant | 2 | 3 | 2 | 5 | 4 | 3 |
+| Gain, not significant | 5 | 4 | 7 | 5 | 4 | 3 |
+| Neutral (within ±1) | 8 | 9 | 8 | 8 | 3 | 6 |
+| Loss, not significant | 2 | 4 | 3 | 5 | 4 | 4 |
 | Sig. loss, truncation-driven | 0 | 2 | 0 | 0 | 2 | 0 |
 | Sig. loss, other | 4 | 1 | 0 | 2 | 3 | 2 |
 | Largest sig. gain where it does not state the answer | +39.8 1.7B NC | +21.2 1.7B NC | +67.2 1.7B NC | +9.2 4B NC | +8.0 4B NC | +47.0 1.7B NC |
@@ -137,7 +136,7 @@ states no structure. Against no primer, pooled over p ≤ .50 (P `[main]`):
 
 By density, 100 graphs per cell, uncorrected exact McNemar; each cell is
 "effect ·accuracy without a primer", with the truncation change shown when it
-is 5 points or more (S, from `frame.csv`):
+is 5 points or more (C `[fillerdens]`):
 
 | Task | Model | p=.10 | p=.20 | p=.35 | p=.50 | p=.65 | p=.75 | p=.85 |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
@@ -180,60 +179,85 @@ is 5 points or more (S, from `frame.csv`):
 
 ## 4. `node_count`: an off-by-one, and one primer that fixes it
 
-The answer is always 40. Share of responses answering 39, p ≤ .35, 300 per
-cell (S, from `runs/`):
+The answer is always 40. % of finished answers that answer 39, p ≤ .50, 400
+per cell (369–400 for 1.7B-T); **bold** is a significant change from no primer
+(C `[ncanswer]`):
 
 | Primer | 1.7B | 4B | 1.7B-T | 4B-T |
 |---|---:|---:|---:|---:|
-| none | 90% | 13% | 0% | 1% |
-| rwse | 65% | 1% | 0% | 0% |
-| degree | 82% | 2% | 1% | 0% |
-| components | 57% | 1% | 0% | 0% |
-| filler | 38% | 1% | 0% | 0% |
-| all | 28% | 0% | 0% | 0% |
-| clustering | 2% | 1% | 0% | 0% |
+| none | 68.5 | 9.8 | 0.0 | 0.5 |
+| filler | **28.7** | **0.5** | 0.0 | 0.0 |
+| components | **47.2** | **0.8** | 0.3 | 0.2 |
+| clustering | **1.2** | **0.8** | 0.0 | 0.0 |
+| rwse | 66.5 | **0.5** | 0.0 | 0.0 |
+| degree | **61.8** | **1.8** | 0.8 | 0.0 |
+| all | **21.5** | **0.0** | 0.0 | 0.0 |
 
-Over all finished responses at p ≤ .50, plain 1.7B answers 39 on 68.5% without a
-primer, 66.5% under `rwse` and 1.2% under `clustering` (P `[nodecount]`).
+By density, % answering 39 (C `[ncdensity]`):
+
+| Model | Primer | p=.10 | p=.20 | p=.35 | p=.50 |
+|---|---|---:|---:|---:|---:|
+| 1.7B | none | 98 | 100 | 72 | 4 |
+| | filler | 84 | 30 | 1 | 0 |
+| | components | 81 | 59 | 30 | 19 |
+| | clustering | 5 | 0 | 0 | 0 |
+| | rwse | 68 | 83 | 45 | **70** |
+| | degree | 97 | 95 | 55 | 0 |
+| | all | 30 | 48 | 6 | 2 |
+| 4B | none | 8 | 31 | 0 | 0 |
+| | every primer | 0–6 | 0–1 | 0 | 0 |
 
 Every model copies the id list 0–39 from the encoding's first line and never
-counts it. Plain 1.7B then takes one of two paths (S):
+counts it. Plain 1.7B then takes one of two paths: it lists the ids one per line
+(30 or more lines holding one id each) and reports the last one, 39, or it
+answers directly ("This is a total of N nodes") (C `[ncanswer]`):
 
-| Primer | Lists ids one per line | Correct when listing | Correct on the direct "total of N" path | Correct overall |
+| Primer | Lists ids one per line | Correct when listing (n) | Correct otherwise (n) | Correct overall |
 |---|---:|---:|---:|---:|
-| none | 79% | 1% | 44% | 10% |
-| degree | 72% | 1% | 59% | 18% |
-| rwse | 25% | 1% | **46%** | 35% |
-| components | 30% | 3% | 60% | 43% |
-| filler | 16% | 0% | 74% | 62% |
-| all | 5% | 7% | 75% | 72% |
-| clustering | 4% | 55% (of 11) | **100%** | 98% |
+| none | 59.5 | 0.8 (238) | 76.5 (162) | 31.5 |
+| degree | 53.8 | 1.4 (215) | 81.1 (185) | 38.2 |
+| rwse | 19.8 | 1.3 (79) | **41.4** (321) | 33.5 |
+| components | 22.5 | 3.3 (90) | 67.1 (310) | 52.8 |
+| filler | 12.2 | 0.0 (49) | 81.2 (351) | 71.2 |
+| all | 3.5 | 7.1 (14) | 81.1 (386) | 78.5 |
+| clustering | 2.8 | 54.5 (11) | **100.0** (389) | 98.8 |
 
-- The one-per-line path ends by reporting the last id, 39.
-- `rwse` and `clustering` both cut that path; they split on the direct path,
-  where the model writes 40 on 46% of responses under `rwse` and 289 of 289
-  under `clustering`. Primer length does not explain it (`all` contains the RWSE
-  text and reaches 75%), nor does naming every node (all three do).
-- Plain 4B makes the same error on the direct path only ("numbered from 0 to 39,
-  which is a total of 39 nodes"), at p = .10 and .20, and any primer removes it,
-  `filler` included. The thinking models do not make it.
+- The listing path is almost never correct.
+- `rwse` and `clustering` both cut that path. They split on the direct path:
+  40 on 41.4% of answers under `rwse`, on all 389 under `clustering`. Primer
+  length does not explain it (`all` contains the RWSE text and reaches 81.1%),
+  nor does naming every node (all three do).
+- Without a primer, the error fades with density (98% at p = .10, 4% at
+  p = .50); under `rwse` it does not (70% at p = .50).
+- Plain 4B never lists the ids. It errs on the direct path only ("numbered from
+  0 to 39, which is a total of 39 nodes", C `[ncsample]`; most of its 39s are a
+  bare "A: 39"), at p = .10 and .20, and every
+  primer removes it, `filler` included (−8.0 to −9.8, all significant).
+- The thinking models do not make the error (at most 0.8%).
 
 ## 5. `cycle_check`: do correct answers rest on real cycles?
 
 The gold answer is "yes" on every 40-node graph. Outcomes, p ≤ .50, 400 per
-cell, % correct / answering no / truncated (S, from `frame.csv`):
+cell, % correct / answering no / truncated (C `[ccoutcome]`):
 
 | Model | none | filler | components | clustering | rwse | degree | all |
 |---|---|---|---|---|---|---|---|
-| 1.7B | 90.8 / 0.2 / 9.0 | 93.8 / 0.0 / 6.2 | 92.8 / 0.8 / 6.5 | 99.2 / 0.0 / 0.8 | 90.5 / 7.8 / 1.8 | 73.2 / 9.5 / 17.2 | 97.8 / 1.2 / 1.0 |
+| 1.7B | 90.8 / 0.2 / 9.0 | 93.8 / 0.0 / 6.2 | 92.8 / 0.8 / 6.5 | 99.2 / 0.0 / 0.8 | 90.5 / 7.8 / 1.8 | 73.2 / 9.2 / 17.2 | 97.8 / 1.2 / 1.0 |
 | 1.7B-T | 97.0 / 0.0 / 3.0 | 100 / 0.0 / 0.0 | 89.5 / 0.0 / 10.5 | 96.5 / 0.0 / 3.5 | 99.2 / 0.0 / 0.8 | 75.2 / 0.5 / 24.2 | 96.2 / 0.0 / 3.8 |
 | 4B | 99.0 / 0.2 / 0.8 | 98.5 / 0.2 / 1.2 | 97.0 / 1.5 / 1.5 | 99.5 / 0.0 / 0.5 | 98.8 / 0.0 / 1.2 | 96.8 / 1.8 / 1.5 | 98.8 / 0.8 / 0.5 |
 | 4B-T | 99.2 / 0.0 / 0.8 | 99.8 / 0.0 / 0.2 | 96.0 / 0.0 / 4.0 | 99.2 / 0.0 / 0.8 | 99.5 / 0.0 / 0.5 | 93.8 / 0.8 / 5.5 | 98.8 / 0.0 / 1.2 |
 
-The "no" answers of plain 1.7B follow wrong reasoning (S): under `degree`, it
-sums the 40 stated degrees, gets an odd total and misapplies the handshaking
-lemma (35 of 47 mention an odd sum); under `rwse`, 30 of 32 mention return
-probability and conclude "no cycle" from finding no self-loops.
+Plain 1.7B's "no" answers rise significantly under `rwse` (+7.5) and `degree`
+(+12.3), and follow wrong reasoning (C `[ccno]`, `[ccsample]`):
+- Under `degree` (37 finished "no" answers), 97% mention an odd degree sum or
+  the handshaking lemma: it sums the 40 stated degrees, gets an odd total and
+  misapplies the lemma.
+- Under `rwse` (31), 68% call the graph *directed* ("The graph is a directed
+  graph (not necessarily undirected)"). All mention return probabilities, but
+  the samples set them aside as "not directly relevant"; none mention an odd
+  sum. The primer seems to make the model read the undirected encoding as
+  directed, not reason from the probabilities.
+- The other models answer no to at most 1.8% of graphs under any primer.
 
 ### 5.1 What the correct answers rest on
 
@@ -410,11 +434,93 @@ the queried non-edge (C `[eeclaims]`):
   plain 4B's; the rest answer yes without naming the edge. Under `clustering`,
   `rwse`, `degree` and `all`, plain 1.7B stops stating the fake edge (8–15% of
   its false alarms) but still answers yes to 25–35% of non-edge pairs.
-- Missed edges cannot be assessed: the models almost never answer no to a true
-  edge (at most 1.9%).
+- The models almost never answer no to a true edge (at most 1.9% at p ≤ .50);
+  misses are read at high density below.
 - Any statement of an edge that does not exist: 1.7B 14.5% (`filler` **+8.0**;
   `clustering`, `degree`, `all` **−8**); 1.7B-T `rwse` **+7.0**; 4B-T `rwse`,
   `degree`, `all` **+2.3** from 0.5% (C `[eeclaims]`).
+
+**A shared neighbour is read as an edge.** % of non-edge pairs answered yes, by
+how many neighbours the two nodes share (counted on the graph), p ≤ .50, all
+primers pooled; pairs in brackets (C `[eeshared]`):
+
+| Model | 0 shared | 1 | 2–3 | 4 or more |
+|---|---:|---:|---:|---:|
+| 1.7B | 1.7 (524) | 34.3 (350) | 47.3 (448) | 65.9 (728) |
+| 1.7B-T | 0.2 | 2.6 | 5.1 | 2.3 |
+| 4B | 0.2 (524) | 4.6 (350) | 19.0 (447) | 38.8 (727) |
+| 4B-T | 0.0 | 0.0 | 0.0 | 0.0 |
+
+- It is not density. Within p = .20 alone, 1.7B goes 2 → 37 → 46 → 81% and 4B
+  0 → 5 → 17 → 31%. Without a primer, the pairs a model calls edges share more
+  neighbours than those it correctly calls non-edges, with the answers permuted
+  within each density: +4.5 for 1.7B (p = 0.0005), +2.8 for 4B (p = 0.014).
+- A typical answer: "Node 18 is connected to Node 17, and Node 9 is connected to
+  Node 17. Therefore, there is an edge between Node 18 and Node 9."
+
+% answered yes on non-edge pairs sharing 4 or more neighbours, 104 pairs per
+cell; **bold** q < 0.05 against no primer (C `[eeshared]`):
+
+| Model | none | filler | components | clustering | rwse | degree | all |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 1.7B | 73.1 | **99.0** | **86.5** | 61.5 | **51.0** | **49.0** | **41.3** |
+| 4B | 24.0 | **43.3** | **36.5** | 14.4 | **56.7** | **41.7** | **54.8** |
+
+- `filler` and `components` raise the shared-neighbour false alarm for both
+  plain models. `rwse`, `degree` and `all` lower it for 1.7B and raise it for
+  4B. `clustering` lowers it for both, but not significantly (−11.5, −9.6).
+
+**What the false alarms say.** Each false alarm is sorted by the first reason it
+gives: it states the queried pair as an edge (as `[eeclaims]`); or it claims the
+other node is listed in an endpoint's list ("Node 12 is listed among these
+connected nodes", right after quoting the list correctly); or neither. All
+primers pooled (C `[eewhy]`):
+
+| Model | Densities | False alarms | States the edge | Claims membership | Neither |
+|---|---|---:|---:|---:|---:|
+| 1.7B | p ≤ .50 | 821 | 24.4 | 12.5 | 63.1 |
+| 1.7B | p ≥ .65 | 445 | 48.5 | 11.0 | 40.4 |
+| 4B | p ≤ .50 | 384 | 21.6 | 41.7 | 36.7 |
+| 4B | p ≥ .65 | 200 | 11.5 | 74.5 | 14.0 |
+
+The membership claim is plain 4B's main false alarm. Its share of 4B's false
+alarms at p ≤ .50: none 62.2, `components` 63.3, `degree` 58.2, `rwse` 37.2,
+`filler` 33.3, `clustering` 27.3, `all` 22.1%. As a share of all non-edge
+pairs, `clustering` is the only primer that changes it significantly (4B,
+8.5 → 2.4%) (C `[eewhy]`). 1.7B-T's false alarms are few (50 at p ≤ .50), and
+92% of them give neither reason; 4B-T has none at p ≤ .50 (C `[eewhy]`).
+
+**What the misses say.** 75 misses in all, 68 of them at p ≥ .65 (C `[eemiss]`,
+`[eesample]`):
+- 1.7B-T (21): 95% say the other node is not listed; 90% have written down a
+  list for one endpoint that contains the other; 71% resolve the mismatch by a
+  rule that both lists must agree ("the edge is only present if both nodes are
+  mutually connected", "this discrepancy suggests an inconsistency in the
+  data"). One list is misread, and the model trusts the misreading.
+- 4B (40): 75% say the other node is not listed, 45% while quoting a list that
+  contains it ("Node 37 is connected to: 0, 1, 3, 4, 6, … Node 4 is **not** in
+  this list").
+- 4B-T (3, all at p = .85): 2 of 3 rule that both lists must agree ("Node 15's
+  connections do not include Node 33, while Node 33's connections do include
+  Node 15. This discrepancy suggests a possible inconsistency").
+- 1.7B (11): 36% say the other node is not listed; none invoke the rule.
+
+**High density (p = .65–.85).** 73 non-edges and 227 edges per model and
+primer. False alarms (%) / % stating the queried non-edge (C `[eehigh]`):
+
+| Model | none | filler | components | clustering | rwse | degree | all |
+|---|---|---|---|---|---|---|---|
+| 1.7B | 94.5 / 69.9 | 100.0 / 68.5 | 98.6 / 68.5 | 86.3 / 20.5 | 90.4 / 23.3 | 75.3 / 27.4 | 64.4 / 17.8 |
+| 4B | 30.1 / 4.1 | 57.5 / 15.1 | 45.8 / 4.2 | 11.0 / 0.0 | 34.2 / 4.1 | 50.0 / 4.2 | 47.2 / 4.2 |
+
+- `clustering`, `rwse`, `degree` and `all` stop plain 1.7B from stating the fake
+  edge (**−49.3**, **−46.6**, **−42.5**, **−52.1**), but it still answers yes to
+  64–90% of non-edges.
+- The thinking models answer yes to at most 4.1% of non-edges.
+- Misses stay rare even with 76% of queried pairs being edges: at most 3.5% of
+  true edges (4B without a primer).
+- Any stated edge that does not exist: 1.7B-T 19.0% without a primer, `rwse`
+  **+14.3**; 1.7B `all` **−19.3**, `degree` **−8.1**; 4B `filler` **+3.7**.
 
 ### 6.2 `node_degree`
 
@@ -441,6 +547,40 @@ node's line). Why the wrong answers are wrong (C `[ndlist]`):
 - Stated lists with an invented neighbour, paired change: 1.7B `clustering`
   **+5.8**, `rwse` **+6.0**; 1.7B-T `rwse` **+4.8** (C `[ndlist]`).
 - The other 4B and all 4B-T cells have 0–12 wrong answers.
+- Wrong answers mostly undercount, as omission predicts: 1.7B 73.4% without a
+  primer (55.6–73.4% across primers), 1.7B-T 91.3% (78.0–91.3%). Plain 4B under
+  `degree` and `all` mostly overcounts (undercounts 37.9% of 29 and 34.3% of
+  35), in line with copying a nearby node's stated degree (P `[copyerr]`)
+  (C `[ndsign]`).
+- As a share of all answers, `rwse`, `degree` and `all` cut undercounting for
+  both 1.7B models: 1.7B **−8.3**, **−5.5**, **−12.7**; 1.7B-T **−5.1**,
+  **−11.2**, **−11.9** (C `[ndsign]`).
+
+**High density (p = .65–.85)**, 300 answers per cell (C `[ndhigh]`):
+
+| Model | Primer | Wrong answers | States the node's list | Misread | Miscounted | No list |
+|---|---|---:|---:|---:|---:|---:|
+| 1.7B | none | 270 | 5.0 | 2.2 | 1.9 | 95.9 |
+| | clustering | 281 | 25.3 | 17.8 | 6.8 | 75.4 |
+| | rwse | 287 | 32.3 | 24.7 | 6.6 | 68.6 |
+| | all | 263 | 25.3 | 14.1 | 9.9 | 76.0 |
+| 1.7B-T | none | 156 | 100.0 | 99.4 | 0.6 | 0.0 |
+| | degree | 52 | 99.6 | 96.2 | 3.8 | 0.0 |
+| 4B | none | 135 | 28.3 | 0.7 | 23.7 | 75.6 |
+| | filler | 129 | 80.7 | 4.7 | 74.4 | 20.9 |
+| | clustering | 101 | 41.7 | 4.0 | 37.6 | 58.4 |
+| | degree | 107 | 30.0 | 0.9 | 57.9 | 41.1 |
+| | all | 199 | 54.7 | 1.5 | 68.3 | 30.2 |
+
+- Plain 1.7B mostly answers without writing the list; 4B-T has 4–12 wrong
+  answers per cell.
+- Plain 4B reads the list right and counts it wrong: under `filler`, `degree`
+  and `all`, most of its wrong answers state the correct list.
+- 1.7B-T's lists invent a neighbour in 33.9% of answers without a primer
+  (3.3% at p ≤ .50), and every primer raises it: `filler` **+20.5**,
+  `components` **+11.0**, `clustering` **+19.0**, `rwse` **+23.1**, `degree`
+  **+6.1**, `all` +5.5. Plain 1.7B, as a share of all its answers: `clustering`
+  **+12.4**, `rwse` **+21.4**, `all` **+9.0** from 1.3%.
 
 ### 6.3 `connected_nodes`
 
@@ -457,28 +597,62 @@ node's line). Why the wrong answers are wrong (C `[ndlist]`):
 Missed neighbours without a primer: 1.7B 22.8%, 1.7B-T 16.5%, 4B 9.0%, 4B-T
 1.0% (C `[cnset]`).
 
+**Where the errors come from**, p ≤ .50, all primers pooled (C `[cnsource]`).
+Invented neighbours other than the queried node q, % in each class, with chance
+in brackets: the share of q's non-neighbours in that class, averaged over the
+invented neighbours (so weighted toward the dense graphs where they occur); and
+the share of all invented neighbours that are q itself:
+
+| Model | Invented, not q | Neighbour of a neighbour | In the line of node q±1 | One off a true neighbour's id | q itself |
+|---|---:|---:|---:|---:|---:|
+| 1.7B | 1,345 | 97.2 (97) | 75.8 (66) | 63.3 (70) | 2.9 |
+| 1.7B-T | 505 | 95.6 (95) | 77.0 (65) | 63.6 (67) | 5.3 |
+| 4B | 536 | 91.0 (85) | 54.5 (49) | 43.5 (52) | 22.7 |
+| 4B-T | 27 | 96.3 (89) | 81.5 (52) | 59.3 (57) | 0.0 |
+
+Missed neighbours, % by their place on the node's line (ids are in ascending
+order):
+
+| Model | Missed | The first one | The last one | Below q (chance) |
+|---|---:|---:|---:|---:|
+| 1.7B | 868 | 3.2 | 39.1 | 23.6 (45) |
+| 1.7B-T | 846 | 2.5 | 21.0 | 34.0 (46) |
+| 4B | 287 | 61.3 | 3.8 | 93.0 (43) |
+| 4B-T | 53 | 3.8 | 17.0 | 62.3 (68) |
+
+- Invented neighbours sit in the line of node q−1 or q+1 somewhat more often
+  than chance (1.7B 75.8% against 66%); being a neighbour's neighbour is at
+  chance, and one off a true neighbour's id is below it.
+- The 1.7B models drop the end of the line; plain 4B drops the start, and puts
+  q itself in its answer (2.8% without a primer; `filler` **+10.2**, `rwse`
+  **+3.5**, `all` **+4.8**, `components` **−2.2**).
+- `clustering` cuts plain 1.7B's dropped last neighbour (14.5 → 7.5%,
+  **−7.0**); `components` cuts plain 4B's dropped first neighbour (8.2 → 2.0%,
+  **−6.2**) (C `[cnsource]`).
+
 ### 6.4 `edge_count`
 
 The per-node degree table a response lists, read by
-`response_patterns.edge_chain` (`[rpchain]`). % of all responses whose table has
-a wrong value, and the paired change (C `[ecchain]`):
+`response_patterns.edge_chain` (`[rpchain]`; §8 on how the table is read). % of
+all responses whose table has a wrong value, and the paired change
+(C `[ecchain]`):
 
 | Model | none | filler | components | clustering | rwse | degree | all |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| 1.7B | 51.2 | **+12.8** | −5.7 | **−24.5** | **−39.7** | **−23.7** | **−29.0** |
-| 1.7B-T | 46.5 | +2.2 | −1.5 | **+7.8** | **−8.0** | **+19.5** | **+9.5** |
-| 4B | 80.2 | **+9.8** | **−15.2** | **+13.5** | **+15.0** | **−43.8** | +5.5 |
-| 4B-T | 12.8 | +1.5 | +2.8 | +3.8 | 0.0 | **+43.5** | **+64.2** |
+| 1.7B | 51.5 | **+12.2** | **−7.5** | **−24.8** | **−40.2** | **−24.0** | **−27.5** |
+| 1.7B-T | 46.5 | +3.5 | −0.5 | **+8.8** | **−8.5** | **+19.5** | **+9.5** |
+| 4B | 80.0 | **+10.0** | **−15.0** | **+13.8** | **+15.2** | **−43.5** | **+5.8** |
+| 4B-T | 12.0 | +1.5 | +3.5 | +4.5 | +0.2 | **+44.2** | **+66.5** |
 
 Primers also change whether a table is listed at all. Among the responses that
-list one, % with a wrong value (S, from `response_claims.csv`, not tested):
+list one, % with a wrong value, not tested (C `[ectable]`):
 
-| Model | none | degree | all |
-|---|---:|---:|---:|
-| 1.7B | 99 | 31 | 43 |
-| 1.7B-T | 62 | 66 | 56 |
-| 4B | 81 | 41 | 86 |
-| 4B-T | 15 | 57 | 79 |
+| Model | none | filler | components | clustering | rwse | degree | all |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 1.7B | 98.6 | 87.9 | 96.2 | 99.1 | 88.2 | 31.0 | 44.4 |
+| 1.7B-T | 61.8 | 61.0 | 60.7 | 64.8 | 54.1 | 66.2 | 56.4 |
+| 4B | 81.2 | 90.2 | 70.8 | 95.7 | 96.5 | 40.9 | 85.8 |
+| 4B-T | 14.3 | 14.6 | 17.4 | 17.9 | 13.8 | 56.4 | 78.7 |
 
 Under `degree` and `all`, 4B-T miscopies degrees out of the primer: one response
 lists "Node 27: degree 6" where the true degree, which the primer states, is 9.
@@ -509,10 +683,35 @@ lists "Node 27: degree 6" where the true degree, which the primer states, is 9.
    mostly the closing step.
 7. **`node_count` gains measure which number the model writes, not counting.**
    No model counts; plain 1.7B's error is reporting the last id (39), and only
-   `clustering` fixes its direct path completely.
+   `clustering` fixes its direct path completely. Plain 4B's smaller error
+   (9.8%) disappears under every primer.
 8. **Where a primer carries the answer's key fact, it works even for a small
    model.** On acyclic graphs, `clustering` (all coefficients 0) halves 0.6B-T's
    false yes (−42.2).
+9. **A false yes on `edge_existence` comes from shared neighbours and false
+   membership claims.** The plain models' false-alarm rate rises from about 0
+   with no shared neighbour to 66% (1.7B) and 39% (4B) with 4 or more, and the
+   link holds within density (permutation p = 0.0005, 0.014). Plain 4B mostly
+   claims the other node is "listed among" a list that does not contain it;
+   `clustering` is the only primer that cuts that claim significantly. On
+   pairs sharing 4 or more neighbours, `filler` and `components` raise false
+   alarms for both plain models, and `rwse`, `degree` and `all` lower them for
+   1.7B but raise them for 4B.
+10. **A false no comes from misreading one list and trusting it.** Misses are
+    rare (75 in all, 68 at p ≥ .65); the thinking models see the edge in one
+    list, miss it in the other, and rule that both lists must agree.
+11. **At high density the same splits hold.** Primers stop plain 1.7B stating
+    the fake edge (−42 to −52) but not answering yes; every primer raises
+    1.7B-T's invented neighbours on `node_degree` (+5.5 to +23.1, significant
+    for all but `all`).
+12. **Copying errors are positional.** The 1.7B models drop the last neighbour
+    on a line, plain 4B the first (and adds the queried node itself, more so
+    under `filler`); invented neighbours come from the line of the next or
+    previous node somewhat more often than chance.
+13. **`rwse` makes plain 1.7B read the graph as directed.** Its `cycle_check`
+    "no" answers rise from 0.3% to 7.8%, and 68% of them call the graph
+    directed; under `degree` the "no" answers (12.3%) come from a misapplied
+    handshaking lemma instead.
 
 ## 8. Method
 
@@ -536,19 +735,47 @@ prompt row's for every graph).
   "maybe" or "imply that", or is followed in the same sentence by "?", "via" or
   "through". A node is never counted as its own neighbour, and a list stops
   before an item that opens the next clause ("…, and Node 31 is …").
+- **The `node_count` path:** an answer lists the ids one per line when 30 or
+  more of its lines (after `</think>`) hold one id each ("- 7"); the answer
+  given is the scored prediction.
 - **Which responses:** correct finished answers for `cycle_check`; finished
-  answers for `edge_existence`, `node_degree` and `connected_nodes`, with the
-  thinking arms read including their trace; all responses for `edge_count`. A
-  response repeated across shards counts once, the first, as in
-  `primer_findings.load_runs`.
+  answers for `edge_existence`, `node_degree`, `connected_nodes` and
+  `node_count`, with the thinking arms read including their trace for the first
+  two; all responses for `edge_count`. A response repeated across shards counts
+  once, the first, as in `primer_findings.load_runs`.
+- **High density:** the p = .65–.85 runs (`edge_existence` and `node_degree`
+  only) are read the same way and reported in their own blocks (`[eehigh]`,
+  `[ndhigh]`); every other block is p ≤ .50.
+- **Why an answer is wrong:** a *membership claim* is "(node) v is listed /
+  among / included / present / in the (list)" for an endpoint, or the same with
+  "not", in the final answer, skipped after "check if" or "whether"; *both lists
+  must agree* is "discrepancy", "inconsistent", "contradict", "mutual" or
+  "bidirectional" anywhere in the response. Shared neighbours are counted on the
+  graph; a keyword reading of shared-neighbour arguments was dropped because it
+  also matched bare claims such as "both nodes are connected". A `cycle_check`
+  "no" is read for an odd degree sum or the handshaking lemma, return
+  probabilities or self-loops, and a *directed* graph. These are mentions, not
+  parsed arguments; `[ccsample]` and `[eesample]` print examples.
+- **The degree table (`edge_count`):** `response_patterns.degree_table` reads
+  "Node 3: 12", "Node 3: degree 12", "Node 3 has 12 …" and markdown table rows
+  under a count column (degree, count, number of, connections), skipping
+  running totals ("total up to Node 18: 48"), decimals, and any column that
+  lists neighbours ("3, 7, 12"). A truncated response with correct but
+  incomplete values is "cut". Against the reading of `87fbf80`, this changes
+  216 of 11,200 responses, 132 of them truncated responses no longer counted as
+  missing nodes. The reading of `795f5a1` also took a "Connections" column that
+  lists neighbours as a count column, so a node with one neighbour got that
+  neighbour's id as its degree; that flagged 168 correct tables as wrong and is
+  fixed here.
 - **Tests:** each primer against none on the same graphs, exact McNemar
   (`graphtalk.scoring.mcnemar`), Benjamini–Hochberg over the primers within
   each model (`primer_findings.bh`).
 
 **Validation.** Each run prints random samples of every rule
-(`[ccsample]`, `[clsample]`); every sample was checked against the prompt's
-lines. A 32-case self-check on a toy graph runs first and covers each rule that
-sampling showed to need one.
+(`[ccsample]`, `[clsample]`, `[ncsample]`, `[eesample]`); every sample was
+checked against the prompt's lines. A 37-case self-check on a toy graph runs
+first and covers each rule that sampling showed to need one; the degree-table
+reading is tested in `tests/test_response_patterns.py`.
 
 **Limits.**
 - The readings are regex-based and spot-checked, not hand-labelled. Hedged or
@@ -559,12 +786,18 @@ sampling showed to need one.
   trace is reported separately (§5.4).
 - The shares "of false alarms" and "among responses listing a table" are not
   tested; paired tests use graphs where both responses finished.
-- `edge_count` depends on `scripts/response_patterns.py`, which is not tracked.
+- At high density only 73 non-edges per model and primer are queried.
 
 **Reproduce:**
 
     PYTHONPATH=. python scripts/check_cycle_claims.py --csv-dir csv2/raw-trends \
         > csv2/raw-trends/check_cycle_claims.txt
+
+`scripts/response_patterns.py`, whose `degree_table` and `edge_chain` §6.4
+uses, has its own output (pattern shifts per primer; not cited here):
+
+    PYTHONPATH=. python scripts/response_patterns.py --csv-dir csv2/raw-trends \
+        > csv2/raw-trends/response_patterns.txt
 
 ## 9. Open questions
 
@@ -575,7 +808,12 @@ sampling showed to need one.
 - **Whether `rwse` causes length-2 claims through its "after 2 steps" wording.**
   Rewording the primer (for example "return probability after a 2-step walk")
   would test it.
-- **Missed edges on `edge_existence`.** The models almost never answer no to a
-  true edge, so dropped edges cannot be measured on these runs.
+- **Missed edges on `edge_existence`.** Even at p = .65–.85, where 76% of
+  queried pairs are edges, no model answers no to more than 3.5% of true edges
+  (75 misses in all), too few to test a primer against.
 - **Acyclic graphs for the larger models.** Only Qwen3-0.6B ran `cc500`; the same
   check on 1.7B and 4B would need new runs.
+- **Whether `rwse` makes the model read the graph as directed.** 68% of plain
+  1.7B's `rwse` "no" answers on `cycle_check` call the graph directed. Checking
+  the same words in its answers to the other tasks, and rewording the primer,
+  would show whether the primer's "random walk" framing causes it.

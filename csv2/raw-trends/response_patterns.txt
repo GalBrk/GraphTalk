@@ -1,0 +1,259 @@
+[rpcontrast] discovery, main sweep: phrases (numbers as <num>/<dec>) whose share of responses moves 15+ points the same way in 3+ arms, primer vs none; shifts per arm 1.7B / 1.7B-T / 4B / 4B-T, top 8
+  node_count / filler: 15 phrases; 'among' +0.00 -0.83 -0.73 -0.76 | 'the graph is' +0.00 -0.81 -0.73 -0.69 | 'among nodes' +0.00 -0.83 -0.46 -0.77 | 'the nodes are' -0.12 -0.47 -0.45 -0.35 | 'from * *' -0.33 -0.34 -0.62 -0.02 | 'is a' +0.24 -0.36 -0.51 -0.31 | 'the nodes' +0.00 -0.26 -0.46 -0.40 | 'answer * *' +0.26 +0.26 -0.06 +0.59
+  node_count / components: 11 phrases; 'among' +0.19 -0.59 -0.73 -0.57 | 'among nodes' +0.16 -0.59 -0.46 -0.59 | 'we' -0.15 -0.38 -0.30 -0.40 | 'which' +0.02 +0.25 +0.53 +0.39 | 'to determine' -0.19 -0.44 -0.14 -0.34 | 'there are' -0.36 -0.18 -0.22 +0.07 | 'numbers from <num>' +0.00 -0.16 -0.22 -0.40 | 'among nodes numbered' +0.00 -0.16 -0.46 -0.66
+  node_count / clustering: 8 phrases; 'is a' +0.42 -0.40 -0.48 -0.33 | 'node <num>' +0.29 +0.67 +0.00 +0.32 | 'from * *' -0.29 -0.34 -0.33 -0.03 | 'we' +0.00 -0.31 -0.28 -0.33 | 'count the' +0.00 -0.39 -0.31 -0.23 | 'count the numbers' +0.00 -0.20 -0.22 -0.17 | 'among nodes numbered' +0.00 -0.16 -0.44 -0.71 | 'of nodes we' +0.00 -0.30 -0.15 -0.26
+  node_count / rwse: 10 phrases; 'among' +0.00 -0.52 -0.73 -0.46 | 'among nodes' +0.00 -0.52 -0.46 -0.48 | 'nodes listed' +0.71 +0.66 -0.10 +0.41 | 'is a' +0.60 -0.25 -0.45 -0.27 | '<num> * *' -0.01 +0.21 +0.21 +0.42 | 'count the numbers' +0.00 -0.20 -0.21 -0.24 | 'nodes * *' +0.38 +0.19 -0.63 +0.19 | 'the graph is' +0.00 -0.19 -0.17 -0.50
+  node_count / degree: 9 phrases; 'we' +0.00 -0.54 -0.30 -0.29 | '+ <num> =' +0.09 -0.23 -0.36 -0.28 | 'which' +0.00 +0.54 +0.26 +0.22 | '<num> <num> +' +0.09 -0.24 -0.36 -0.22 | '<num> + <num>' +0.09 -0.20 -0.36 -0.28 | '<num> = <num>' +0.02 -0.19 -0.35 -0.27 | 'count the numbers' +0.00 -0.17 -0.22 -0.16 | 'answer * *' +0.21 +0.15 -0.06 +0.30
+  node_count / all: 12 phrases; 'is a' +0.36 -0.36 -0.50 -0.34 | 'from * *' -0.37 -0.32 -0.58 -0.03 | 'we' +0.00 -0.68 -0.30 -0.38 | 'count the' +0.00 -0.22 -0.33 -0.25 | '<num> = <num>' -0.20 -0.49 -0.35 -0.15 | '<num> <num> and' +0.00 +0.36 +0.19 +0.31 | '<num> and <num>' +0.00 +0.34 +0.19 +0.26 | 'counting' +0.00 +0.22 +0.18 +0.51
+  node_degree / filler: 3 phrases; 'we' +0.00 -0.48 -0.28 -0.54 | 'description * *' -0.35 +0.00 -0.45 -0.23 | '<num> <num> *' +0.00 -0.20 -0.27 -0.16
+  node_degree / components: 0 phrases; 
+  node_degree / clustering: 2 phrases; 'description * *' -0.40 +0.00 -0.50 -0.29 | 'final answer' -0.17 -0.06 -0.28 -0.34
+  node_degree / rwse: 4 phrases; 'to find the' -0.01 -0.82 -0.49 -0.52 | 'find the' -0.01 -0.75 -0.49 -0.34 | 'to count how' -0.01 -0.23 -0.93 -0.59 | 'find' -0.01 -0.55 -0.49 -0.17
+  node_degree / degree: 28 phrases; 'to find the' -0.17 -0.66 -0.99 -0.88 | 'need to count' -0.50 -0.78 -0.99 -0.61 | 'find the' -0.17 -0.61 -0.99 -0.81 | 'to count how' -0.50 -0.81 -0.99 -0.56 | 'to find' -0.17 -0.52 -0.99 -0.85 | 'are connected to' -0.45 +0.21 -0.50 -0.59 | 'we need to' -0.44 +0.08 -0.99 -0.55 | 'find' -0.17 -0.45 -0.98 -0.47
+  node_degree / all: 30 phrases; 'to find the' -0.94 -0.77 -0.99 -0.85 | 'find the' -0.94 -0.76 -0.99 -0.74 | 'need to count' -0.31 -0.73 -0.99 -0.84 | 'to find' -0.94 -0.69 -0.99 -0.67 | 'we' -0.14 -0.64 -0.76 -0.82 | 'to count how' -0.31 -0.73 -0.99 -0.63 | 'find' -0.86 -0.60 -0.76 -0.56 | '* we need' -0.54 -0.00 -0.99 -0.70
+  connected_nodes / filler: 10 phrases; 'find all the' -0.59 -0.64 -0.56 -0.22 | 'to find all' -0.60 -0.64 -0.56 -0.22 | 'to list all' +0.59 +0.38 +0.15 +0.29 | 'look' -0.69 -0.27 -0.44 -0.13 | 'at the list' -0.17 -0.23 -0.55 -0.47 | 'list all the' +0.59 +0.23 +0.15 +0.26 | 'look at the' -0.69 -0.21 -0.44 -0.03 | 'to find' -0.60 -0.19 -0.56 -0.12
+  connected_nodes / components: 0 phrases; 
+  connected_nodes / clustering: 4 phrases; 'at the list' -0.17 -0.39 -0.08 -0.30 | 'these nodes' +0.18 +0.16 -0.07 +0.18 | 'list all the' -0.20 +0.20 +0.16 +0.34 | 'to list all' -0.18 +0.32 +0.16 +0.38
+  connected_nodes / rwse: 9 phrases; 'at the list' -0.18 -0.45 -0.61 -0.38 | '<num> in alphabetical' +0.00 +0.23 +0.38 +0.23 | 'to find all' -0.18 -0.67 -0.59 -0.23 | 'find all the' -0.17 -0.68 -0.59 -0.22 | 'list all the' -0.26 +0.19 +0.17 +0.35 | 'to list all' -0.25 +0.31 +0.17 +0.40 | 'node <num> are' +0.17 +0.13 +0.30 +0.19 | 'from the' +0.44 +0.37 +0.17 +0.01
+  connected_nodes / degree: 2 phrases; 'information' +0.38 +0.67 +0.00 +0.19 | 'data' +0.22 +0.15 +0.01 +0.48
+  connected_nodes / all: 12 phrases; 'at the list' -0.18 -0.47 -0.53 -0.48 | 'to find' -0.05 -0.50 -0.53 -0.42 | 'find' -0.05 -0.47 -0.53 -0.35 | 'to find all' -0.05 -0.67 -0.53 -0.23 | '<num> in alphabetical' +0.00 +0.22 +0.38 +0.23 | 'find all the' -0.04 -0.67 -0.53 -0.22 | 'list all the' -0.05 +0.21 +0.19 +0.35 | 'to list all' -0.03 +0.35 +0.19 +0.40
+  edge_count / filler: 13 phrases; 'node is' -0.37 -0.08 -0.67 -0.61 | '<num> sum all' -0.26 +0.05 -0.46 -0.27 | 'and count' -0.43 +0.17 -0.57 -0.20 | 'to <num> and' -0.38 -0.18 -0.01 -0.52 | 'nodes and' -0.09 -0.26 -0.39 -0.18 | 'degree' -0.17 -0.30 -0.12 -0.23 | '<num> since' +0.23 -0.36 +0.86 +0.17 | 'these numbers' +0.00 +0.22 +0.21 +0.16
+  edge_count / components: 8 phrases; 'the total number' -0.25 -0.15 -0.29 -0.28 | 'to <num> and' -0.23 -0.31 -0.01 -0.66 | '<num> to <num>' -0.23 -0.21 +0.00 -0.43 | 'from <num> to' -0.23 -0.21 +0.00 -0.51 | 'total number of' -0.21 -0.15 -0.26 -0.28 | 'list of' -0.23 +0.04 -0.20 -0.21 | 'has and then' -0.18 -0.16 +0.07 -0.25 | 'as' -0.06 -0.26 -0.15 -0.37
+  edge_count / clustering: 18 phrases; 'edges in' +0.77 +0.69 +0.99 -0.47 | 'find the number' +0.98 +0.77 +0.54 -0.01 | 'a graph' -0.40 -0.62 -0.02 -0.47 | 'edges from' -0.40 +0.16 -0.38 -0.36 | 'clustering coefficients' +0.35 +0.92 +0.00 +0.36 | 'of edges in' +0.34 +0.71 +0.99 -0.43 | 'as' +0.13 -0.24 -0.74 -0.37 | 'listed' -0.24 +0.22 -0.78 -0.26
+  edge_count / rwse: 26 phrases; 'return' +0.58 +0.85 +0.00 +0.53 | 'not' +0.35 +0.44 -0.24 +0.44 | 'however' +0.35 +0.25 +0.51 +0.33 | 'after' +0.49 +0.76 -0.02 +0.33 | 'after <num>' +0.50 +0.73 +0.00 +0.33 | 'are given' +0.55 +0.34 +0.32 +0.29 | '<num> steps' +0.50 +0.73 +0.00 +0.32 | 'probabilities' +0.52 +0.80 +0.00 +0.31
+  edge_count / degree: 137 phrases; 'number of connections' -0.70 -0.47 -0.95 -0.84 | 'is equal to' +0.67 +0.23 +1.00 +0.76 | 'any graph the' +0.81 +0.61 +0.00 +0.62 | 'in any graph' +0.81 +0.61 +0.00 +0.62 | 'use' +1.00 +0.09 +0.97 +0.60 | 'use the' +1.00 +0.04 +1.00 +0.60 | 'the degrees of' +0.88 +0.54 +0.99 +0.58 | 'can use' +1.00 +0.14 +0.97 +0.57
+  edge_count / all: 60 phrases; 'degrees of all' +0.28 +0.60 +1.00 +0.58 | '<num> connections' -0.20 -0.57 -0.63 -0.66 | 'of connections' -0.03 -0.48 -0.68 -0.55 | 'number of connections' -0.03 -0.47 -0.65 -0.67 | 'from each' -0.42 -0.06 -0.70 -0.63 | 'the degrees of' +0.22 +0.41 +0.99 +0.41 | 'and count' -0.27 -0.36 -0.80 -0.59 | 'all nodes' +0.36 +0.43 +0.89 +0.22
+  edge_existence / filler: 7 phrases; '* * <num>' -0.20 -0.30 -0.20 -0.23 | '* <num> <num>' -0.07 -0.21 -0.19 -0.21 | 'check if' -0.19 -0.21 -0.01 -0.19 | '<num> <num> *' -0.01 -0.23 -0.21 -0.19 | '* * no' -0.18 -0.03 -0.33 -0.22 | 'step' -0.18 -0.26 -0.00 -0.21 | '* <num> *' -0.17 -0.29 -0.03 -0.23
+  edge_existence / components: 0 phrases; 
+  edge_existence / clustering: 3 phrases; 'of connections for' -0.03 +0.28 +0.57 +0.25 | 'list of connections' -0.17 +0.33 +0.58 +0.22 | 'adjacency' +0.31 +0.21 +0.04 +0.21
+  edge_existence / rwse: 1 phrases; 'the graph' +0.26 +0.20 -0.04 +0.51
+  edge_existence / degree: 1 phrases; 'from the' +0.00 +0.20 +0.28 +0.31
+  edge_existence / all: 4 phrases; 'adjacency list' +0.30 +0.28 +0.34 +0.15 | 'from the' +0.00 +0.24 +0.80 +0.23 | 'the provided adjacency' +0.28 +0.16 +0.06 +0.17 | 'are connected' +0.20 +0.25 +0.09 +0.15
+  cycle_check / filler: 6 phrases; 'nodes and' -0.02 -0.43 -0.53 -0.25 | 'a tree' -0.33 -0.24 -0.31 -0.00 | 'we' -0.26 -0.22 -0.39 -0.00 | 'we can' -0.38 -0.21 -0.38 +0.01 | 'not a tree' -0.33 -0.17 -0.27 -0.01 | 'to determine' -0.27 -0.17 -0.30 -0.01
+  cycle_check / components: 17 phrases; 'component' -0.01 +0.62 +0.66 +0.85 | 'connected component' -0.04 +0.70 +0.60 +0.86 | 'has <num>' +0.03 +0.64 +0.36 +0.88 | 'graph is connected' -0.00 +0.45 +0.31 +0.58 | 'is connected and' +0.00 +0.33 +0.29 +0.29 | 'such' +0.00 -0.32 -0.23 -0.28 | 'has <num> connected' +0.03 +0.22 +0.41 +0.33 | 'and it' +0.18 +0.51 +0.43 +0.22
+  cycle_check / clustering: 54 phrases; 'clustering' +0.52 +0.61 +0.34 +0.76 | 'edges or nodes' -0.51 -0.62 -0.54 +0.00 | 'clustering coefficient' +0.48 +0.58 +0.18 +0.71 | 'any edges or' -0.39 -0.39 -0.65 +0.19 | 'high' +0.14 +0.37 +0.44 +0.44 | 'find a' -0.35 -0.48 -0.05 -0.36 | 'to find' -0.36 -0.37 -0.01 -0.33 | 'to find a' -0.47 -0.38 -0.01 -0.33
+  cycle_check / rwse: 77 phrases; 'return' +0.53 +0.72 -0.04 +0.80 | 'given' +0.46 +0.53 -0.55 +0.64 | 'edges or nodes' -0.43 -0.17 -0.56 -0.67 | 'to the' +0.46 +0.42 -0.04 +0.52 | 'directed' +0.37 +0.34 -0.04 +0.76 | 'existence of a' +0.33 +0.43 -0.01 +0.35 | 'or nodes except' -0.42 -0.19 -0.33 -0.73 | 'ending node' -0.64 -0.17 -0.32 -0.66
+  cycle_check / degree: 157 phrases; 'degrees' +0.83 +0.82 +0.89 +0.47 | 'degree' +0.91 +0.59 +0.77 +0.82 | 'sum' +0.68 +0.78 +0.62 +0.48 | 'sum of' +0.62 +0.78 +0.66 +0.47 | 'of degrees' +0.53 +0.67 +0.57 +0.34 | 'sum of degrees' +0.53 +0.71 +0.57 +0.34 | '<num> + <num>' +0.64 +0.62 +0.51 +0.30 | 'the sum of' +0.54 +0.78 +0.51 +0.46
+  cycle_check / all: 43 phrases; 'return' +0.65 +0.85 -0.03 +0.67 | 'degree' +0.59 +0.59 -0.04 +0.63 | 'ending node' -0.61 -0.43 -0.52 +0.12 | 'provided' +0.42 +0.74 +0.86 +0.11 | 'whether there' +0.81 +0.44 -0.50 +0.38 | 'to find a' -0.47 -0.41 -0.03 -0.33 | 'try to find' -0.33 -0.45 -0.01 -0.31 | 'for cycles' +0.31 +0.39 -0.12 +0.34
+[rpvalid] text patterns: labelled precision on csv2/raw-trends/response_pattern_validation.csv (seeded, 5 per arm first); kept at 0.9 or more
+  dismisses          not labelled -- left out (says the primer's clustering, return-probability or component information is irrelevant or not needed)
+  names_clustering   not labelled -- left out (mentions clustering coefficients)
+  names_rwse         not labelled -- left out (mentions return probabilities, random walks or Markov chains)
+  names_components   not labelled -- left out (mentions connected components)
+  names_degree       not labelled -- left out (mentions node degrees)
+  degree_sum         not labelled -- left out (sums the degrees and halves the sum (handshake))
+  edge_pairs         not labelled -- left out (lists edges as node pairs (ten or more))
+  reports_conflict   not labelled -- left out (reports a conflict between values)
+  retrieve           not labelled -- left out (answers without restating the queried node's neighbour list)
+  enumerate          not labelled -- left out (lists the queried node's neighbours one per line)
+  cites_degree       not labelled -- left out (cites the primer's degree sentence for the queried node)
+  restates_line      not labelled -- left out (restates the queried node's line)
+  lookup_any         not labelled -- left out (restates the line of at least one endpoint)
+  lookup_both        not labelled -- left out (restates the lines of both endpoints)
+  hedges             not labelled -- left out (judges the edge by likelihood)
+  tree_bound         not labelled -- left out (argues from the edge count against n - 1 (a tree))
+  id_range           not labelled -- left out (reads the count off the range of node ids)
+[rpchain] edge_count, main sweep, all responses: share listing values for 30+ nodes; among those, per-node accuracy against the true degrees and the share with all 40 right; then where the chain first fails, % of responses with a table: right / values / nodes / sum / halving / answer / cut / unparsed
+  1.7B   none       table  52% | per-node right  33.0% | all 40 right   1% | 0 / 99 / 0 / 1 / 0 / 0 / 0 / 0
+  1.7B   filler     table  72% | per-node right  38.9% | all 40 right  10% | 0 / 88 / 2 / 3 / 0 / 0 / 1 / 6
+  1.7B   components table  46% | per-node right  31.4% | all 40 right   3% | 0 / 96 / 1 / 1 / 0 / 0 / 0 / 2
+  1.7B   clustering table  27% | per-node right  27.1% | all 40 right   0% | 0 / 99 / 1 / 0 / 0 / 0 / 0 / 0
+  1.7B   rwse       table  13% | per-node right  36.9% | all 40 right  12% | 0 / 88 / 0 / 6 / 0 / 0 / 2 / 4
+  1.7B   degree     table  89% | per-node right  98.7% | all 40 right  69% | 4 / 31 / 0 / 61 / 0 / 0 / 4 / 0
+  1.7B   all        table  54% | per-node right  96.6% | all 40 right  56% | 3 / 44 / 0 / 23 / 0 / 0 / 12 / 18
+  1.7B-T none       table  75% | per-node right  85.6% | all 40 right  34% | 18 / 62 / 1 / 2 / 0 / 0 / 17 / 0
+  1.7B-T filler     table  82% | per-node right  88.4% | all 40 right  34% | 13 / 61 / 2 / 3 / 0 / 0 / 21 / 0
+  1.7B-T components table  76% | per-node right  87.8% | all 40 right  35% | 16 / 61 / 2 / 5 / 0 / 0 / 16 / 0
+  1.7B-T clustering table  85% | per-node right  90.4% | all 40 right  32% | 14 / 65 / 1 / 4 / 0 / 0 / 16 / 0
+  1.7B-T rwse       table  70% | per-node right  86.7% | all 40 right  42% | 15 / 54 / 1 / 4 / 0 / 0 / 26 / 0
+  1.7B-T degree     table 100% | per-node right  94.2% | all 40 right  33% | 12 / 66 / 0 / 6 / 0 / 0 / 16 / 0
+  1.7B-T all        table  99% | per-node right  95.6% | all 40 right  43% | 19 / 56 / 1 / 7 / 0 / 0 / 17 / 0
+  4B     none       table  98% | per-node right  76.1% | all 40 right  16% | 1 / 81 / 3 / 14 / 0 / 0 / 0 / 0
+  4B     filler     table 100% | per-node right  74.5% | all 40 right   6% | 1 / 90 / 4 / 6 / 0 / 0 / 0 / 0
+  4B     components table  92% | per-node right  74.2% | all 40 right  23% | 0 / 71 / 7 / 23 / 0 / 0 / 0 / 0
+  4B     clustering table  98% | per-node right  68.5% | all 40 right   4% | 0 / 96 / 0 / 4 / 0 / 0 / 0 / 0
+  4B     rwse       table  99% | per-node right  69.1% | all 40 right   2% | 0 / 96 / 1 / 2 / 0 / 0 / 0 / 1
+  4B     degree     table  89% | per-node right  97.9% | all 40 right  59% | 28 / 41 / 0 / 31 / 0 / 0 / 0 / 0
+  4B     all        table 100% | per-node right  90.9% | all 40 right  14% | 3 / 86 / 0 / 11 / 0 / 0 / 0 / 0
+  4B-T   none       table  84% | per-node right  96.8% | all 40 right  79% | 23 / 14 / 1 / 6 / 0 / 0 / 56 / 0
+  4B-T   filler     table  92% | per-node right  98.2% | all 40 right  76% | 34 / 15 / 1 / 5 / 0 / 0 / 46 / 0
+  4B-T   components table  89% | per-node right  98.3% | all 40 right  77% | 46 / 17 / 3 / 4 / 0 / 0 / 29 / 0
+  4B-T   clustering table  92% | per-node right  97.2% | all 40 right  78% | 47 / 18 / 2 / 5 / 0 / 0 / 29 / 0
+  4B-T   rwse       table  89% | per-node right  97.6% | all 40 right  80% | 33 / 14 / 2 / 5 / 0 / 0 / 45 / 0
+  4B-T   degree     table 100% | per-node right  93.5% | all 40 right  43% | 24 / 56 / 0 / 4 / 0 / 0 / 15 / 0
+  4B-T   all        table 100% | per-node right  89.0% | all 40 right  21% | 15 / 79 / 1 / 2 / 0 / 0 / 5 / 0
+[rpcycle] cycle_check, main sweep, all responses, per primer: % writing out a closed walk / % whose walk is a cycle of the graph / % whose walks are none
+  1.7B   none 76/26/50 | filler 83/26/56 | components 78/19/58 | clustering 90/36/54 | rwse 78/28/50 | degree 25/9/16 | all 88/35/54
+  1.7B-T none 98/78/20 | filler 99/77/22 | components 94/71/23 | clustering 97/79/18 | rwse 98/67/31 | degree 80/53/27 | all 95/70/24
+  4B     none 62/30/32 | filler 71/36/36 | components 54/28/26 | clustering 71/42/29 | rwse 79/28/51 | degree 16/10/7 | all 71/38/33
+  4B-T   none 100/98/2 | filler 99/95/4 | components 94/91/4 | clustering 89/86/2 | rwse 70/55/15 | degree 90/86/5 | all 93/89/4
+[rpcopy] finished wrong answers. node_degree, all densities: equal to the degree of node t-1 or t+1 (the neighbouring primer lines), against the count expected from how often other nodes share that degree. connected_nodes, main sweep: equal to another node's neighbour set (of which t-1 or t+1)
+  node_degree 1.7B   none 50/428 vs 45.1 | filler 33/447 vs 33.4 | components 45/421 vs 39.0 | clustering 49/427 vs 45.0 | rwse 36/428 vs 35.8 | degree 43/398 vs 35.5 | all 38/380 vs 32.8
+  node_degree 1.7B-T none 42/248 vs 42.5 | filler 55/301 vs 53.3 | components 54/257 vs 45.9 | clustering 51/275 vs 46.7 | rwse 44/255 vs 40.4 | degree 21/91 vs 16.5 | all 25/133 vs 23.8
+  node_degree 4B     none 15/138 vs 15.0 | filler 14/134 vs 14.5 | components 18/140 vs 17.6 | clustering 16/106 vs 12.5 | rwse 12/124 vs 14.9 | degree 27/136 vs 17.8 | all 30/234 vs 21.6
+  node_degree 4B-T   none 1/8 vs 1.5 | filler 2/8 vs 1.4 | components 4/14 vs 2.8 | clustering 4/11 vs 2.3 | rwse 2/15 vs 2.6 | degree 1/9 vs 2.6 | all 3/7 vs 1.0
+  connected_nodes 1.7B   none 1 (1)/110 | filler 0 (0)/135 | components 0 (0)/107 | clustering 1 (0)/105 | rwse 1 (0)/106 | degree 0 (0)/96 | all 0 (0)/101
+  connected_nodes 1.7B-T none 0 (0)/80 | filler 0 (0)/73 | components 2 (1)/71 | clustering 1 (0)/76 | rwse 0 (0)/82 | degree 1 (0)/54 | all 0 (0)/57
+  connected_nodes 4B     none 0 (0)/56 | filler 0 (0)/106 | components 0 (0)/19 | clustering 0 (0)/52 | rwse 2 (0)/56 | degree 0 (0)/68 | all 0 (0)/67
+  connected_nodes 4B-T   none 0 (0)/5 | filler 0 (0)/2 | components 0 (0)/2 | clustering 0 (0)/3 | rwse 0 (0)/4 | degree 1 (1)/4 | all 0 (0)/6
+[rpnodecount] node_count, main sweep, p<=.50: share of all responses (truncated included) with each pattern under none, per arm; then the shift in points under each primer, * q<.05, (t ...) the change in the truncated share, (fin ...) the shift over pairs where both finished, TREND = 3+ arms the same way at q<.05
+  quotes_primer_value (quotes a decimal the clustering or rwse primer prints for this graph (under any condition)): none 1.7B 0% / 1.7B-T 0% / 4B 0% / 4B-T 0%
+    filler     +0.0 (t +0.0, fin +0.0) | +0.0 (t -7.8, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.0, fin +0.0)
+    components +0.0 (t +0.0, fin +0.0) | +0.0 (t -0.5, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.0, fin +0.0)
+    clustering +0.0 (t +0.0, fin +0.0) | +11.0* (t -7.8, fin +10.6) | +0.0 (t +0.0, fin +0.0) | +17.8* (t +0.2, fin +17.5)
+    rwse       +0.0 (t +0.0, fin +0.0) | +7.5* (t -7.8, fin +7.0) | +0.0 (t +0.0, fin +0.0) | +6.8* (t +0.2, fin +6.5)
+    degree     +0.0 (t +0.0, fin +0.0) | +0.0 (t -5.0, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.2, fin +0.0)
+    all        +0.2 (t +0.0, fin +0.2) | +6.2* (t -7.8, fin +6.2) | +0.0 (t +0.0, fin +0.0) | +0.5 (t +0.0, fin +0.5)
+[rpnodedegree] node_degree, main sweep, p<=.50: share of all responses (truncated included) with each pattern under none, per arm; then the shift in points under each primer, * q<.05, (t ...) the change in the truncated share, (fin ...) the shift over pairs where both finished, TREND = 3+ arms the same way at q<.05
+  quotes_primer_value (quotes a decimal the clustering or rwse primer prints for this graph (under any condition)): none 1.7B 0% / 1.7B-T 0% / 4B 0% / 4B-T 0%
+    filler     +0.0 (t +0.0, fin +0.0) | +0.0 (t -0.5, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t -1.8, fin +0.0)
+    components +0.0 (t +0.0, fin +0.0) | +0.0 (t -0.2, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t -0.5, fin +0.0)
+    clustering +0.0 (t +0.0, fin +0.0) | +9.2* (t -0.5, fin +9.1) | +0.2 (t +0.0, fin +0.2) | +12.0* (t -2.0, fin +12.4)
+    rwse       +0.2 (t +0.2, fin +0.3) | +33.2* (t +0.0, fin +32.7) | +0.2 (t +0.0, fin +0.2) | +4.8* (t -0.5, fin +3.7)
+    degree     +0.0 (t +0.0, fin +0.0) | +0.0 (t +4.5, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t -2.5, fin +0.0)
+    all        +0.8 (t +0.0, fin +0.8) | +65.8* (t -0.5, fin +65.4) | +0.5 (t +0.0, fin +0.5) | +64.5* (t -1.0, fin +65.0)
+[rpnodedegreehi] node_degree, high-density extension, p>=.65 (plain arms at 2048 tokens): share of all responses (truncated included) with each pattern under none, per arm; then the shift in points under each primer, * q<.05, (t ...) the change in the truncated share, (fin ...) the shift over pairs where both finished, TREND = 3+ arms the same way at q<.05
+  quotes_primer_value (quotes a decimal the clustering or rwse primer prints for this graph (under any condition)): none 1.7B 0% / 1.7B-T 0% / 4B 0% / 4B-T 0%
+    filler     +0.0 (t -0.3, fin +0.0) | +0.0 (t -1.0, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t -0.3, fin +0.0)
+    components +0.0 (t -0.3, fin +0.0) | +0.0 (t +0.3, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.3, fin +0.0)
+    clustering +0.0 (t -0.3, fin +0.0) | +20.7* (t -1.3, fin +20.7) | +0.0 (t +0.0, fin +0.0) | +19.7* (t +0.0, fin +19.8)
+    rwse       +0.0 (t -0.3, fin +0.0) | +23.0* (t -1.3, fin +23.1) | +0.0 (t +0.0, fin +0.0) | +0.3 (t +0.7, fin +0.3)
+    degree     +0.0 (t -0.3, fin +0.0) | +0.0 (t +9.0, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.3, fin +0.0)
+    all        +1.3 (t -0.3, fin +1.3) | +59.7* (t +0.0, fin +59.8) | +0.3 (t +0.0, fin +0.3) | +86.7* (t +0.7, fin +86.5)
+[rpconnectednodes] connected_nodes, main sweep, p<=.50: share of all responses (truncated included) with each pattern under none, per arm; then the shift in points under each primer, * q<.05, (t ...) the change in the truncated share, (fin ...) the shift over pairs where both finished, TREND = 3+ arms the same way at q<.05
+  quotes_primer_value (quotes a decimal the clustering or rwse primer prints for this graph (under any condition)): none 1.7B 0% / 1.7B-T 0% / 4B 0% / 4B-T 0%
+    filler     +0.0 (t +0.0, fin +0.0) | +0.0 (t -0.8, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t -0.5, fin +0.0)
+    components +0.0 (t +0.0, fin +0.0) | +0.0 (t -0.2, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.2, fin +0.0)
+    clustering +0.0 (t +0.0, fin +0.0) | +3.2* (t -1.0, fin +3.3) | +0.0 (t +0.0, fin +0.0) | +1.2 (t +1.2, fin +0.8)
+    rwse       +0.2 (t +0.0, fin +0.2) | +37.5* (t -0.8, fin +37.9) | +0.0 (t +0.0, fin +0.0) | +7.2* (t -0.2, fin +6.3)
+    degree     +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.2, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t -0.2, fin +0.0)
+    all        +0.0 (t +0.2, fin +0.0) | +32.5* (t -0.5, fin +31.6) | +0.0 (t +0.0, fin +0.0) | +6.0* (t +1.0, fin +4.8)
+[rpedgecount] edge_count, main sweep, p<=.50: share of all responses (truncated included) with each pattern under none, per arm; then the shift in points under each primer, * q<.05, (t ...) the change in the truncated share, (fin ...) the shift over pairs where both finished, TREND = 3+ arms the same way at q<.05
+  quotes_primer_value (quotes a decimal the clustering or rwse primer prints for this graph (under any condition)): none 1.7B 0% / 1.7B-T 0% / 4B 0% / 4B-T 0%
+    filler     +0.0 (t -3.5, fin +0.0) | +0.0 (t +1.2, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t -13.0, fin +0.0)
+    components +0.0 (t -2.5, fin +0.0) | +0.0 (t +0.5, fin +0.0) | +0.0 (t +0.8, fin +0.0) | +0.0 (t -25.0, fin +0.0)
+    clustering +0.0 (t -11.8, fin +0.0) | +7.8* (t +0.8, fin +17.4) | +0.0 (t +0.2, fin +0.0) | +12.2* (t -26.0, fin +13.6)
+    rwse       +0.0 (t -11.8, fin +0.0) | +34.2* (t +5.0, fin +28.0) | +0.0 (t +0.5, fin +0.0) | +12.8* (t -12.2, fin +16.3)
+    degree     +0.0 (t -20.2, fin +0.0) | +0.0 (t -0.8, fin +0.0) | +0.0 (t +1.8, fin +0.0) | +0.0 (t -20.8, fin +0.0)
+    all        +0.0 (t -1.8, fin +0.0) | +45.5* (t -12.2, fin +37.5) | +0.0 (t +0.8, fin +0.0) | +38.2* (t -23.8, fin +17.1)
+  degree_table (lists a value for 30 or more of the 40 nodes): none 1.7B 52% / 1.7B-T 75% / 4B 98% / 4B-T 84%
+    filler     +20.2* (t -3.5, fin +21.0) | +6.8* (t +1.2, fin -3.4) | +1.2 (t +0.0, fin +1.2) | +8.5* (t -13.0, fin +0.0)  TREND
+    components -6.5 (t -2.5, fin -8.1) | +0.5 (t +0.5, fin -3.7) | -6.8* (t +0.8, fin -6.8) | +5.5 (t -25.0, fin +0.0)
+    clustering -25.2* (t -11.8, fin -28.2) | +10.0* (t +0.8, fin +0.0) | -0.5 (t +0.2, fin -0.5) | +8.5* (t -26.0, fin +0.0)
+    rwse       -39.5* (t -11.8, fin -35.1) | -5.0 (t +5.0, fin +0.0) | +0.2 (t +0.5, fin +0.3) | +5.0 (t -12.2, fin +0.0)
+    degree     +36.5* (t -20.2, fin +45.8) | +24.5* (t -0.8, fin +0.0) | -9.2* (t +1.8, fin -9.4) | +16.0* (t -20.8, fin +0.0)  TREND
+    all        +1.8 (t -1.8, fin +13.3) | +24.0* (t -12.2, fin +0.0) | +1.5 (t +0.8, fin +1.5) | +16.0* (t -23.8, fin +0.0)
+  degree_table_right (lists all 40 nodes, every value the true degree): none 1.7B 1% / 1.7B-T 26% / 4B 16% / 4B-T 66%
+    filler     +6.5* (t -3.5, fin +8.0) | +1.8 (t +1.2, fin -6.9) | -9.2* (t +0.0, fin -9.2) | +3.5 (t -13.0, fin -2.0)
+    components +0.8 (t -2.5, fin +0.5) | +0.8 (t +0.5, fin -7.4) | +5.2 (t +0.8, fin +5.3) | +2.2 (t -25.0, fin -10.0)
+    clustering -0.8 (t -11.8, fin -1.3) | +1.5 (t +0.8, fin -4.3) | -11.5* (t +0.2, fin -11.5) | +5.2 (t -26.0, fin +1.7)
+    rwse       +0.8 (t -11.8, fin +0.8) | +4.0 (t +5.0, fin +4.0) | -13.2* (t +0.5, fin -13.6) | +4.2 (t -12.2, fin +0.0)
+    degree     +60.5* (t -20.2, fin +62.8) | +7.5 (t -0.8, fin -46.2) | +37.0* (t +1.8, fin +37.4) | -23.2* (t -20.8, fin -20.6)
+    all        +29.2* (t -1.8, fin +33.2) | +16.8* (t -12.2, fin -4.2) | -1.5 (t +0.8, fin -1.5) | -45.8* (t -23.8, fin -43.9)
+[rpedgeexistence] edge_existence, main sweep, p<=.50: share of all responses (truncated included) with each pattern under none, per arm; then the shift in points under each primer, * q<.05, (t ...) the change in the truncated share, (fin ...) the shift over pairs where both finished, TREND = 3+ arms the same way at q<.05
+  quotes_primer_value (quotes a decimal the clustering or rwse primer prints for this graph (under any condition)): none 1.7B 0% / 1.7B-T 0% / 4B 0% / 4B-T 0%
+    filler     +0.0 (t +0.0, fin +0.0) | +0.0 (t -0.2, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.0, fin +0.0)
+    components +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.5, fin +0.0)
+    clustering +0.0 (t +0.0, fin +0.0) | +1.8* (t +0.0, fin +1.5) | +0.5 (t +0.0, fin +0.5) | +2.2* (t +0.8, fin +2.0)
+    rwse       +0.2 (t +0.2, fin +0.3) | +20.2* (t +0.0, fin +19.8) | +0.2 (t +0.0, fin +0.2) | +4.0* (t +1.2, fin +3.6)
+    degree     +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.2, fin +0.0) | +0.0 (t +0.5, fin +0.0) | +0.0 (t +0.0, fin +0.0)
+    all        +0.0 (t +0.0, fin +0.0) | +12.5* (t -0.2, fin +12.3) | +0.0 (t +0.2, fin +0.0) | +2.8* (t +1.0, fin +2.3)
+[rpedgeexistencehi] edge_existence, high-density extension, p>=.65 (plain arms at 2048 tokens): share of all responses (truncated included) with each pattern under none, per arm; then the shift in points under each primer, * q<.05, (t ...) the change in the truncated share, (fin ...) the shift over pairs where both finished, TREND = 3+ arms the same way at q<.05
+  quotes_primer_value (quotes a decimal the clustering or rwse primer prints for this graph (under any condition)): none 1.7B 0% / 1.7B-T 0% / 4B 0% / 4B-T 0%
+    filler     +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.0, fin +0.0)
+    components +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.3, fin +0.0) | +0.0 (t +0.0, fin +0.0)
+    clustering +0.0 (t +0.0, fin +0.0) | +0.3 (t +0.0, fin +0.3) | +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.0, fin +0.0)
+    rwse       +0.0 (t +0.0, fin +0.0) | +4.0* (t +0.0, fin +4.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.0, fin +0.0)
+    degree     +0.0 (t +1.3, fin +0.0) | +0.0 (t +0.0, fin +0.0) | +0.0 (t +0.3, fin +0.0) | +0.0 (t +0.0, fin +0.0)
+    all        +0.0 (t +0.0, fin +0.0) | +7.3* (t +0.0, fin +7.3) | +0.0 (t +0.3, fin +0.0) | +0.0 (t +0.0, fin +0.0)
+[rpcyclecheck] cycle_check, main sweep, p<=.50: share of all responses (truncated included) with each pattern under none, per arm; then the shift in points under each primer, * q<.05, (t ...) the change in the truncated share, (fin ...) the shift over pairs where both finished, TREND = 3+ arms the same way at q<.05
+  quotes_primer_value (quotes a decimal the clustering or rwse primer prints for this graph (under any condition)): none 1.7B 0% / 1.7B-T 0% / 4B 0% / 4B-T 0%
+    filler     +0.0 (t -2.8, fin +0.0) | +0.0 (t -3.0, fin +0.0) | +0.0 (t +0.5, fin +0.0) | +0.0 (t -0.5, fin +0.0)
+    components +0.0 (t -2.5, fin +0.0) | +0.0 (t +7.5, fin +0.0) | +0.0 (t +0.8, fin +0.0) | +0.0 (t +3.2, fin +0.0)
+    clustering +3.8* (t -8.2, fin +3.9) | +20.8* (t +0.5, fin +20.2) | +22.5* (t -0.2, fin +22.5) | +68.5* (t +0.0, fin +68.3)  TREND
+    rwse       +0.0 (t -7.2, fin +0.0) | +17.5* (t -2.2, fin +17.6) | +0.0 (t +0.5, fin +0.0) | +8.2* (t -0.2, fin +8.1)
+    degree     +0.0 (t +8.2, fin +0.0) | +0.0 (t +21.2, fin +0.0) | +0.0 (t +0.8, fin +0.0) | +0.0 (t +4.8, fin +0.0)
+    all        +6.2* (t -8.0, fin +6.6) | +51.8* (t +0.8, fin +49.9) | +1.0 (t -0.2, fin +1.0) | +10.2* (t +0.5, fin +9.4)  TREND
+  cycle_named (writes out a closed walk): none 1.7B 76% / 1.7B-T 98% / 4B 62% / 4B-T 100%
+    filler     +7.2* (t -2.8, fin +6.5) | +0.2 (t -3.0, fin -0.5) | +9.0* (t +0.5, fin +9.2) | -0.8 (t -0.5, fin -1.3)
+    components +2.2 (t -2.5, fin -0.9) | -4.5* (t +7.5, fin -0.9) | -7.8 (t +0.8, fin -8.2) | -5.0* (t +3.2, fin -3.1)
+    clustering +15.0* (t -8.2, fin +8.0) | -1.2 (t +0.5, fin +0.0) | +9.2* (t -0.2, fin +9.9) | -10.5* (t +0.0, fin -11.2)
+    rwse       +2.2 (t -7.2, fin -2.8) | -0.2 (t -2.2, fin -0.5) | +17.0* (t +0.5, fin +17.1) | -29.5* (t -0.2, fin -29.9)
+    degree     -50.8* (t +8.2, fin -51.8) | -18.8* (t +21.2, fin -2.7) | -45.5* (t +0.8, fin -45.3) | -9.0* (t +4.8, fin -5.3)  TREND
+    all        +13.0* (t -8.0, fin +6.1) | -3.5* (t +0.8, fin -2.9) | +9.2* (t -0.2, fin +9.4) | -6.5* (t +0.5, fin -6.4)
+  cycle_real (writes out a closed walk that is a cycle of the graph): none 1.7B 26% / 1.7B-T 78% / 4B 30% / 4B-T 98%
+    filler     +0.8 (t -2.8, fin +0.0) | -1.8 (t -3.0, fin -4.1) | +5.2 (t +0.5, fin +5.4) | -2.2 (t -0.5, fin -2.8)
+    components -6.5 (t -2.5, fin -7.3) | -7.2* (t +7.5, fin -4.3) | -1.8 (t +0.8, fin -2.0) | -6.8* (t +3.2, fin -4.7)
+    clustering +10.5* (t -8.2, fin +7.7) | +0.2 (t +0.5, fin +0.3) | +11.8* (t -0.2, fin +11.9) | -11.0* (t +0.0, fin -11.7)
+    rwse       +2.0 (t -7.2, fin -1.1) | -11.5* (t -2.2, fin -12.4) | -2.2 (t +0.5, fin -2.3) | -42.8* (t -0.2, fin -43.0)
+    degree     -16.5* (t +8.2, fin -15.0) | -25.5* (t +21.2, fin -15.3) | -20.8* (t +0.8, fin -20.7) | -12.0* (t +4.8, fin -8.5)  TREND
+    all        +9.0* (t -8.0, fin +6.9) | -8.0* (t +0.8, fin -8.0) | +8.0* (t -0.2, fin +8.1) | -8.8* (t +0.5, fin -8.7)
+[rptrend] pattern shifts that go the same way at q<.05 in 3+ arms (task, density group, primer, pattern: shift per arm 1.7B / 1.7B-T / 4B / 4B-T; arms not moving that way)
+  cycle_check main all: quotes_primer_value up +6.2* / +51.8* / +1.0 / +10.2*; not: 4B
+  cycle_check main clustering: quotes_primer_value up +3.8* / +20.8* / +22.5* / +68.5*
+  cycle_check main degree: cycle_named down -50.8* / -18.8* / -45.5* / -9.0*
+  cycle_check main degree: cycle_real down -16.5* / -25.5* / -20.8* / -12.0*
+  edge_count main degree: degree_table up +36.5* / +24.5* / -9.2* / +16.0*; not: 4B
+  edge_count main filler: degree_table up +20.2* / +6.8* / +1.2 / +8.5*; not: 4B
+[rpassoc] for each trend, finished responses under that primer: accuracy with the pattern vs without (n), where both have 10+; observational
+  cycle_check main all quotes_primer_value: 1.7B 100% (25) vs 99% (371); 1.7B-T 100% (192) vs 100% (193); 4B-T 100% (37) vs 100% (358)
+  cycle_check main clustering quotes_primer_value: 1.7B 100% (14) vs 100% (383); 1.7B-T 100% (79) vs 100% (307); 4B 100% (90) vs 100% (308); 4B-T 100% (271) vs 100% (126)
+  cycle_check main degree cycle_named: 1.7B 100% (99) vs 84% (232); 1.7B-T 100% (291) vs 83% (12); 4B 100% (66) vs 98% (328); 4B-T 100% (358) vs 85% (20)
+  cycle_check main degree cycle_real: 1.7B 100% (37) vs 87% (294); 1.7B-T 100% (198) vs 98% (105); 4B 100% (38) vs 98% (356); 4B-T 100% (340) vs 92% (38)
+  edge_count main degree degree_table: 1.7B 5% (336) vs 0% (26); 4B 31% (350) vs 16% (43)
+  edge_count main filler degree_table: 1.7B 0% (198) vs 3% (97)
+[rprelation] accuracy (correct share of all responses; truncated is never correct) against none, main sweep, 400 paired graphs, by what the primer gives the graph-blind solver for the task: dbar = bar(primer) - bar(none). Class means leave out cells with 15%+ truncated on either side (~); * q<.05, BH over all 144 (arm, task, primer)
+  1.7B: answer-carrying 2 cells, mean +8.9 (up 2, down 0), vs filler +9.4; informative side 2 cells, mean +4.5 (up 0, down 0), vs filler +12.6; uninformative side 11 cells, mean +2.2 (up 1, down 1), vs filler +10.9; control 3 cells, mean -7.5 (up 0, down 2); constant task 11 cells, mean +18.6 (up 7, down 0), vs filler -5.5; flagged 7
+  1.7B-T: answer-carrying 2 cells, mean +10.5 (up 2, down 0), vs filler +13.5; informative side 2 cells, mean +0.6 (up 0, down 0), vs filler +2.4; uninformative side 11 cells, mean +1.1 (up 2, down 0), vs filler +0.7; control 3 cells, mean -0.3 (up 0, down 0); constant task 11 cells, mean +3.6 (up 6, down 1), vs filler -3.3; flagged 7
+  4B: answer-carrying 4 cells, mean +4.1 (up 2, down 2), vs filler +3.8; informative side 3 cells, mean -4.5 (up 0, down 1), vs filler -2.4; uninformative side 13 cells, mean -0.9 (up 2, down 2), vs filler +5.9; control 4 cells, mean -4.7 (up 0, down 2); constant task 12 cells, mean +4.1 (up 6, down 0), vs filler -0.3; flagged 0
+  4B-T: answer-carrying 2 cells, mean +1.5 (up 1, down 0), vs filler -0.5; informative side 2 cells, mean -1.2 (up 0, down 0), vs filler -2.2; uninformative side 11 cells, mean -0.1 (up 0, down 0), vs filler -1.0; control 3 cells, mean +1.1 (up 0, down 0); constant task 12 cells, mean -0.6 (up 0, down 2), vs filler -1.3; flagged 6
+  per task and primer (dbar, class): effect per arm; then, where accuracy moved, the three largest pattern shifts at q<.05 in the same cell
+  node_count/filler (+0.00, constant task): 1.7B +39.8* (t +0.0) | 1.7B-T +9.0* (t -7.8) | 4B +9.2* (t +0.0) | 4B-T +0.5 (t +0.0)
+  node_count/components (+0.00, constant task): 1.7B +21.2* (t +0.0) | 1.7B-T +1.5 (t -0.5) | 4B +9.0* (t +0.0) | 4B-T +0.0 (t +0.0)
+  node_count/clustering (+0.00, constant task): 1.7B +67.2* (t +0.0) | 1.7B-T +9.0* (t -7.8) | 4B +8.8* (t +0.0) | 4B-T +0.2 (t +0.2)
+      patterns: 1.7B-T: quotes_primer_value +11.0
+  node_count/rwse (+0.00, constant task): 1.7B +2.0 (t +0.0) | 1.7B-T +9.0* (t -7.8) | 4B +9.2* (t +0.0) | 4B-T +0.2 (t +0.2)
+      patterns: 1.7B-T: quotes_primer_value +7.5
+  node_count/degree (+0.00, constant task): 1.7B +6.8* (t +0.0) | 1.7B-T +5.5* (t -5.0) | 4B +8.0* (t +0.0) | 4B-T +0.2 (t +0.2)
+  node_count/all (+0.00, constant task): 1.7B +47.0* (t +0.0) | 1.7B-T +9.0* (t -7.8) | 4B +9.8* (t +0.0) | 4B-T +0.5 (t +0.0)
+      patterns: 1.7B-T: quotes_primer_value +6.2
+  node_degree/filler (+0.00, control): 1.7B -0.5 (t +0.0) | 1.7B-T -3.0 (t -0.5) | 4B -0.5 (t +0.0) | 4B-T +2.0 (t -1.8)
+  node_degree/components (+0.00, uninformative side): 1.7B +1.8 (t +0.0) | 1.7B-T -1.0 (t -0.2) | 4B +0.2 (t +0.0) | 4B-T +0.2 (t -0.5)
+  node_degree/clustering (+0.00, uninformative side): 1.7B +3.0 (t +0.0) | 1.7B-T +1.5 (t -0.5) | 4B -0.5 (t +0.0) | 4B-T +1.8 (t -2.0)
+  node_degree/rwse (+0.07, informative side): 1.7B +4.0 (t +0.2) | 1.7B-T +2.5 (t +0.0) | 4B -2.2 (t +0.0) | 4B-T -1.2 (t -0.5)
+  node_degree/degree (+0.86, answer-carrying): 1.7B +7.5* (t +0.0) | 1.7B-T +8.8* (t +4.5) | 4B -6.5* (t +0.0) | 4B-T +2.5* (t -2.5)
+  node_degree/all (+0.86, answer-carrying): 1.7B +10.2* (t +0.0) | 1.7B-T +12.2* (t -0.5) | 4B -8.0* (t +0.0) | 4B-T +0.5 (t -1.0)
+      patterns: 1.7B-T: quotes_primer_value +65.8
+  connected_nodes/filler (+0.00, control): 1.7B -6.2* (t +0.0) | 1.7B-T +2.5 (t -0.8) | 4B -12.5* (t +0.0) | 4B-T +1.2 (t -0.5)
+  connected_nodes/components (+0.00, uninformative side): 1.7B +0.8 (t +0.0) | 1.7B-T +2.5 (t -0.2) | 4B +9.2* (t +0.0) | 4B-T +0.5 (t +0.2)
+  connected_nodes/clustering (+0.00, uninformative side): 1.7B +1.2 (t +0.0) | 1.7B-T +2.0 (t -1.0) | 4B +1.0 (t +0.0) | 4B-T -0.8 (t +1.2)
+  connected_nodes/rwse (+0.00, uninformative side): 1.7B +1.0 (t +0.0) | 1.7B-T +0.2 (t -0.8) | 4B +0.0 (t +0.0) | 4B-T +0.5 (t -0.2)
+  connected_nodes/degree (+0.00, uninformative side): 1.7B +3.5 (t +0.0) | 1.7B-T +6.2* (t +0.2) | 4B -3.0 (t +0.0) | 4B-T +0.5 (t -0.2)
+  connected_nodes/all (+0.01, uninformative side): 1.7B +2.0 (t +0.2) | 1.7B-T +6.2* (t -0.5) | 4B -2.8 (t +0.0) | 4B-T -1.2 (t +1.0)
+      patterns: 1.7B-T: quotes_primer_value +32.5
+  edge_count/filler (+0.00, control): 1.7B -0.5~ (t -3.5) | 1.7B-T -1.5~ (t +1.2) | 4B +1.2 (t +0.0) | 4B-T +12.2*~ (t -13.0)
+      patterns: 4B-T: degree_table +8.5
+  edge_count/components (+0.00, uninformative side): 1.7B -1.0~ (t -2.5) | 1.7B-T -0.8~ (t +0.5) | 4B -1.2 (t +0.8) | 4B-T +24.8*~ (t -25.0)
+  edge_count/clustering (+0.07, informative side): 1.7B -0.5~ (t -11.8) | 1.7B-T -1.2~ (t +0.8) | 4B -1.2 (t +0.2) | 4B-T +24.8*~ (t -26.0)
+      patterns: 4B-T: quotes_primer_value +12.2, degree_table +8.5
+  edge_count/rwse (+0.00, uninformative side): 1.7B -0.8~ (t -11.8) | 1.7B-T -3.2~ (t +5.0) | 4B -1.5 (t +0.5) | 4B-T +10.2*~ (t -12.2)
+      patterns: 4B-T: quotes_primer_value +12.8
+  edge_count/degree (+0.97, answer-carrying): 1.7B +3.0*~ (t -20.2) | 1.7B-T -3.2~ (t -0.8) | 4B +27.2* (t +1.8) | 4B-T +8.5*~ (t -20.8)
+      patterns: 1.7B: degree_table_right +60.5, degree_table +36.5; 4B: degree_table_right +37.0, degree_table -9.2; 4B-T: degree_table_right -23.2, degree_table +16.0
+  edge_count/all (+0.97, answer-carrying): 1.7B +0.8~ (t -1.8) | 1.7B-T +5.0~ (t -12.2) | 4B +3.8* (t +0.8) | 4B-T +1.8~ (t -23.8)
+  edge_existence/filler (+0.00, control): 1.7B -15.8* (t +0.0) | 1.7B-T -0.5 (t -0.2) | 4B -7.0* (t +0.0) | 4B-T +0.0 (t +0.0)
+  edge_existence/components (+0.00, uninformative side): 1.7B -8.2* (t +0.0) | 1.7B-T -0.8 (t +0.0) | 4B -2.8 (t +0.0) | 4B-T -0.5 (t +0.5)
+  edge_existence/clustering (-0.01, uninformative side): 1.7B +3.8 (t +0.0) | 1.7B-T -1.0 (t +0.0) | 4B +4.0* (t +0.0) | 4B-T -0.8 (t +0.8)
+  edge_existence/rwse (-0.18, informative side): 1.7B +5.0 (t +0.2) | 1.7B-T -1.2 (t +0.0) | 4B -10.0* (t +0.0) | 4B-T -1.2 (t +1.2)
+  edge_existence/degree (+0.01, uninformative side): 1.7B +4.0 (t +0.0) | 1.7B-T -2.5 (t +0.2) | 4B -4.8* (t +0.5) | 4B-T +0.0 (t +0.0)
+  edge_existence/all (+0.01, uninformative side): 1.7B +11.5* (t +0.0) | 1.7B-T -1.8 (t -0.2) | 4B -10.0* (t +0.2) | 4B-T -1.0 (t +1.0)
+  cycle_check/filler (+0.00, constant task): 1.7B +3.0 (t -2.8) | 1.7B-T +3.0* (t -3.0) | 4B -0.5 (t +0.5) | 4B-T +0.5 (t -0.5)
+  cycle_check/components (+0.00, constant task): 1.7B +2.0 (t -2.5) | 1.7B-T -7.5* (t +7.5) | 4B -2.0 (t +0.8) | 4B-T -3.2* (t +3.2)
+      patterns: 1.7B-T: cycle_real -7.2, cycle_named -4.5; 4B-T: cycle_real -6.8, cycle_named -5.0
+  cycle_check/clustering (+0.00, constant task): 1.7B +8.5* (t -8.2) | 1.7B-T -0.5 (t +0.5) | 4B +0.5 (t -0.2) | 4B-T +0.0 (t +0.0)
+      patterns: 1.7B: cycle_named +15.0, cycle_real +10.5, quotes_primer_value +3.8
+  cycle_check/rwse (+0.00, constant task): 1.7B -0.2 (t -7.2) | 1.7B-T +2.2 (t -2.2) | 4B -0.2 (t +0.5) | 4B-T +0.2 (t -0.2)
+  cycle_check/degree (+0.00, constant task): 1.7B -17.5*~ (t +8.2) | 1.7B-T -21.8*~ (t +21.2) | 4B -2.2 (t +0.8) | 4B-T -5.5* (t +4.8)
+      patterns: 1.7B: cycle_named -50.8, cycle_real -16.5; 1.7B-T: cycle_real -25.5, cycle_named -18.8; 4B-T: cycle_real -12.0, cycle_named -9.0
+  cycle_check/all (+0.00, constant task): 1.7B +7.0* (t -8.0) | 1.7B-T -0.8 (t +0.8) | 4B -0.2 (t -0.2) | 4B-T -0.5 (t +0.5)
+      patterns: 1.7B: cycle_named +13.0, cycle_real +9.0, quotes_primer_value +6.2

@@ -206,6 +206,7 @@ _TABLE = [
 ]
 _COUNT_COL = re.compile(r"degree|count|number of|connections", re.I)
 _NOT_COUNT_COL = re.compile(r"sum|total|running|cumulative", re.I)
+_LISTED = re.compile(r"\d\s*,\s*\d")      # a cell listing neighbours: "3, 7"
 _HALF = re.compile(r"\\d?frac\{\s*(\d+)\s*\}\{\s*2\s*\}\s*=\s*(?:\\boxed\{)?\s*(\d+)"
                    r"|(\d+)\s*(?:/|÷|divided by)\s*2\s*=\s*(?:\\boxed\{)?\s*(\d+)", re.I)
 _WALK = re.compile(r"\d+(?:\s*(?:→|->|⟶|=>|–|—|\\to\b|\\rightarrow|\s-\s)\s*\d+|-\d+){2,}")
@@ -214,27 +215,33 @@ _RUN = re.compile(r"\d+(?:\s*,\s*(?:and\s+)?\d+){2,}")
 
 
 def _table_rows(text):
-  """(position, node, value) from markdown table rows whose header names a count
-  column (degree, count, number of, connections; not a sum or running total).
-  The value is the first whole number in such a column; tables without that
-  header (edge lists, headerless tables) are skipped."""
-  pos, cols = 0, []
+  """(position, node, value) from markdown table rows under a count column: one
+  whose header names a count (degree, count, number of, connections; not a sum or
+  running total) and that lists no neighbours -- a 'Connections' column holding
+  '3, 7, 12' is a neighbour list, and its bare '32' for a node with one neighbour
+  is an id, not a degree. The value is the first whole number in such a column;
+  tables without one (edge lists, headerless tables) are skipped."""
+  pos, tables = 0, []                  # [header cells, [(position, node, cells)]]; None ends one
   for line in text.splitlines(keepends=True):
-    if line.lstrip().startswith("|"):
+    if not line.lstrip().startswith("|"):
+      tables.append(None)
+    else:
       cells = [c.strip() for c in line.strip().strip("|").split("|")]
       node = re.sub(r"(?i)^node\s*", "", cells[0])
-      if not node.isdecimal():
-        if not set("".join(cells)) <= set("-: "):          # a header, not |---|
-          cols = [i for i, h in enumerate(cells) if i and _COUNT_COL.search(h)
-                  and not _NOT_COUNT_COL.search(h)]
-      else:
-        value = next((cells[i] for i in cols if i < len(cells) and cells[i].isdecimal()),
-                     None)
-        if value is not None:
-          yield pos, int(node), int(value)
-    else:
-      cols = []
+      if node.isdecimal():
+        if tables and tables[-1] is not None:
+          tables[-1][1].append((pos, int(node), cells))
+      elif not set("".join(cells)) <= set("-: "):          # a header, not |---|
+        tables.append((cells, []))
     pos += len(line)
+  for header, rows in filter(None, tables):
+    cols = [i for i, h in enumerate(header) if i and _COUNT_COL.search(h)
+            and not _NOT_COUNT_COL.search(h)
+            and not any(i < len(c) and _LISTED.search(c[i]) for _, _, c in rows)]
+    for at, node, cells in rows:
+      value = next((cells[i] for i in cols if i < len(cells) and cells[i].isdecimal()), None)
+      if value is not None:
+        yield at, node, int(value)
 
 
 def degree_table(text, n):
