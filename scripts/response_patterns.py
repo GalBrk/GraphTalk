@@ -3,9 +3,11 @@ with what a primer says about the task. Read from the raw responses of the
 40-node sweep (runs/qwen3-{1.7b,4b}[-think].densfull40*), all 84,000 of them.
 
 Truncated responses are kept everywhere: a response the budget cut off still
-shows whether the model was counting or copying. Accuracy follows rule R1
-(graphtalk/outcomes.py): a truncated response is never correct, and every
-shift is printed with the change in the truncated share beside it ("t").
+shows whether the model was counting or copying. Each pattern shift is printed
+with the change in the truncated share beside it ("t") and with the shift over
+the pairs in which both responses finished ("fin"), which is the set the
+repo's own answer descriptions use (rule R1, graphtalk/outcomes.py). Accuracy
+follows R1: a truncated response is never correct.
 
   [rpcontrast]  discovery: phrases whose share of responses (first 12,000
                 characters) moves by 15 points or more, the same way, in three
@@ -26,10 +28,11 @@ shift is printed with the change in the truncated share beside it ("t").
   [rptrend]     shifts that go the same way at q < .05 in three or more arms
   [rpassoc]     for each trend: accuracy of finished responses with and without
                 the pattern (observational -- the model picks its procedure)
-  [rprelation]  per arm, the accuracy effect of each primer against how much it
-                tells the graph-blind solver about the task (bar(primer) -
-                bar(none), shortcuts_n40_flat.json), and the patterns that moved
-                in the cells whose accuracy moved
+  [rprelation]  per arm, the accuracy effect of each primer (primer_findings'
+                effect(), so its intervals match primer_cells.csv) against how
+                much the primer tells the graph-blind solver about the task
+                (bar(primer) - bar(none), shortcuts_n40_flat.json), and the
+                patterns that moved in the cells whose accuracy moved
 
   PYTHONPATH=. python scripts/response_patterns.py --sample
   PYTHONPATH=. python scripts/response_patterns.py --csv-dir csv2/raw-trends \\
@@ -49,7 +52,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_raw_frame as brf  # noqa: E402  (Corpus: the true graphs)
 import primer_findings as pf  # noqa: E402
 
-from graphtalk import primers, scoring  # noqa: E402
+from graphtalk import outcomes, primers, scoring  # noqa: E402
 
 ARMS = pf.ARMS
 SHORT = {"qwen3-1.7b": "1.7B", "qwen3-1.7b-think": "1.7B-T", "qwen3-4b": "4B",
@@ -96,18 +99,28 @@ def _lookup(both):
 
 
 def _route(kind):
+  """primer_findings.route(); for 'enumerate' the evidence is the first one-per-line
+  item after the queried node's line, where route() looks for the list."""
   def find(text, targets):
     if pf.route(text, targets[0]) != kind:
       return None
-    m = pf._ENUM_LINE.search(text) if kind == "enumerate" else None
+    if kind != "enumerate":
+      return 0
+    line = re.search(_line(targets[0]), text)
+    m = pf._ENUM_LINE.search(text, line.start() if line else 0)
     return m.start() if m else 0
   return find
 
 
 def _conflict(text, targets):
-  if not pf.reports_discrepancy(text):
-    return None
-  return pf._DISCREPANCY.search(text).start()
+  """primer_findings.reports_discrepancy(), returning where its accepted match is:
+  the first discrepancy word with no hypothetical cue in the 60 characters before
+  it, within its sentence."""
+  for m in pf._DISCREPANCY.finditer(text):
+    before = re.split(r"[.!?\n]", text[max(0, m.start() - 60):m.start()])[-1]
+    if not pf._HYPOTHETICAL.search(before):
+      return m.start()
+  return None
 
 
 _PAIR = re.compile(r"\(\s*\d+\s*,\s*\d+\s*\)")
@@ -118,14 +131,18 @@ def _edge_pairs(text, targets):
   return found[0].start() if len(found) >= 10 else None
 
 
-_DISMISS = (r"\b(?:not|n't)\s+(?:directly\s+|really\s+|actually\s+|necessarily\s+|"
-            r"seem\s+(?:to\s+be\s+)?)?(?:relevant|needed|necessary|required|useful|"
-            r"helpful|related)\b|\birrelevant\b|red herring|distract")
+# A dismissal counts only when a primer's own term comes shortly before it: in the
+# labelled sample, most bare "not necessary" / "not helpful" were about a step.
+_DISMISS = (r"(?:clustering|coefficient|return probabilit|random[- ]walk|markov|"
+            r"components?)[^\n]{0,150}?(?:(?:\bnot|n['’]t)\s+(?:directly\s+|really\s+|"
+            r"actually\s+|necessarily\s+|seem\s+(?:to\s+be\s+)?)?(?:relevant|needed|"
+            r"necessary|required|useful|helpful|related)\b|\birrelevant\b|red herring|"
+            r"distract)")
 
 ALL = tuple(TASKS)
 TEXT = {  # name: (tasks, meaning, finder)
-    "dismisses": (ALL, "says some given information is irrelevant or not needed",
-                  _rx(_DISMISS)),
+    "dismisses": (ALL, "says the primer's clustering, return-probability or component "
+                       "information is irrelevant or not needed", _rx(_DISMISS)),
     "names_clustering": (ALL, "mentions clustering coefficients",
                          _rx(r"clustering coefficient")),
     "names_rwse": (ALL, "mentions return probabilities, random walks or Markov chains",
@@ -133,7 +150,7 @@ TEXT = {  # name: (tasks, meaning, finder)
     "names_components": (ALL, "mentions connected components",
                          _rx(r"\bcomponents?\b")),
     "names_degree": (tuple(t for t in TASKS if t != "node_degree"),
-                     "reasons with node degrees", _rx(r"\bdegrees?\b")),
+                     "mentions node degrees", _rx(r"\bdegrees?\b")),
     "degree_sum": (("edge_count", "cycle_check"),
                    "sums the degrees and halves the sum (handshake)",
                    _rx(brf._MARKERS["uses_degree_sum"].pattern)),
@@ -141,12 +158,14 @@ TEXT = {  # name: (tasks, meaning, finder)
                    _edge_pairs),
     "reports_conflict": (("node_degree", "edge_count", "connected_nodes"),
                          "reports a conflict between values", _conflict),
-    "retrieve": (("node_degree",), "answers without restating the queried node's line",
-                 _route("retrieve")),
+    # load() also clears retrieve when the text restates the neighbour list in
+    # other words (lists_neighbours), which route() does not look for.
+    "retrieve": (("node_degree",), "answers without restating the queried node's "
+                                   "neighbour list", _route("retrieve")),
     "enumerate": (("node_degree",), "lists the queried node's neighbours one per line",
                   _route("enumerate")),
     "cites_degree": (("node_degree",),
-                     "states the queried node's degree in the primer's words",
+                     "cites the primer's degree sentence for the queried node",
                      _target(lambda t: rf"[Nn]ode {t}\**\s+has degree")),
     "restates_line": (("connected_nodes",), "restates the queried node's line",
                       _target(_line)),
@@ -157,8 +176,10 @@ TEXT = {  # name: (tasks, meaning, finder)
     "hedges": (("edge_existence",), "judges the edge by likelihood",
                _rx(r"\b(?:likely|unlikely|probably)\b")),
     "tree_bound": (("cycle_check",), "argues from the edge count against n - 1 (a tree)",
-                   _rx(r"\bn\s*-\s*1\b|\b40\s*-\s*1\b|\btrees?\b|more edges than|"
-                       r"at least as many edges")),
+                   _rx(r"\bn\s*-\s*1\b|\b40\s*-\s*1\b|\b3[89] edges\b|"
+                       r"more edges than (?:a tree|nodes|n\b|the number of nodes)|"
+                       r"edges than a tree|at least as many edges|edges (?:is|are) "
+                       r"(?:at least|greater than|more than) (?:the number of nodes|n\b)")),
     "id_range": (("node_count",), "reads the count off the range of node ids",
                  _rx(r"\b0\s*(?:to|through|-|–|—)\s*39\b|\b39\s*-\s*0\s*\+\s*1\b|"
                      r"(?:highest|largest|maximum) (?:node )?(?:id|number|index|label)")),
@@ -174,47 +195,73 @@ NUMERIC = {  # name: (tasks, meaning); checked against the graph, not labelled
 }
 
 # ------------------------------------------------------------------ numeric detectors
+# A value is not a degree when it starts a decimal (0.33) or a comma list (1, 5);
+# "total up to Node 18: 48" is a running total, not node 18's degree.
+_VALUE_END = r"\b(?![.,]\d)(?!\s*,\s*\d)"
 _TABLE = [
-    re.compile(r"\bnode\s+(\d+)\s*(?:\([^)\n]*\))?\s*[:=\-–]\s*(\d+)\b(?!\s*[,.]\s*\d)", re.I),
-    re.compile(r"\bnode\s+(\d+)\s+has\s+(?:a\s+)?(?:degree\s+(?:of\s+)?)?(\d+)\b"
-               r"(?!\s*[,.]\s*\d)", re.I),
+    re.compile(r"(?<!to )(?<!through )\bnode\s+(\d+)\s*(?:\([^)\n]*\))?\s*[:=\-–]\s*"
+               r"(?:degree\s+(?:of\s+)?)?(\d+)" + _VALUE_END, re.I),
+    re.compile(r"(?<!to )(?<!through )\bnode\s+(\d+)\s+has\s+(?:a\s+)?"
+               r"(?:degree\s+(?:of\s+)?)?(\d+)" + _VALUE_END, re.I),
 ]
+_COUNT_COL = re.compile(r"degree|count|number of|connections", re.I)
+_NOT_COUNT_COL = re.compile(r"sum|total|running|cumulative", re.I)
 _HALF = re.compile(r"\\d?frac\{\s*(\d+)\s*\}\{\s*2\s*\}\s*=\s*(?:\\boxed\{)?\s*(\d+)"
                    r"|(\d+)\s*(?:/|÷|divided by)\s*2\s*=\s*(?:\\boxed\{)?\s*(\d+)", re.I)
-_WALK = re.compile(r"\d+(?:\s*(?:→|->|⟶|=>|–|—|\\to\b|\\rightarrow)\s*\d+|-\d+){2,}")
+_WALK = re.compile(r"\d+(?:\s*(?:→|->|⟶|=>|–|—|\\to\b|\\rightarrow|\s-\s)\s*\d+|-\d+){2,}")
 _DEC = re.compile(r"(?<![\d.])\d\.\d\d(?!\d)")
+_RUN = re.compile(r"\d+(?:\s*,\s*(?:and\s+)?\d+){2,}")
+
+
+def _table_rows(text):
+  """(position, node, value) from markdown table rows whose header names a count
+  column (degree, count, number of, connections; not a sum or running total).
+  The value is the first whole number in such a column; tables without that
+  header (edge lists, headerless tables) are skipped."""
+  pos, cols = 0, []
+  for line in text.splitlines(keepends=True):
+    if line.lstrip().startswith("|"):
+      cells = [c.strip() for c in line.strip().strip("|").split("|")]
+      node = re.sub(r"(?i)^node\s*", "", cells[0])
+      if not node.isdecimal():
+        if not set("".join(cells)) <= set("-: "):          # a header, not |---|
+          cols = [i for i, h in enumerate(cells) if i and _COUNT_COL.search(h)
+                  and not _NOT_COUNT_COL.search(h)]
+      else:
+        value = next((cells[i] for i in cols if i < len(cells) and cells[i].isdecimal()),
+                     None)
+        if value is not None:
+          yield pos, int(node), int(value)
+    else:
+      cols = []
+    pos += len(line)
 
 
 def degree_table(text, n):
   """The per-node values a response lists ('Node 3: 12', 'Node 3 has 12
-  connections', a '| 3 | ... | 12 |' table row) as {node: value}. A node listed
-  more than once keeps its last value; ids outside 0..n-1 are ignored."""
+  connections', 'Node 3: degree 12', a table row under a degree column) as
+  {node: value}. A node listed more than once keeps its last value; ids outside
+  0..n-1 are ignored."""
   text = text.replace("*", "")
   found = [(m.start(), int(m.group(1)), int(m.group(2)))
            for rx in _TABLE for m in rx.finditer(text)]
-  pos = 0
-  for line in text.splitlines(keepends=True):
-    cells = [c.strip() for c in line.strip().strip("|").split("|")]
-    if line.lstrip().startswith("|") and len(cells) >= 2 and cells[0].isdigit() \
-        and cells[-1].isdigit():
-      found.append((pos, int(cells[0]), int(cells[-1])))
-    pos += len(line)
+  found += list(_table_rows(text))
   return {k: v for _, k, v in sorted(found) if k < n}
 
 
-def edge_chain(text, degrees, pred, truncated):
+def edge_chain(text, degrees, pred, truncated, table=None):
   """Where an edge_count response's handshake chain first goes wrong: 'no table'
   (values for under 3/4 of the nodes), 'values', 'nodes' (some missing), 'sum'
   (the stated sum is not the sum of the listed values), 'halving', 'answer'; else
   'cut' (truncated, right as far as it got), 'unparsed' (finished, no halving
-  written as S/2 = H) or 'right'."""
-  table = degree_table(text, len(degrees))
+  written as S/2 = H) or 'right'. `table` is degree_table(text), if already made."""
+  table = degree_table(text, len(degrees)) if table is None else table
   if len(table) < 0.75 * len(degrees):
     return "no table"
   if any(degrees[k] != v for k, v in table.items()):
     return "values"
   if len(table) < len(degrees):
-    return "nodes"
+    return "cut" if truncated else "nodes"
   halves = _HALF.findall(text.replace("*", ""))
   if not halves:
     return "cut" if truncated else "unparsed"
@@ -230,9 +277,10 @@ def edge_chain(text, degrees, pred, truncated):
 
 
 def named_cycles(text):
-  """The closed walks a response writes out ('0 → 5 → 7 → 0'), as node lists."""
-  walks = ([int(x) for x in re.findall(r"\d+", m.group(0))]
-           for m in _WALK.finditer(text.replace("*", "")))
+  """The closed walks a response writes out ('0 → 5 → 7 → 0', '0 - 5 - 7 - 0',
+  'Node 0 → Node 5 → ...'), as node lists."""
+  text = re.sub(r"\bnodes?\s+(?=\d)", "", text.replace("*", ""), flags=re.I)
+  walks = ([int(x) for x in re.findall(r"\d+", m.group(0))] for m in _WALK.finditer(text))
   return [w for w in walks if w[0] == w[-1]]
 
 
@@ -241,6 +289,17 @@ def is_cycle(walk, g):
   inner = walk[:-1]
   return (walk[0] == walk[-1] and len(inner) >= 3 and len(set(inner)) == len(inner)
           and all(g.has_edge(a, b) for a, b in zip(walk, walk[1:])))
+
+
+def lists_neighbours(text, nbrs):
+  """True when a comma-separated run of three or more ids is mostly the queried
+  node's neighbours (and covers half of them): a restated neighbour list, whatever
+  words introduce it ('the connections are explicitly listed as: 1, 6, 10')."""
+  for m in _RUN.finditer(text.replace("*", "")):
+    ids = [int(x) for x in re.findall(r"\d+", m.group(0))]
+    if sum(i in nbrs for i in ids) >= 0.8 * len(ids) and len(ids) >= 0.5 * len(nbrs):
+      return True
+  return False
 
 
 # ------------------------------------------------------------------ discovery
@@ -254,23 +313,20 @@ def grams(text, nmax=3):
   return {" ".join(w[i:i + n]) for n in range(1, nmax + 1) for i in range(len(w) - n + 1)}
 
 
-def phrase_shifts(docs, arms, cond, min_shift=0.15, min_arms=3):
+def phrase_shifts(counts, arms, cond, min_shift=0.15, min_arms=3):
   """Phrases whose share of responses moves by min_shift or more the same way in
-  min_arms arms, cond against none; docs[(arm, condition)] is a list of phrase
-  sets. Ranked by the min_arms-th largest shift, longer phrases first on ties; a
-  phrase inside a higher-ranked one with a shift within .05 of it is dropped.
-  Returns [(phrase, shifts)]."""
-  share = {}
-  for arm in arms:
-    for c in ("none", cond):
-      ds = docs[(arm, c)]
-      share[(arm, c)] = {w: k / len(ds) for w, k in
-                         collections.Counter(w for s in ds for w in s).items()}
+  min_arms arms, cond against none; counts[(arm, condition)] is (Counter of the
+  responses each phrase appears in, number of responses). Ranked by the
+  min_arms-th largest shift, longer phrases first on ties; a phrase inside a
+  higher-ranked one with a shift within .05 of it is dropped. Returns
+  [(phrase, shifts)]."""
+  share = {(a, c): {w: k / counts[(a, c)][1] for w, k in counts[(a, c)][0].items()}
+           for a in arms for c in ("none", cond)}
   found = []
   for w in set().union(*share.values()):
     d = [share[(a, cond)].get(w, 0) - share[(a, "none")].get(w, 0) for a in arms]
     for sign in (1, -1):
-      s = sorted((sign * x for x in d), reverse=True)[min_arms - 1]
+      s = round(sorted((sign * x for x in d), reverse=True)[min_arms - 1], 9)
       if s >= min_shift:
         found.append((sign * s, w, d))
   found.sort(key=lambda x: (-abs(x[0]), -len(x[1].split()), x[1]))
@@ -287,9 +343,12 @@ def contrast(d, out_rows):
         "per arm " + " / ".join(SHORT[a] for a in ARMS) + ", top 8")
   for task in TASKS:
     m = d[(d.task == task) & d.density_class.isin(pf.DENS4)]
-    docs = {(a, c): [grams(t) for t in g.text] for (a, c), g in m.groupby(["arm", "condition"])}
+    counts = collections.defaultdict(lambda: [collections.Counter(), 0])
+    for a, c, t in zip(m.arm, m.condition, m.text):
+      counts[(a, c)][0].update(grams(t))
+      counts[(a, c)][1] += 1
     for c in CONDS:
-      found = phrase_shifts(docs, ARMS, c)
+      found = phrase_shifts(counts, ARMS, c)
       print(f"  {task} / {c}: {len(found)} phrases; " + " | ".join(
           f"'{w}' " + " ".join(f"{x:+.2f}" for x in s) for w, s in found[:8]))
       out_rows += [dict(task=task, condition=c, phrase=w, **{a: x for a, x in zip(ARMS, s)})
@@ -319,6 +378,8 @@ def load():
     for name, (tasks, _, find) in TEXT.items():
       if r.task in tasks:
         row[name] = int(find(text, targets) is not None)
+    if r.task == "node_degree" and row["retrieve"] and lists_neighbours(text, set(g[targets[0]])):
+      row["retrieve"] = 0
     if r.task == "edge_count":
       t = degree_table(text, len(degrees))
       right = [degrees[k] == v for k, v in t.items()]
@@ -326,7 +387,7 @@ def load():
       row["degree_table_right"] = int(len(t) == len(degrees) and all(right))
       row["node_acc"] = np.mean(right) if len(t) >= 30 else np.nan
       pred = None if r.hit_cap or pd.isna(r.pred) else int(float(r.pred))
-      row["chain"] = edge_chain(text, degrees, pred, bool(r.hit_cap))
+      row["chain"] = edge_chain(text, degrees, pred, bool(r.hit_cap), t)
     if r.task == "cycle_check":
       walks = named_cycles(text)
       row["cycle_named"] = int(bool(walks))
@@ -342,7 +403,8 @@ def copy_kind(r, g, degrees, t):
   equals the degree of t-1 or t+1, else 'other', and the chance of that match
   given how often the other nodes share the value (as primer_findings.leakage).
   connected_nodes: the offset u - t of another node u whose neighbour set it
-  equals, else 'other'. (NaN, NaN) for any other response."""
+  equals, else 'other' (an empty answer is 'other': an isolated node has no line
+  to copy). (NaN, NaN) for any other response."""
   if r.hit_cap or r.exact or pd.isna(r.pred):
     return np.nan, np.nan
   if r.task == "node_degree":
@@ -352,13 +414,18 @@ def copy_kind(r, g, degrees, t):
     return ("near" if any(degrees[u] == v for u in near) else "other",
             1 - (1 - q) ** len(near))
   s = pf.neighbour_set(r.pred)
+  if not s:
+    return "other", np.nan
   hits = [u - t for u in g if u != t and s == set(g[u])]
   return (min(hits, key=abs) if hits else "other"), np.nan
 
 
 # ------------------------------------------------------------------ validation
 def write_sample(d):
-  """N_SAMPLE seeded positives per text pattern, PER_ARM from each arm first."""
+  """N_SAMPLE seeded positives per text pattern, PER_ARM from each arm first.
+  Refuses to replace a sample that already carries labels."""
+  if os.path.exists(VALIDATION) and pd.read_csv(VALIDATION).label.notna().any():
+    sys.exit(f"{VALIDATION} already has labels; move it aside before drawing a new sample")
   rng = np.random.default_rng(pf.SEED)
   rows = []
   for name, (tasks, meaning, find) in TEXT.items():
@@ -406,22 +473,29 @@ def validation():
 
 # ------------------------------------------------------------------ statistics
 def boot(x, strata):
-  """95% interval of 100 * mean(x), resampling within each stratum."""
+  """95% interval of 100 * mean(x), resampling within each stratum (all draws at
+  once; pattern shifts only -- accuracy goes through primer_findings.effect)."""
   rng = np.random.default_rng(pf.SEED)
   groups = [np.flatnonzero(strata == s) for s in np.unique(strata)]
   idx = np.concatenate([g[rng.integers(0, len(g), (pf.B, len(g)))] for g in groups], axis=1)
   return np.percentile(100 * x[idx].mean(1), [2.5, 97.5])
 
 
+def diff(j, col):
+  """Paired change in the share of `col`, in points."""
+  return 100 * (j[col + "_b"].mean() - j[col + "_a"].mean())
+
+
 def paired(j, col):
   a, b = j[col + "_a"].to_numpy(float), j[col + "_b"].to_numpy(float)
   m = scoring.mcnemar(a.astype(bool), b.astype(bool))
   lo, hi = boot(b - a, j.index.get_level_values(0).to_numpy())
+  fin = pf.finished(j)
   return {"n": len(j), "share_none": 100 * a.mean(), "share": 100 * b.mean(),
           "shift": 100 * (b.mean() - a.mean()), "lo": lo, "hi": hi,
           "a_only": m["b"], "b_only": m["c"], "p": m["p_value"],
-          "d_truncated": 100 * (j.truncated_b.mean() - j.truncated_a.mean()),
-          "flag": max(j.truncated_a.mean(), j.truncated_b.mean()) >= .15}
+          "d_truncated": diff(j, "truncated"),
+          "shift_fin": diff(fin, col) if len(fin) else np.nan, "n_fin": len(fin)}
 
 
 def groups(task):
@@ -435,13 +509,14 @@ def spec(name):
 def pattern_shifts(d, names):
   rows = []
   for task in TASKS:
+    here = [n for n in names if task in spec(n)[0]]
     for arm in ARMS:
       dt = d[(d.arm == arm) & (d.task == task)]
-      for name in (n for n in names if task in spec(n)[0]):
-        for grp, dens in groups(task):
-          for c in CONDS:
-            rows.append(dict(task=task, group=grp, pattern=name, arm=arm, condition=c,
-                             **paired(pf.pairs(dt, arm, task, "none", c, dens), name)))
+      for grp, dens in groups(task):
+        for c in CONDS:
+          j = pf.pairs(dt, arm, task, "none", c, dens)
+          rows += [dict(task=task, group=grp, pattern=name, arm=arm, condition=c,
+                        **paired(j, name)) for name in here]
   r = pd.DataFrame(rows)
   r["q"] = pf.bh(r.p.to_numpy())
   return r
@@ -459,8 +534,8 @@ def print_tasks(r, trend_keys):
                "high-density extension, p>=.65 (plain arms at 2048 tokens)")
       print(f"[{tag}] {task}, {where}: share of all responses (truncated included) "
             f"with each pattern under none, per arm; then the shift in points under each "
-            f"primer, * q<.05, (t ...) the change in the truncated share, TREND = 3+ arms "
-            f"the same way at q<.05")
+            f"primer, * q<.05, (t ...) the change in the truncated share, (fin ...) the "
+            f"shift over pairs where both finished, TREND = 3+ arms the same way at q<.05")
       x = r[(r.task == task) & (r.group == grp)]
       for name in x.pattern.unique():
         y = x[x.pattern == name]
@@ -471,8 +546,8 @@ def print_tasks(r, trend_keys):
           z = y[y.condition == c].set_index("arm")
           mark = "  TREND" if (task, grp, c, name) in trend_keys else ""
           print(f"    {c:10s} " + " | ".join(
-              f"{pf.f1(z['shift'][a])}{star(z.q[a])} (t {pf.f1(z.d_truncated[a])})"
-              for a in ARMS) + mark)
+              f"{pf.f1(z['shift'][a])}{star(z.q[a])} (t {pf.f1(z.d_truncated[a])}, "
+              f"fin {pf.f1(z.shift_fin[a])})" for a in ARMS) + mark)
 
 
 def find_trends(r):
@@ -587,26 +662,30 @@ def relation_class(task, cond, bar, dbar):
 
 
 def relation(d, r):
-  bars = json.load(open(pf.BARS))
+  with open(pf.BARS) as fh:
+    bars = json.load(fh)
   rows = []
   for arm in ARMS:
     for task in TASKS:
       dt = d[(d.arm == arm) & (d.task == task)]
       for c in CONDS:
-        e = paired(pf.pairs(dt, arm, task, "none", c, pf.DENS4), "correct")
-        vf = (paired(pf.pairs(dt, arm, task, "filler", c, pf.DENS4), "correct")["shift"]
+        j = pf.pairs(dt, arm, task, "none", c, pf.DENS4)
+        shift, lo, hi, broke, fixed, p, n, dtr = pf.effect(j)
+        vf = (diff(pf.pairs(dt, arm, task, "filler", c, pf.DENS4), "correct")
               if c != "filler" else np.nan)
         dbar = bars[f"{task}/{c}"] - bars[f"{task}/none"]
         rows.append(dict(arm=arm, task=task, condition=c, dbar=dbar,
                          relation=relation_class(task, c, bars[f"{task}/{c}"], dbar),
-                         vs_filler=vf, **e))
+                         shift=shift, lo=lo, hi=hi, broke=broke, fixed=fixed, p=p, n=n,
+                         d_truncated=dtr, vs_filler=vf,
+                         flag=max(j.truncated_a.mean(), j.truncated_b.mean()) >= outcomes.FLAG))
   x = pd.DataFrame(rows)
   x["q"] = pf.bh(x.p.to_numpy())
   print("[rprelation] accuracy (correct share of all responses; truncated is never "
         "correct) against none, main sweep, 400 paired graphs, by what the primer gives "
         "the graph-blind solver for the task: dbar = bar(primer) - bar(none). Class means "
-        "leave out cells with 15%+ truncated on either side (~); * q<.05, BH over all "
-        f"{len(x)} (arm, task, primer)")
+        f"leave out cells with {100 * outcomes.FLAG:.0f}%+ truncated on either side (~); "
+        f"* q<.05, BH over all {len(x)} (arm, task, primer)")
   for arm in ARMS:
     y = x[x.arm == arm]
     parts = []
