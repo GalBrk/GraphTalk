@@ -1,0 +1,332 @@
+[ccanswer] correct finished answers, % resting on: a real cycle / an invented cycle / not a cycle (length-2, retraced) / none named (of which an edge-count argument) | % that rejected a real cycle and rest on something else
+  1.7B   none       n=363   36.9 /  43.5 /  16.0 /   3.6 (  0.8) |   1.1
+  1.7B   filler     n=375   33.3 /  55.5 /   9.6 /   1.6 (  0.0) |   0.3
+  1.7B   components n=371   27.8 /  40.4 /  25.3 /   6.5 (  4.3) |   0.3
+  1.7B   clustering n=397   39.5 /  48.1 /   7.8 /   4.5 (  1.0) |   0.0
+  1.7B   rwse       n=362   33.7 /  40.3 /  19.9 /   6.1 (  1.7) |   0.0
+  1.7B   degree     n=293   13.0 /  20.5 /   1.4 /  65.2 ( 55.6) |   0.0
+  1.7B   all        n=391   38.4 /  50.4 /   7.9 /   3.3 (  1.3) |   0.0
+  1.7B-T none       n=388   79.9 /  17.8 /   1.0 /   1.3 (  0.5) |   0.0
+  1.7B-T filler     n=400   77.2 /  19.8 /   2.5 /   0.5 (  0.0) |   0.0
+  1.7B-T components n=358   74.9 /  22.6 /   0.0 /   2.5 (  2.0) |   0.0
+  1.7B-T clustering n=386   80.6 /  19.2 /   0.0 /   0.3 (  0.3) |   0.0
+  1.7B-T rwse       n=397   68.0 /  20.7 /  10.6 /   0.8 (  0.5) |   0.0
+  1.7B-T degree     n=301   61.5 /  29.6 /   0.0 /   9.0 (  9.0) |   0.0
+  1.7B-T all        n=385   73.0 /  21.8 /   3.1 /   2.1 (  1.8) |   0.0
+  4B     none       n=396   34.1 /  23.0 /   6.8 /  36.1 ( 25.0) |   0.3
+  4B     filler     n=394   44.2 /  28.2 /   5.3 /  22.3 (  2.3) |   0.5
+  4B     components n=388   39.2 /  18.6 /   3.4 /  38.9 ( 26.5) |   0.3
+  4B     clustering n=398   48.7 /  31.2 /   1.0 /  19.1 (  5.8) |   0.3
+  4B     rwse       n=395   33.2 /  20.8 /  38.7 /   7.3 (  0.5) |   0.0
+  4B     degree     n=387   13.4 /   3.9 /   2.1 /  80.6 ( 65.6) |   0.3
+  4B     all        n=395   45.1 /  33.4 /   6.6 /  14.9 (  0.8) |   0.3
+  4B-T   none       n=397   96.5 /   3.3 /   0.0 /   0.3 (  0.0) |   0.0
+  4B-T   filler     n=399   94.2 /   5.0 /   0.5 /   0.3 (  0.0) |   0.0
+  4B-T   components n=384   92.2 /   4.4 /   0.0 /   3.4 (  2.9) |   0.0
+  4B-T   clustering n=397   95.5 /   4.5 /   0.0 /   0.0 (  0.0) |   0.0
+  4B-T   rwse       n=398   55.0 /   2.5 /  42.5 /   0.0 (  0.0) |   0.0
+  4B-T   degree     n=375   90.9 /   5.1 /   0.0 /   4.0 (  2.7) |   0.0
+  4B-T   all        n=395   92.7 /   6.3 /   0.0 /   1.0 (  1.0) |   0.0
+[ccinvent] correct finished answers, % asserting an invented cycle / % naming one and rejecting it
+  1.7B   none 45.5/3.0 | filler 56.8/2.4 | components 43.4/1.6 | clustering 50.9/0.5 | rwse 44.5/1.4 | degree 20.8/1.4 | all 56.8/0.5
+  1.7B-T none 39.2/0.0 | filler 47.2/0.2 | components 37.4/0.0 | clustering 52.3/0.5 | rwse 39.0/0.3 | degree 38.5/0.3 | all 52.5/0.3
+  4B     none 23.5/0.8 | filler 29.2/0.5 | components 20.4/0.5 | clustering 32.9/0.5 | rwse 20.8/0.0 | degree 4.1/0.3 | all 35.2/1.3
+  4B-T   none 5.8/0.0 | filler 6.3/0.0 | components 7.0/0.0 | clustering 10.3/0.0 | rwse 4.8/0.0 | degree 6.7/0.0 | all 10.6/0.0
+[cctest] cycle_check, correct finished answers, each primer against none on the same graphs
+  asserts an invented cycle: % none -> % primer (change, * BH q < .05), pairs
+    1.7B   filler 44.7->57.1 (+12.4*, n=340) | components 46.6->42.5 (-4.1, n=341) | clustering 45.4->51.2 (+5.8, n=361) | rwse 45.3->45.3 (+0.0, n=329) | degree 46.4->21.3 (-25.1*, n=263) | all 45.5->56.2 (+10.7*, n=356)
+    1.7B-T filler 39.2->46.9 (+7.7, n=388) | components 39.3->37.6 (-1.7, n=346) | clustering 38.8->51.9 (+13.0*, n=376) | rwse 39.1->38.6 (-0.5, n=386) | degree 37.2->38.9 (+1.7, n=293) | all 38.9->51.5 (+12.6*, n=373)
+    4B     filler 23.8->29.4 (+5.6, n=391) | components 23.4->20.3 (-3.1, n=384) | clustering 23.6->33.2 (+9.6*, n=394) | rwse 23.5->20.2 (-3.3, n=391) | degree 23.7->4.2 (-19.5*, n=384) | all 23.5->34.8 (+11.3*, n=391)
+    4B-T   filler 5.8->6.1 (+0.3, n=396) | components 5.8->7.1 (+1.3, n=381) | clustering 5.6->10.4 (+4.8, n=394) | rwse 5.8->4.8 (-1.0, n=395) | degree 5.9->6.7 (+0.8, n=372) | all 5.9->10.5 (+4.6, n=392)
+  rests on an invented cycle: % none -> % primer (change, * BH q < .05), pairs
+    1.7B   filler 43.5->55.6 (+12.1*, n=340) | components 44.6->39.6 (-5.0, n=341) | clustering 43.5->48.2 (+4.7, n=361) | rwse 43.5->41.3 (-2.1, n=329) | degree 44.9->20.9 (-24.0*, n=263) | all 43.5->50.0 (+6.5, n=356)
+    1.7B-T filler 17.8->19.8 (+2.1, n=388) | components 17.9->22.5 (+4.6, n=346) | clustering 17.6->18.9 (+1.3, n=376) | rwse 17.6->20.2 (+2.6, n=386) | degree 17.1->29.7 (+12.6*, n=293) | all 17.7->21.7 (+4.0, n=373)
+    4B     filler 23.3->28.4 (+5.1, n=391) | components 22.9->18.5 (-4.4, n=384) | clustering 23.1->31.5 (+8.4*, n=394) | rwse 23.0->20.2 (-2.8, n=391) | degree 23.2->3.9 (-19.3*, n=384) | all 23.0->33.0 (+10.0*, n=391)
+    4B-T   filler 3.3->4.8 (+1.5, n=396) | components 3.1->4.5 (+1.3, n=381) | clustering 3.3->4.6 (+1.3, n=394) | rwse 3.3->2.5 (-0.8, n=395) | degree 3.2->5.1 (+1.9, n=372) | all 3.3->6.1 (+2.8, n=392)
+  rests on a real cycle: % none -> % primer (change, * BH q < .05), pairs
+    1.7B   filler 36.2->32.9 (-3.2, n=340) | components 36.1->27.0 (-9.1*, n=341) | clustering 36.8->39.1 (+2.2, n=361) | rwse 37.1->32.8 (-4.3, n=329) | degree 35.4->13.3 (-22.1*, n=263) | all 37.1->38.8 (+1.7, n=356)
+    1.7B-T filler 79.9->77.1 (-2.8, n=388) | components 79.5->75.1 (-4.3, n=346) | clustering 80.1->80.9 (+0.8, n=376) | rwse 80.1->68.7 (-11.4*, n=386) | degree 80.2->62.1 (-18.1*, n=293) | all 79.9->73.2 (-6.7, n=373)
+    4B     filler 34.3->44.0 (+9.7*, n=391) | components 34.4->39.1 (+4.7, n=384) | clustering 34.0->48.7 (+14.7*, n=394) | rwse 34.3->33.2 (-1.0, n=391) | degree 34.1->13.5 (-20.6*, n=384) | all 33.8->45.3 (+11.5*, n=391)
+    4B-T   filler 96.5->94.4 (-2.0, n=396) | components 96.6->92.1 (-4.5*, n=381) | clustering 96.4->95.4 (-1.0, n=394) | rwse 96.5->55.4 (-41.0*, n=395) | degree 96.5->90.9 (-5.6*, n=372) | all 96.4->92.9 (-3.6, n=392)
+[ccwhere] asserted invented cycles, all primers: invented steps; % of closing steps invented / % of inner steps invented; fake neighbour in the line of node a-1 or a+1, % (chance %); one off a real neighbour's id, % (chance %)
+  1.7B    5398 steps; closing  56.6 / inner  21.6; adjacent line  38.1 (41.8); off by one  32.4 (44.8)
+  1.7B-T  2838 steps; closing  56.8 / inner  16.1; adjacent line  38.9 (44.1); off by one  35.8 (48.6)
+  4B      1439 steps; closing  62.7 / inner  14.4; adjacent line  44.2 (43.1); off by one  36.8 (47.5)
+  4B-T     333 steps; closing  43.9 / inner  23.4; adjacent line  55.6 (48.1); off by one  49.8 (55.3)
+[ccdensity] % of correct finished answers asserting an invented cycle, all primers
+  1.7B   p=0.1 50.9  p=0.2 52.3  p=0.35 43.4  p=0.5 39.3
+  1.7B-T p=0.1 43.3  p=0.2 49.2  p=0.35 39.2  p=0.5 44.1
+  4B     p=0.1 25.3  p=0.2 25.9  p=0.35 22.2  p=0.5 21.8
+  4B-T   p=0.1 7.0  p=0.2 6.2  p=0.35 7.6  p=0.5 8.7
+[ccthink] thinking traces (text before </think>) of the correct finished answers: % naming any cycle / % naming a real cycle, kept / % asserting an invented cycle / % naming one and rejecting it
+  1.7B-T none       n=388  100.0 /  86.9 /  53.4 /   9.0
+  1.7B-T filler     n=400  100.0 /  80.8 /  59.0 /  12.5
+  1.7B-T components n=358   99.2 /  78.8 /  44.1 /   9.2
+  1.7B-T clustering n=386   99.7 /  82.4 /  62.7 /  10.6
+  1.7B-T rwse       n=397   99.0 /  70.5 /  48.1 /  16.4
+  1.7B-T degree     n=301   98.7 /  70.4 /  55.5 /  13.0
+  1.7B-T all        n=385   96.4 /  73.8 /  66.8 /  14.8
+  4B-T   none       n=397  100.0 /  98.5 /  25.4 /  23.7
+  4B-T   filler     n=399   99.7 /  96.7 /  22.3 /  19.5
+  4B-T   components n=384   97.1 /  94.5 /  26.0 /  19.3
+  4B-T   clustering n=397   99.5 /  96.7 /  31.2 /  14.1
+  4B-T   rwse       n=398   96.5 /  56.8 /  24.6 /  19.8
+  4B-T   degree     n=375   97.6 /  93.9 /  22.7 /  11.2
+  4B-T   all        n=395   99.0 /  94.4 /  33.4 /  16.5
+  trace asserts an invented cycle: % none -> % primer (change, * BH q < .05), pairs
+    1.7B-T filler 53.4->58.8 (+5.4, n=388) | components 53.5->44.2 (-9.2*, n=346) | clustering 52.9->62.0 (+9.0*, n=376) | rwse 53.1->47.7 (-5.4, n=386) | degree 52.2->56.0 (+3.8, n=293) | all 52.5->66.0 (+13.4*, n=373)
+    4B-T   filler 25.3->22.2 (-3.0, n=396) | components 25.5->26.0 (+0.5, n=381) | clustering 25.4->31.2 (+5.8, n=394) | rwse 25.6->24.6 (-1.0, n=395) | degree 24.7->22.8 (-1.9, n=372) | all 25.8->33.2 (+7.4, n=392)
+[ccacyclic] cc500, finished answers. Acyclic graphs: n, % answering yes (wrong); of those, % resting on an invented cycle / not a cycle / none named. Cyclic graphs: n correct, % resting on a real cycle
+  0.6B   none       acyclic n= 84 yes  94.0; of those  13.9 /  67.1 /  19.0 | cyclic correct n=390 real  47.4
+  0.6B   components acyclic n= 82 yes  97.6; of those  13.8 /  66.2 /  20.0 | cyclic correct n=404 real  36.4
+  0.6B   clustering acyclic n= 82 yes  89.0; of those  30.1 /  50.7 /  19.2 | cyclic correct n=390 real  43.3
+  0.6B   rwse       acyclic n= 82 yes  95.1; of those  11.5 /  69.2 /  19.2 | cyclic correct n=407 real  45.5
+  0.6B-T none       acyclic n= 84 yes  91.7; of those  20.8 /  68.8 /  10.4 | cyclic correct n=411 real  70.6
+  0.6B-T components acyclic n= 78 yes  82.1; of those  35.9 /  53.1 /  10.9 | cyclic correct n=404 real  69.8
+  0.6B-T clustering acyclic n= 83 yes  49.4; of those  41.5 /  56.1 /   2.4 | cyclic correct n=395 real  65.1
+  0.6B-T rwse       acyclic n= 84 yes  86.9; of those  20.5 /  71.2 /   8.2 | cyclic correct n=410 real  63.7
+  answers yes on an acyclic graph: % none -> % primer (change, * BH q < .05), pairs
+    0.6B   components 93.9->97.6 (+3.7, n=82) | clustering 95.1->89.0 (-6.1, n=82) | rwse 93.9->95.1 (+1.2, n=82)
+    0.6B-T components 91.0->82.1 (-9.0, n=78) | clustering 91.6->49.4 (-42.2*, n=83) | rwse 91.7->86.9 (-4.8, n=84)
+[eeclaims] edge_existence, finished answers. Non-edges: n, % answering yes (false alarm), % stating the pair as an edge, % of false alarms that state it. Edges: n, % answering no (miss), % of misses restating an endpoint's list without the other. All: % stating any edge that is not one
+  1.7B   none       non-edges n=293 yes  40.3 states  13.7 of yes  33.9 | edges n=107 no   0.0 of no     - | any fabricated  14.5
+  1.7B   filler     non-edges n=293 yes  61.8 states  23.2 of yes  37.6 | edges n=107 no   0.0 of no     - | any fabricated  22.5
+  1.7B   components non-edges n=293 yes  51.5 states  17.4 of yes  33.8 | edges n=107 no   0.0 of no     - | any fabricated  16.2
+  1.7B   clustering non-edges n=293 yes  35.2 states   4.4 of yes  11.7 | edges n=107 no   0.0 of no     - | any fabricated   6.2
+  1.7B   rwse       non-edges n=292 yes  32.5 states   2.7 of yes   8.4 | edges n=107 no   1.9 of no   0.0 | any fabricated  10.8
+  1.7B   degree     non-edges n=293 yes  34.5 states   3.4 of yes   9.9 | edges n=107 no   0.9 of no   0.0 | any fabricated   6.5
+  1.7B   all        non-edges n=293 yes  24.6 states   4.1 of yes  15.3 | edges n=107 no   0.0 of no     - | any fabricated   6.2
+  1.7B-T none       non-edges n=292 yes   0.7 states   0.0 of yes   0.0 | edges n=107 no   0.9 of no   0.0 | any fabricated   4.0
+  1.7B-T filler     non-edges n=293 yes   1.7 states   0.7 of yes   0.0 | edges n=107 no   0.9 of no   0.0 | any fabricated   5.8
+  1.7B-T components non-edges n=292 yes   2.1 states   0.3 of yes  16.7 | edges n=107 no   0.0 of no     - | any fabricated   5.5
+  1.7B-T clustering non-edges n=292 yes   2.4 states   0.7 of yes  14.3 | edges n=107 no   0.0 of no     - | any fabricated   5.5
+  1.7B-T rwse       non-edges n=292 yes   2.4 states   0.7 of yes  14.3 | edges n=107 no   0.9 of no   0.0 | any fabricated  11.0
+  1.7B-T degree     non-edges n=291 yes   4.1 states   0.7 of yes   8.3 | edges n=107 no   0.0 of no     - | any fabricated   4.3
+  1.7B-T all        non-edges n=293 yes   3.8 states   0.3 of yes   0.0 | edges n=107 no   0.0 of no     - | any fabricated   5.0
+  4B     none       non-edges n=293 yes  12.6 states   4.1 of yes  21.6 | edges n=107 no   0.9 of no   0.0 | any fabricated   4.2
+  4B     filler     non-edges n=293 yes  22.5 states   5.5 of yes  24.2 | edges n=107 no   0.0 of no     - | any fabricated   5.0
+  4B     components non-edges n=293 yes  16.7 states   3.1 of yes  18.4 | edges n=107 no   0.0 of no     - | any fabricated   3.5
+  4B     clustering non-edges n=293 yes   7.5 states   1.7 of yes  22.7 | edges n=107 no   0.0 of no     - | any fabricated   3.5
+  4B     rwse       non-edges n=293 yes  26.6 states   5.5 of yes  20.5 | edges n=107 no   0.0 of no     - | any fabricated   5.0
+  4B     degree     non-edges n=291 yes  18.9 states   4.5 of yes  21.8 | edges n=107 no   0.0 of no     - | any fabricated   4.3
+  4B     all        non-edges n=292 yes  26.4 states   5.8 of yes  22.1 | edges n=107 no   0.0 of no     - | any fabricated   6.3
+  4B-T   none       non-edges n=292 yes   0.0 states   0.0 of yes     - | edges n=107 no   0.0 of no     - | any fabricated   0.5
+  4B-T   filler     non-edges n=292 yes   0.0 states   0.0 of yes     - | edges n=107 no   0.0 of no     - | any fabricated   0.8
+  4B-T   components non-edges n=290 yes   0.0 states   0.3 of yes     - | edges n=107 no   0.0 of no     - | any fabricated   2.0
+  4B-T   clustering non-edges n=289 yes   0.0 states   0.0 of yes     - | edges n=107 no   0.0 of no     - | any fabricated   2.3
+  4B-T   rwse       non-edges n=288 yes   0.0 states   0.0 of yes     - | edges n=106 no   0.0 of no     - | any fabricated   3.0
+  4B-T   degree     non-edges n=292 yes   0.0 states   0.0 of yes     - | edges n=107 no   0.0 of no     - | any fabricated   3.0
+  4B-T   all        non-edges n=288 yes   0.0 states   0.0 of yes     - | edges n=107 no   0.0 of no     - | any fabricated   3.0
+  states the queried non-edge as an edge: % none -> % primer (change, * BH q < .05), pairs
+    1.7B   filler 13.7->23.2 (+9.6*, n=293) | components 13.7->17.4 (+3.8, n=293) | clustering 13.7->4.4 (-9.2*, n=293) | rwse 13.7->2.7 (-11.0*, n=292) | degree 13.7->3.4 (-10.2*, n=293) | all 13.7->4.1 (-9.6*, n=293)
+    1.7B-T filler 0.0->0.7 (+0.7, n=292) | components 0.0->0.3 (+0.3, n=291) | clustering 0.0->0.7 (+0.7, n=291) | rwse 0.0->0.7 (+0.7, n=291) | degree 0.0->0.7 (+0.7, n=290) | all 0.0->0.3 (+0.3, n=292)
+    4B     filler 4.1->5.5 (+1.4, n=293) | components 4.1->3.1 (-1.0, n=293) | clustering 4.1->1.7 (-2.4, n=293) | rwse 4.1->5.5 (+1.4, n=293) | degree 4.1->4.5 (+0.3, n=291) | all 4.1->5.8 (+1.7, n=292)
+    4B-T   filler 0.0->0.0 (+0.0, n=292) | components 0.0->0.3 (+0.3, n=289) | clustering 0.0->0.0 (+0.0, n=289) | rwse 0.0->0.0 (+0.0, n=287) | degree 0.0->0.0 (+0.0, n=291) | all 0.0->0.0 (+0.0, n=287)
+  states any edge that is not one: % none -> % primer (change, * BH q < .05), pairs
+    1.7B   filler 14.5->22.5 (+8.0*, n=400) | components 14.5->16.2 (+1.8, n=400) | clustering 14.5->6.2 (-8.2*, n=400) | rwse 14.5->10.8 (-3.8, n=399) | degree 14.5->6.5 (-8.0*, n=400) | all 14.5->6.2 (-8.2*, n=400)
+    1.7B-T filler 4.0->5.8 (+1.8, n=399) | components 4.0->5.3 (+1.3, n=398) | clustering 4.0->5.5 (+1.5, n=398) | rwse 4.0->11.1 (+7.0*, n=398) | degree 4.0->4.3 (+0.3, n=397) | all 4.0->5.0 (+1.0, n=399)
+    4B     filler 4.2->5.0 (+0.8, n=400) | components 4.2->3.5 (-0.7, n=400) | clustering 4.2->3.5 (-0.7, n=400) | rwse 4.2->5.0 (+0.8, n=400) | degree 4.3->4.3 (+0.0, n=398) | all 4.3->6.3 (+2.0, n=399)
+    4B-T   filler 0.5->0.8 (+0.3, n=399) | components 0.5->2.0 (+1.5, n=396) | clustering 0.5->2.3 (+1.8, n=396) | rwse 0.5->2.8 (+2.3*, n=393) | degree 0.5->2.8 (+2.3*, n=398) | all 0.5->2.8 (+2.3*, n=394)
+[ndlist] node_degree, finished answers: % stating the node's list; of those, % with an invented neighbour / % with a missed one | wrong answers: n, % misread / miscounted / no list
+  1.7B   none       n=400 states  69.0; invented   3.3 / missed  24.6 | wrong n=158  43.0 /   6.3 /  50.6
+  1.7B   filler     n=400 states  65.0; invented   2.3 / missed  21.9 | wrong n=160  35.0 /   4.4 /  60.6
+  1.7B   components n=400 states  41.5; invented   2.4 / missed   9.6 | wrong n=151  12.6 /   2.6 /  84.8
+  1.7B   clustering n=400 states  86.5; invented   9.2 / missed  23.7 | wrong n=146  63.0 /  15.8 /  21.2
+  1.7B   rwse       n=399 states  78.4; invented  10.5 / missed  21.1 | wrong n=141  56.7 /  10.6 /  32.6
+  1.7B   degree     n=400 states  84.5; invented   3.8 / missed  21.9 | wrong n=128  57.0 /  14.1 /  28.9
+  1.7B   all        n=400 states  78.5; invented   6.4 / missed  13.7 | wrong n=117  44.4 /  21.4 /  34.2
+  1.7B-T none       n=397 states  99.5; invented   3.3 / missed  23.0 | wrong n= 92  98.9 /   1.1 /   0.0
+  1.7B-T filler     n=399 states  99.5; invented   5.3 / missed  25.4 | wrong n=106  98.1 /   1.9 /   0.0
+  1.7B-T components n=398 states  99.5; invented   5.3 / missed  21.5 | wrong n= 97  97.9 /   2.1 /   0.0
+  1.7B-T clustering n=399 states  99.5; invented   6.3 / missed  20.4 | wrong n= 88 100.0 /   0.0 /   0.0
+  1.7B-T rwse       n=397 states  99.5; invented   8.1 / missed  18.5 | wrong n= 82  98.8 /   1.2 /   0.0
+  1.7B-T degree     n=379 states  98.9; invented   4.0 / missed  16.8 | wrong n= 39  79.5 /  17.9 /   2.6
+  1.7B-T all        n=399 states  97.7; invented   4.1 / missed  16.2 | wrong n= 45  86.7 /   8.9 /   4.4
+  4B     none       n=400 states  57.8; invented   0.4 / missed   0.9 | wrong n=  3  66.7 /   0.0 /  33.3
+  4B     filler     n=400 states  59.5; invented   0.4 / missed   1.3 | wrong n=  5  60.0 /  20.0 /  20.0
+  4B     components n=400 states  40.5; invented   0.0 / missed   0.6 | wrong n=  2  50.0 /   0.0 /  50.0
+  4B     clustering n=400 states  47.0; invented   0.5 / missed   1.6 | wrong n=  5  20.0 /  20.0 /  60.0
+  4B     rwse       n=400 states  44.2; invented   0.6 / missed   1.1 | wrong n= 12  16.7 /   0.0 /  83.3
+  4B     degree     n=400 states  31.8; invented   0.0 / missed   2.4 | wrong n= 29   6.9 /  31.0 /  62.1
+  4B     all        n=400 states  75.0; invented   1.3 / missed   3.7 | wrong n= 35  28.6 /  37.1 /  34.3
+  4B-T   none       n=389 states  99.2; invented   0.3 / missed   0.3 | wrong n=  1 100.0 /   0.0 /   0.0
+  4B-T   filler     n=396 states  99.5; invented   0.3 / missed   0.0 | wrong n=  0     - /     - /     -
+  4B-T   components n=391 states  99.5; invented   1.3 / missed   0.0 | wrong n=  2 100.0 /   0.0 /   0.0
+  4B-T   clustering n=397 states  99.5; invented   1.0 / missed   1.3 | wrong n=  2 100.0 /   0.0 /   0.0
+  4B-T   rwse       n=391 states  98.2; invented   1.6 / missed   1.6 | wrong n=  8  87.5 /   0.0 /  12.5
+  4B-T   degree     n=399 states  98.7; invented   0.5 / missed   1.0 | wrong n=  1 100.0 /   0.0 /   0.0
+  4B-T   all        n=393 states  97.7; invented   0.5 / missed   0.8 | wrong n=  3 100.0 /   0.0 /   0.0
+  states a list with an invented neighbour: % none -> % primer (change, * BH q < .05), pairs
+    1.7B   filler 2.2->1.5 (-0.8, n=400) | components 2.2->1.0 (-1.2, n=400) | clustering 2.2->8.0 (+5.8*, n=400) | rwse 2.3->8.3 (+6.0*, n=399) | degree 2.2->3.2 (+1.0, n=400) | all 2.2->5.0 (+2.8, n=400)
+    1.7B-T filler 3.3->5.3 (+2.0, n=396) | components 3.3->5.1 (+1.8, n=395) | clustering 3.3->6.1 (+2.8, n=396) | rwse 3.3->8.1 (+4.8*, n=394) | degree 2.9->3.7 (+0.8, n=376) | all 3.3->4.0 (+0.8, n=396)
+    4B     filler 0.2->0.2 (+0.0, n=400) | components 0.2->0.0 (-0.2, n=400) | clustering 0.2->0.2 (+0.0, n=400) | rwse 0.2->0.2 (+0.0, n=400) | degree 0.2->0.0 (-0.2, n=400) | all 0.2->1.0 (+0.8, n=400)
+    4B-T   filler 0.3->0.3 (+0.0, n=386) | components 0.3->1.1 (+0.8, n=380) | clustering 0.3->1.0 (+0.8, n=386) | rwse 0.3->1.3 (+1.0, n=381) | degree 0.3->0.5 (+0.3, n=388) | all 0.3->0.5 (+0.3, n=383)
+[cnset] connected_nodes, finished answers: % with an invented neighbour / % with a missed one / mean invented per answer
+  1.7B   none 9.8/22.8/0.36 | filler 16.8/25.2/0.71 | components 13.0/20.2/0.42 | clustering 13.0/18.2/0.41 | rwse 16.0/16.2/0.75 | degree 8.5/19.0/0.30 | all 13.5/17.5/0.52
+  1.7B-T none 5.6/16.5/0.16 | filler 5.8/15.3/0.14 | components 7.1/14.9/0.24 | clustering 7.0/15.0/0.19 | rwse 10.6/15.1/0.34 | degree 5.6/10.7/0.11 | all 5.5/11.6/0.16
+  4B     none 6.5/9.0/0.14 | filler 21.2/10.2/0.59 | components 3.0/2.5/0.04 | clustering 10.0/6.2/0.15 | rwse 9.2/6.8/0.16 | degree 12.2/10.5/0.29 | all 13.8/7.0/0.35
+  4B-T   none 0.5/1.0/0.01 | filler 0.3/0.3/0.01 | components 0.3/0.3/0.00 | clustering 0.5/0.5/0.01 | rwse 0.5/0.5/0.01 | degree 0.5/0.8/0.03 | all 0.8/1.3/0.01
+  answer has an invented neighbour: % none -> % primer (change, * BH q < .05), pairs
+    1.7B   filler 9.8->16.8 (+7.0*, n=400) | components 9.8->13.0 (+3.2*, n=400) | clustering 9.8->13.0 (+3.2, n=400) | rwse 9.8->16.0 (+6.2*, n=400) | degree 9.8->8.5 (-1.2, n=400) | all 9.5->13.5 (+4.0, n=399)
+    1.7B-T filler 5.6->5.6 (+0.0, n=394) | components 5.4->6.4 (+1.0, n=392) | clustering 5.6->6.6 (+1.0, n=394) | rwse 5.6->10.4 (+4.8*, n=393) | degree 5.6->4.9 (-0.8, n=390) | all 5.6->5.4 (-0.3, n=392)
+    4B     filler 6.5->21.2 (+14.8*, n=400) | components 6.5->3.0 (-3.5*, n=400) | clustering 6.5->10.0 (+3.5, n=400) | rwse 6.5->9.2 (+2.8, n=400) | degree 6.5->12.2 (+5.8*, n=400) | all 6.5->13.8 (+7.3*, n=400)
+    4B-T   filler 0.3->0.0 (-0.3, n=379) | components 0.5->0.3 (-0.3, n=377) | clustering 0.3->0.5 (+0.3, n=373) | rwse 0.3->0.5 (+0.3, n=379) | degree 0.3->0.5 (+0.3, n=376) | all 0.5->0.8 (+0.3, n=375)
+[ecchain] edge_count, all responses: % by first broken step (right / values / nodes / sum / halving / answer / no table / unparsed / cut)
+  1.7B   none       n=400 0.0 / 51.2 / 0.0 / 0.8 / 0.0 / 0.0 / 48.0 / 0.0 / 0.0
+  1.7B   filler     n=400 0.0 / 64.0 / 1.8 / 2.5 / 0.0 / 0.0 / 26.2 / 4.8 / 0.8
+  1.7B   components n=400 0.0 / 45.5 / 0.2 / 0.5 / 0.0 / 0.0 / 52.8 / 1.0 / 0.0
+  1.7B   clustering n=400 0.0 / 26.8 / 0.2 / 0.0 / 0.0 / 0.0 / 73.0 / 0.0 / 0.0
+  1.7B   rwse       n=400 0.0 / 11.5 / 0.0 / 0.8 / 0.0 / 0.0 / 87.0 / 0.5 / 0.2
+  1.7B   degree     n=400 3.5 / 27.5 / 0.0 / 54.5 / 0.0 / 0.0 / 11.2 / 0.0 / 3.2
+  1.7B   all        n=400 1.5 / 22.2 / 0.0 / 12.0 / 0.0 / 0.0 / 48.5 / 9.5 / 6.2
+  1.7B-T none       n=400 14.0 / 46.5 / 3.0 / 1.5 / 0.0 / 0.0 / 24.8 / 0.0 / 10.2
+  1.7B-T filler     n=400 11.0 / 48.8 / 4.5 / 2.8 / 0.0 / 0.0 / 18.0 / 0.0 / 15.0
+  1.7B-T components n=400 12.8 / 45.0 / 3.5 / 4.0 / 0.0 / 0.0 / 24.2 / 0.0 / 10.5
+  1.7B-T clustering n=400 12.0 / 54.2 / 2.8 / 4.2 / 0.0 / 0.0 / 15.0 / 0.0 / 11.8
+  1.7B-T rwse       n=400 10.8 / 38.5 / 2.2 / 2.8 / 0.0 / 0.0 / 29.8 / 0.0 / 16.0
+  1.7B-T degree     n=400 11.8 / 66.0 / 0.5 / 5.8 / 0.0 / 0.0 / 0.2 / 0.0 / 15.8
+  1.7B-T all        n=400 18.8 / 56.0 / 1.5 / 7.5 / 0.0 / 0.0 / 0.8 / 0.0 / 15.5
+  4B     none       n=400 1.2 / 80.2 / 3.0 / 14.0 / 0.0 / 0.0 / 1.2 / 0.2 / 0.0
+  4B     filler     n=400 0.5 / 90.0 / 3.5 / 5.8 / 0.0 / 0.0 / 0.2 / 0.0 / 0.0
+  4B     components n=400 0.0 / 65.0 / 6.0 / 20.8 / 0.0 / 0.0 / 8.2 / 0.0 / 0.0
+  4B     clustering n=400 0.0 / 93.8 / 0.2 / 4.0 / 0.0 / 0.0 / 2.0 / 0.0 / 0.0
+  4B     rwse       n=400 0.0 / 95.2 / 1.2 / 1.5 / 0.0 / 0.0 / 1.2 / 0.5 / 0.2
+  4B     degree     n=400 24.8 / 36.5 / 0.2 / 27.5 / 0.0 / 0.0 / 10.8 / 0.0 / 0.2
+  4B     all        n=400 2.8 / 85.8 / 0.2 / 11.2 / 0.0 / 0.0 / 0.0 / 0.0 / 0.0
+  4B-T   none       n=400 19.5 / 12.8 / 5.2 / 5.0 / 0.0 / 0.0 / 16.5 / 0.0 / 41.0
+  4B-T   filler     n=400 31.0 / 14.2 / 8.8 / 4.2 / 0.0 / 0.0 / 7.8 / 0.0 / 34.0
+  4B-T   components n=400 41.0 / 15.5 / 5.0 / 3.5 / 0.0 / 0.0 / 11.5 / 0.0 / 23.5
+  4B-T   clustering n=400 43.0 / 16.5 / 4.0 / 4.2 / 0.0 / 0.0 / 7.8 / 0.0 / 24.5
+  4B-T   rwse       n=400 29.2 / 12.8 / 5.8 / 4.8 / 0.0 / 0.2 / 11.2 / 0.2 / 35.8
+  4B-T   degree     n=400 23.2 / 56.2 / 0.8 / 4.2 / 0.0 / 0.0 / 0.5 / 0.0 / 15.0
+  4B-T   all        n=400 13.8 / 77.0 / 0.5 / 1.5 / 0.0 / 0.0 / 2.8 / 0.0 / 4.5
+  lists a wrong degree value: % none -> % primer (change, * BH q < .05), pairs
+    1.7B   filler 51.2->64.0 (+12.8*, n=400) | components 51.2->45.5 (-5.7, n=400) | clustering 51.2->26.8 (-24.5*, n=400) | rwse 51.2->11.5 (-39.7*, n=400) | degree 51.2->27.5 (-23.7*, n=400) | all 51.2->22.2 (-29.0*, n=400)
+    1.7B-T filler 46.5->48.8 (+2.2, n=400) | components 46.5->45.0 (-1.5, n=400) | clustering 46.5->54.2 (+7.8*, n=400) | rwse 46.5->38.5 (-8.0*, n=400) | degree 46.5->66.0 (+19.5*, n=400) | all 46.5->56.0 (+9.5*, n=400)
+    4B     filler 80.2->90.0 (+9.8*, n=400) | components 80.2->65.0 (-15.2*, n=400) | clustering 80.2->93.8 (+13.5*, n=400) | rwse 80.2->95.2 (+15.0*, n=400) | degree 80.2->36.5 (-43.8*, n=400) | all 80.2->85.8 (+5.5, n=400)
+    4B-T   filler 12.8->14.2 (+1.5, n=400) | components 12.8->15.5 (+2.8, n=400) | clustering 12.8->16.5 (+3.8, n=400) | rwse 12.8->12.8 (+0.0, n=400) | degree 12.8->56.2 (+43.5*, n=400) | all 12.8->77.0 (+64.2*, n=400)
+[ccsample] rejected named cycles: the text after each
+  1.7B filler cycle_check/size40/p0.2/27 [invented] "0 → 0 → 11 → 2 → 17 → 8 → 12 → 16 → 10 → 21 → 26 → 35 → 31 → 32 → 39 → 38 → 34 →" -> " (already visited) | - This path ends at 12, not a cycle. |  | Try another path:"
+  1.7B none cycle_check/size40/p0.1/80 [length-2] "0 → 3 → 4 → 11 → 2 → 8 → 2" -> " → ... (but this is a loop, not a cycle) |  | Try another path: |  | - "
+  1.7B all cycle_check/size40/p0.1/43 [length-2] "0 → 13 → 0" -> " is a cycle of length 2 (but not a cycle of length 3 or more). So, not a cycle."
+  1.7B all cycle_check/size40/p0.1/61 [length-2] "0 → 8 → 0" -> " is a cycle of length 2 (but not a cycle of length ≥3)."
+  4B filler cycle_check/size40/p0.2/58 [length-2] "2 → Node 1 → Node 2" -> " (though this is not a valid cycle since Node 1 is not connected to Node 2 directly, but let's look for a valid cycle). | "
+[ccsample] rejected a real cycle, rests on an invented one
+  1.7B none cycle_check/size40/p0.1/60
+    [real, rejected] "0 → 2 → 15 → 3 → 22 → 15"  15–3 ✓  3–22 ✓  22–15 ✓
+      after: " (already visited) → ...   |   This path doesn't form a cycle. |  | Try another path: |  | - "
+    [invented, kept] "0 → 2 → 16 → 29 → 21 → 14 → 1 → 7 → 10 → 26 → 3 → 22 → 15 → 36 → 2 → 0"  0–2 ✓  2–16 ✓  16–29 ✓  29–21 ✓  21–14 ✓  14–1 ✓  1–7 ✓  7–10 ✓  10–26 ✓  26–3 ✓  3–22 ✓  22–15 ✓  15–36 ✗  36–2 ✓  2–0 ✓
+      after: " |  | This is a cycle: |  | "
+    [invented, kept] "0 → 2 → 16 → 29 → 21 → 14 → 1 → 7 → 10 → 26 → 3 → 22 → 15 → 36 → 2 → 0"  0–2 ✓  2–16 ✓  16–29 ✓  29–21 ✓  21–14 ✓  14–1 ✓  1–7 ✓  7–10 ✓  10–26 ✓  26–3 ✓  3–22 ✓  22–15 ✓  15–36 ✗  36–2 ✓  2–0 ✓
+      after: " |  | This is a cycle of length 14."
+    [invented, kept] "0 → 2 → 16 → 29 → 21 → 14 → 1 → 7 → 10 → 26 → 3 → 22 → 15 → 36 → 2 → 0"  0–2 ✓  2–16 ✓  16–29 ✓  29–21 ✓  21–14 ✓  14–1 ✓  1–7 ✓  7–10 ✓  10–26 ✓  26–3 ✓  3–22 ✓  22–15 ✓  15–36 ✗  36–2 ✓  2–0 ✓
+      after: ""
+  4B none cycle_check/size40/p0.5/40
+    [invented, rejected] "0 → 2 → 3 → 5 → 1 → 2 → 0"  0–2 ✓  2–3 ✗  3–5 ✓  5–1 ✓  1–2 ✓  2–0 ✓
+      after: " |  | This is not a valid cycle because it repeats node 2. Let's try another path: |  | "
+    [real, rejected] "0 → 2 → 6 → 1 → 2 → 0"  0–2 ✓  2–6 ✓  6–1 ✓  1–2 ✓  2–0 ✓
+      after: " |  | Again, this repeats node 2. |  | Let's try a more complex cycle: |  | "
+    [invented, kept] "0 → 2 → 6 → 1 → 4 → 5 → 3 → 2 → 0"  0–2 ✓  2–6 ✓  6–1 ✓  1–4 ✓  4–5 ✓  5–3 ✓  3–2 ✗  2–0 ✓
+      after: " |  | This forms a cycle: "
+    [invented, kept] "0 → 2 → 6 → 1 → 4 → 5 → 3 → 2 → 0"  0–2 ✓  2–6 ✓  6–1 ✓  1–4 ✓  4–5 ✓  5–3 ✓  3–2 ✗  2–0 ✓
+      after: " |  | This is a valid cycle of length 7 (nodes 0, 2, 6, 1, 4, 5, 3). |  | Therefore, there is definitely a c"
+  4B components cycle_check/size40/p0.2/32
+    [real, rejected] "0 → 1 → 18 → 22 → 4 → 5 → 3 → 4"  4–5 ✓  5–3 ✓  3–4 ✓
+      after: " → ... (This is not a valid cycle, but it shows that there are multiple connections that can form cy"
+    [invented, kept] "0 → 1 → 18 → 22 → 4 → 5 → 3 → 4 → 5 → 16 → 15 → 19 → 4 → 0"  0–1 ✓  1–18 ✓  18–22 ✓  22–4 ✓  4–5 ✓  5–3 ✓  3–4 ✓  4–5 ✓  5–16 ✓  16–15 ✓  15–19 ✓  19–4 ✓  4–0 ✗
+      after: " |  | This is a cycle that starts and ends at node 0, and includes several nodes and edges without repea"
+[ccsample] rests on a real cycle that is not the last one named
+  1.7B-T none cycle_check/size40/p0.35/78
+    [real, kept] "0 → 1 → 4 → 6 → 0"  0–1 ✓  1–4 ✓  4–6 ✓  6–0 ✓
+      after: ":   |    - Node 0 is connected to node 6.   |    - Node 1 is connected to node 4.   |    - Node 4 is conne"
+    [real, kept] "0 → 1 → 4 → 6 → 0"  0–1 ✓  1–4 ✓  4–6 ✓  6–0 ✓
+      after: ". |  | 2. Cycle "
+    [invented, kept] "3 → 10 → 4 → 6 → 0 → 1 → 3"  3–10 ✓  10–4 ✓  4–6 ✓  6–0 ✓  0–1 ✓  1–3 ✗
+      after: ":   |    - Node "
+    [invented, kept] "3 is connected to node 10.   |    - Node 10 is connected to node 4.   |    - Node 4 "  3–10 ✓  10–4 ✓  4–6 ✓  6–0 ✓  0–1 ✓  1–3 ✗
+      after: ".   |    - This forms a cycle: "
+    [invented, kept] "3 → 10 → 4 → 6 → 0 → 1 → 3"  3–10 ✓  10–4 ✓  4–6 ✓  6–0 ✓  0–1 ✓  1–3 ✗
+      after: ". |  | Since the graph is connected and contains at least one cycle, it is confirmed that a cycle exists"
+  1.7B components cycle_check/size40/p0.2/68
+    [real, rejected] "0 → 2 → 10 → 1 → 2"  2–10 ✓  10–1 ✓  1–2 ✓
+      after: " (but this is not a cycle, since it repeats node 2) | - Try a different path: |  | "
+    [real, kept] "0 → 2 → 10 → 1 → 2"  2–10 ✓  10–1 ✓  1–2 ✓
+      after: " (again, same as above) |  | Try a longer path: |  | "
+    [real, rejected] "0 → 2 → 10 → 1 → 2 → 10 → 1"  1–2 ✓  2–10 ✓  10–1 ✓
+      after: " → ... → still not a cycle. |  | Let’s look for a shorter cycle."
+    [real, kept] "0 → 2 → 10 → 1 → 2"  2–10 ✓  10–1 ✓  1–2 ✓
+      after: " |  | This is a cycle ("
+    [real, rejected] "0 → 2 → 10 → 1 → 2"  2–10 ✓  10–1 ✓  1–2 ✓
+      after: "), but it's not a simple cycle (it repeats node 2). |  | But the definition of a cycle in graph theory a"
+  1.7B-T none cycle_check/size40/p0.1/44
+    [real, kept] "0 → 1 → 10 → 33 → 11 → 12 → 9 → 4 → 0"  0–1 ✓  1–10 ✓  10–33 ✓  33–11 ✓  11–12 ✓  12–9 ✓  9–4 ✓  4–0 ✓
+      after: "    |    This path forms a "
+    [real, kept] "cycle with nodes  0, 1, 10, 33, 11, 12, 9, 4"  0–1 ✓  1–10 ✓  10–33 ✓  33–11 ✓  11–12 ✓  12–9 ✓  9–4 ✓  4–0 ✓
+      after: " . |  | 2. Cycle 2:   |     "
+    [real, kept] "2 → 6 → 14 → 2"  2–6 ✓  6–14 ✓  14–2 ✓
+      after: "    |    This is a "
+    [real, kept] "triangle (3-node cycle) involving nodes  2, 6, 14"  2–6 ✓  6–14 ✓  14–2 ✓
+      after: " . |  | 3. Cycle 3:   |     "
+    [real, kept] "3 → 8 → 5 → 16 → 14 → 3"  3–8 ✓  8–5 ✓  5–16 ✓  16–14 ✓  14–3 ✓
+      after: "    |    This cycle includes nodes  3, 8, 5, 16, 14 . |  | 4. Cycle 4:   |     "
+    [invented, kept] "31 → 33 → 10 → 34 → 6 → 2 → 14 → 21 → 27 → 33 → 31"  31–33 ✓  33–10 ✓  10–34 ✓  34–6 ✓  6–2 ✓  2–14 ✓  14–21 ✗  21–27 ✓  27–33 ✓  33–31 ✓
+      after: "    |    This longer cycle involves nodes  31, 33, 10, 34, 6, 2, 14, 21, 27 . |  | Since the graph contain"
+[ccsample] invented steps whose fake neighbour is in the line of node a-1 or a+1
+  1.7B-T clustering cycle_check/size40/p0.2/24: claimed 7–15
+    Node 6 is connected to nodes 2, 3, 4, 7, 8, 10, 12, 20, 22, 25, 26, 32, 33, 35, 36, 39.
+    Node 7 is connected to nodes 0, 3, 6, 10, 11, 16, 17, 19, 25.
+    Node 8 is connected to nodes 1, 6, 11, 15, 16, 18, 19, 30, 31, 32, 35, 36, 37.
+  1.7B clustering cycle_check/size40/p0.35/41: claimed 1–0
+    Node 0 is connected to nodes 2, 4, 7, 8, 9, 14, 15, 19, 25, 28, 33, 35, 36, 37.
+    Node 1 is connected to nodes 3, 4, 11, 12, 17, 19, 22, 27, 32, 35, 36.
+    Node 2 is connected to nodes 0, 6, 7, 11, 12, 16, 18, 19, 20, 23, 25, 30, 32, 33, 34, 35, 36, 39.
+  1.7B-T degree cycle_check/size40/p0.35/19: claimed 29–32
+    Node 28 is connected to nodes 0, 1, 5, 6, 8, 9, 11, 14, 16, 17, 18, 20, 22, 23, 26, 30, 33, 35.
+    Node 29 is connected to nodes 0, 9, 10, 17, 21, 23, 25, 26, 31.
+    Node 30 is connected to nodes 1, 4, 5, 6, 13, 14, 15, 16, 17, 22, 28, 32, 33, 34, 35, 36, 37.
+[clsample] edge_existence false alarms that state the queried non-edge: the statement, then the graph
+  1.7B components edge_existence/size40/p0.35/73 asked (24, 11): "Node 24 is connected to Node 11"
+    graph: Node 24 is connected to nodes 8, 9, 15, 16, 18, 19, 22, 26, 29, 31, 34, 36.
+  4B rwse edge_existence/size40/p0.5/76 asked (2, 0): "Node 2 is directly connected to Node 0"
+    graph: Node 2 is connected to nodes 5, 6, 8, 9, 14, 16, 19, 20, 21, 22, 25, 26, 28, 30, 31, 35, 36, 38.
+  1.7B none edge_existence/size40/p0.5/5 asked (15, 23): "Node 15 is connected to Node 23"
+    graph: Node 15 is connected to nodes 0, 2, 3, 4, 5, 6, 8, 11, 14, 16, 20, 21, 25, 30, 31, 33, 34, 35, 37, 39.
+  4B filler edge_existence/size40/p0.35/14 asked (17, 37): "Node 17 is connected to Node 37"
+    graph: Node 17 is connected to nodes 0, 1, 2, 3, 4, 5, 6, 9, 13, 18, 22, 26, 31, 32, 34.
+[clsample] edge_existence answers of no that state the queried non-edge: the statement, then the graph
+  4B degree edge_existence/size40/p0.5/4 asked (39, 15): "Node 39 is connected to Node 15"
+    graph: Node 39 is connected to nodes 0, 1, 2, 3, 8, 9, 10, 12, 16, 19, 21, 22, 24, 25, 27, 34, 35, 36, 37.
+  4B-T components edge_existence/size40/p0.5/81 asked (36, 33): "Node 33 is connected to Node 36"
+    graph: Node 33 is connected to nodes 4, 9, 16, 17, 18, 19, 20, 22, 29, 30, 31, 37.
+  1.7B clustering edge_existence/size40/p0.35/35 asked (1, 8): "Node 1 is connected to Node 8"
+    graph: Node 1 is connected to nodes 0, 5, 7, 11, 12, 13, 17, 18, 19, 23, 24, 25, 27, 28, 30, 34, 36, 39.
+  1.7B all edge_existence/size40/p0.1/49 asked (39, 23): "Node 39 is connected to nodes 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, "
+    graph: Node 39: no line
+[clsample] edge_existence, thinking arms: a stated list with a non-neighbour: the statement, then the graph
+  1.7B-T clustering edge_existence/size40/p0.35/67 asked (29, 15): "Node 29 is connected to nodes 1, 6, 7, 12, 14, 15, 17, 18, 21, 22, 23, 26, 29, 32, 35, 38"
+    graph: Node 29 is connected to nodes 1, 6, 7, 12, 14, 15, 17, 18, 21, 22, 23, 26, 33, 35, 38.
+  1.7B-T rwse edge_existence/size40/p0.35/80 asked (22, 14): "Node 22 is connected to nodes 2, 3, 4, 9, 11, 13, 16, 21, 25, 26, 30, 35, 36"
+    graph: Node 22 is connected to nodes 2, 3, 4, 9, 11, 13, 16, 21, 25, 26, 30, 35.
+  1.7B-T filler edge_existence/size40/p0.1/6 asked (31, 7): "Node 31 is connected to nodes 16, 18, 32"
+    graph: Node 31 is connected to nodes 16, 18.
+  4B-T rwse edge_existence/size40/p0.1/73 asked (11, 36): "Node 11 is connected to Node 36"
+    graph: Node 11 is connected to nodes 1, 12, 15, 24.
+[clsample] node_degree wrong answers with a misread list: the statement, invented, missed, the graph
+  1.7B-T degree node_degree/size40/p0.35/0: "node 21 is connected to the following nodes: 4, 8, 10, 11, 18, 22, 24, 26, 27, 29, 30, 31, and 35" invented [] missed [36]
+    graph: Node 21 is connected to nodes 4, 8, 10, 11, 18, 22, 24, 26, 27, 29, 30, 31, 35, 36.
+  1.7B-T degree node_degree/size40/p0.35/20: "Node 6 is connected to nodes 4, 7, 9, 12, 17, 23, 32, 38, 39" invented [] missed [25, 36]
+    graph: Node 6 is connected to nodes 4, 7, 9, 12, 17, 23, 25, 32, 36, 38, 39.
+  1.7B rwse node_degree/size40/p0.35/86: "Node 6 is connected to nodes 11, 14, 15, 16, 26, 32, 34, 36" invented [] missed [17]
+    graph: Node 6 is connected to nodes 11, 14, 15, 16, 17, 26, 32, 34, 36.
+  1.7B filler node_degree/size40/p0.1/80: "Node 31 is connected to nodes:   |   9, 13, 20, 22, 36, 39" invented [] missed [28]
+    graph: Node 31 is connected to nodes 9, 13, 20, 22, 28, 36, 39.
+[clsample] node_degree correct answers with a misread list: the statement, invented, missed, the graph
+  1.7B none node_degree/size40/p0.5/8: "Node 33 is connected to nodes:   |   0, 3, 4, 6, 7, 8, 9, 11, 13, 14, 15, 16, 17, 18, 20, 22, 24, 27, 28, 29, 32, 35, 36, " invented [] missed [19]
+    graph: Node 33 is connected to nodes 0, 3, 4, 6, 7, 8, 9, 11, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 27, 28, 29, 32, 35, 36, 37, 38.
+  1.7B-T degree node_degree/size40/p0.35/47: "Node 28 is connected to nodes 5, 7, 10, 11, 13, 14, 15, 16, 18, 20, 24, 25, 29, 30, 31, 32, 34, 36, 37, 38" invented [5, 7, 10, 14, 15, 24, 30, 31, 32, 34, 36, 37, 38] missed [1, 3, 27, 35, 39]
+    graph: Node 28 is connected to nodes 1, 3, 11, 13, 16, 18, 20, 25, 27, 29, 35, 39.
+  4B-T clustering node_degree/size40/p0.1/59: "Node 29 is connected to nodes 2, 13, 33" invented [33] missed []
+    graph: Node 29 is connected to nodes 2, 13.
+  1.7B-T all node_degree/size40/p0.5/49: "Node 9 is connected to nodes 0, 1, 2, 4, 5, 11, 12, 13, 14, 15, 16, 18, 21, 33, 34, 38, 39" invented [] missed [22]
+    graph: Node 9 is connected to nodes 0, 1, 2, 4, 5, 11, 12, 13, 14, 15, 16, 18, 21, 22, 33, 34, 38, 39.
+wrote 71103 rows to csv2/raw-trends\cycle_claims.csv and 44571 rows to csv2/raw-trends\response_claims.csv
