@@ -48,6 +48,32 @@ once, as in pf.load_runs.
   connected_nodes  the answer's nodes against the true neighbours
   edge_count       the first broken step of the degree-sum chain,
                    response_patterns.edge_chain ([rpchain]); all responses
+  node_count       the gold is 40 on every graph: the answer given (40, 39 or
+                   other), and whether the answer lists the ids one per line
+                   (30 or more lines holding one id each), the path that ends
+                   by reporting the last id, 39
+
+The high-density extension (runs/qwen3-*.densfull40hi*, p = .65-.85) has
+edge_existence and node_degree only; it is read the same way and reported in
+its own blocks, so every other block stays p <= .50.
+
+Why answers are wrong, beyond the claims above:
+  edge_existence   a false yes may claim the other node is listed ("Node 12 is
+                   listed among these"), a miss that it is not ("Node 4 is not in
+                   this list"); the same words after "check if" / "whether" are
+                   skipped. A miss may also rule that both lists must agree
+                   ("discrepancy", "inconsistent", "mutual", ...). Shared
+                   neighbours are counted on the graph, not read from the text.
+  cycle_check      a "no" may mention an odd degree sum or the handshaking
+                   lemma, return probabilities / self-loops, or call the graph
+                   directed
+  node_degree      whether a wrong answer is below the true degree
+  connected_nodes  where each invented neighbour sits (a neighbour's
+                   neighbour, the line of node q-1 or q+1, one off a true
+                   neighbour's id, q itself), against the share of q's
+                   non-neighbours there; which neighbours are dropped
+The primer-against-none counts, the filler table and the cycle_check outcomes
+come from frame.csv (rule R1), not from the text.
 
 Each primer is tested against none on the same graphs: exact McNemar, BH over
 the primers within each arm, as in primer_findings.
@@ -74,8 +100,35 @@ the primers within each arm, as in primer_findings.
   [cnset]      connected_nodes: answers with invented / missed neighbours;
                tested
   [ecchain]    edge_count: first broken step; misread degree values tested
+  [ncanswer]   node_count: answers of 40 / 39 / other, the listing path and
+               accuracy on each path; answering 39 tested
+  [ncdensity]  node_count: % answering 39, by density
+  [eehigh]     [eeclaims] at p = .65-.85
+  [ndhigh]     [ndlist] at p = .65-.85
+  [pvn]        every primer against none on the 24 (arm, task) pairings: counts
+               by kind of change, the largest changes, each significant one
+  [fillerdens] filler against none by density, 100 graphs per cell,
+               uncorrected exact McNemar
+  [ccoutcome]  cycle_check: % correct / answering no / truncated
+  [ccno]       cycle_check "no" answers by the reason cited; answering no tested
+  [eeshared]   edge_existence false yes by shared neighbours; a within-density
+               permutation test without a primer; primers tested on pairs
+               sharing 4 or more
+  [eewhy]      edge_existence false yes: states the pair as an edge / claims the
+               other node is listed / neither; claiming tested
+  [eemiss]     edge_existence misses: "not listed" claims, a stated list that
+               holds the other node, "both lists must agree" reasoning
+  [ndsign]     node_degree: % of wrong answers below the true degree;
+               undercounting tested
+  [cnsource]   connected_nodes: invented neighbours by source against chance,
+               missed neighbours by place on the line; q itself, dropping the
+               first and dropping the last tested
+  [ectable]    edge_count: % with a wrong degree value, among answers that list
+               a table
   [ccsample]   random examples of each cycle rule, to check by eye
   [clsample]   random examples of the edge_existence and node_degree readings
+  [ncsample]   node_count answers of 39
+  [eesample]   edge_existence membership claims and misses
 
   PYTHONPATH=. python scripts/check_cycle_claims.py --csv-dir csv2/raw-trends \\
       > csv2/raw-trends/check_cycle_claims.txt
@@ -90,6 +143,7 @@ import random
 import re
 import sys
 
+import numpy as np
 import pandas as pd
 
 from graphtalk import scoring
@@ -99,6 +153,7 @@ import primer_findings as pf  # noqa: E402  (FRAME, ARMS, PRIMERS, SEED, with_ou
 import response_patterns as rp  # noqa: E402  (edge_chain: the [rpchain] reading of edge_count)
 
 PROMPTS = "prompts.densfull40.jsonl"
+PROMPTS_HI = "prompts.densfull40hi.jsonl"
 CC500 = "prompts.cyclecheck500.clean.jsonl"
 CC500_ARMS = ["qwen3-0.6b", "qwen3-0.6b-think"]
 THINK = [a for a in pf.ARMS if a.endswith("-think")]
@@ -107,8 +162,14 @@ SHORT = {"qwen3-1.7b": "1.7B", "qwen3-1.7b-think": "1.7B-T", "qwen3-4b": "4B",
 CONDS = ["none", "filler"] + pf.PRIMERS
 CC500_CONDS = ["none", "components", "clustering", "rwse"]
 DENS = ["p0.1", "p0.2", "p0.35", "p0.5"]
+HI = ["0.65", "0.75", "0.85"]
 CHAIN = ["right", "values", "nodes", "sum", "halving", "answer", "no table", "unparsed", "cut"]
 WINDOW = 250   # characters after a named cycle searched for a rejection
+TASKS6 = ["node_count", "cycle_check", "node_degree", "edge_count", "connected_nodes", "edge_existence"]
+SHARED = ["0", "1", "2-3", "4+"]   # neighbours a queried pair shares
+B_PERM = 2000
+PVN = ["gain, states the answer", "gain, does not state it", "gain, truncation-driven", "gain, not significant",
+       "neutral (within 1 point)", "loss, not significant", "loss, truncation-driven", "loss, other"]
 
 _ARROW = re.compile(r"\s*(?:→|->|⟶|➝|⇒|=>|\\?(?:long)?rightarrow|\\to\b|—|–)\s*"
                     r"|(?<=\d)\s*-\s*(?=\d)")
@@ -155,6 +216,19 @@ _QUESTION = re.compile(r"(?:\bif|whether|check|determine|see|verify|maybe|perhap
                        r"|imply|implies|mean)\s+(?:\w+\s+){0,2}$", re.I)
 # "... is connected to Node 21 via Node 26" / "... through another node?" is not an edge claim.
 _INDIRECT = re.compile(r"^[^.\n!]*?(?:\?|\bvia\b|\bthrough\b|\bindirect)", re.I)
+# node_count: a line holding one id ("- 7"); 30 or more of them list the ids one per line.
+_IDLINE = re.compile(r"^\s*[-*]\s*\d+\s*$", re.M)
+# edge_existence: "Node 12 is listed among these", "Node 4 is not in this list".
+_MEMBER = re.compile(r"\b(?:node\s+)?(\d+)\s+(?:is|appears)\s+(not\s+)?(?:also\s+)?(?:explicitly\s+)?"
+                     r"(?:listed|present|included|mentioned|found|among|in (?:the|this|its|that|these|both)\b)",
+                     re.I)
+_CHECKING = re.compile(r"(?:check|whether|\bif)\b[^.\n]*$", re.I)
+_BOTHLISTS = re.compile(r"discrepanc|inconsisten|contradict|mutual|bidirectional", re.I)
+_ODDSUM = re.compile(r"\bodd\b|handshak", re.I)
+_RETURN = re.compile(r"return probab|self[- ]?(?:loop|edge)", re.I)
+_DIRECTED = re.compile(r"(?<!un)directed graph|graph is directed|not (?:necessarily )?undirected", re.I)
+# Primers whose text states the answer ([bars] >= 0.85 in primer_findings).
+CARRY = {("node_degree", "degree"), ("node_degree", "all"), ("edge_count", "degree"), ("edge_count", "all")}
 _TARGET = {"node_degree": re.compile(r"degree of node (\d+)\?"),
            "connected_nodes": re.compile(r"connected to (\d+) in alphabetical"),
            "edge_existence": re.compile(r"between Node (\d+) and Node (\d+)\?")}
@@ -296,6 +370,16 @@ def statements(text):
   return [x[1:] for x in sorted(out)]
 
 
+def member(text, nodes, negated):
+  """The first claim that one of nodes is listed (negated: is not listed), or None; checks skipped."""
+  for m in _MEMBER.finditer(text):
+    before = text[max(0, m.start() - 60):m.start()]
+    if int(m[1]) in nodes and bool(m[2]) == negated and not _CHECKING.search(before) \
+        and not _QUESTION.search(before[-40:]):
+      return m
+  return None
+
+
 def _selfcheck():
   es = {frozenset(p) for p in [(0, 1), (1, 2), (0, 2), (2, 3)]}
   r = lambda s: read(s, es)[0]
@@ -332,6 +416,11 @@ def _selfcheck():
   assert s("So Node 10 is connected to Node 21 via Node 26.") == []
   assert s("Maybe Node 32 is connected to Node 37 through another node?") == []
   assert s("Node 5 is connected to nodes 1, 2. Is that all?") == [(5, [1, 2])]
+  assert member("Node 12 is listed among these connected nodes.", (12, 3), False)
+  assert not member("### Step 1: Check if 12 is in the list of neighbors of 3", (12, 3), False)
+  assert member("Node 4 is not in this list, so there is no edge.", (4, 7), True)
+  assert not member("Node 4 is not in this list, so there is no edge.", (4, 7), False)
+  assert not member("Node 9 is listed among these.", (4, 7), False)
 
 
 def paired(df, col, conds, arms):
@@ -364,14 +453,97 @@ def pc(x):
   return f"{100 * x.mean():5.1f}" if len(x) else "    -"
 
 
+def perm_within(x, y, groups, rng):
+  """Mean x where y minus mean x where not y, and its two-sided p with y permuted within each group."""
+  y = y.astype(bool)
+  if y.all() or not y.any():
+    return float("nan"), float("nan")
+  stat = lambda z: x[z].mean() - x[~z].mean()
+  d, idx, hits = stat(y), [np.flatnonzero(groups == g) for g in np.unique(groups)], 0
+  for _ in range(B_PERM):
+    z = y.copy()
+    for i in idx:
+      z[i] = rng.permutation(y[i])
+    hits += abs(stat(z)) >= abs(d)
+  return d, (1 + hits) / (B_PERM + 1)
+
+
+def against_none(x, c):
+  """One (graph, condition) table's pairs of c and none: correct and truncated, none's columns suffixed _n."""
+  return pd.concat([x.xs(c, axis=1, level=1), x.xs("none", axis=1, level=1).add_suffix("_n")], axis=1).dropna()
+
+
+def kind(r):
+  """[pvn]'s kind of change for one primer-against-none pairing."""
+  sig, e = r["q"] < .05, r["e"]
+  driven = sig and -r["dt"] * np.sign(e) >= abs(e) / 2   # the truncated share moves against it by half or more
+  if sig and e > 0:
+    return PVN[2] if driven else PVN[0] if (r["task"], r["c"]) in CARRY else PVN[1]
+  if sig:
+    return PVN[6] if driven else PVN[7]
+  return PVN[4] if abs(e) <= 1 else PVN[3] if e > 0 else PVN[5]
+
+
+def primer_vs_none(f):
+  """[pvn]: every primer against none on each (arm, task), p <= .50, BH over the six within each, as [main]."""
+  rows = []
+  for (arm, task), d in f[f.density_class <= .5].groupby(["arm", "task"]):
+    x = d.set_index(["graph_id", "condition"])[["correct", "truncated"]].unstack()
+    rr = []
+    for c in CONDS[1:]:
+      j = against_none(x, c)
+      rr.append(dict(arm=arm, task=task, c=c, e=100 * (j.correct.mean() - j.correct_n.mean()),
+                     dt=100 * (j.truncated.mean() - j.truncated_n.mean()),
+                     p=scoring.mcnemar(j.correct_n.astype(bool).to_numpy(),
+                                       j.correct.astype(bool).to_numpy())["p_value"]))
+    for r, q in zip(rr, pf.bh([r["p"] for r in rr])):
+      r["q"] = q
+      r["kind"] = kind(r)
+    rows += rr
+  name = lambda r: f"{r['c']} {pf.f1(r['e'])} {SHORT[r['arm']]} {r['task']}"
+  print(f"[pvn] every primer against none, p <= .50, {len(rows) // 6} (arm, task) pairings: correct share (R1), "
+        "exact McNemar, BH over the six within each pairing as in [main]; truncation-driven when the truncated "
+        "share moves against the change by at least half of it; states the answer as in [bars]")
+  print(f"  {'':26s}" + "".join(f"{c:>11s}" for c in CONDS[1:]))
+  for k in PVN:
+    print(f"  {k:26s}" + "".join(f"{sum(r['kind'] == k and r['c'] == c for r in rows):11d}" for c in CONDS[1:]))
+  for label, pick, best in (("largest gain that does not state the answer", lambda r: r["kind"] == PVN[1], max),
+                            ("same, outside node_count", lambda r: r["kind"] == PVN[1] and r["task"] != "node_count",
+                             max),
+                            ("largest loss, not truncation-driven", lambda r: r["kind"] == PVN[7], min)):
+    print(f"  {label}: " + " | ".join(
+        name(best(rs, key=lambda r: r["e"])) if rs else f"{c} none"
+        for c in CONDS[1:] for rs in [[r for r in rows if r["c"] == c and pick(r)]]))
+  for k in (PVN[0], PVN[1], PVN[2], PVN[6], PVN[7]):
+    print(f"  {k}: " + "; ".join(f"{name(r)} (truncated {pf.f1(r['dt'])})" for r in rows if r["kind"] == k))
+
+
+def filler_by_density(f):
+  """[fillerdens]: filler against none per (arm, task, density), exact McNemar, uncorrected."""
+  print("[fillerdens] filler against none per density, 100 graphs per cell: change in % correct (* p < .05, "
+        "exact McNemar, uncorrected), the truncated change when 5 points or more, then ·% correct without a primer")
+  for task in TASKS6:
+    for arm in pf.ARMS:
+      d, cells = f[(f.arm == arm) & (f.task == task)], []
+      for p in sorted(d.density_class.unique()):
+        j = against_none(d[d.density_class == p].set_index(["graph_id", "condition"])[
+            ["correct", "truncated"]].unstack(), "filler")
+        e, dt = 100 * (j.correct.mean() - j.correct_n.mean()), 100 * (j.truncated.mean() - j.truncated_n.mean())
+        pv = scoring.mcnemar(j.correct_n.astype(bool).to_numpy(), j.correct.astype(bool).to_numpy())["p_value"]
+        cells.append(f"p={p:g} {'0' if round(e) == 0 else f'{e:+.0f}'}{'*' if pv < .05 else ''}"
+                     + (f" (tr {dt:+.0f})" if abs(dt) >= 5 else "") + f" ·{100 * j.correct_n.mean():.0f}")
+      print(f"  {task:15s} {SHORT[arm]:6s} " + " | ".join(cells))
+
+
 def main():
   ap = argparse.ArgumentParser()
   ap.add_argument("--csv-dir", help="write cycle_claims.csv (one row per named cycle, and per "
                   "answer naming none) and response_claims.csv (one row per response of the other tasks)")
   args = ap.parse_args()
   _selfcheck()
-  g, ok = graphs(PROMPTS), outcomes_by_key()
-  cyc, trace, ee, nd, cn, ec, where = [], [], [], [], [], [], []
+  g, ok = {**graphs(PROMPTS), **graphs(PROMPTS_HI)}, outcomes_by_key()
+  cyc, trace, ee, nd, cn, ec, nc, where = [], [], [], [], [], [], [], []
+  ccall, cninv, cnmiss = [], [], []
   claim_rows, samples = [], collections.defaultdict(list)
 
   def claim_log(base, info, es, nb, n, part):
@@ -398,18 +570,27 @@ def main():
 
   for arm in pf.ARMS:
     seen = set()   # a response repeated across shards counts once, the first, as in pf.load_runs
-    for path in sorted(glob.glob(f"runs/{arm}.densfull40.shard*.jsonl")):
+    for path in sorted(glob.glob(f"runs/{arm}.densfull40*.shard*.jsonl")):
       for line in open(path, encoding="utf-8"):
         r = json.loads(line)
         iid, cond, task = r.get("instance_id"), r.get("condition"), r.get("task")
-        if (arm, iid, cond) not in ok or task == "node_count" or (iid, cond) in seen:
+        if (arm, iid, cond) not in ok or (iid, cond) in seen:
           continue
         seen.add((iid, cond))
         correct, truncated, pred = ok[(arm, iid, cond)]
         es, nb, lines, targets, gold, n = g[iid]
         p = iid.split("/")[2]
+        main_sweep = p in DENS   # samples are drawn from the main sweep only
         key = dict(arm=arm, condition=cond, instance_id=iid, density=p[1:])
         text = r["response"] or ""
+
+        if task == "cycle_check" and not truncated:
+          a = answer_part(text)
+          said_no = isinstance(pred, str) and pred.strip().lower().startswith("no")
+          ccall.append(dict(key, said_no=said_no, odd=bool(_ODDSUM.search(a)), ret=bool(_RETURN.search(a)),
+                            directed=bool(_DIRECTED.search(a))))
+          if said_no:
+            samples["ccno"].append((arm, cond, iid, a))
 
         if task == "cycle_check" and correct:
           rests, info, edgearg = read(answer_part(text), es)
@@ -454,17 +635,27 @@ def main():
           last = query[-1] if query else None
           other = (v if last[0] == u else u) if last else None
           said_yes = isinstance(pred, str) and pred.strip().lower().startswith("yes")
+          a = answer_part(text).replace("*", "").replace("`", "")
+          claim_in, claim_out = member(a, (u, v), False), member(a, (u, v), True)
           rec = dict(key, task=task, correct=int(correct), pred=pred, edge=edge, said_yes=said_yes,
                      n_statements=len(st),
                      fabricated=any(y not in nb.get(x, ()) and y != x for x, ys, _ in st for y in ys),
                      states_nonedge=bool(last) and other in last[1] and not edge,
-                     drops_edge=bool(last) and len(last[1]) >= 2 and other not in last[1] and edge)
+                     drops_edge=bool(last) and len(last[1]) >= 2 and other not in last[1] and edge,
+                     states_pair=bool(last) and other in last[1],
+                     shared=len(nb.get(u, set()) & nb.get(v, set())),
+                     claims_listed=bool(claim_in), claims_unlisted=bool(claim_out),
+                     both_lists=bool(_BOTHLISTS.search(text)))
           ee.append(rec)
-          if rec["states_nonedge"]:
+          if said_yes and not edge and claim_in and main_sweep:
+            samples["member"].append((arm, cond, iid, (u, v), a, claim_in, lines.get(u, f"Node {u}: no line")))
+          if edge and not said_yes:
+            samples["miss"].append((arm, cond, iid, (u, v), a, claim_out, lines.get(u, f"Node {u}: no line")))
+          if rec["states_nonedge"] and main_sweep:
             samples["ee" if said_yes else "ee_no"].append(
                 (arm, cond, iid, (u, v), last[2], lines.get(last[0], f"Node {last[0]}: no line")))
           fab = [(x, qt) for x, ys, qt in st if any(y not in nb.get(x, ()) and y != x for y in ys)]
-          if arm in THINK and fab:
+          if arm in THINK and fab and main_sweep:
             x, qt = fab[0]
             samples["ee_fab"].append((arm, cond, iid, (u, v), qt, lines.get(x, f"Node {x}: no line")))
 
@@ -477,9 +668,10 @@ def main():
           kind = "no list" if ys is None else ("miscounted" if ys == true else "misread")
           rec = dict(key, task=task, correct=int(correct), pred=pred, stated=ys is not None,
                      invented=len(ys - true) if ys is not None else 0,
-                     missed=len(true - ys) if ys is not None else 0, kind=kind)
+                     missed=len(true - ys) if ys is not None else 0, kind=kind,
+                     under=isinstance(pred, str) and float(pred) < len(true))
           nd.append(rec)
-          if kind == "misread":
+          if kind == "misread" and main_sweep:
             samples["nd_ok" if correct else "nd"].append(
                 (arm, cond, iid, t, lists[-1][1], sorted(ys - true), sorted(true - ys),
                  lines.get(t, f"Node {t}: no line")))
@@ -487,15 +679,35 @@ def main():
         elif task == "connected_nodes" and not truncated:
           s = pf.neighbour_set(pred)
           if s is not None:
-            true = nb.get(targets[0], set())
+            q = targets[0]
+            true = nb.get(q, set())
+            line = sorted(true)   # the node's line lists its neighbours in ascending order
             cn.append(dict(key, task=task, correct=int(correct), pred=pred,
-                           invented=len(s - true), missed=len(true - s)))
+                           invented=len(s - true), missed=len(true - s), has_self=q in s,
+                           drops_first=bool(line) and line[0] not in s, drops_last=bool(line) and line[-1] not in s))
+            two = set().union(*(nb.get(y, set()) for y in true)) - true - {q}
+            adj = (nb.get(q - 1, set()) | nb.get(q + 1, set())) - true - {q}
+            off = {y + d for y in true for d in (-1, 1)} - true - {q}
+            non = [y for y in range(n) if y != q and y not in true]
+            share = lambda cls: sum(z in cls for z in non) / len(non)
+            for y in s - true:
+              cninv.append(dict(arm=arm, self=y == q, two=y in two, adj=y in adj, off=y in off,
+                                two_chance=share(two), adj_chance=share(adj), off_chance=share(off)))
+            for y in true - s:
+              cnmiss.append(dict(arm=arm, first=y == line[0], last=y == line[-1], below=y < q,
+                                 below_chance=sum(z < q for z in line) / len(line)))
 
         elif task == "edge_count":
           degrees = {i: len(nb.get(i, ())) for i in range(n)}
           p_int = None if truncated or not isinstance(pred, str) else int(float(pred))
           ec.append(dict(key, task=task, correct=int(correct), pred=pred,
                          chain=rp.edge_chain(text, degrees, p_int, truncated)))
+
+        elif task == "node_count" and not truncated:
+          listing = len(_IDLINE.findall(answer_part(text))) >= 30
+          nc.append(dict(key, task=task, correct=int(correct), pred=pred, listing=listing))
+          if pred == "39":
+            samples["nc39"].append((arm, cond, iid, listing, answer_part(text)))
 
   # cc500: the published graphs, some acyclic.
   cg, cc = graphs(CC500), []
@@ -519,8 +731,10 @@ def main():
                        rests_on=rests, edge_count_argument=int(rests == "none" and edgearg),
                        rejected_real=0, n_named=len(info)), info, es, nb, n, "answer")
 
-  cyc, trace, ee, nd, cn, ec, cc = map(pd.DataFrame, (cyc, trace, ee, nd, cn, ec, cc))
+  cyc, trace, ee, nd, cn, ec, nc, cc = map(pd.DataFrame, (cyc, trace, ee, nd, cn, ec, nc, cc))
+  ccall, cninv, cnmiss = map(pd.DataFrame, (ccall, cninv, cnmiss))
   cell = lambda d, arm, c: d[(d.arm == arm) & (d.condition == c)]
+  main_part, high_part = (lambda d: d[~d.density.isin(HI)]), (lambda d: d[d.density.isin(HI)])
 
   print("[ccanswer] correct finished answers, % resting on: a real cycle / an invented cycle / "
         "not a cycle (length-2, retraced) / none named (of which an edge-count argument) | "
@@ -576,31 +790,37 @@ def main():
             f"real {pc(y.rests == 'real')}")
   print_paired("answers yes on an acyclic graph", paired(cc[cc.acyclic], "said_yes", CC500_CONDS, CC500_ARMS))
 
+  def ee_block(d):
+    for arm in pf.ARMS:
+      for c in CONDS:
+        x = cell(d, arm, c)
+        ne, e = x[~x.edge], x[x.edge]
+        fa, miss = ne[ne.said_yes], e[~e.said_yes]
+        print(f"  {SHORT[arm]:6s} {c:10s} non-edges n={len(ne):3d} yes {pc(ne.said_yes)} states {pc(ne.states_nonedge)} "
+              f"of yes {pc(fa.states_nonedge)} | edges n={len(e):3d} no {pc(~e.said_yes)} of no "
+              f"{pc(miss.drops_edge)} | any fabricated {pc(x.fabricated)}")
+    print_paired("states the queried non-edge as an edge", paired(d[~d.edge], "states_nonedge", CONDS, pf.ARMS))
+    print_paired("states any edge that is not one", paired(d, "fabricated", CONDS, pf.ARMS))
+
+  def nd_block(d):
+    for arm in pf.ARMS:
+      for c in CONDS:
+        x = cell(d, arm, c)
+        s, wr = x[x.stated], x[x.correct == 0]
+        print(f"  {SHORT[arm]:6s} {c:10s} n={len(x):3d} states {pc(x.stated)}; invented {pc(s.invented > 0)} / "
+              f"missed {pc(s.missed > 0)} | wrong n={len(wr):3d} {pc(wr.kind == 'misread')} / "
+              f"{pc(wr.kind == 'miscounted')} / {pc(wr.kind == 'no list')}")
+    print_paired("states a list with an invented neighbour", paired(d, "invents", CONDS, pf.ARMS))
+
   print("[eeclaims] edge_existence, finished answers. Non-edges: n, % answering yes (false alarm), % stating "
         "the pair as an edge, % of false alarms that state it. Edges: n, % answering no (miss), % of misses "
         "restating an endpoint's list without the other. All: % stating any edge that is not one")
-  for arm in pf.ARMS:
-    for c in CONDS:
-      x = cell(ee, arm, c)
-      ne, e = x[~x.edge], x[x.edge]
-      fa, miss = ne[ne.said_yes], e[~e.said_yes]
-      print(f"  {SHORT[arm]:6s} {c:10s} non-edges n={len(ne):3d} yes {pc(ne.said_yes)} states {pc(ne.states_nonedge)} "
-            f"of yes {pc(fa.states_nonedge)} | edges n={len(e):3d} no {pc(~e.said_yes)} of no "
-            f"{pc(miss.drops_edge)} | any fabricated {pc(x.fabricated)}")
-  print_paired("states the queried non-edge as an edge", paired(ee[~ee.edge], "states_nonedge", CONDS, pf.ARMS))
-  print_paired("states any edge that is not one", paired(ee, "fabricated", CONDS, pf.ARMS))
+  ee_block(main_part(ee))
 
   print("[ndlist] node_degree, finished answers: % stating the node's list; of those, % with an invented "
         "neighbour / % with a missed one | wrong answers: n, % misread / miscounted / no list")
-  for arm in pf.ARMS:
-    for c in CONDS:
-      x = cell(nd, arm, c)
-      s, wr = x[x.stated], x[x.correct == 0]
-      print(f"  {SHORT[arm]:6s} {c:10s} n={len(x):3d} states {pc(x.stated)}; invented {pc(s.invented > 0)} / "
-            f"missed {pc(s.missed > 0)} | wrong n={len(wr):3d} {pc(wr.kind == 'misread')} / "
-            f"{pc(wr.kind == 'miscounted')} / {pc(wr.kind == 'no list')}")
   nd["invents"] = nd.invented > 0
-  print_paired("states a list with an invented neighbour", paired(nd, "invents", CONDS, pf.ARMS))
+  nd_block(main_part(nd))
 
   print("[cnset] connected_nodes, finished answers: % with an invented neighbour / % with a missed one / "
         "mean invented per answer")
@@ -618,6 +838,130 @@ def main():
       print(f"  {SHORT[arm]:6s} {c:10s} n={len(x):3d} " + " / ".join(pc(x.chain == k).strip() for k in CHAIN))
   ec["misread"] = ec.chain == "values"
   print_paired("lists a wrong degree value", paired(ec, "misread", CONDS, pf.ARMS))
+
+  print("[ncanswer] node_count, finished answers: n, % answering 40 / 39 / other | % listing the ids one per "
+        "line; % correct when listing (n) / when not (n)")
+  for arm in pf.ARMS:
+    for c in CONDS:
+      x = cell(nc, arm, c)
+      li, di = x[x.listing], x[~x.listing]
+      print(f"  {SHORT[arm]:6s} {c:10s} n={len(x):3d}  {pc(x.pred == '40')} / {pc(x.pred == '39')} / "
+            f"{pc(~x.pred.isin(['40', '39']))} | listing {pc(x.listing)}; correct {pc(li.correct == 1)} "
+            f"(n={len(li):3d}) / {pc(di.correct == 1)} (n={len(di):3d})")
+  nc["says39"] = nc.pred == "39"
+  print_paired("answers 39", paired(nc, "says39", CONDS, pf.ARMS))
+  print("[ncdensity] node_count, % of finished answers that answer 39, by density")
+  for arm in pf.ARMS:
+    for c in CONDS:
+      x = cell(nc, arm, c)
+      print(f"  {SHORT[arm]:6s} {c:10s} " + "  ".join(
+          f"p={p[1:]} {pc(x[x.density == p[1:]].says39).strip()}" for p in DENS))
+
+  print("[eehigh] edge_existence at p = .65-.85, as [eeclaims]")
+  ee_block(high_part(ee))
+  print("[ndhigh] node_degree at p = .65-.85, as [ndlist]")
+  nd_block(high_part(nd))
+
+  f = pf.with_outcomes(pd.read_csv(pf.FRAME, dtype={"pred": str}, usecols=[
+      "arm", "task", "condition", "graph_id", "density_class", "exact", "hit_cap", "pred"]))
+  primer_vs_none(f)
+  filler_by_density(f)
+
+  print("[ccoutcome] cycle_check, all responses, p <= .50: % correct / answering no / truncated (n)")
+  x = f[(f.task == "cycle_check") & (f.density_class <= .5)]
+  x = x.assign(said_no=(x.truncated == 0) & x.pred.str.lower().str.startswith("no", na=False))
+  for arm in pf.ARMS:
+    print(f"  {SHORT[arm]:6s} " + " | ".join(
+        f"{c} {pc(y.correct == 1).strip()} / {pc(y.said_no).strip()} / {pc(y.truncated == 1).strip()} ({len(y)})"
+        for c in CONDS for y in [x[(x.arm == arm) & (x.condition == c)]]))
+
+  print("[ccno] cycle_check finished answers: % answering no; of those, n, % mentioning an odd degree sum or "
+        "the handshaking lemma / % mentioning return probabilities or self-loops / % calling the graph directed")
+  for arm in pf.ARMS:
+    print(f"  {SHORT[arm]:6s} " + " | ".join(
+        f"{c} {pc(y.said_no).strip()}; {len(z)}: {pc(z.odd).strip()} / {pc(z.ret).strip()} / "
+        f"{pc(z.directed).strip()}" for c in CONDS for y in [cell(ccall, arm, c)] for z in [y[y.said_no]]))
+  print_paired("answers no", paired(ccall, "said_no", CONDS, pf.ARMS))
+
+  e0 = main_part(ee)
+  ne = e0[~e0.edge].assign(bin=lambda d: pd.cut(d.shared, [-1, 0, 1, 3, 10 ** 3], labels=SHARED))
+  print("[eeshared] edge_existence non-edges, finished answers, p <= .50: % answered yes by the neighbours the "
+        "pair shares (" + " / ".join(SHARED) + "), n in brackets; all primers pooled, then p = .20 alone")
+  for arm in pf.ARMS:
+    x = ne[ne.arm == arm]
+    by = lambda d: " / ".join(f"{pc(d[d.bin == b].said_yes).strip()} ({(d.bin == b).sum()})" for b in SHARED)
+    print(f"  {SHORT[arm]:6s} pooled {by(x)} | p=0.2 {by(x[x.density == '0.2'])}")
+  print("  shared neighbours of false alarms minus those of correct no's, no primer, permuted within density "
+        f"({B_PERM} permutations)")
+  rng_p = np.random.default_rng(pf.SEED)
+  for arm in pf.ARMS:
+    x = ne[(ne.arm == arm) & (ne.condition == "none")]
+    d, p = perm_within(x.shared.to_numpy(), x.said_yes.to_numpy(), x.density.to_numpy(), rng_p)
+    print(f"    {SHORT[arm]:6s} {d:+.2f} neighbours, p={p:.2g}, {int(x.said_yes.sum())} false alarms of {len(x)}")
+  print("  % answered yes on pairs sharing 4 or more, by primer")
+  for arm in pf.ARMS:
+    x = ne[(ne.arm == arm) & (ne.shared >= 4)]
+    print(f"    {SHORT[arm]:6s} " + " | ".join(f"{c} {pc(cell(x, arm, c).said_yes).strip()}" for c in CONDS))
+  print_paired("answers yes to a non-edge pair sharing 4 or more", paired(ne[ne.shared >= 4], "said_yes", CONDS,
+                                                                           pf.ARMS))
+
+  print("[eewhy] edge_existence false alarms, % by the first reason given: states the pair as an edge (as "
+        "[eeclaims]) / claims the other node is listed / neither")
+  fa = ee[~ee.edge & ee.said_yes].assign(
+      reason=lambda d: np.where(d.states_nonedge, "states", np.where(d.claims_listed, "listed", "neither")))
+  for arm in pf.ARMS:
+    print(f"  {SHORT[arm]:6s} " + " | ".join(
+        f"{label} n={len(y)} {pc(y.reason == 'states').strip()} / {pc(y.reason == 'listed').strip()} / "
+        f"{pc(y.reason == 'neither').strip()}" for label, y in (("p<=.50", main_part(fa[fa.arm == arm])),
+                                                                ("p>=.65", high_part(fa[fa.arm == arm])))))
+  print("  p <= .50, % of false alarms claiming the other node is listed, by primer")
+  for arm in pf.ARMS:
+    x = main_part(fa)
+    print(f"    {SHORT[arm]:6s} " + " | ".join(f"{c} {pc(cell(x, arm, c).reason == 'listed').strip()} "
+                                           f"({len(cell(x, arm, c))})" for c in CONDS))
+  print_paired("p <= .50, non-edges: claims the other node is listed",
+               paired(main_part(ee[~ee.edge]), "claims_listed", CONDS, pf.ARMS))
+
+  print("[eemiss] edge_existence misses (true edges answered no), all densities: n (at p >= .65), % claiming the "
+        "other node is not listed / % stating a list for an endpoint that holds the other / % ruling that both "
+        "lists must agree")
+  ms = ee[ee.edge & ~ee.said_yes]
+  for arm in pf.ARMS:
+    x = ms[ms.arm == arm]
+    print(f"  {SHORT[arm]:6s} n={len(x)} ({len(high_part(x))}) {pc(x.claims_unlisted).strip()} / "
+          f"{pc(x.states_pair).strip()} / {pc(x.both_lists).strip()}")
+
+  print("[ndsign] node_degree, wrong finished answers, p <= .50: % below the true degree (n)")
+  n0 = main_part(nd)
+  for arm in pf.ARMS:
+    print(f"  {SHORT[arm]:6s} " + " | ".join(
+        f"{c} {pc(y.under).strip()} ({len(y)})" for c in CONDS
+        for y in [cell(n0, arm, c)[cell(n0, arm, c).correct == 0]]))
+  print_paired("answers below the true degree", paired(n0, "under", CONDS, pf.ARMS))
+
+  print("[cnsource] connected_nodes, finished answers, all primers. Invented neighbours other than q: n, % a "
+        "neighbour's neighbour / in the line of node q-1 or q+1 / one off a true neighbour's id (chance %); % of "
+        "all invented that are q itself")
+  for arm in pf.ARMS:
+    x = cninv[cninv.arm == arm]
+    o = x[~x.self]
+    print(f"  {SHORT[arm]:6s} n={len(o):4d} " + " / ".join(
+        f"{pc(o[k]).strip()} ({100 * o[k + '_chance'].mean():.0f})" for k in ("two", "adj", "off"))
+        + f"; q itself {pc(x.self).strip()} of {len(x)}")
+  print("  missed neighbours: n, % the first on the node's line / the last / below q (chance %)")
+  for arm in pf.ARMS:
+    x = cnmiss[cnmiss.arm == arm]
+    print(f"    {SHORT[arm]:6s} n={len(x):4d} {pc(x['first']).strip()} / {pc(x['last']).strip()} / "
+          f"{pc(x.below).strip()} ({100 * x.below_chance.mean():.0f})")
+  print_paired("answer includes q itself", paired(cn, "has_self", CONDS, pf.ARMS))
+  print_paired("drops the first neighbour on the line", paired(cn, "drops_first", CONDS, pf.ARMS))
+  print_paired("drops the last neighbour on the line", paired(cn, "drops_last", CONDS, pf.ARMS))
+
+  print("[ectable] edge_count, answers that list a degree table: % with a wrong degree value (n)")
+  t = ec[ec.chain != "no table"]
+  for arm in pf.ARMS:
+    print(f"  {SHORT[arm]:6s} " + " | ".join(
+        f"{c} {pc(cell(t, arm, c).chain == 'values').strip()} ({len(cell(t, arm, c))})" for c in CONDS))
 
   rng = random.Random(pf.SEED)
   steps = lambda wk, es: "  ".join(f"{a}–{b} {'✓' if frozenset((a, b)) in es else '✗'}"
@@ -653,6 +997,22 @@ def main():
     for arm, cond, iid, t, qt, inv, mis, true in rng.sample(samples[key], min(4, len(samples[key]))):
       print(f"  {SHORT[arm]} {cond} {iid}: \"{flat(qt, 120)}\" invented {inv} missed {mis}\n    graph: {true[:150]}")
 
+  around = lambda a, m, k: flat(a[max(0, m.start() - 100):m.end() + 80] if m else a[-k:], 220)
+  print("[ccsample] cycle_check answers of no: the text around the reason cited (or the answer's end)")
+  for arm, cond, iid, a in rng.sample(samples["ccno"], min(5, len(samples["ccno"]))):
+    print(f"  {SHORT[arm]} {cond} {iid}: \"...{around(a, _ODDSUM.search(a) or _RETURN.search(a), 200)}...\"")
+  print("[ncsample] node_count answers of 39: plain 4B, then plain 1.7B listing the ids (start ... end)")
+  for arm, listing, k in (("qwen3-4b", False, 3), ("qwen3-1.7b", True, 2)):
+    pool = [s for s in samples["nc39"] if s[0] == arm and s[3] == listing]
+    for a, cond, iid, _, text in rng.sample(pool, min(k, len(pool))):
+      text = text.strip()
+      print(f"  {SHORT[a]} {cond} {iid}: \"{flat(text, 140)} ... {flat(text[-100:], 100)}\"")
+  for key, label in (("member", "false alarms claiming the other node is listed"),
+                     ("miss", "misses: the text around a 'not listed' claim (or the answer's end)")):
+    print(f"[eesample] {label}, then the line of the first node asked")
+    for arm, cond, iid, pair, a, m, line in rng.sample(samples[key], min(5, len(samples[key]))):
+      print(f"  {SHORT[arm]} {cond} {iid} asked {pair}: \"...{around(a, m, 200)}...\"\n    graph: {line[:150]}")
+
   if args.csv_dir:
     cols = ["source", "part", "arm", "condition", "instance_id", "density", "rests_on",
             "edge_count_argument", "rejected_real", "n_named", "index", "kind", "verdict", "rejected",
@@ -663,7 +1023,7 @@ def main():
       wr = csv.DictWriter(fh, fieldnames=cols)
       wr.writeheader()
       wr.writerows(claim_rows)
-    other = pd.concat([ee, nd, cn, ec], ignore_index=True)
+    other = pd.concat([ee, nd, cn, ec, nc], ignore_index=True)
     other.to_csv(os.path.join(args.csv_dir, "response_claims.csv"), index=False)
     print(f"wrote {len(claim_rows)} rows to {path} and {len(other)} rows to "
           f"{os.path.join(args.csv_dir, 'response_claims.csv')}")

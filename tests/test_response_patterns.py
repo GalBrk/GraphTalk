@@ -32,6 +32,14 @@ def test_degree_table_skips_what_is_not_a_degree():
                          "\n| Node A | Node B |\n| 3 | 7 |\n\n| 4 | 9 |", 40) == {0: 2, 1: 3, 2: 1}
 
 
+def test_degree_table_does_not_read_a_neighbour_list_column():
+  # Node 1 has one neighbour, 32: the list column shows a bare 32, which is not its degree.
+  assert rp.degree_table("| Node | Connections | Degree |\n|---|---|---|\n| 0 | 3, 7 | 2 |\n"
+                         "| 1 | 32 | 1 |", 40) == {0: 2, 1: 1}
+  # A connections column of counts, with no neighbour list in it, is read.
+  assert rp.degree_table("| Node | Connections |\n| 0 | 12 |\n| 1 | 14 |", 40) == {0: 12, 1: 14}
+
+
 def test_degree_table_does_not_crash_on_a_superscript_digit():
   assert rp.degree_table("| Node | Degree |\n| 3 | ² |", 40) == {}
 
