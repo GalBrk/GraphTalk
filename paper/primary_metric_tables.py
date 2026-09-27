@@ -5,7 +5,7 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parent
 lines = (root / "metric_audit.txt").read_text().splitlines()
-report = (root.parents[1] / "csv2" / "raw-trends" / "primer_findings.txt").read_text(encoding="utf-8")
+report = (root.parent / "outputs" / "n40-sweep" / "primer_findings.txt").read_text(encoding="utf-8")
 arm_names = {"qwen3-1.7b": "1.7P", "qwen3-1.7b-think": "1.7T",
              "qwen3-4b": "4P", "qwen3-4b-think": "4T"}
 f1_pattern = re.compile(
