@@ -174,7 +174,7 @@ def main() -> None:
         # `n_new_tokens`/`hit_cap` are new as of the prompt-rewording re-run; rows
         # generated before it do not carry them, so anything reading these must
         # treat absence as "unknown" and fall back to
-        # `analysis/truncated_keys.json` -- see `graphtalk/analysis.py`.
+        # `preliminary/analysis/truncated_keys.json` -- see `graphtalk/analysis.py`.
         row = {
             "instance_id": record["instance_id"],
             "task": record["task"],

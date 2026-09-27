@@ -37,7 +37,7 @@ python plot_outcomes.py
 | File | Written by | Reads |
 |---|---|---|
 | `main_matrix.tex` (Results matrix) | `matrix_audit.py` | `frame.csv`, and checks all 144 contrasts against `[main]` |
-| `fig_headroom.pdf` (Figure 1) | `floats.py` | `primer_cells.csv`; also writes `docs/img/fig_headroom.png` |
+| `fig_headroom.pdf` (Figure 1) | `floats.py` | `primer_cells.csv` |
 | `fig_clustering.pdf` (Figure 2) | `floats.py` | `[clustarms]`, `[replic]`, `density_followups.txt` |
 | `table_cycles.tex` (Table 2) | `floats.py` | `[ccanswer]`, `[cctest]` in `check_cycle_claims.txt` |
 | `edge_count_outcomes.pdf` (Figure 3) | `plot_outcomes.py` | values copied from `[edgecount]` |
@@ -60,11 +60,11 @@ The paper cites the results at `results-sot` commit `746d2ab`
 
 | Paper part | Source |
 |---|---|
-| Question and motivation | [results/README.md](../docs/results/README.md), "The study" |
-| What the proposal planned and what was run (models, graphs, primers, tasks, metrics) | [results/README.md](../docs/results/README.md), "From the proposal to what was run"; primer definitions in `graphtalk/primers.py` |
+| Question and motivation | [docs/README.md](../docs/README.md), "The study" |
+| What the proposal planned and what was run (models, graphs, primers, tasks, metrics) | [docs/README.md](../docs/README.md), "From the proposal to what was run"; primer definitions in `graphtalk/primers.py` |
 | The pilot, and why the main experiment moved to 40-node graphs | [`preliminary/README.md`](../preliminary/README.md). Say it in words; the paper cites no pilot numbers |
 | Setup and measurement | [n40-sweep.md](../docs/results/n40-sweep.md) §1 |
-| Which primers state the answer (the graph-blind solver) | n40-sweep.md §2; design in [plans/shortcut-ceilings.md](../docs/plans/shortcut-ceilings.md) |
+| Which primers state the answer (the graph-blind solver) | n40-sweep.md §2; design in [design/shortcut-ceilings.md](../docs/design/shortcut-ceilings.md) |
 | Main results | n40-sweep.md §3–9 |
 | The `node_degree` follow-ups: the `clustering` effect, its replication, thinking against plain, the `filler` control, fixed mean degree, the forensics | [density-followups.md](../docs/results/density-followups.md) §2–8 |
 | Limitations | n40-sweep.md §10, density-followups.md §9 |

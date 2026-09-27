@@ -55,7 +55,7 @@ def show(graph, label: str, k_min: int, k_max: int, target_chars: int | None):
   # Information, not a pass/fail check. Per-graph r ranges from -0.77 to +1.00
   # and is undefined on a fifth of graphs at k=3, so a three-row sample says
   # nothing: the acceptance criterion is the corpus-level window in
-  # docs/plans/primer-computation.md over at least 100 graphs.
+  # docs/design/primer-computation.md over at least 100 graphs.
   correlation = primers.rwse_degree_correlation(graph, k_min=k_min, k_max=k_max)
   rendered = " ".join(
       f"k={k}: {'undefined' if r is None else format(r, '+.2f')}"
@@ -74,7 +74,7 @@ def corpus_report(
 
   The per-graph correlations printed by `show` are information only: per-graph r
   ranges from -0.77 to +1.00 and is undefined on a fifth of graphs at k=3. The
-  criterion in docs/plans/primer-computation.md is the mean of per-graph r over
+  criterion in docs/design/primer-computation.md is the mean of per-graph r over
   at least 100 graphs, against the windows below. Aggregation matters: pooling
   all nodes of all graphs flips the sign, because it measures graph size rather
   than node degree.

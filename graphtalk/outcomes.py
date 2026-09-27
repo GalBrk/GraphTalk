@@ -7,7 +7,7 @@ labelled wrong or dropped. Analyses report the three outcomes as shares of all
 responses and a primer's effect as the paired change in each share. Quantities
 that describe an answer (error size, yes-rate, false alarms, response text) use
 finished responses only. A cell whose truncated share is FLAG or more is
-flagged. Rule R1 of docs/plans/2026-09-24-single-source-of-truth.md.
+flagged. Rule R1 of docs/README.md#conventions.
 """
 import numpy as np
 

@@ -88,8 +88,8 @@ LIMIT="${2:-}"
 # The prompt file is overridable so an arm can run a subset. The thinking arm
 # uses a zero_shot-only file whose 1260 rows are byte-identical to the zero_shot
 # half of the main one, so the two arms are comparable row for row. Also how a
-# GoT-named run points at prompts_got.jsonl instead -- see
-# cluster/submit_sweep.sh, which builds it before ever setting this.
+# GoT-named run points at preliminary/data/prompts/prompts_got.jsonl -- see
+# preliminary/cluster/submit_sweep.sh, which builds it before ever setting this.
 PROMPTS="${GRAPHTALK_PROMPTS:-data/prompts/prompts.densfull40.jsonl}"
 if [[ ! -f "$PROMPTS" ]]; then
   # Fails already without this -- the REMAINING check below opens the file --
@@ -116,7 +116,7 @@ OUT="${RUNS_DIR}/${MODEL}.jsonl"
 EXTRA=()
 if [[ -n "$LIMIT" ]]; then
   # Straight into the archive: a smoke run is never part of the sweep, and
-  # runs/archive/ is excluded by directory rather than by the `smoke-` prefix.
+  # data/runs/archive/ is excluded by directory rather than by the `smoke-` prefix.
   mkdir -p "${RUNS_DIR}/archive"
   OUT="${RUNS_DIR}/archive/smoke-${MODEL}.jsonl"
   EXTRA=(--limit "$LIMIT")
@@ -126,12 +126,12 @@ fi
 # operation is auditable and reversible instead of appending into the arm:
 #
 #   GRAPHTALK_RUN_TAG=rerun sbatch --array=0-3 ... <model>
-#     -> runs/<model>.rerun.shard0of4.jsonl
+#     -> data/runs/<model>.rerun.shard0of4.jsonl
 #
 # score_sweep.py pools by each row's `model` field rather than by filename, so a
 # tagged file joins its arm with no reassembly.
 #
-# `redo` is still refused. Exclusion is now by directory (runs/archive/) rather
+# `redo` is still refused. Exclusion is now by directory (archive/) rather
 # than by filename, so the old footgun is mostly gone -- but ".redo.shard" is kept
 # as a safety net in analysis.is_excluded for paths predating that move, and a file
 # named that way would still be dropped from every frame in silence.
@@ -150,7 +150,7 @@ fi
 #
 # Each shard writes its own file. score_sweep.py groups by the `model` field in
 # each row rather than by filename, so the shards need no reassembly -- point it
-# at runs/*.jsonl and they are pooled automatically.
+# at data/runs/*.jsonl and they are pooled automatically.
 SHARD="${SLURM_ARRAY_TASK_ID:-0}"
 NSHARDS="${SLURM_ARRAY_TASK_COUNT:-1}"
 # If Slurm ever hands us a task id without a count, every task would fall back to
@@ -170,7 +170,7 @@ fi
 # and unset by default so every existing invocation keeps using the exact
 # single-stream code path every row on disk so far was generated with.
 # NOT YET VALIDATED against a GPU -- see generate_batch's docstring for the
-# reference check (analysis/budget-gemma4-e4b.jsonl /
+# reference check (preliminary/analysis/budget-gemma4-e4b.jsonl /
 # budget-qwen3-8b.jsonl) to run before using this for a real sweep, not a
 # smoke test.
 BATCH_SIZE="${GRAPHTALK_BATCH_SIZE:-}"

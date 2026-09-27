@@ -10,7 +10,7 @@ groups, trading per-task granularity for statistical power.
 Hand-rolled rather than built on scipy/statsmodels, for the same reason
 `scoring.mcnemar` avoids scipy's chi-square approximation: this project has
 deliberately kept scipy out of its dependency set (see
-docs/plans/primer-computation.md), and a permutation test on a sign-flippable
+docs/design/primer-computation.md), and a permutation test on a sign-flippable
 paired difference needs nothing beyond a source of randomness.
 
 Pooling across task (and, when comparing across models, across model too)

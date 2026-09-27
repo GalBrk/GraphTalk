@@ -108,7 +108,7 @@ rate quoted per row must therefore say whether it is the published draw or a res
 Only one row moved by enough to matter, and it is the `edge_existence` baseline: the
 published query draw is 3 points more "No" than a resample of the same graphs, so the
 majority baseline on the rows we will actually score is **53.0%, not ≈51.6%**. Use 53.0%
-wherever this document or `docs/plans/shortcut-ceilings.md` quotes ≈51.6%. It does not
+wherever this document or `docs/design/shortcut-ceilings.md` quotes ≈51.6%. It does not
 change any verdict — the `d_a + d_b > n−1` heuristic still clears it by twenty-five
 points — but it is the number a model's `edge_existence` score has to be read against.
 
@@ -235,7 +235,7 @@ TensorFlow 2.20 / tf-keras / tensorflow-gnn combination that is easy to disturb.
   > **That counter was wrong, and this requirement is the one the original wording
   > failed.** "No *new* numeral" is not the same as "no claim". `Node N has <n-1>
   > other nodes` sits under the same `has` verb the `degree` condition uses, and
-  > models read it as a degree statement: `analysis/superseded/failure_sample.csv` catches 8 of
+  > models read it as a degree statement: `analysis/superseded/failure_sample.csv` (tag `pre-cleanup`) catches 8 of
   > 9 sampled `filler` rows deriving a complete graph K_n from it. The bullet above
   > predicted the consequence precisely — a drop in accuracy that cannot be
   > distinguished from a length effect — and that drop was then reported as a
@@ -245,7 +245,7 @@ TensorFlow 2.20 / tf-keras / tensorflow-gnn combination that is easy to disturb.
   > real completions, and was not checked until 2026-08-29.
 
 - **A seventh condition: number of connected components**, with the caveats in §5.
-  `docs/features-considered.md` records the features that were evaluated and rejected.
+  `docs/design/features-considered.md` records the features that were evaluated and rejected.
 
 - **Canonicalise at the parse boundary.** `canonical()` rebuilds a graph so insertion
   order is sorted order for both nodes and adjacency. Across all 24 edge-insertion
@@ -254,7 +254,7 @@ TensorFlow 2.20 / tf-keras / tensorflow-gnn combination that is easy to disturb.
 
 - **`expected_answer` moves into the package.** An earlier draft kept it in
   `scripts/draw_graph.py` as "verification tooling, not pipeline code". That is no longer
-  true: the shortcut-ceiling work (`docs/plans/shortcut-ceilings.md`) needs gold answers,
+  true: the shortcut-ceiling work (`docs/design/shortcut-ceilings.md`) needs gold answers,
   so it becomes pipeline code.
 
 ### Correction to the proposal's task taxonomy
@@ -301,7 +301,7 @@ Two findings that bound the damage rather than extend it:
   The stated degree sequence constrains which graphs are possible, and often to exactly
   one: a degree-sequence peel recovers whole neighbour lists on 20.8% of rows, and the
   full `all` primer does so on 35.2%, both at precision 1. See the reconstruction section
-  of `docs/plans/shortcut-ceilings.md`. **A primer route can exist with no stated fact
+  of `docs/design/shortcut-ceilings.md`. **A primer route can exist with no stated fact
   pointing at it**, which is the general lesson and the reason that plan measures rather
   than argues.
 - **The `filler` control is inert against every *solver* route tested.** This one
@@ -315,7 +315,7 @@ Two findings that bound the damage rather than extend it:
   > a reader infers. Both checks are needed; only one was run.
 
 **Consequence for the design.** There is no reliable agnostic tier, so the taxonomy
-cannot be asserted; it has to be measured. That is what `docs/plans/shortcut-ceilings.md`
+cannot be asserted; it has to be measured. That is what `docs/design/shortcut-ceilings.md`
 does, and it replaces the sampling filter an earlier draft proposed. Nothing in the
 statistics or the renderer changes as a result — suppressing the degree-0 sentence would
 make primer content depend on an encoder quirk and would break the one-renderer property.
@@ -491,11 +491,11 @@ and is documented rather than fixed.
 ### 4. Length control
 
 **Revised.** The original wording below is preserved for provenance -- it is what the
-tracked sweep in `runs/*.jsonl` was actually generated with -- but it was replaced after
+tracked sweep in `preliminary/data/runs/*.jsonl` was actually generated with -- but it was replaced after
 real sweep responses showed models sometimes misreading it as a connectivity claim (a
 filler-primed graph read as a clique, since `n-1` is exactly the degree every node has in
 a complete graph, and the phrase sat right after the same `has` verb `degree` uses). The
-evidence is in `analysis/superseded/failure_sample.csv`, where 8 of the 9 sampled `filler` rows show
+evidence is in `analysis/superseded/failure_sample.csv` (tag `pre-cleanup`), where 8 of the 9 sampled `filler` rows show
 the misreading in the model's own words -- `gemma4-e4b-think`: *"If D_i = 12 for all 13
 nodes, the graph must be a complete graph K_13"*; `gemma4-12b-think`: *"Is it possible
 that 'Node 0 has 8 other nodes' means it's connected to all 8 other nodes?"*. What

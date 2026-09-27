@@ -5,8 +5,7 @@ Usage: python paper/floats.py   (reads ../outputs; --repo points elsewhere)
 Writes, next to this file:
   fig_headroom.pdf   Figure 1: node_degree effect against the no-primer correct
                      share, per arm and density, degree and all (primer_cells.csv,
-                     which primer_findings.py --csv-dir writes); also
-                     docs/img/fig_headroom.png for the README.
+                     which primer_findings.py --csv-dir writes).
   fig_clustering.pdf Figure 2: the clustering effect on node_degree, every arm on the same
                      graphs ([clustarms]), then the follow-ups ([replic], [fixdeg17],
                      [ddplainfill], [ddplain], [ddthink], [fixdeg8]).
@@ -76,8 +75,6 @@ def fig_headroom(cells_path):
     axes[0].legend(fontsize=7, frameon=False, loc="lower left", handletextpad=0.2)
     fig.tight_layout(w_pad=1.0)
     fig.savefig(HERE / "fig_headroom.pdf", bbox_inches="tight", pad_inches=0.02)
-    fig.savefig(HERE.parent / "docs" / "img" / "fig_headroom.png", dpi=200,
-                bbox_inches="tight", pad_inches=0.05, facecolor="white")
 
 
 def fig_clustering(report, followups):

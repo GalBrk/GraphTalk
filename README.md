@@ -1,242 +1,146 @@
-# GraphTalk
+<h1 align="center">Talk Like a Structured Graph</h1>
 
-Course project building on
-[Talk like a Graph: Encoding Graphs for Large Language Models](https://arxiv.org/abs/2310.04560).
+<p align="center">
+  <em>Does telling an LLM each node's degree, clustering or random-walk statistics<br>
+  help it answer questions about a graph written as text?</em>
+</p>
 
-**Results live in [docs/results/](docs/results/README.md)**: one document per
-family of runs, each checked against its script's committed output. The main
-experiment is the 40-node sweep ([n40-sweep.md](docs/results/n40-sweep.md)),
-and its `node_degree` follow-ups are in
-[density-followups.md](docs/results/density-followups.md). The index also lists
-every earlier family of runs with its document and status.
+<p align="center">
+  <a href="paper/structured_graph.pdf"><img alt="Paper" src="https://img.shields.io/badge/paper-PDF-b31b1b?style=flat-square"></a>
+  <a href="https://arxiv.org/abs/2310.04560"><img alt="Builds on arXiv:2310.04560" src="https://img.shields.io/badge/builds%20on-arXiv%3A2310.04560-555?style=flat-square"></a>
+  <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776ab?style=flat-square">
+  <img alt="Models: Qwen3" src="https://img.shields.io/badge/models-Qwen3%201.7B%20%7C%204B-6f42c1?style=flat-square">
+</p>
 
-`talk_like_a_graph/` is a vendored copy of Google Research's reference
-implementation. See [talk_like_a_graph/UPSTREAM.md](talk_like_a_graph/UPSTREAM.md)
-for the exact upstream commit and our local changes. For the fuller map of
-what's on `main` and why — including how the n=40 work relates to the paper's
-own 5-19 node benchmark — see [docs/repo-scope.md](docs/repo-scope.md).
+<p align="center">
+  <b>A structural hint helps only when it hands over an answer the model can't compute itself,<br>
+  and it hurts a model that already can. Hints that don't state the answer barely move accuracy.</b>
+</p>
 
-`graphtalk/` is this project's own package: `graphqa.py` recovers a networkx
-graph from a GraphQA row and recomputes its gold answer, `primers.py` holds the
-primer statistics and the single renderer every condition goes through, and
-`shortcuts.py` holds the primer-only solvers: a strict parser that reads a
-rendered primer back out of its text, sixteen theorem rules, one heuristic and
-eight fitted rules, and the exact enumeration bound for small graphs. See
-[docs/plans/shortcut-ceilings.md](docs/plans/shortcut-ceilings.md) for what the
-resulting numbers mean.
+<p align="center">
+  <img src="docs/img/primer_effect.png" width="760" alt="Dumbbell chart of node-degree accuracy per model. The degree primer, which states the answer, raises Qwen3-1.7B from 60.50% to 68.00% and Qwen3-1.7B thinking from 76.25% to 85.00%, lowers Qwen3-4B from 99.25% to 92.75%, and moves Qwen3-4B thinking from 97.00% to 99.50%, not significantly. The clustering primer moves each model by at most 3 points, none significantly.">
+  <br>
+  <sub>Node degree on 40-node graphs, 400 paired graphs per model. Blue and red changes are significant
+  (Benjamini–Hochberg q &lt; .05); gray ones are not.
+  Details: <a href="docs/results/n40-sweep.md#3-every-primer-against-no-primer">n40-sweep §3</a>.</sub>
+</p>
 
-Three of those theorems *reconstruct* rather than compare: the stated degree
-sequence constrains which graphs are possible, often to exactly one, so a primer
-that states no adjacency at all still gives away whole neighbour lists. That is
-what makes `connected_nodes` a 35.2% cell rather than the 8.2% one it was first
-measured as.
+A course project for *Machine Learning with Graphs* (Tel Aviv University) that
+extends [Talk like a Graph](https://arxiv.org/abs/2310.04560) (Fatemi et al.).
+We prepend a **primer** (short factual sentences about each node's local structure)
+to GraphQA's text encoding of a graph, and compare the same graphs with and without
+it in paired tests.
 
-## The shortcut table
+## How a primer is used
 
-```bash
-PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500
-```
+<p align="center"><img src="docs/img/primer_usage.png" width="900" alt="One graph, the prompt the model reads (primer, incident encoding, question), and the seven primer conditions"></p>
 
-Scores a solver that reads only the primer and never the graph, across 7
-conditions x 6 tasks x 3 rungs. That score is the bar a model has to clear: a
-model at or below it did the primer arithmetic and nothing more. Four of the six
-tasks turn out to be already decided this way.
+Each prompt is a primer, then GraphQA's incident encoding of the graph, then the
+question. The seven conditions go through one renderer (`graphtalk/primers.py`), so
+they differ in content only, and every model sees the same graphs under all seven.
 
-The table sorts the sweep rather than pruning it. A 100% shortcut is what a
-Python program scores, not what a model scores — on `node_count` the shortcut is
-100% and the paper reports 18.8% for PaLM 2 on the encoding GraphQA ships. So a
-decided cell still answers a question, just a narrower one: whether the model
-uses a fact it was handed, rather than whether it reasoned about the graph.
+## Key findings
 
-## The sweep
+- **Stating the answer helps a model that computes it unreliably, and hurts one
+  that computes it reliably.** On node degree, the `degree` primer adds +7.5 points
+  for Qwen3-1.7B and +8.8 with thinking, but costs Qwen3-4B −6.5 (99.25% → 92.75%).
+  [n40-sweep §3](docs/results/n40-sweep.md#3-every-primer-against-no-primer)
+- **Statistics that don't state the answer have smaller effects**, and their sign
+  depends on the statistic and the model. Where structure-free `filler` text lowers
+  accuracy, clustering and RWSE mostly do not.
+  [n40-sweep §7](docs/results/n40-sweep.md#7-side-information-is-small-and-non-specific)
+- **Correct is not the same as right.** On cycle detection, only about a third of
+  the correct answers given without thinking or a primer rest on a real cycle,
+  against 80.9–96.4% with thinking.
+  [cycles §5](docs/investigate_connections_and_cycles.md#5-cycle_check-do-correct-answers-rest-on-real-cycles)
+- **The setup:** 40-node Erdős–Rényi graphs at seven edge densities (p = .10 to .85),
+  6 GraphQA tasks, 7 primer conditions, and Qwen3-1.7B and Qwen3-4B with and without
+  thinking: 84,000 paired responses.
+  A graph-blind solver that reads only the primer text shows which primers give the
+  answer away.
 
-Three stages, and only the middle one needs a GPU. See
-[cluster/README.md](cluster/README.md) for running it on the TAU CS cluster.
+## Repository map
 
-```bash
-# 1. build every prompt to a file, on the laptop
-PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 30
+| Folder | What's inside | Start here |
+|---|---|---|
+| [`paper/`](paper/) | The paper, its LaTeX source, and the scripts behind every table and figure | [paper/README.md](paper/README.md) |
+| [`docs/`](docs/) | The results, one doc per family of runs, plus the analyses behind the paper's discussion | [docs/README.md](docs/README.md) |
+| [`scripts/`](scripts/) | The pipeline, from prompt building to every analysis | [scripts/README.md](scripts/README.md) |
+| [`data/`](data/) | The committed inputs: prompts, the models' raw responses, the solver bars | [data/README.md](data/README.md) |
+| [`outputs/`](outputs/) | What the scripts print and write; the docs and paper cite these | [scripts/README.md](scripts/README.md#outputs) |
+| [`graphtalk/`](graphtalk/) | The package: primers, the graph-blind solver, prompts, scoring | module docstrings |
+| [`cluster/`](cluster/) | How responses were generated on the TAU GPU cluster | [cluster/README.md](cluster/README.md) |
+| [`preliminary/`](preliminary/) | The pilot and screens that chose the 40-node settings | [preliminary/README.md](preliminary/README.md) |
+| [`talk_like_a_graph/`](talk_like_a_graph/) | Google Research's reference code, vendored | [UPSTREAM.md](talk_like_a_graph/UPSTREAM.md) |
 
-# 2. generate, on a GPU node, once per model
-sbatch cluster/sweep.sbatch gemma4-12b
+## Quickstart
 
-# 3. score, back on the laptop
-PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500 --json shortcuts.json
-PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v '\.got\.') --shortcuts shortcuts.json
-```
-
-Step 2 is written as one job per model for readability. On the TAU cluster a
-model needs more than the 24-hour partition limit, so it is really a *chain* of
-resuming jobs with a per-model memory request — see
-[cluster/README.md](cluster/README.md), which is the authority on how the sweep
-is actually launched.
-
-The prompt set is written to a file first so it can be read and diffed before any
-GPU time is spent, and so every model in the sweep is handed the identical file.
-The design is paired — the same graph and query appear under all seven conditions
-and both prompt styles — which is what the proposal's McNemar test requires.
-
-Chain-of-thought is measured by the thinking arm (the `-think` specs, native
-reasoning at `zero_shot`) rather than by a separate prompt style.
-
-At the proposal's 30 rows per task that is 1,260 prompts per model: 180 instances
-x 7 conditions, at `zero_shot` (the published dataset's own wording).
-
-## Node naming
-
-Every prompt names nodes one of two ways, chosen with `--node-naming` on
-`build_prompts.py`:
-
-- **`integer`** (default) — nodes stay `0, 1, 2, ...`, the published
-  dataset's own scheme and what every other section of this README assumes.
-- **`got`** — nodes are renamed to Game-of-Thrones characters (`Ned`,
-  `Catelyn`, `Daenerys`, ...) throughout the primer, the encoding, and the
-  question, via `graphtalk/node_naming.py`. Additive rather than a variant
-  code path: a named prompt is the ordinary integer prompt with node
-  references substituted after the fact, and a named response is converted
-  back to integers before it reaches the same, unmodified scorer — nothing
-  in `primers.py`, `prompts.py`, `graphqa.py`, or `scoring.py` is touched.
-
-```bash
-# integer node ids (default)
-PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 30
-
-# GoT character names -- --out keeps this from overwriting prompts.jsonl.
-PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 30 \
-    --node-naming got --out prompts_got.jsonl
-```
-
-Generation is the same `cluster/sweep.sbatch` as [the sweep](#the-sweep)
-above, pointed at the named prompt file and tagged so its output doesn't
-collide with the integer run's — both env vars the script already supports:
-
-```bash
-GRAPHTALK_PROMPTS=prompts_got.jsonl GRAPHTALK_RUN_TAG=got \
-    sbatch cluster/sweep.sbatch gemma4-12b
-```
-
-That writes `runs/gemma4-12b.got.jsonl` next to the integer run's
-`runs/gemma4-12b.jsonl`, rather than replacing it.
-
-**Or skip both manual steps with `cluster/submit_sweep.sh`**, which builds
-`prompts_got.jsonl` first if it doesn't exist yet (reusing it otherwise) and
-sets both env vars for you:
-
-```bash
-cluster/submit_sweep.sh --node-naming got cluster/sweep.sbatch gemma4-12b
-```
-
-`scripts/build_size_sweep.py` (the n=40+ density sweep, see
-`docs/repo-scope.md`'s "canonical n=40 experiment") takes the same
-`--node-naming got` flag, for the identical graphs with GoT names instead of
-node integers. `GOT_NAMES` covers 40 characters (20 vendored + 20 added in
-`graphtalk/node_naming.py`, same additive-override pattern as the `Cat` ->
-`Catelyn` fix above) specifically so it reaches every node at that size;
-`build_name_map` still raises past however many names are defined.
-
-Every other `sbatch` flag/positional passes straight through unchanged, so
-this is a drop-in replacement for the word `sbatch` in any of the invocations
-above or in [cluster/README.md](cluster/README.md) — `--dry-run` prints what
-it would do without submitting anything. Building the prompt file happens in
-the wrapper itself, on the login node, not inside the SLURM job: compute
-nodes have no outbound network, which is why `sweep.sbatch` sets
-`HF_HUB_OFFLINE=1` in the first place.
-
-**Score the two schemes separately, not with one `runs/*.jsonl` glob** — no
-flag needed to get this right, it's enforced. Every named response's
-`node_naming` field is enough for `score_sweep.py`/`build_sweep_frame.py` to
-desubstitute GoT names back to integers automatically before scoring, and
-`build_sweep_frame.py`, `sample_failures.py`, and `check_significance.py`
-all **infer the scheme from the data and raise rather than silently pooling**
-if their input ever carries more than one — pooling both schemes' files for
-the same model would otherwise put two rows under the identical
-`(instance_id, condition, style, model)` key, which
-[docs/DATA.md](docs/DATA.md#the-pairing-key) requires to be unique within a
-scheme:
-
-```bash
-PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py \
-    --responses runs/gemma4-12b.jsonl --shortcuts shortcuts.json
-# -> csv2/sweep-small-graph/sweep_frame.csv
-
-PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py \
-    --responses runs/gemma4-12b.got.jsonl --shortcuts shortcuts.json
-# -> csv2/sweep-small-graph/sweep_frame.got.csv
-```
-
-Each `--out` left unset lands at its own scheme-tagged filename automatically
-(`analysis.tagged_path`) — `sweep_frame.csv`/`failure_sample.csv` for
-`integer`, `sweep_frame.got.csv`/`failure_sample.got.csv` for `got`, and
-likewise for `check_significance.py --out`. Run the two side by side to ask
-whether accuracy depends on node identity rather than graph structure. The
-existing `shortcuts.json` is still the bar for both — `shortcut_table.py`
-generates its own graphs and integer primers internally and never imports
-`node_naming`, so the ceiling it measures (how much of a primer's
-degree/clustering/etc. facts a solver can recover) does not depend on how a
-downstream prompt happens to label the nodes. `shortcuts.py` itself is
-integer-only, though (`_NODE_RE` expects `Node (\d+) ...`), so it's the
-model's GoT-worded *response* that needs desubstituting before scoring,
-never a primer that needs running through `shortcuts.py` directly.
-
-## Setup
+Only generation needs a GPU; everything else reruns on a laptop from the committed
+responses.
 
 ```bash
 uv venv --python 3.11 && uv pip install -e ".[dev]"
+uv run --no-sync pytest -q                     # ~830 tests
 ```
 
-That covers the graph generators, tasks, text encoders, and metrics — which is
-everything except `graph_tasks_utils.py`.
-
-### Optional: the TensorFlow pipeline
-
-`graph_tasks_utils.py` alone needs `tensorflow`, `tensorflow-gnn`, and `seqio`
-(~2 GB installed):
+Reproduce the main experiment's numbers from the committed responses (no GPU):
 
 ```bash
-uv pip install -e ".[pipeline]"
+PYTHONPATH=. python scripts/build_raw_frame.py
+PYTHONPATH=. python scripts/primer_findings.py --csv-dir outputs/n40-sweep > outputs/n40-sweep/primer_findings.txt
+uv run --no-sync pytest -q tests/test_results_docs.py
 ```
 
-`tensorflow_gnn` 1.0.3 requires Keras 2, but TF 2.20 ships Keras 3, so
-`TF_USE_LEGACY_KERAS=1` must be set before importing it. `.venv/bin/activate`
-exports it already; set it manually if you run the interpreter without
-activating.
+<details>
+<summary><b>Reproduce every number</b> (about an hour on a laptop)</summary>
 
-Python is pinned to 3.11 because `seqio` and `tensorflow-gnn` do not resolve
-cleanly on 3.12+.
+The full list, in order, is in [scripts/README.md](scripts/README.md#reproduce-everything).
+It rebuilds the frame, reruns each analysis into `outputs/`, reruns the density
+follow-ups, and then the paper's table and figure scripts.
 
-## Tests
+</details>
+
+<details>
+<summary><b>Generate responses on a GPU</b></summary>
+
+`scripts/run_sweep.py` is the only stage that needs a GPU (`pip install -e ".[gpu]"`).
+[cluster/README.md](cluster/README.md) covers how every response in `data/runs/`
+was generated on the TAU CS cluster, and
+[cluster/run-4b-density-sweep.md](cluster/run-4b-density-sweep.md) is the exact
+recipe for one arm.
+
+</details>
+
+<details>
+<summary><b>Build the paper</b></summary>
 
 ```bash
-uv run --no-sync pytest -q --ignore=tests/test_hierarchical_model.py \
-                           --ignore=tests/test_mixed_models.py
+cd paper
+pdflatex structured_graph && bibtex structured_graph && pdflatex structured_graph && pdflatex structured_graph
 ```
 
-613 tests: 30 vendored ones covering graph generation, text encoders and
-metrics, 138 covering the primer statistics, the renderer, and the committed
-golden primer strings, 143 covering the shortcut solvers, 85 covering prompt
-assembly and answer scoring, 86 covering the significance machinery and
-sample-size recommendation, 43 covering the corpus and prompt builders, 33
-covering the sweep frame and failure taxonomy, 27 covering node naming and the
-GoT round trip, 13 covering topology extraction and the task-scoped screen, and
-15 covering the density-sweep scorer and its trend test.
+[paper/README.md](paper/README.md) also regenerates each table and figure, and
+says where every number in the paper comes from.
 
-Two more files -- `tests/test_hierarchical_model.py` and
-`tests/test_mixed_models.py` -- import `statsmodels`/`pymc` at module scope. The
-count above is with both `--ignore`d, which is how they have to be run wherever
-those libraries are absent: a missing one fails at *collection* rather than
-skipping, so the whole run aborts and reports **zero** passes rather than a
-couple of failures. The same is true of `pandas` for `tests/test_analysis.py`,
-which `pip install -e ".[analysis]"` provides.
+</details>
 
-Two of those deserve mention because they are what the rest rests on. The
-**round trip** renders a primer, parses it back, and requires the recovered
-values to equal the rounded originals — the only check that notices a renderer
-change nobody meant to make, which is why `shortcuts.py` shares no code with
-`primers.py`. And **theorem precision** must be exactly 1.0 over both an ER
-corpus and an adversarial one of trees, forests, cycles and complete bipartite
-graphs; the adversarial corpus exists because the ER generator produces no tree
-at all, so a false rule keyed on the m = n-1 boundary scored a clean 1.0 without
-it.
+## Earlier work
 
-Use `--no-sync`: a plain `uv run` re-syncs the environment to the default
-dependencies and would uninstall the optional `pipeline` extras.
+The 40-node design came out of earlier screens:
+- a pilot on GraphQA's published 5–19-node graphs, where most models were
+  near ceiling without a primer;
+- Game-of-Thrones node names;
+- a size sweep;
+- a difficulty ladder and a retrieval probe.
+
+These live in [`preliminary/`](preliminary/README.md) with their own scripts,
+data and tests, all still runnable. Replaced drafts of the paper and the
+analyses are kept in git tag `pre-cleanup` (`git checkout pre-cleanup`).
+
+## Credits
+
+Inbal Moryles ([@iinbal](https://github.com/iinbal)), Gal Barak
+([@GalBrk](https://github.com/GalBrk)) and Nitzan Zacharia
+([@NitzanZacharia](https://github.com/NitzanZacharia)). The graph generators and
+text encoders in `talk_like_a_graph/` are Google Research's (Apache-2.0); see
+[UPSTREAM.md](talk_like_a_graph/UPSTREAM.md) for the commit and the local changes.

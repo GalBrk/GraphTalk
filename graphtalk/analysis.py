@@ -27,7 +27,7 @@ import pandas as pd
 from graphtalk import scoring
 
 # Rows that carry a `model` field but are not part of the tracked sweep now live
-# in `runs/archive/`, so exclusion is a directory rather than a naming
+# in an `archive/` directory, so exclusion is a directory rather than a naming
 # convention. That matters: the substrings below were the whole mechanism, and a
 # regeneration tagged `redo` would have been dropped from every frame in silence
 # -- a live footgun that a directory boundary simply removes.
@@ -76,7 +76,7 @@ def wording(task: str, condition: str, style: str) -> str:
 
 
 def is_excluded(path: str) -> bool:
-  """Whether `path` holds rows `docs/DATA.md` says to keep out of the sweep."""
+  """Whether `path` holds rows `preliminary/docs/DATA.md` says to keep out of the sweep."""
   parts = pathlib.PurePath(path).parts
   if _EXCLUDE_DIR in parts:
     return True
@@ -133,7 +133,7 @@ def assert_unique_pairing_key(frame: pd.DataFrame, keys: list[str]) -> None:
   non-unique index doesn't raise, it cross-joins the duplicated keys,
   inflating `n_pairs` and corrupting every downstream test with no error at
   all. Call this once, before any grouping, rather than trusting an upstream
-  guard (`infer_node_naming`, the pairing-key uniqueness `docs/DATA.md`
+  guard (`infer_node_naming`, the pairing-key uniqueness `preliminary/docs/DATA.md`
   documents) to have already caught it -- a frame CSV can come from anywhere.
   """
   dupes = frame.duplicated(subset=keys, keep=False)
@@ -174,7 +174,7 @@ def graph_index(instance_id: str) -> str:
 def tagged_path(path: str, scheme: str) -> str:
   """`path` unchanged for `"integer"`; `.<scheme>` inserted before the
   extension otherwise -- `preliminary/analysis/sweep_frame.csv` -> `.got.csv`, matching
-  the `.rerun.`/`.shard<i>of<n>.` dot-tag convention already live in `runs/`.
+  the `.rerun.`/`.shard<i>of<n>.` dot-tag convention already live in `data/runs/`.
 
   Idempotent: a `path` that already ends in `.<scheme>` right before its
   extension is returned unchanged rather than tagged a second time. Without
@@ -227,7 +227,7 @@ def load_truncated_keys(path: str) -> set[tuple[str, str, str, str, str]]:
 
 
 def load_shortcuts(path: str) -> dict[tuple[str, str], float]:
-  """`shortcuts.json` as a `(task, condition) -> score` dict.
+  """`preliminary/data/shortcuts.json` as a `(task, condition) -> score` dict.
 
   Same parsing `preliminary/scripts/score_sweep.py`'s `main` does inline; pulled out here
   so both `preliminary/scripts/build_sweep_frame.py` and tests can reuse it.
