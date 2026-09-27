@@ -11,7 +11,7 @@
 #
 # The two are independent and submit together: banding does not depend on the
 # reading limit, which is applied later as a second filter in
-# scripts/analyze_ladder.py. The rewiring experiment itself is deliberately NOT
+# preliminary/scripts/analyze_ladder.py. The rewiring experiment itself is deliberately NOT
 # here -- it should only be spent on rungs that both passes have shown to be
 # valid for that model.
 #
@@ -106,25 +106,25 @@ submit () {   # submit <model> <prompts> <tag>
 for STAGE in $STAGES; do
   case "$STAGE" in
     probe)
-      PROMPTS="prompts.retrieval_locate.jsonl"
+      PROMPTS="preliminary/data/prompts/prompts.retrieval_locate.jsonl"
       TAG="retrieval_locate"
       if [[ -f "$PROMPTS" ]]; then
         echo "reusing existing $PROMPTS"
       else
         echo "building $PROMPTS (statements: $PROBE_STATEMENTS, count $PROBE_COUNT)"
-        [[ -z "$DRY_RUN" ]] && PYTHONPATH=. "$PYTHON" scripts/build_retrieval_probe.py \
+        [[ -z "$DRY_RUN" ]] && PYTHONPATH=. "$PYTHON" preliminary/scripts/build_retrieval_probe.py \
             --statements $PROBE_STATEMENTS --positions 0.1 0.5 0.9 \
             --magnitudes small large --count "$PROBE_COUNT" --out "$PROMPTS"
       fi
       ;;
     ladder)
-      PROMPTS="prompts.ladder_screen.jsonl"
+      PROMPTS="preliminary/data/prompts/prompts.ladder_screen.jsonl"
       TAG="ladder_screen"
       if [[ -f "$PROMPTS" ]]; then
         echo "reusing existing $PROMPTS"
       else
         echo "building $PROMPTS (18 rungs x $LADDER_COUNT graphs, condition=none)"
-        [[ -z "$DRY_RUN" ]] && PYTHONPATH=. "$PYTHON" scripts/build_ladder.py \
+        [[ -z "$DRY_RUN" ]] && PYTHONPATH=. "$PYTHON" preliminary/scripts/build_ladder.py \
             --stage screen --count "$LADDER_COUNT" --out "$PROMPTS"
       fi
       ;;
@@ -132,7 +132,7 @@ for STAGE in $STAGES; do
       # Stage 3. Unlike the two gating stages this is NOT run on every rung:
       # REWIRE_PROMPTS must already have been built with build_ladder.py
       # --stage rewire --rungs <only the rungs that cleared BOTH gates for
-      # these models>, read off analysis/ladder_matrix.limited.csv. Running it
+      # these models>, read off preliminary/analysis/ladder_matrix.limited.csv. Running it
       # on a rung the model ceilings or cannot read measures nothing.
       PROMPTS="${REWIRE_PROMPTS:?set REWIRE_PROMPTS to a built rewire file}"
       TAG="${REWIRE_TAG:-rewire}"
@@ -148,7 +148,7 @@ done
 
 echo
 echo "when the jobs finish:"
-echo "  PYTHONPATH=. $PYTHON scripts/analyze_ladder.py \\"
-echo "      --responses 'runs/*.ladder_screen.jsonl' --out analysis/ladder_matrix.csv"
+echo "  PYTHONPATH=. $PYTHON preliminary/scripts/analyze_ladder.py \\"
+echo "      --responses 'preliminary/data/runs/*.ladder_screen.jsonl' --out preliminary/analysis/ladder_matrix.csv"
 echo "  # then re-run it with the reading limits the probe gives you:"
 echo "  #   --reading-limits qwen3-1.7b=2600 qwen3-1.7b-think=2600"

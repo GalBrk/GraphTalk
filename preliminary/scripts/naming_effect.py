@@ -27,10 +27,10 @@ Three things this does that a plain groupby would get wrong:
     named and skipped.
 
 Non-terminating rows are dropped before pairing, matching
-`scripts/check_significance.py`: a truncated response's score reflects abandoned
+`preliminary/scripts/check_significance.py`: a truncated response's score reflects abandoned
 working, and truncation itself responds to condition.
 
-  PYTHONPATH=. python scripts/naming_effect.py --runs runs
+  PYTHONPATH=. python preliminary/scripts/naming_effect.py --runs preliminary/data/runs
 """
 
 import argparse
@@ -40,7 +40,7 @@ import json
 import os
 
 from graphtalk import significance
-from scripts import score_sweep
+from preliminary.scripts import score_sweep
 
 ARMS = ("gemma4-e4b", "gemma4-12b", "qwen3-8b", "qwen3-14b",
         "gemma4-e4b-think", "gemma4-12b-think", "qwen3-8b-think",
@@ -97,7 +97,7 @@ def paired(integer: list[dict], got: list[dict], drop_capped: bool = True) -> tu
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--runs", default="runs")
+  parser.add_argument("--runs", default="preliminary/data/runs")
   parser.add_argument("--n-perm", type=int, default=10_000)
   parser.add_argument("--n-boot", type=int, default=10_000)
   parser.add_argument("--seed", type=int, default=1234)

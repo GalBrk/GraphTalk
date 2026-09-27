@@ -1,4 +1,4 @@
-"""`scripts/build_prompts.py::build_stratified` (Track 2.2): the size-based
+"""`preliminary/scripts/build_prompts.py::build_stratified` (Track 2.2): the size-based
 selection logic is new, untested-elsewhere code that a future real sweep
 will rely on to pick which graphs to spend GPU time on, so its ranking,
 tie-breaking, and instance_id-namespacing get pinned here directly rather
@@ -20,7 +20,7 @@ import networkx as nx
 import pytest
 
 from graphtalk import graphqa
-from scripts import build_prompts
+from preliminary.scripts import build_prompts
 
 
 def _fake_question(graph: nx.Graph) -> str:
@@ -242,7 +242,7 @@ def test_stratified_default_naming_is_integer_and_omits_the_field(monkeypatch):
 
 
 def test_stratified_supports_got_naming(monkeypatch):
-  """Phase 4b (`docs/plans/run_improved_tests.md`): GOT name assignment
+  """Phase 4b (`preliminary/docs/run_improved_tests.md`): GOT name assignment
   is purely positional by node count (verified directly in
   `build_prompts.build_stratified`'s own docstring), so a graph selected
   by size ranking here must get the exact same name map `build_named`

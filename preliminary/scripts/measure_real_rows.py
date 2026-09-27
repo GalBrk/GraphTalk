@@ -30,8 +30,8 @@ Two decompositions matter for reading the output:
 
 Rows are cached under .cache/graphqa_rows so re-runs do not re-fetch.
 
-  PYTHONPATH=. .venv/bin/python scripts/measure_real_rows.py
-  PYTHONPATH=. .venv/bin/python scripts/measure_real_rows.py --shortcut-table
+  PYTHONPATH=. .venv/bin/python preliminary/scripts/measure_real_rows.py
+  PYTHONPATH=. .venv/bin/python preliminary/scripts/measure_real_rows.py --shortcut-table
 """
 
 import argparse
@@ -52,7 +52,7 @@ from graphtalk import shortcuts
 
 BAR = "-" * 78
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DEFAULT_CACHE = os.path.join(REPO_ROOT, ".cache", "graphqa_rows")
 
 # The rows API caps `length` per request; 100 is comfortably inside it.
@@ -561,7 +561,7 @@ def primer_lengths(graphs, generated):
 def _best_on_small(task, small, fit_graphs):
   """Our strongest solver, scored on the same small graphs the exact bound covers.
 
-  Mirrors `best_on_small` in scripts/shortcut_table.py deliberately rather than
+  Mirrors `best_on_small` in preliminary/scripts/shortcut_table.py deliberately rather than
   importing it: scripts/ is not a package, and a cross-script import would be a
   worse dependency than twelve duplicated lines. Keep the two in step.
   """
@@ -594,7 +594,7 @@ def shortcut_table(real_graphs, fit_seed, size):
   print(f"  fitted on generate_graphs(seed={fit_seed}), scored on {len(real_graphs)}"
         " published zero_shot_test graphs")
   print("  queries are resampled by shortcuts.build_rows, as in"
-        " scripts/shortcut_table.py -- not the queries the dataset ships")
+        " preliminary/scripts/shortcut_table.py -- not the queries the dataset ships")
   fit_graphs = shortcuts.generate_corpus(size, fit_seed)
 
   cells = {}

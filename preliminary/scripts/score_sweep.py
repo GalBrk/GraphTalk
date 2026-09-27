@@ -10,7 +10,7 @@ Reports, per (task, style):
     rather than only against the control;
   * McNemar against the no-primer control, on the paired rows.
 
-  PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses runs/*.jsonl
+  PYTHONPATH=. .venv/bin/python preliminary/scripts/score_sweep.py --responses preliminary/data/runs/*.jsonl
 """
 
 import argparse

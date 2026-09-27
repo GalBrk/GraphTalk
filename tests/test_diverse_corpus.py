@@ -17,7 +17,7 @@ import pytest
 from graphtalk import diverse_corpus
 from graphtalk import graphqa
 from graphtalk import scoring
-from scripts import build_prompts
+from preliminary.scripts import build_prompts
 
 
 # --- build_pool -------------------------------------------------------------

@@ -10,8 +10,8 @@ The table says how to read each cell's model result, not which cells to run. A
 of a win rather than predicting where a model lands. See the four regimes section
 of docs/plans/shortcut-ceilings.md.
 
-  PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500
-  PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --json shortcuts.json
+  PYTHONPATH=. .venv/bin/python preliminary/scripts/shortcut_table.py --graphs 500
+  PYTHONPATH=. .venv/bin/python preliminary/scripts/shortcut_table.py --json preliminary/data/shortcuts.json
 """
 
 import argparse
@@ -199,7 +199,7 @@ def main(argv=None):
   parser.add_argument("--test-seed", type=int, default=1234)
   parser.add_argument("--json", default=None,
                       help="also write {'task/condition': shortcut} for "
-                           "scripts/score_sweep.py --shortcuts")
+                           "preliminary/scripts/score_sweep.py --shortcuts")
   parser.add_argument("--json-rung", type=int, default=3,
                       choices=shortcuts.RUNGS)
   args = parser.parse_args(argv)

@@ -1,9 +1,9 @@
 """Stage 4: pooled significance tests over the tracked sweep. No GPU needed.
 
-`scripts/score_sweep.py` runs exact McNemar per (task, style, condition)
+`preliminary/scripts/score_sweep.py` runs exact McNemar per (task, style, condition)
 cell -- 288 cells across 4 models, most with fewer than 10 discordant pairs
 out of 30, and no correction for testing 288 of them at once (see
-docs/sweep-findings.md, "The McNemar analysis is underpowered"). This script
+preliminary/docs/sweep-findings.md, "The McNemar analysis is underpowered"). This script
 pools pairs across task and style instead, per `graphtalk/significance.py`:
 a permutation p-value, a bootstrap CI on the effect size, and a
 Benjamini-Hochberg correction across the *independent* conditions tested for
@@ -13,8 +13,8 @@ conditions it's derived from, see `_is_derived_condition`. It reuses the
 same pooling for the thinking arm's non-termination rate, replacing the ad
 hoc p-values quoted in prose there.
 
-Reads the already-scored, already-joined table `scripts/build_sweep_frame.py`
-writes -- no re-scoring, no re-reading raw runs/*.jsonl. Raises if `--frame`
+Reads the already-scored, already-joined table `preliminary/scripts/build_sweep_frame.py`
+writes -- no re-scoring, no re-reading raw preliminary/data/runs/*.jsonl. Raises if `--frame`
 carries more than one `node_naming` scheme (a pooled significance number
 across schemes would be meaningless, not just mislabeled) or a duplicated
 `(model, instance_id, condition, style, node_naming)` key (silently corrupts
@@ -154,7 +154,7 @@ one even if it were there":
   n_perm=200, n_steps=5`) unless `--mde` asks for full precision
   (`200/500/8`, roughly 6-7x slower -- use for a final reported number, not
   routine runs) or `--no-mde` turns the whole thing off. The fast preset is
-  benchmarked against full precision in `scripts/benchmark_mde.py`: mean/max
+  benchmarked against full precision in `scripts/benchmark_mde.py` (tag `pre-cleanup`): mean/max
   `|delta|` difference stays within `graphtalk.significance
   .minimum_detectable_effect_clustered`'s own documented Monte Carlo noise
   floor (SE ~= 0.03) at several times the speed -- see that script and
@@ -173,8 +173,8 @@ one even if it were there":
   is suppressing detectability there. Blank wherever not computed --
   `bh_significant is True` (nothing to explain), or `--no-mde` was passed.
 
-  PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
-      --frame csv2/sweep-small-graph/sweep_frame.csv
+  PYTHONPATH=. .venv/bin/python preliminary/scripts/check_significance.py \
+      --frame preliminary/outputs/sweep-small-graph/sweep_frame.csv
 
 **`--metric`**: `both` (default) runs `exact` (accuracy vs. `none`, pooled
 across tasks, main sweep + thinking arm) and `mae` (mean absolute error
@@ -225,8 +225,8 @@ control` the underlying functions return -- lower error is better, the
 opposite sign convention from `exact`'s "higher is better", so this flip
 keeps a positive number meaning "helped" in both modes.
 
-  PYTHONPATH=. .venv/bin/python scripts/check_significance.py \
-      --frame csv2/sweep-small-graph/sweep_frame.csv --metric mae
+  PYTHONPATH=. .venv/bin/python preliminary/scripts/check_significance.py \
+      --frame preliminary/outputs/sweep-small-graph/sweep_frame.csv --metric mae
 
 **`--confirmatory-config`**: an optional JSON file naming the (arm, model,
 condition, metric) cells decided *before a sweep's results are seen* to be
@@ -329,7 +329,8 @@ def _hypothesis_type(
   return "exploratory"
 
 
-# The cluster unit, shared with `graphtalk.mixed_models`' GEE grouping and
+# The cluster unit, shared with `graphtalk.mixed_models`' GEE grouping (tag
+# `pre-cleanup`) and
 # with every validator that reconstructs either -- one definition, in the
 # package, so the two can't drift into different granularities again. See
 # `analysis.graph_index` and `_paired_values`.
@@ -346,7 +347,7 @@ def main_sweep_scope(frame: pd.DataFrame) -> pd.DataFrame:
   and excluding them would double-count the correction -- two call sites
   were updated and four were not. `validate_recommend_count.py`,
   `benchmark_mde.py`, `validate_stratified_sampling.py` and
-  `validate_hierarchical_model.py` each kept their own
+  `validate_hierarchical_model.py` (all four in tag `pre-cleanup`) each kept their own
   `failure_type != "non_terminating"` filter while their docstrings claimed
   to mirror this scoping, so every "we validated this" claim was measured
   on a different set of rows than the thing it validated. It was not
@@ -1157,7 +1158,7 @@ def _apply_filter(frame: pd.DataFrame, filter_expr: str | None) -> pd.DataFrame:
   """`--filter`'s pandas `DataFrame.query()` expression applied to
   `frame`, or `frame` unchanged when no filter was given. Formalizes what
   used to be an undocumented manual pre-filter step (see the module
-  docstring's `--filter` help text and `analysis/README.md`) into one
+  docstring's `--filter` help text and `preliminary/analysis/README.md`) into one
   reproducible, testable operation -- a `--filter "style == 'zero_shot'"`
   run and a manually-pre-filtered `frame.query(...)` call passed straight
   into the rest of `main()` are now provably the same thing, not two
@@ -1170,7 +1171,7 @@ def _apply_filter(frame: pd.DataFrame, filter_expr: str | None) -> pd.DataFrame:
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--frame", default="csv2/sweep-small-graph/sweep_frame.csv")
+  parser.add_argument("--frame", default="preliminary/outputs/sweep-small-graph/sweep_frame.csv")
   parser.add_argument("--metric", choices=("exact", "mae", "both"), default="both",
                        help="'both' (default): runs 'exact' (accuracy-vs-none, "
                             "pooled across tasks, main sweep + thinking arm) "
@@ -1228,7 +1229,7 @@ def main() -> None:
                        help="explicit spelling of the default fast-"
                             "approximate MDE preset (n_replicates=50, "
                             "n_perm=200, n_steps=5, benchmarked in "
-                            "scripts/benchmark_mde.py against --mde's full "
+                            "scripts/benchmark_mde.py (tag pre-cleanup) against --mde's full "
                             "precision: mean/max |delta| difference stays "
                             "within graphtalk.significance"
                             ".minimum_detectable_effect_clustered's own "
@@ -1260,7 +1261,7 @@ def main() -> None:
                             "--filter \"style == 'zero_shot'\". Formalizes "
                             "what used to be an undocumented manual "
                             "pre-filter step for any 'what holds up under "
-                            "subset X' question (see analysis/README.md); "
+                            "subset X' question (see preliminary/analysis/README.md); "
                             "one flag is now the whole reproduction "
                             "recipe instead of a remembered pandas snippet. "
                             "`bh_family`/`bh_significant_global`'s "

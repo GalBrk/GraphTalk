@@ -84,7 +84,7 @@ meaningful divisions of the data.
 ### The ladder/retrieval/rewire families are a different shape
 
 `runs/<model>.ladder_screen.jsonl`, `.retrieval_locate.jsonl`, `.rewire_shared.jsonl`,
-and `.rewire_extra.jsonl` (`docs/ladder-and-rewiring.md`) share the same file-level
+and `.rewire_extra.jsonl` (`preliminary/docs/ladder-and-rewiring.md`) share the same file-level
 schema above but not the same *values*:
 
 - `instance_id` is not `"<task>/<index>"`. `ladder_screen`/`rewire_shared`/
@@ -102,8 +102,8 @@ schema above but not the same *values*:
   `graphtalk/ladder.py`'s `context_headroom` and `tests/test_ladder.py`.
 
 These files are **not excluded from a `runs/*.jsonl` glob** (see the "Scoring
-them" gotcha in `runs/README.md`), so score them with `scripts/analyze_ladder.py`
-/ `scripts/analyze_rewiring_sweep.py`, not `score_sweep.py`.
+them" gotcha in `runs/README.md`), so score them with `preliminary/scripts/analyze_ladder.py`
+/ `preliminary/scripts/analyze_rewiring_sweep.py`, not `score_sweep.py`.
 
 ## `shortcuts.json`
 
@@ -232,7 +232,7 @@ The narrower claim survives intact — the models do resolve "connected" as adja
 far more often than not. It just turns out that "far more often than not" was
 hiding about a tenth of this task's accuracy.
 
-Full analysis in `docs/sweep-findings.md`; reproduce with
+Full analysis in `preliminary/docs/sweep-findings.md`; reproduce with
 `scripts/rewording_effect.py`.
 
 Caveat on precision: this rests on 30 instances, 14 of them ambiguous. The
@@ -269,7 +269,7 @@ sentence like *"None of the nodes are directly connected, but node 5 is
 adjacent"* is not misread as the empty-set answer.
 
 Rescoring `runs/*.jsonl` with the fix and rebuilding
-`csv2/sweep-small-graph/sweep_frame.csv` flipped **8 rows** from `wrong` to `correct`, all
+`preliminary/outputs/sweep-small-graph/sweep_frame.csv` flipped **8 rows** from `wrong` to `correct`, all
 `connected_nodes/2`, spanning 7 (model, condition, style) combinations on
 `gemma4-12b` plus one on `gemma4-e4b-think`. Confirmed against the previous
 committed frame that no other task and no non-terminating row changed. The
@@ -339,7 +339,7 @@ examples and not evidenced beyond that count.
 Reproduce with `tests/test_prompts.py::test_extracts_node_lists`,
 `test_stale_answer_marker_does_not_shadow_the_final_line`,
 `test_bracket_answer_survives_a_trailing_period_after_the_decoration`, and
-`scripts/build_sweep_frame.py`.
+`preliminary/scripts/build_sweep_frame.py`.
 
 ## `edge_existence` responses that never say "yes"/"no" were unparsed
 
@@ -403,7 +403,7 @@ conclusion is stated last, don't pool across the whole response" rule
 `_extract_node_list` already applies for `No nodes` (see the section above).
 
 With both guards in place, rescoring `runs/*.jsonl` and rebuilding
-`csv2/sweep-small-graph/sweep_frame.csv` flipped exactly the predicted **10 rows** from
+`preliminary/outputs/sweep-small-graph/sweep_frame.csv` flipped exactly the predicted **10 rows** from
 `unparsed` to `correct`, and confirmed against the previous frame that no
 other task, no non-terminating row, and no row that already had a non-null
 `predicted` value changed. The two refusal rows correctly remain `unparsed`.
@@ -414,7 +414,7 @@ because that phrasing already contains the bare word "no" and the existing
 extractor already handles it. The fix is Yes-only, not a guess at symmetry.
 
 Reproduce with `tests/test_prompts.py::test_extracts_edge_existence_paraphrases`
-(and its three regression-specific siblings) and `scripts/build_sweep_frame.py`.
+(and its three regression-specific siblings) and `preliminary/scripts/build_sweep_frame.py`.
 
 ## `_extract_integer`'s tail scope picked the wrong number
 
@@ -485,7 +485,7 @@ coincidence. The fix correctly reads what the model actually said; the row
 newly (and correctly) counts as a model error, not an extraction bug.
 
 Rescoring `runs/*.jsonl` with the shipped version and rebuilding
-`csv2/sweep-small-graph/sweep_frame.csv` flipped **507 rows** from `wrong`/`unparsed` to
+`preliminary/outputs/sweep-small-graph/sweep_frame.csv` flipped **507 rows** from `wrong`/`unparsed` to
 `correct` (480 `node_degree`, 28 `node_count`, 1 `edge_count`) — far more
 than the ~13-row sample predicted, because the bug wasn't specific to the
 sampled rows; it affected this shape everywhere it occurred in the tracked
@@ -494,7 +494,7 @@ these three tasks only, and the only two `correct → wrong` transitions are
 the coincidental `node_degree/2` case above, not a regression.
 
 Reproduce with `tests/test_prompts.py::test_extracts_integers` and
-`scripts/build_sweep_frame.py`.
+`preliminary/scripts/build_sweep_frame.py`.
 
 ## Caveats that travel with specific rows
 
@@ -515,7 +515,7 @@ These are properties of the data, not of the analysis, so they belong here:
   `hit_cap`, and `graphtalk/analysis.py` prefers that when present. Filter them
   before reporting accuracy: on `gemma4-12b-think` the difference is 81.2% against
   99.1%. The count fell from 350 because the reworded `filler` primer roughly
-  halved non-termination in that condition -- see `docs/sweep-findings.md`.
+  halved non-termination in that condition -- see `preliminary/docs/sweep-findings.md`.
 - **`runs/archive/*.redo.shard*.jsonl` are evidence, not answers.** 67 of those
   rows regenerated at a 4x larger cap; 76% still hit it. They exist to show the cap
   was not the cause. Do not merge them into the arm.
@@ -541,23 +541,23 @@ These are properties of the data, not of the analysis, so they belong here:
 response was generated against that file.
 
 ```bash
-python scripts/build_prompts.py --count 30            # -> prompts.jsonl
-python scripts/shortcut_table.py --graphs 500 --json shortcuts.json
-python scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v smoke) \
+python preliminary/scripts/build_prompts.py --count 30            # -> prompts.jsonl
+python preliminary/scripts/shortcut_table.py --graphs 500 --json shortcuts.json
+python preliminary/scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v smoke) \
                              --shortcuts shortcuts.json
 ```
 
 Beyond `score_sweep.py`'s per-cell McNemar (underpowered at 30 pairs/cell, see
-`docs/sweep-findings.md`), `scripts/check_significance.py` pools pairs across task and
+`preliminary/docs/sweep-findings.md`), `preliminary/scripts/check_significance.py` pools pairs across task and
 style per (model, condition) for a permutation p-value, a bootstrap CI, and a
 Benjamini-Hochberg correction — over both main-sweep accuracy and thinking-arm
 non-termination rate. It reads the joined table `build_sweep_frame.py` writes, and
 needs the `analysis` extra (`pandas`) installed:
 
 ```bash
-python scripts/build_sweep_frame.py --responses $(ls runs/*.jsonl | grep -v smoke) \
+python preliminary/scripts/build_sweep_frame.py --responses $(ls runs/*.jsonl | grep -v smoke) \
     --shortcuts shortcuts.json --truncated-keys analysis/truncated_keys.json
-python scripts/check_significance.py --frame csv2/sweep-small-graph/sweep_frame.csv --out significance.csv
+python preliminary/scripts/check_significance.py --frame preliminary/outputs/sweep-small-graph/sweep_frame.csv --out significance.csv
 ```
 
 `--count` takes a *prefix* of each split, so a larger value is a strict superset:

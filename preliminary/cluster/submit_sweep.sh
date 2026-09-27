@@ -1,6 +1,6 @@
 #!/bin/bash
 # Wraps `sbatch` to add one flag for the GoT node-naming scheme -- builds
-# prompts_got.jsonl (login-node work: network, no torch, no GPU) if it
+# preliminary/data/prompts/prompts_got.jsonl (login-node work: network, no torch, no GPU) if it
 # doesn't already exist, then submits exactly as `sbatch` would.
 #
 # `build_prompts.py` fetches dataset rows over plain `urllib` and has to run
@@ -24,7 +24,7 @@
 #
 # --count N (GoT scheme only -- see below) requests a larger prompt file
 # than the tracked sweep's default 30, e.g. for a targeted follow-up on
-# one (model, condition) cell that Track 2.1's `scripts/recommend_count.py`
+# one (model, condition) cell that Track 2.1's `preliminary/scripts/recommend_count.py`
 # says needs more graphs to reliably detect an already-observed effect:
 #
 #   cluster/submit_sweep.sh --node-naming got --count 500 \
@@ -84,18 +84,18 @@ case "$NODE_NAMING" in
     # the prompt filename and GRAPHTALK_RUN_TAG so it can never silently
     # collide with (or be mistaken for) the tracked, historical --count 30
     # GoT sweep's own files, mirroring the `.rerun.`/`.shard<i>of<n>.`
-    # dot-tag convention already used elsewhere under runs/.
+    # dot-tag convention already used elsewhere under preliminary/data/runs/.
     if [[ "$COUNT" == "30" ]]; then
-      PROMPTS_FILE="prompts_got.jsonl"
+      PROMPTS_FILE="preliminary/data/prompts/prompts_got.jsonl"
       RUN_TAG="got"
     else
-      PROMPTS_FILE="prompts_got.count${COUNT}.jsonl"
+      PROMPTS_FILE="preliminary/data/prompts/prompts_got.count${COUNT}.jsonl"
       RUN_TAG="got.count${COUNT}"
     fi
     if [[ ! -f "$PROMPTS_FILE" ]]; then
       echo "building $PROMPTS_FILE (login node, --node-naming got, --count $COUNT)"
       if [[ -z "$DRY_RUN" ]]; then
-        PYTHONPATH=. "$PYTHON" scripts/build_prompts.py --count "$COUNT" \
+        PYTHONPATH=. "$PYTHON" preliminary/scripts/build_prompts.py --count "$COUNT" \
             --node-naming got --out "$PROMPTS_FILE"
       fi
     else

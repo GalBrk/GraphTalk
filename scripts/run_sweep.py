@@ -189,7 +189,7 @@ def main() -> None:
         }
         # The prompt file's node-naming scheme has to travel with the response.
         # Everything downstream keys off this field on the *response* row --
-        # `scripts/score_sweep.py` converts GoT names back to integers before
+        # `preliminary/scripts/score_sweep.py` converts GoT names back to integers before
         # scoring, and `graphtalk/analysis.py` reads it for the frame's column and
         # for its mixed-scheme guard. All three default a missing field to
         # `integer`, so dropping it here does not raise: a GoT run would simply be

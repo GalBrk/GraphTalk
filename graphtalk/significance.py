@@ -3,7 +3,7 @@
 `graphtalk.scoring.mcnemar` is exact but per-cell: at 30 paired instances per
 (task, style, condition) cell there is often too little discordance to say
 anything, and there is no correction for testing 288 such cells at once (see
-docs/sweep-findings.md, "The McNemar analysis is underpowered"). The
+preliminary/docs/sweep-findings.md, "The McNemar analysis is underpowered"). The
 functions here pool pairs across task and style instead of testing 288 tiny
 groups, trading per-task granularity for statistical power.
 
@@ -21,7 +21,7 @@ sharing a graph are correlated (a graph the model finds easy, or a
 condition that happens to suit its structure, moves every row sharing that
 graph in the same direction). `paired_permutation_test_clustered`/
 `cluster_bootstrap_ci_clustered` correct for that by resampling/sign-flipping
-whole clusters rather than individual rows -- see `scripts/check_significance.py`,
+whole clusters rather than individual rows -- see `preliminary/scripts/check_significance.py`,
 which threads `(model, graph_index)` through as the cluster key.
 
 What that key deliberately is and isn't. It is **not** `instance_id`: that
@@ -428,7 +428,7 @@ def minimum_detectable_effect_clustered(
   control has very different headroom in each direction and a caller
   reading only the positive side can't tell "no room to improve" apart
   from "no room to get worse either", which are very different claims;
-  see `scripts/check_significance.py`'s `near_ceiling`). The positive
+  see `preliminary/scripts/check_significance.py`'s `near_ceiling`). The positive
   direction's `delta`/`realized_diff`/`note` keys keep their original
   names and, for the same `seed`, their original values -- the positive
   search runs first and is unaffected by whether the negative search runs
@@ -472,7 +472,7 @@ def minimum_detectable_effect_clustered(
 
   The rate clamp in `_flip_rates` is deliberate, not a limitation to work
   around: a near-ceiling or near-floor control (see
-  `scripts/check_significance.py`'s `near_ceiling`) has few rows on the
+  `preliminary/scripts/check_significance.py`'s `near_ceiling`) has few rows on the
   side a shift would have to move, so the required flip rate saturates at
   1.0 and even a large `delta` produces a small *realized* shift --
   correctly reflecting reduced detectability there rather than hiding it.
@@ -487,7 +487,7 @@ def minimum_detectable_effect_clustered(
   what it actually produced on this row's data, which is the same scale as
   `check_significance.py`'s `delta` column. Dividing one by the other
   inflates a sample-size extrapolation by `(1 / headroom)^2` -- 50-160x on
-  a near-ceiling cell (see `scripts/recommend_count.py`).
+  a near-ceiling cell (see `preliminary/scripts/recommend_count.py`).
 
   Search (`_search_one_direction`, run once per requested direction):
   expands `hi` geometrically from `max(0.05, initial_hi)` -- callers should

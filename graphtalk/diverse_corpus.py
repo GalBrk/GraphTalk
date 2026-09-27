@@ -12,7 +12,7 @@ all seven, so a diverse run can ask whether a primer's effect is an
 artifact of ER's specific degree distribution.
 
 Reconstructed from its own usage contract (`tests/test_diverse_corpus.py`
-and `scripts/build_prompts.py::build_diverse`) after discovering this file
+and `preliminary/scripts/build_prompts.py::build_diverse`) after discovering this file
 was never actually committed -- see the quarantine note at the top of
 `tests/test_diverse_corpus.py` for how that was confirmed. Every wording
 and gold-answer choice below is pinned by that existing test file, not

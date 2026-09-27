@@ -1,9 +1,9 @@
 """arm_paths must separate the published-split integer/got files from the
 auxiliary corpora that share the same `{model}.*jsonl` glob prefix -- the bug
 that made every arm except the two whose extra files just wore off "skipped:
-incomplete" (see superseded/docs/paper-revision-handoff.md plan step 4.9)."""
+incomplete" (see superseded/docs/paper-revision-handoff.md plan step 4.9, tag `pre-cleanup`)."""
 
-from scripts.naming_effect import arm_paths
+from preliminary.scripts.naming_effect import arm_paths
 
 
 def test_arm_paths_excludes_auxiliary_corpora(tmp_path, monkeypatch):

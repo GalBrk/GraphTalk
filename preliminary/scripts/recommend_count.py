@@ -34,7 +34,7 @@ at p=0.0018 with the 30 graphs on disk.
 
 This reuses Track 1's already-computed MDE rather than running a new
 simulation -- it is a closed-form extrapolation of it, not a
-re-derivation. `scripts/validate_recommend_count.py` checks the
+re-derivation. `scripts/validate_recommend_count.py` (tag `pre-cleanup`) checks the
 extrapolation's accuracy against a real bootstrap-based power simulation
 at the recommended size, for a handful of cells, before trusting it
 further. Its `--max-n-clusters-target` cap must stay above the largest
@@ -76,13 +76,13 @@ Without `--frame`, these cells are skipped with a `skip_reason` saying so,
 rather than silently treated as "nothing to do here" the way a plain
 `bh_significant` check would.
 
-  PYTHONPATH=. .venv/bin/python scripts/recommend_count.py \
-      --report analysis/significance_report.csv
+  PYTHONPATH=. .venv/bin/python preliminary/scripts/recommend_count.py \
+      --report preliminary/analysis/significance_report.csv
 
   # Also compute real MDEs for family-significant/not-global cells:
-  PYTHONPATH=. .venv/bin/python scripts/recommend_count.py \
-      --report analysis/significance_report.got.csv \
-      --frame csv2/sweep-small-graph/sweep_frame.got.csv
+  PYTHONPATH=. .venv/bin/python preliminary/scripts/recommend_count.py \
+      --report preliminary/analysis/significance_report.got.csv \
+      --frame preliminary/outputs/sweep-small-graph/sweep_frame.got.csv
 """
 
 import argparse
@@ -90,7 +90,7 @@ import argparse
 import pandas as pd
 
 from graphtalk import significance
-from scripts import check_significance as cs
+from preliminary.scripts import check_significance as cs
 
 _CURRENT_COUNT = 30
 _PUBLISHED_SPLIT_CAP = 500
@@ -110,7 +110,7 @@ def _mde_for_family_significant_cell(
   `check_significance.py` never simulated one for. Two distinct reasons a
   cell ends up here rather than reading a pre-computed `mde_delta` off the
   report (see the module docstring for the first; `--task`, Phase 4a of
-  `docs/plans/run_improved_tests.md`, for the second):
+  `preliminary/docs/run_improved_tests.md`, for the second):
 
   1. The cell was already significant within its own per-family
      correction (`bh_significant=True`) -- `check_significance.py`'s own
@@ -186,7 +186,7 @@ def recommend(
   `_mde_for_family_significant_cell` instead of being skipped outright --
   see the module docstring.
 
-  `task` (optional, Phase 4a of `docs/plans/run_improved_tests.md`):
+  `task` (optional, Phase 4a of `preliminary/docs/run_improved_tests.md`):
   scopes to `report`'s per-task rows for that task (`_report_exact_per_task`
   in `check_significance.py`, populated only when that script was run with
   `--metric exact`/`both`) instead of the pooled-across-6-tasks rows this
@@ -287,7 +287,7 @@ def recommend(
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--report", default="analysis/significance_report.csv")
+  parser.add_argument("--report", default="preliminary/analysis/significance_report.csv")
   parser.add_argument("--current-count", type=int, default=_CURRENT_COUNT)
   parser.add_argument("--frame", default=None,
                        help="the sweep_frame.csv --report was built from -- "

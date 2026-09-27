@@ -8,9 +8,9 @@ The general cluster reference lives in the SlidesGen repo
 
 | stage | script | where | needs |
 |---|---|---|---|
-| 1. build prompts | `scripts/build_prompts.py` | login node | network, no torch |
+| 1. build prompts | `preliminary/scripts/build_prompts.py` | login node | network, no torch |
 | 2. generate | `scripts/run_sweep.py` | compute node | GPU, torch, transformers |
-| 3. score | `scripts/score_sweep.py` | login node | nothing |
+| 3. score | `preliminary/scripts/score_sweep.py` | login node | nothing |
 
 Splitting it this way means the prompt set is a file you can read and diff before
 spending GPU time, every model is handed the identical file, and the scoring can
@@ -79,13 +79,13 @@ token from earlier work was present and does no harm.
 
 ```bash
 # stage 1, on the login node
-python scripts/build_prompts.py --count 30      # writes 1260 prompts
+python preliminary/scripts/build_prompts.py --count 30      # writes 1260 prompts
 
 # stage 2, on the cluster, a chain per model (see below)
 sbatch --exclude=n-801 --mem=32G cluster/sweep.sbatch qwen3-8b
 
 # stage 3, on the login node
-python scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v '\.got\.')
+python preliminary/scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v '\.got\.')
 ```
 
 Smoke-test first. Passing a second argument runs that many generations and
@@ -158,7 +158,7 @@ key, the smoke-test limit) passes straight through in whatever position it's
 given -- only `--node-naming`, `--count`, and `--dry-run` are consumed by the
 wrapper. `--count N` (GoT scheme only) requests a prompt file larger than the
 tracked sweep's 30-per-task default -- e.g. for a targeted follow-up sized by
-`scripts/recommend_count.py` (see `analysis/README.md`'s Track 2 section) --
+`preliminary/scripts/recommend_count.py` (see `analysis/README.md`'s Track 2 section) --
 tagged into both the prompt filename and `GRAPHTALK_RUN_TAG` so it can't
 collide with the tracked `--count 30` sweep's own files:
 
@@ -185,7 +185,7 @@ nothing else about the wrapper's behavior changes.
 ### Running the ladder/rewiring sweep
 
 The graph-structure ladder and the degree-preserving rewiring experiment
-(`docs/ladder-and-rewiring.md`) have their own driver, `cluster/run_ladder.sh`,
+(`preliminary/docs/ladder-and-rewiring.md`) have their own driver, `cluster/run_ladder.sh`,
 rather than going through `sweep.sbatch` by hand:
 
 ```bash
@@ -200,9 +200,9 @@ they don't already exist, sizes each model's GPU tier and `--mem` itself (see
 writing to `runs/<model>.retrieval_locate.jsonl` / `runs/<model>.ladder_screen.jsonl`
 (see `runs/README.md`). The rewiring stage is deliberately **not** included in
 the default run (`STAGES` defaults to `probe ladder`); it needs a rewire
-prompt file built separately with `scripts/build_ladder.py --stage rewire`,
+prompt file built separately with `preliminary/scripts/build_ladder.py --stage rewire`,
 restricted to the rungs that cleared both screens for the models being run --
-read `docs/ladder-and-rewiring.md` before spending GPU time on it.
+read `preliminary/docs/ladder-and-rewiring.md` before spending GPU time on it.
 
 ## Warm the page cache, or the job dies loading
 

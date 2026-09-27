@@ -27,7 +27,7 @@ def flatten(per_density: dict) -> dict:
   classification in analyze_baseline_law.py) that key on one flat bar per
   cell rather than per (task, condition, density). Averaging rather than
   taking a single density keeps the classification density-independent,
-  the same way the published-split shortcuts.json is graph-size-independent
+  the same way the published-split preliminary/data/shortcuts.json is graph-size-independent
   within its own corpus.
   """
   keys = {k for bars in per_density.values() for k in bars}

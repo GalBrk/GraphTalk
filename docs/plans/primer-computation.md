@@ -71,7 +71,7 @@ sparsity uniform on (0, 1) — because network access to the HuggingFace rows AP
 blocked (403 at the proxy) when this was written. They were recorded as provisional
 pending re-measurement on real rows.
 
-**That re-measurement is done.** `scripts/measure_real_rows.py` fetches all 500
+**That re-measurement is done.** `preliminary/scripts/measure_real_rows.py` fetches all 500
 `zero_shot_test` rows for all six configs (3000 rows) and re-measures every quantity
 here. The single most important thing it found:
 
@@ -221,7 +221,7 @@ TensorFlow 2.20 / tf-keras / tensorflow-gnn combination that is easy to disturb.
 > property this primer has; it is a property of this primer *in short prompts*.
 > Any cell that adds characters is paying a tax that grows with the base prompt,
 > and the tax is the same size as the primer effects this project measures. See
-> `docs/primer-effects-and-power.md`, "The `filler` control".
+> `preliminary/docs/primer-effects-and-power.md`, "The `filler` control".
 
 - **An inert length control**, not a misinformation placebo. Wrong numbers would
   contradict the edge list in the same prompt, so a drop in accuracy could mean the
@@ -239,7 +239,7 @@ TensorFlow 2.20 / tf-keras / tensorflow-gnn combination that is easy to disturb.
   > 9 sampled `filler` rows deriving a complete graph K_n from it. The bullet above
   > predicted the consequence precisely — a drop in accuracy that cannot be
   > distinguished from a length effect — and that drop was then reported as a
-  > finding about primer length in `docs/sweep-findings.md`. Three reviews of the
+  > finding about primer length in `preliminary/docs/sweep-findings.md`. Three reviews of the
   > wording missed it; the responses did not. The lesson is the one this plan states
   > elsewhere: measure rather than argue. A control's inertness is checkable against
   > real completions, and was not checked until 2026-08-29.
@@ -499,7 +499,7 @@ evidence is in `analysis/superseded/failure_sample.csv`, where 8 of the 9 sample
 the misreading in the model's own words -- `gemma4-e4b-think`: *"If D_i = 12 for all 13
 nodes, the graph must be a complete graph K_13"*; `gemma4-12b-think`: *"Is it possible
 that 'Node 0 has 8 other nodes' means it's connected to all 8 other nodes?"*. What
-`docs/sweep-findings.md` recorded at the time was that `filler` scored *below* the
+`preliminary/docs/sweep-findings.md` recorded at the time was that `filler` scored *below* the
 no-primer control almost everywhere. That is no longer what it records: the re-run shows
 the penalty was this wording, not primer length, and with the text below `filler` sits at
 the control's own level on accuracy and *lowest* of the seven conditions on
@@ -669,7 +669,7 @@ feature of the three, and RWSE is the redundant one.
   `normalize`, import from `graphtalk.graphqa`
 - `scripts/show_primers.py` — new; prints all seven conditions for a few real rows, plus
   character counts and the correlation diagnostic, for eyeballing
-- `scripts/measure_real_rows.py` — new; re-measures every quantity in the provenance
+- `preliminary/scripts/measure_real_rows.py` — new; re-measures every quantity in the provenance
   section against the published rows, caching them under `.cache/graphqa_rows`. Optional
   `--shortcut-table` re-runs the shortcut cells with real graphs as the evaluation set.
 - `tests/test_primers.py` — new
@@ -771,7 +771,7 @@ refactored to import from the new package:
 And the provenance check, which is the one that touches the network:
 
 ```bash
-PYTHONPATH=. .venv/bin/python scripts/measure_real_rows.py
+PYTHONPATH=. .venv/bin/python preliminary/scripts/measure_real_rows.py
 ```
 
 It exits non-zero if any of the 3000 rows fails to parse, disagrees with its own

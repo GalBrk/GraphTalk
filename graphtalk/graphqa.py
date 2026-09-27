@@ -144,7 +144,7 @@ def fetch_rows(config: str, split: str, offset: int, length: int) -> list[dict]:
   """Fetches up to `length` rows starting at `offset`, paginating as needed.
 
   Pagination is here rather than in the caller because the 100-row cap is a
-  property of the API, not of any particular sweep: `scripts/build_prompts.py`
+  property of the API, not of any particular sweep: `preliminary/scripts/build_prompts.py`
   asks for "the first `count` rows of this task" and should not have to know
   how many requests that takes.
 

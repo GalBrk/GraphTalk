@@ -1,5 +1,5 @@
-"""`scripts/task_scoped_screen.py` (Phase 1,
-`docs/plans/run_improved_tests.md`): the shortcut-ceiling flag and the
+"""`preliminary/scripts/task_scoped_screen.py` (Phase 1,
+`preliminary/docs/run_improved_tests.md`): the shortcut-ceiling flag and the
 `all`-exclusion/pairing logic are new, so they get pinned directly here
 rather than trusted only against the real-data regression check the plan
 also requires (run separately, against tracked data -- see the module's
@@ -10,8 +10,8 @@ import pandas as pd
 
 from graphtalk import primers
 from graphtalk import scoring
-from scripts import check_significance as cs
-from scripts import task_scoped_screen
+from preliminary.scripts import check_significance as cs
+from preliminary.scripts import task_scoped_screen
 
 
 def test_shortcut_audit_covers_every_screenable_condition_task_pair():

@@ -3,7 +3,7 @@
 > **Status: executed.** `graphtalk/shortcuts.py` implements this plan --
 > `ALL_RULES` holds 25 rules (16 theorem, 1 heuristic, 8 fitted) and
 > `shortcuts.json` holds the resulting table. Kept as the record of the
-> reasoning; read the module and `docs/primer-effects-and-power.md` for what
+> reasoning; read the module and `preliminary/docs/primer-effects-and-power.md` for what
 > the numbers currently are.
 
 ## Context
@@ -335,7 +335,7 @@ all of them either way.
 
 ## Measured results
 
-Computed by `scripts/shortcut_table.py --graphs 500`, fitted on seed 999 and scored on
+Computed by `preliminary/scripts/shortcut_table.py --graphs 500`, fitted on seed 999 and scored on
 seed 1234. Shortcut score at rung 3, against the majority baseline.
 
 | task | baseline | best arm | shortcut | verdict |
@@ -484,7 +484,7 @@ each task's own query sampling:
 | `degree` × `connected_nodes` | — | 9.4% coverage at 100% precision | degree 0 ⟹ `" No nodes."` |
 
 Every number here was generator-derived, and has since been checked against the published
-rows by `scripts/measure_real_rows.py`. The graph-level ones are exact rather than
+rows by `preliminary/scripts/measure_real_rows.py`. The graph-level ones are exact rather than
 approximate: `generate_graphs(500, "er", False, random_seed=1234)` and the published
 `zero_shot_test` split are the same multiset of graphs, merely shuffled. Only the rates
 that depend on the per-row query draw moved — `edge_existence` from ≈51.6% to 53.0%, and
@@ -497,7 +497,7 @@ primer plan.
   (thirteen comparison rules and three degree-sequence reconstruction rules), one
   parameter-free heuristic, eight fitted rules with the train/test split, the solver, the
   exact enumeration bound, and `island_posterior` for bounding a solver pointwise.
-- `scripts/shortcut_table.py` — **landed**; computes and prints the 36-cell table at all
+- `preliminary/scripts/shortcut_table.py` — **landed**; computes and prints the 36-cell table at all
   three rungs, with coverage for theorems and accuracy for the rest
 - `tests/test_shortcuts.py` — **landed**, 152 tests covering all of the above
 - depends on `graphtalk.graphqa.expected_answer` and `normalize` for gold answers, which
@@ -560,7 +560,7 @@ primer plan.
 
 ```bash
 uv run --no-sync pytest tests/ -q
-.venv/bin/python scripts/shortcut_table.py --graphs 500
+.venv/bin/python preliminary/scripts/shortcut_table.py --graphs 500
 ```
 
 Read the table before analysing any sweep. Every cell's model result is interpreted
@@ -590,7 +590,7 @@ results are read, not which of them get collected.
   would still buy one cell where the proposal's aligned/adjacent/agnostic framing survives
   intact, at the cost of a sampling constraint already verified as distribution-neutral.
   Decide when writing up, not now.
-- ~~**Real-data confirmation.**~~ **Settled.** `scripts/measure_real_rows.py
+- ~~**Real-data confirmation.**~~ **Settled.** `preliminary/scripts/measure_real_rows.py
   --shortcut-table` re-runs the table with the 500 published `zero_shot_test` graphs as
   the evaluation set, still fitting on generated seed-999 graphs. Every theorem keeps
   precision 1.0, all six verdicts hold, and the `components` × `cycle_check` ladder

@@ -1,19 +1,19 @@
 """A queryable table over the whole tracked sweep, and the failure taxonomy
 used to sample cases for manual review.
 
-`scripts/score_sweep.py` scores and prints; nothing before this module
+`preliminary/scripts/score_sweep.py` scores and prints; nothing before this module
 persisted a table, so there was nothing to slice by condition, join against
-`analysis/truncated_keys.json`, or sample from. This module is the reusable
+`preliminary/analysis/truncated_keys.json`, or sample from. This module is the reusable
 layer that does that -- it stays a `graphtalk/` module rather than living
 directly in a script because the non-termination heuristic below is exactly
 the kind of quiet source of measurement error `graphtalk/scoring.py`'s own
 docstring warns about, so it gets the same test-pinned treatment as any other
 rule in this package: see `tests/test_analysis.py`, which pins it against
-`analysis/truncated_keys.json`'s labelled rows.
+`preliminary/analysis/truncated_keys.json`'s labelled rows.
 
 Deliberately does not import from `scripts/`: `graphtalk/` is the reusable
 layer scripts are built on, not the other way around. Callers (the
-`scripts/build_sweep_frame.py` CLI) are expected to load and score records
+`preliminary/scripts/build_sweep_frame.py` CLI) are expected to load and score records
 with `scripts.score_sweep.load`/`score_records` first and pass the already-
 scored records in here.
 """
@@ -87,7 +87,7 @@ def infer_node_naming(records) -> str:
   """The single `node_naming` scheme every record agrees on, or raises.
 
   `graphtalk.node_naming.NAMINGS` lists the valid values; absence on a record
-  means `"integer"` (`scripts/build_prompts.py`'s convention -- the field is
+  means `"integer"` (`preliminary/scripts/build_prompts.py`'s convention -- the field is
   only written for a named scheme). Raising on a mix, rather than silently
   keeping whichever scheme happens to be more common, is what lets every
   script downstream skip a `--node-naming` flag entirely: the data says what
@@ -111,7 +111,7 @@ def frame_node_naming(frame: pd.DataFrame) -> str:
   `"integer"`, the same absence convention used everywhere else `node_naming`
   is read. Checked independently of `infer_node_naming` (rather than trusting
   a caller upstream already caught a mix), since a frame CSV can come from
-  anywhere, not only from `scripts/build_sweep_frame.py`'s own guard.
+  anywhere, not only from `preliminary/scripts/build_sweep_frame.py`'s own guard.
   """
   if "node_naming" not in frame.columns:
     return "integer"
@@ -127,7 +127,7 @@ def frame_node_naming(frame: pd.DataFrame) -> str:
 def assert_unique_pairing_key(frame: pd.DataFrame, keys: list[str]) -> None:
   """Raises if `keys` isn't unique in `frame`.
 
-  The silent failure mode without this: `scripts/check_significance.py`'s
+  The silent failure mode without this: `preliminary/scripts/check_significance.py`'s
   `_paired_values` does `frame[...].set_index(keys)` then `pd.concat(...,
   join="inner")` to align control against treatment -- and `pd.concat` on a
   non-unique index doesn't raise, it cross-joins the duplicated keys,
@@ -151,9 +151,9 @@ def graph_index(instance_id: str) -> str:
   same edges, byte-identical encoding in `prompts.jsonl` -- asked a
   different question. So this, not the whole `instance_id`, is the unit
   rows can be correlated within, and every analysis that clusters or groups
-  by graph has to agree on it: `scripts/check_significance.py`'s
+  by graph has to agree on it: `preliminary/scripts/check_significance.py`'s
   permutation/bootstrap cluster id, `graphtalk/mixed_models.py`'s GEE
-  grouping, and the validators that reconstruct either. It lives here, in
+  grouping (tag `pre-cleanup`), and the validators that reconstruct either. It lives here, in
   the package, so the script and the module can share one definition rather
   than each splitting the string their own way and drifting into different
   granularities -- which is how the two ended up disagreeing before.
@@ -173,19 +173,19 @@ def graph_index(instance_id: str) -> str:
 
 def tagged_path(path: str, scheme: str) -> str:
   """`path` unchanged for `"integer"`; `.<scheme>` inserted before the
-  extension otherwise -- `analysis/sweep_frame.csv` -> `.got.csv`, matching
+  extension otherwise -- `preliminary/analysis/sweep_frame.csv` -> `.got.csv`, matching
   the `.rerun.`/`.shard<i>of<n>.` dot-tag convention already live in `runs/`.
 
   Idempotent: a `path` that already ends in `.<scheme>` right before its
   extension is returned unchanged rather than tagged a second time. Without
   this, a caller who (reasonably) passes an already-tagged `--out` -- e.g.
-  `--out analysis/significance_report.got.csv` against a `got`-scheme frame,
-  instead of the base `analysis/significance_report.csv` this function is
+  `--out preliminary/analysis/significance_report.got.csv` against a `got`-scheme frame,
+  instead of the base `preliminary/analysis/significance_report.csv` this function is
   designed to be handed -- silently gets
-  `analysis/significance_report.got.got.csv` instead, which looks like a
+  `preliminary/analysis/significance_report.got.got.csv` instead, which looks like a
   distinct, correctly-tagged file rather than the mistake it is (caught
   while producing the first real GOT-scheme significance report, see
-  `scripts/check_significance.py`).
+  `preliminary/scripts/check_significance.py`).
   """
   if scheme == "integer":
     return path
@@ -205,7 +205,7 @@ def load_truncated_keys(path: str) -> set[tuple[str, str, str, str, str]]:
   non-terminating rows any more (that total is 316); it is the fallback for rows
   that cannot state the fact themselves.
 
-  `analysis/truncated_keys.json` is `{model: [[instance_id, condition, style],
+  `preliminary/analysis/truncated_keys.json` is `{model: [[instance_id, condition, style],
   ...]}`; flattened here to `(model, instance_id, condition, style, "integer")`
   tuples for O(1) row lookup in `build_frame`. The trailing `"integer"` is not
   read from the file -- it predates `node_naming`/GOT entirely (every row it
@@ -229,8 +229,8 @@ def load_truncated_keys(path: str) -> set[tuple[str, str, str, str, str]]:
 def load_shortcuts(path: str) -> dict[tuple[str, str], float]:
   """`shortcuts.json` as a `(task, condition) -> score` dict.
 
-  Same parsing `scripts/score_sweep.py`'s `main` does inline; pulled out here
-  so both `scripts/build_sweep_frame.py` and tests can reuse it.
+  Same parsing `preliminary/scripts/score_sweep.py`'s `main` does inline; pulled out here
+  so both `preliminary/scripts/build_sweep_frame.py` and tests can reuse it.
   """
   with open(path) as handle:
     raw = json.load(handle)
@@ -266,7 +266,7 @@ def build_frame(
   `response` itself is deliberately not a column here: full response text
   runs to ~11K characters on the longest rows, and keeping it out of the
   canonical frame keeps every groupby/export cheap. It is re-joined only in
-  `sample_failures`'s companion CLI (`scripts/sample_failures.py`), where full
+  `sample_failures`'s companion CLI (`preliminary/scripts/sample_failures.py`), where full
   text is the actual point.
 
   `exact`/`primary` are forced to 0.0 on every `non_terminating` row,
@@ -275,7 +275,7 @@ def build_frame(
   gold answer is not evidence of correct reasoning, and every downstream
   consumer (significance testing, MDE) trusts these columns outright, with
   no bound/bracket mechanism left to second-guess them (see
-  `scripts/check_significance.py`, which used to bracket this uncertainty
+  `preliminary/scripts/check_significance.py`, which used to bracket this uncertainty
   via `best_case`/`worst_case` and no longer does -- the row is simply,
   unconditionally, scored as wrong). `truncated_but_correct` preserves the
   discarded fact for anyone who wants it: `True` only when the forcing
@@ -293,7 +293,7 @@ def build_frame(
   number when the truncated text happened to parse, `None` otherwise) --
   unlike `exact`/`primary`, there is no single "mimics wrong" value for an
   unbounded metric, so that decision is left to
-  `scripts/check_significance.py::_mae_imputation_table`, not made here.
+  `preliminary/scripts/check_significance.py::_mae_imputation_table`, not made here.
   """
   rows = []
   for record in scored_records:
@@ -315,13 +315,13 @@ def build_frame(
     # The row's own `hit_cap` when it has one, the hand-maintained ground-truth
     # file otherwise. Rows generated before `scripts/run_sweep.py` started
     # recording token counts carry no `hit_cap`, and for those
-    # `analysis/truncated_keys.json` remains the only record -- so absence must
+    # `preliminary/analysis/truncated_keys.json` remains the only record -- so absence must
     # fall through to the lookup rather than read as False.
     recorded_cap = record.get("hit_cap")
     non_terminating = (
         bool(recorded_cap) if recorded_cap is not None else key in truncated_keys
     )
-    # Where the flag came from. Since `scripts/backfill_hit_cap.py` ran, every
+    # Where the flag came from. Since `scripts/backfill_hit_cap.py` (tag `pre-cleanup`) ran, every
     # tracked row carries one, so `ground_truth_file` should no longer appear --
     # it stays as the fallback for any row predating both mechanisms.
     cap_source = (
@@ -358,7 +358,7 @@ def build_frame(
     # wrong" for an unbounded error metric, and choosing one is a modeling
     # decision that belongs where the empirical wrong-row error distribution
     # needed to do it well is actually computable (see
-    # `scripts/check_significance.py::_mae_imputation_table`), not here,
+    # `preliminary/scripts/check_significance.py::_mae_imputation_table`), not here,
     # one row at a time.
     truncated_but_correct = non_terminating and score["exact"] == 1.0
     # Sibling to `truncated_but_correct`, for `primary`'s F1 grading on
@@ -430,7 +430,7 @@ def _flag_length_outliers(frame: pd.DataFrame) -> pd.Series:
   """Per-(model, task, condition, style) extreme-length flag.
 
   Unvalidated against any ground truth (unlike `non_terminating`, which comes
-  straight from `analysis/truncated_keys.json`) -- this only extends coverage
+  straight from `preliminary/analysis/truncated_keys.json`) -- this only extends coverage
   to rows the ground-truth file doesn't label: non-`-think` models, or any
   thinking-arm data generated after that file's snapshot. Callers should treat
   it as "worth a human look," not as a second source of truth.
@@ -454,7 +454,7 @@ def sample_failures(
   present gets a look, rather than a plain random sample being dominated by
   whichever failure mode is most common. Fixed `seed` for reproducibility,
   matching this repo's convention of pinned seeds elsewhere (e.g.
-  `random_seed=1234` in `scripts/measure_real_rows.py`).
+  `random_seed=1234` in `preliminary/scripts/measure_real_rows.py`).
   """
   failures = frame[frame["failure_type"] != "correct"]
   if failures.empty:

@@ -3,7 +3,7 @@
 No test file existed for `graphtalk/scoring.py` before this session; it
 started out scoped to `extract_answer_first`, added alongside the
 non-termination "looped on the correct answer" diagnostic in
-`graphtalk/analysis.py`'s `build_frame` (see `scripts/check_significance.py`'s
+`graphtalk/analysis.py`'s `build_frame` (see `preliminary/scripts/check_significance.py`'s
 `n_looped_on_correct_answer` column), and did not attempt to cover
 `extract_answer`/`score_one` themselves. The `TASKS`/`ALL_TASKS` section below
 adds narrow coverage of those two for the `reachability` task specifically,
@@ -88,7 +88,7 @@ def test_extract_answer_first_raises_on_unknown_task():
 # `TASKS` (the default `--tasks`/`build_diverse` value that drives
 # `graphqa.fetch_rows`) while still being accepted by the scorer via
 # `ALL_TASKS`. See `graphtalk/diverse_corpus.py::make_row` and
-# `scripts/build_prompts.py --tasks`.
+# `preliminary/scripts/build_prompts.py --tasks`.
 
 
 def test_tasks_tuple_unchanged_by_reachability_addition():

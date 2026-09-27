@@ -175,7 +175,7 @@ def _filler_phrase() -> str:
   characters on the same 500-graph corpus `docs/plans/primer-computation.md`
   §4 uses, against 265 for `degree` and 497 for `clustering` -- because the
   control has to stay at or above those unpadded for the length argument in
-  that section to hold, and `scripts/build_prompts.py` does not pass
+  that section to hold, and `preliminary/scripts/build_prompts.py` does not pass
   `target_chars` in production.
   """
   return "is simply present within the graph G"

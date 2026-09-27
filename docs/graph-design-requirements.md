@@ -5,7 +5,7 @@ something other than primer content, usually without failing loudly.
 
 Everything here is measured, not assumed; the source job or script is named for
 each number. Screens come from `graphtalk/cell_screen.py`, accuracies from
-`csv2/ladder-retrieval/ladder_matrix.limited.csv`, reading limits from the retrieval probe
+`preliminary/outputs/ladder-retrieval/ladder_matrix.limited.csv`, reading limits from the retrieval probe
 (jobs 873209-873246).
 
 ## 1. `n >= 40` -- enough distinct degree values
@@ -63,7 +63,7 @@ the prompt while collapsing to **0.18** on the same fact at position 0.5.
 
 So "does not truncate" is the wrong target. The target is "below this model's
 reading limit", and that number comes only from the retrieval probe
-(`scripts/build_retrieval_probe.py`), per model.
+(`preliminary/scripts/build_retrieval_probe.py`), per model.
 
 Note the think arm reserves 16,384 tokens for generation, so its usable prompt
 budget is ~16k even though the window is 32,768. That has never been the
@@ -210,7 +210,7 @@ If `m` or length were the driver, the rows in each block would be equal.
 The higher-`k_bar` rung is harder *and shorter*: length runs opposite to
 difficulty. This rules out length-alone, and rules out edge count (constant by
 construction). The pattern holds in 6 of the 7 fixed-`m` blocks, across all
-three models. Full table: `scripts/analyze_ladder.py` output grouped by `m`.
+three models. Full table: `preliminary/scripts/analyze_ladder.py` output grouped by `m`.
 
 ### Test 2 -- hold mean degree fixed, vary length
 

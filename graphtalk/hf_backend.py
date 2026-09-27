@@ -27,7 +27,7 @@ class Completion:
   the abandoned working -- so it scores as a confident wrong answer rather than
   as missing data, and `docs/DATA.md` puts the difference on `gemma4-12b-think`
   at 81.2% against 99.1%. Until now the only record of which rows those were was
-  the hand-maintained `analysis/truncated_keys.json`, derived by a route nothing
+  the hand-maintained `preliminary/analysis/truncated_keys.json`, derived by a route nothing
   in the repo scripts; the generator states it directly instead.
 
   `n_new_tokens` counts generated ids including a trailing EOS, which
@@ -131,8 +131,8 @@ def generate_batch(tokenizer, model, prompts: list[str], max_new_tokens: int,
   **NOT YET VALIDATED ON A GPU** -- this dev environment has no `torch`
   install and no CUDA device, so this function has only been checked by
   reading, not by running. Before trusting it for a real sweep: run it
-  against the same prompts `analysis/budget-gemma4-e4b.jsonl` and
-  `analysis/budget-qwen3-8b.jsonl` came from and confirm the decoded text
+  against the same prompts `preliminary/analysis/budget-gemma4-e4b.jsonl` and
+  `preliminary/analysis/budget-qwen3-8b.jsonl` came from and confirm the decoded text
   matches `generate`'s single-stream output near-identically (greedy
   decoding, so it should be exact modulo the known floating-point
   non-associativity of batched vs. unbatched matmuls) -- for *both*

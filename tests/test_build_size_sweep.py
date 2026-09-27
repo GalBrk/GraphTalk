@@ -1,7 +1,7 @@
 """Tests for `scripts/build_size_sweep.py`'s density mode.
 
 The density knob is opt-in, and the reason it has to be is that
-`prompts.sizesweep.jsonl` was already generated and already scored: if
+`preliminary/data/prompts/prompts.sizesweep.jsonl` was already generated and already scored: if
 passing no new flag changed a single byte of this script's output, the four
 completed `size` arms would no longer be reproducible from the script that
 built them. `test_default_output_unchanged_by_density_support` is that
