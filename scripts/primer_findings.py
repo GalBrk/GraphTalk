@@ -516,7 +516,8 @@ def edge_existence_main(f):
   print("[eemain] edge_existence, main sweep (p<=.50): raw accuracy and balanced "
         "accuracy of all responses (truncated not correct, %), yes-rate of finished, "
         "truncated share; balanced accuracy vs none: change [95% CI], paired "
-        "permutation p, BH q over the six conditions within arm")
+        "permutation p, BH q over the six conditions within arm; then each primer "
+        "against filler, BH q over the five")
   for arm in ARMS:
     d = f[(f.arm == arm) & (f.task == "edge_existence") & f.density_class.isin(DENS4)]
     rows = []
@@ -533,6 +534,13 @@ def edge_existence_main(f):
             f"{(fin.pred == 'Yes').mean():.3f} truncated {x.truncated.mean():.3f}")
     for (c, obs, lo, hi, p), q in zip(rows, bh([r[4] for r in rows])):
       print(f"    BA {c:10s} vs none {f1(obs)} [{f1(lo)}, {f1(hi)}] p={p:.2g} q={q:.2g}")
+    rows = []
+    for c in PRIMERS:
+      j = pairs(f, arm, "edge_existence", "filler", c, DENS4)
+      obs, p = ba_test(j)
+      rows.append((c, obs, *boot(j, ba_test_stat), p))
+    for (c, obs, lo, hi, p), q in zip(rows, bh([r[4] for r in rows])):
+      print(f"    BA {c:10s} vs filler {f1(obs)} [{f1(lo)}, {f1(hi)}] p={p:.2g} q={q:.2g}")
 
 
 def edge_existence(f):
@@ -569,19 +577,20 @@ def edge_existence(f):
       x = cur[(cur.arm == arm) & (cur.condition == c)].sort_values("density")
       print(f"  {c:10s} " + " ".join(f"{r.yes:.2f}/{r.bacc:.2f}/{r.truncated:.2f}/{r.tokens:.0f}"
                                      for r in x.itertuples()))
-  for c in ["degree", "all", "clustering", "rwse", "filler"]:
-    j = pairs(f, "qwen3-1.7b", "edge_existence", "none", c, DENSHI)
-
-    def dba(jj):
-      v = []
-      for _, g in jj.groupby(level=0):
-        p, n = g[g.gold_is_yes_a == 1], g[g.gold_is_yes_a == 0]
-        v.append(0.5 * (p.correct_b.mean() + n.correct_b.mean())
-                 - 0.5 * (p.correct_a.mean() + n.correct_a.mean()))
-      return 100 * np.mean(v)
+  def dba(jj):
+    v = []
+    for _, g in jj.groupby(level=0):
+      p, n = g[g.gold_is_yes_a == 1], g[g.gold_is_yes_a == 0]
+      v.append(0.5 * (p.correct_b.mean() + n.correct_b.mean())
+               - 0.5 * (p.correct_a.mean() + n.correct_a.mean()))
+    return 100 * np.mean(v)
+  conds = ["degree", "all", "clustering", "rwse", "filler"]
+  js = [pairs(f, "qwen3-1.7b", "edge_existence", "none", c, DENSHI) for c in conds]
+  ps = [ba_test(j, per_density=True)[1] for j in js]
+  for c, j, p, q in zip(conds, js, ps, bh(ps)):
     lo, hi = boot(j, dba)
     print(f"  balanced accuracy, qwen3-1.7b, p>=.65, {c} vs none: {f1(dba(j))} [{f1(lo)}, {f1(hi)}]"
-          f" permutation p={ba_test(j, per_density=True)[1]:.2g}")
+          f" permutation p={p:.2g} q={q:.2g} (BH over the five)")
 
 
 def clustering_high(f):
