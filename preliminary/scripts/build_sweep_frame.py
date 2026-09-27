@@ -3,15 +3,14 @@
 Zeroshot/none baseline, the cross-condition comparison, the thinking-arm
 non-termination breakdown, and an overall failure_type tally. No GPU needed.
 
-Rows that are not part of the tracked sweep live in `runs/archive/` and are
-excluded by directory, so a plain `runs/*.jsonl` glob does not reach them.
+Rows under any `archive/` directory are excluded (`graphtalk.analysis.is_excluded`).
 
-  PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py \
-      --responses runs/*.jsonl --shortcuts shortcuts.json \
-      --truncated-keys analysis/truncated_keys.json \
-      --out csv2/sweep-small-graph/sweep_frame.csv
+  PYTHONPATH=. .venv/bin/python preliminary/scripts/build_sweep_frame.py \
+      --responses preliminary/data/runs/*.jsonl --shortcuts preliminary/data/shortcuts.json \
+      --truncated-keys preliminary/analysis/truncated_keys.json \
+      --out preliminary/outputs/sweep-small-graph/sweep_frame.csv
 
-The written CSV is the input `scripts/sample_failures.py` reads back in to
+The written CSV is the input `preliminary/scripts/sample_failures.py` reads back in to
 pull the manual-inspection sample (objective 4) without re-scoring.
 
 GoT-named responses (`--node-naming got` on `build_prompts.py`) are
@@ -20,7 +19,7 @@ desubstituted back to integers before scoring, same as `score_sweep.py`'s own
 an integer run and a `.got.` run in one glob raises rather than silently
 pooling them under the same `(instance_id, condition, style, model)` key
 (see `graphtalk.analysis.infer_node_naming`). `--out` left unset picks
-`csv2/sweep-small-graph/sweep_frame.csv` for `integer` or `csv2/sweep-small-graph/sweep_frame.got.csv`
+`preliminary/outputs/sweep-small-graph/sweep_frame.csv` for `integer` or `preliminary/outputs/sweep-small-graph/sweep_frame.got.csv`
 for `got` automatically.
 """
 
@@ -28,7 +27,7 @@ import argparse
 import glob
 
 from graphtalk import analysis
-from scripts import score_sweep
+from preliminary.scripts import score_sweep
 
 
 def _load_paths(patterns: list[str]) -> list[str]:
@@ -98,13 +97,13 @@ def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--responses", nargs="+", required=True)
   parser.add_argument("--shortcuts", default=None,
-                       help="optional shortcuts.json for the shortcut_score column")
+                       help="optional preliminary/data/shortcuts.json for the shortcut_score column")
   parser.add_argument("--truncated-keys", default=None,
-                       help="optional analysis/truncated_keys.json for the "
+                       help="optional preliminary/analysis/truncated_keys.json for the "
                             "ground-truth non_terminating column")
   parser.add_argument("--out", default=None,
-                       help="default csv2/sweep-small-graph/sweep_frame.csv, or "
-                            "analysis/sweep_frame.<scheme>.csv for a "
+                       help="default preliminary/outputs/sweep-small-graph/sweep_frame.csv, or "
+                            "preliminary/analysis/sweep_frame.<scheme>.csv for a "
                             "non-integer node_naming scheme -- see "
                             "README.md#node-naming")
   args = parser.parse_args()
@@ -126,7 +125,7 @@ def main() -> None:
   )
 
   frame = analysis.build_frame(records, truncated_keys, shortcuts_by_cell)
-  out = args.out or analysis.tagged_path("csv2/sweep-small-graph/sweep_frame.csv", scheme)
+  out = args.out or analysis.tagged_path("preliminary/outputs/sweep-small-graph/sweep_frame.csv", scheme)
   frame.to_csv(out, index=False)
   print(f"wrote {len(frame)} rows to {out} (node_naming: {scheme})")
 

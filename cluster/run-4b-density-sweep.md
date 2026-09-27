@@ -13,7 +13,7 @@ Already built at `/home/dcor/galbarak2/GraphTalk/prompts.densfull40.jsonl`; you
 do not need to rebuild it (it's tracked in git, or read it in place on the
 cluster).
 
-**Heads up on validity before you look at results:** `docs/primer-effects-and-power.md`
+**Heads up on validity before you look at results:** `preliminary/docs/primer-effects-and-power.md`
 documents that at this size/density, `node_count` is contaminated by nearly
 every primer (any per-node sentence lets you count sentences), `cycle_check`'s
 gold is "yes" for almost every graph past the sparsest level, and the `degree`
@@ -62,7 +62,7 @@ Don't override `--max-new-tokens` on the `-think` arm -- it already defaults to
 
 Output lands at `data/runs/qwen3-4b.densfull40-inbal.shard<i>of25.jsonl` and
 `data/runs/qwen3-4b-think.densfull40-inbal.shard<i>of25.jsonl`.
-`scripts/score_sweep.py`/`score_density_sweep.py` pool by each row's `model`
+`preliminary/scripts/score_sweep.py`/`score_density_sweep.py` pool by each row's `model`
 field, not by filename, so the `-inbal` tag rejoins the arm automatically --
 nothing to reassemble.
 

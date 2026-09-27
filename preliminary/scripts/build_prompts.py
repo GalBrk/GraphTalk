@@ -10,7 +10,7 @@ The design is paired, which is what the proposal's McNemar test requires: the
 same graph and the same query appear under every primer condition and both prompt
 styles, differing only in the primer. `instance_id` is the pairing key.
 
-  PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 30
+  PYTHONPATH=. .venv/bin/python preliminary/scripts/build_prompts.py --count 30
 """
 
 import argparse
@@ -172,7 +172,7 @@ def build_stratified(count: int, conditions, styles, split: str, cache: str,
   count) out of a `pool_size`-row candidate pool per task, instead of
   simply the first `count` rows in split order.
 
-  `node_naming_scheme` (Phase 4b, `docs/plans/run_improved_tests.md`):
+  `node_naming_scheme` (Phase 4b, `preliminary/docs/run_improved_tests.md`):
   `"integer"` (default, unchanged) or a `graphtalk.node_naming.NAMINGS`
   value, mirroring `build_named`. Safe to add mechanically rather than by
   guesswork: `node_naming.build_name_map` assigns names by list position
@@ -185,16 +185,16 @@ def build_stratified(count: int, conditions, styles, split: str, cache: str,
   is identical either way.
 
   Track 2.2: near-ceiling models (`gemma4-12b`/`gemma4-e4b` in the main
-  sweep, per `analysis/README.md`'s "Current significance results")
+  sweep, per `preliminary/analysis/README.md`'s "Current significance results")
   barely produce any discordant pairs at `--count 30` -- there is almost
   nothing left to flip. Uniformly scaling `--count` raises the discordant
-  count roughly proportionally, but `docs/sweep-findings.md`'s "Missing
+  count roughly proportionally, but `preliminary/docs/sweep-findings.md`'s "Missing
   instances skew toward larger graphs" already establishes, on already-
   collected data, that larger graphs are where these models' errors (and,
   by the same logic, a primer's chance to change the verdict) concentrate.
   Oversampling large graphs raises the discordant-pair *yield per graph
   collected* instead of just the total graph count -- see
-  `scripts/validate_stratified_sampling.py` for the data-driven check of
+  `scripts/validate_stratified_sampling.py` (tag `pre-cleanup`) for the data-driven check of
   that assumption against real, already-collected responses (Track 2.2's
   required validation) before spending any GPU time generating with this
   mode.
@@ -333,14 +333,14 @@ def main() -> None:
                            "(by node count) out of a --pool-size candidate pool "
                            "from the published split, instead of the first "
                            "--count in split order -- for near-ceiling models, "
-                           "where docs/sweep-findings.md's 'Missing instances "
+                           "where preliminary/docs/sweep-findings.md's 'Missing instances "
                            "skew toward larger graphs' finding suggests larger "
                            "graphs yield more discordant pairs per graph "
-                           "collected; see scripts/validate_stratified_sampling.py "
+                           "collected; see scripts/validate_stratified_sampling.py in tag pre-cleanup "
                            "before spending GPU time on this. diverse is only "
                            "supported with --node-naming integer; stratified "
                            "supports every --node-naming scheme (Phase 4b, "
-                           "docs/plans/run_improved_tests.md).")
+                           "preliminary/docs/run_improved_tests.md).")
   parser.add_argument("--pool-size", type=int, default=500,
                       help="--graph-source stratified only: candidate pool size "
                            "per task to rank by graph size before taking the "

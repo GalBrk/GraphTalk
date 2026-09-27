@@ -34,7 +34,7 @@ TASKS = (
 
 # Tasks scoring understands but that don't exist in the published HF dataset
 # (no matching config to fetch via graphqa.fetch_rows) -- kept out of TASKS so
-# scripts/build_prompts.py's default `--tasks` and build_diverse's Python-level
+# preliminary/scripts/build_prompts.py's default `--tasks` and build_diverse's Python-level
 # default (both `scoring.TASKS`) never try to fetch a nonexistent published
 # config. Opt in explicitly via `--tasks reachability` (--graph-source diverse
 # only; there is no published "reachability" split to source from).

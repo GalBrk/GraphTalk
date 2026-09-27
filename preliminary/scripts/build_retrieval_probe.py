@@ -1,6 +1,6 @@
 """Build a pure retrieval probe: can the model read one stated fact out of a long prompt?
 
-Three separate findings in `docs/primer-effects-and-power.md` point at one
+Three separate findings in `preliminary/docs/primer-effects-and-power.md` point at one
 mechanism rather than three:
 
 - the `degree` ceiling (job 871263) -- with the answer written verbatim the
@@ -87,7 +87,7 @@ def main() -> None:
                       choices=sorted(BANDS))
   parser.add_argument("--count", type=int, default=100, help="items per cell")
   parser.add_argument("--seed", type=int, default=20260909)
-  parser.add_argument("--out", default="prompts.retrieval.jsonl")
+  parser.add_argument("--out", default="preliminary/data/prompts/prompts.retrieval.jsonl")
   args = parser.parse_args()
 
   records = build(args.statements, args.positions, args.magnitudes,

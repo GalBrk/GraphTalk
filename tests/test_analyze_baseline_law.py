@@ -3,7 +3,7 @@
 Two of these guard decisions that would fail silently rather than loudly.
 
 `test_degenerate_tasks_report_no_route_gain` pins the n=40 correction: the
-shortcut bars in `shortcuts.json` were fitted on the published split's small
+shortcut bars in `preliminary/data/shortcuts.json` were fitted on the published split's small
 graphs, where a per-node primer gives `node_count` away. At n=40 the gold
 answer is the constant 40, so the blind bar is ~1.00 under `none` too and the
 primer adds nothing. Leaving those tasks in flips the split's headline

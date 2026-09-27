@@ -1,4 +1,4 @@
-"""Phase 1 (`docs/plans/run_improved_tests.md`): a repeatable, per-(model,
+"""Phase 1 (`preliminary/docs/run_improved_tests.md`): a repeatable, per-(model,
 condition, task) significance screen for the `exact` metric, run directly
 against already-collected data -- no new GPU time.
 
@@ -14,7 +14,7 @@ cell.
 originally assumed a fixed list of *tasks* a graph-blind primer-only
 solver already solves near 100% (see `docs/plans/shortcut-ceilings.md`,
 `graphtalk/shortcuts.py`), to be excluded from this screen as an
-uninteresting confound. Checking the real, current `shortcuts.json`
+uninteresting confound. Checking the real, current `preliminary/data/shortcuts.json`
 (embedded in every row of the frame as `shortcut_score`) shows this isn't
 actually true *per task*: shortcut ceiling is a property of a
 `(task, condition)` **pair**, not a task alone -- no task is anywhere near
@@ -22,7 +22,7 @@ ceiling-bound under the `none` control condition (the highest is
 `cycle_check`/`none` at 0.832, not ~1.0), so there is no fixed task list
 to exclude on that basis. The plan's current revision replaces that
 exclusion with a full audit instead:
-`analysis/primer_task_shortcut_audit.md` traces, per `(condition, task)`
+`preliminary/analysis/primer_task_shortcut_audit.md` traces, per `(condition, task)`
 pair, whether the primer text mechanically determines the answer
 (`shortcut`), gives real but partial leverage via a one-directional
 theorem or a moderate correlation (`partial`), or gives nothing detectable
@@ -40,8 +40,8 @@ excluded outright as a screened cell, per the plan -- it is mechanically
 correlated with its components and not independent evidence, matching
 `check_significance.py`'s own `_is_derived_condition` policy.
 
-  PYTHONPATH=. .venv/bin/python scripts/task_scoped_screen.py \
-      --frame csv2/sweep-small-graph/sweep_frame.got.csv
+  PYTHONPATH=. .venv/bin/python preliminary/scripts/task_scoped_screen.py \
+      --frame preliminary/outputs/sweep-small-graph/sweep_frame.got.csv
 """
 
 import argparse
@@ -51,9 +51,9 @@ import pandas as pd
 
 from graphtalk import analysis
 from graphtalk import significance
-from scripts import check_significance as cs
+from preliminary.scripts import check_significance as cs
 
-# analysis/primer_task_shortcut_audit.md's classification, hardcoded here
+# preliminary/analysis/primer_task_shortcut_audit.md's classification, hardcoded here
 # (see module docstring for why this isn't derived from shortcut_score at
 # runtime). `all` is omitted -- excluded from the screen entirely, so it
 # never needs a lookup here.
@@ -229,9 +229,9 @@ def screen(
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--frame", default="csv2/sweep-small-graph/sweep_frame.got.csv")
+  parser.add_argument("--frame", default="preliminary/outputs/sweep-small-graph/sweep_frame.got.csv")
   parser.add_argument("--out", default=None,
-                      help="default analysis/task_scoped_screen.<scheme>.csv")
+                      help="default preliminary/analysis/task_scoped_screen.<scheme>.csv")
   parser.add_argument("--n-perm", type=int, default=10_000)
   parser.add_argument("--n-boot", type=int, default=10_000)
   parser.add_argument("--alpha", type=float, default=0.05)
@@ -240,7 +240,7 @@ def main() -> None:
                       help="flat \"<task>/<condition>\": bar JSON to classify "
                            "cells from, instead of _SHORTCUT_AUDIT and the "
                            "frame's shortcut_score. Defaults to "
-                           "shortcuts_n40_flat.json when the frame's "
+                           "data/shortcuts_n40_flat.json when the frame's "
                            "instance_ids say n=40, because the audit table "
                            "is wrong in both directions there (see "
                            "flag_from_bars). Pass \"none\" to force the "
@@ -261,7 +261,7 @@ def main() -> None:
   is_n40 = frame["instance_id"].astype(str).str.contains("/size40/").any()
   shortcuts = args.shortcuts
   if shortcuts is None and is_n40:
-    shortcuts = "shortcuts_n40_flat.json"
+    shortcuts = "data/shortcuts_n40_flat.json"
   bars = None if shortcuts in (None, "none") else load_bars(shortcuts)
   if bars is not None:
     print(f"classifying cells from refit bars: {shortcuts}")
@@ -276,7 +276,7 @@ def main() -> None:
   result = pd.DataFrame(rows).sort_values("p_value")
 
   out = args.out or analysis.tagged_path(
-      "csv2/sweep-small-graph/task_scoped_screen.csv", scheme
+      "preliminary/outputs/sweep-small-graph/task_scoped_screen.csv", scheme
   )
   result.to_csv(out, index=False)
   print(f"wrote {len(result)} rows to {out}")
@@ -297,7 +297,7 @@ def main() -> None:
 
   # Split per the plan: "none" cells (real graph-reasoning candidates)
   # reported separately from shortcut/partial cells (arithmetic/lookup
-  # execution-reliability candidates) -- see analysis/
+  # execution-reliability candidates) -- see preliminary/analysis/
   # primer_task_shortcut_audit.md's closing section for why this split
   # matters for Phase 5 prioritization.
   none_candidates = candidates[candidates["shortcut_flag"] == "none"]

@@ -1,4 +1,4 @@
-"""`scripts/recommend_count.py`: the closed-form `--count` extrapolation,
+"""`preliminary/scripts/recommend_count.py`: the closed-form `--count` extrapolation,
 and the on-demand MDE path for family-significant-but-not-globally-
 significant cells (see the module docstring for why that case needs a
 fresh simulation rather than reusing anything `check_significance.py`
@@ -10,7 +10,7 @@ import random
 import pandas as pd
 import pytest
 
-from scripts import recommend_count as rc
+from preliminary.scripts import recommend_count as rc
 
 
 def _report_row(**overrides) -> dict:

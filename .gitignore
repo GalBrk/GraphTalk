@@ -26,8 +26,8 @@ out/
 # Prompt subsets used to drive a partial regeneration. Regenerable by filtering
 # the tracked prompt files (see analysis/README.md), and misleading if committed:
 # they look like a prompt set the sweep used in full, which they never are.
-/prompts.rerun.jsonl
-/prompts.smoke.jsonl
+/preliminary/data/prompts/prompts.rerun.jsonl
+/preliminary/data/prompts/prompts.smoke.jsonl
 
 # Same reasoning, two more of them.
 #
@@ -43,7 +43,7 @@ out/
 # rebuilds deterministically from `scripts/build_prompts.py --count 500
 # --node-naming got`.
 /batch_validation_prompts.jsonl
-/prompts_got.count500.jsonl
+/preliminary/data/prompts/prompts_got.count500.jsonl
 
 # The density-sweep prompt sets, which are large and exactly regenerable.
 #
@@ -74,13 +74,13 @@ out/
 # `scripts/build_retrieval_probe.py` with the command in its run writeup. Larger
 # than any tracked prompt file because 1,280 statements of surrounding text is
 # the point of the design rather than an accident of it.
-/prompts.retrieval.jsonl
+/preliminary/data/prompts/prompts.retrieval.jsonl
 
 # The threshold-bisection follow-up to the retrieval probe above: three
 # statement counts (226/452/905) that bisect, in log space, the two collapse
 # boundaries the base probe only bracketed. Regenerable exactly by the command
 # in docs/primer-effects-and-power.md's "What this makes worth running next".
-/prompts.retrieval_threshold.jsonl
+/preliminary/data/prompts/prompts.retrieval_threshold.jsonl
 
 # The GoT-node-naming build of the densfull40 sweep. `prompts.densfull40.jsonl`
 # (the integer-named version, 86 MB) IS tracked, because it has tracked

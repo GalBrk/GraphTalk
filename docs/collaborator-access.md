@@ -9,13 +9,13 @@ the models and the environments as well, without re-downloading 111 GB.
 git clone git@github.com:GalBrk/GraphTalk.git
 ```
 
-**[DATA.md](DATA.md) documents every file's schema and how they join.** Everything needed to score and analyse is tracked: `runs/*.jsonl` (the raw model
-responses), `prompts.jsonl` (the exact prompts they answer), and `shortcuts.json`
-(the primer-only solver score each cell is read against). See `runs/README.md` for
+**[DATA.md](DATA.md) documents every file's schema and how they join.** Everything needed to score and analyse is tracked: `preliminary/data/runs/*.jsonl` (the raw model
+responses), `prompts.jsonl` (the exact prompts they answer), and `preliminary/data/shortcuts.json`
+(the primer-only solver score each cell is read against). See `preliminary/data/runs/README.md` for
 the row schema. **Read [results/README.md](results/README.md) first** -- the
-index of current results; `docs/sweep-findings.md` is the older analysis of the
+index of current results; `preliminary/docs/sweep-findings.md` is the older analysis of the
 5-19 node corpus, kept for its retractions rather than its conclusions. Two
-things decide how every other number should be read: effects are judged against `bar(cond) - bar(none)` from `shortcuts.json`
+things decide how every other number should be read: effects are judged against `bar(cond) - bar(none)` from `preliminary/data/shortcuts.json`
 rather than against zero, and against a *length-matched* control rather than
 against `none`, since a structure-free primer of about the same length costs a
 thinking model 11.4 points at p >= .65 on its own
@@ -42,7 +42,7 @@ source /home/dcor/galbarak2/anaconda3/etc/profile.d/conda.sh
 conda activate /home/dcor/galbarak2/conda_envs/graphtalk-cu126
 
 cd $REPO
-python scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v '\.got\.') --shortcuts shortcuts.json
+python preliminary/scripts/score_sweep.py --responses $(ls preliminary/data/runs/*.jsonl | grep -v '\.got\.') --shortcuts preliminary/data/shortcuts.json
 ```
 
 `graphtalk` is a cu130 build and needs driver 580+. That is a driver

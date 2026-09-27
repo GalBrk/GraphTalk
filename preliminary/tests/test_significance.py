@@ -1,7 +1,7 @@
 """Tests for graphtalk/significance.py and its guards.
 
 No test file existed for this module before -- these are the checks that
-justify trusting `scripts/check_significance.py`'s numbers, added alongside
+justify trusting `preliminary/scripts/check_significance.py`'s numbers, added alongside
 the fixes they validate: exact agreement with `scoring.mcnemar` (the
 project's already-trusted test, on the same data), and a synthetic
 correlated dataset demonstrating why the *_clustered functions exist at all
@@ -20,7 +20,7 @@ import pytest
 from graphtalk import analysis
 from graphtalk import scoring
 from graphtalk import significance
-from scripts import check_significance as cs
+from preliminary.scripts import check_significance as cs
 
 
 def _default_args(**overrides):
@@ -262,7 +262,7 @@ def test_assert_unique_pairing_key_needs_condition_for_a_whole_frame():
   )
 
 
-# --- scripts/check_significance.py: non_terminating rows, forced wrong -----
+# --- preliminary/scripts/check_significance.py: non_terminating rows, forced wrong -----
 
 
 def test_count_forced_wrong_non_terminating():
@@ -1748,7 +1748,7 @@ def test_exact_paired_ci_reports_no_interval_width_without_discordant_pairs():
   """`n_discordant` is what a caller renders; the zero width is not a claim.
 
   Conditional on nothing disagreeing there is no direction to bound, so the
-  interval is a point. `superseded/paper/make_ci_table.py` prints "n/a" off the count
+  interval is a point. `superseded/paper/make_ci_table.py` (tag `pre-cleanup`) prints "n/a" off the count
   rather than a zero-width 95% interval, which reads as a confident null.
   """
   assert significance.exact_paired_ci(0, 0, 380) == {
@@ -1758,7 +1758,7 @@ def test_exact_paired_ci_reports_no_interval_width_without_discordant_pairs():
 def test_exact_paired_ci_does_not_overclaim_where_the_bootstrap_did():
   """The five cells the bootstrap wrongly separated from zero.
 
-  Each is a real `superseded/ci_all.json` cell: a handful of disagreements out of ~370,
+  Each is a real `superseded/ci_all.json` (tag `pre-cleanup`) cell: a handful of disagreements out of ~370,
   where the percentile bootstrap returned an interval excluding zero (its
   measured false-positive rate is 6.25% at 5 discordant pairs and 6.58% at
   8, against a nominal 5%). The exact interval covers zero at all five.

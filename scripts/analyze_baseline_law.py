@@ -15,7 +15,7 @@ DEGENERATE_TASKS = ("node_count", "cycle_check")
 
 # A primer is treated as offering a substitute route when the blind solver
 # recovers meaningfully more from it than from `none`. The threshold is a
-# rounding guard, not a tuned parameter: every gain in `shortcuts.json` is
+# rounding guard, not a tuned parameter: every gain in `preliminary/data/shortcuts.json` is
 # either <= 0.012 or >= 0.114, so anything in [0.02, 0.10] gives this split.
 ROUTE_GAIN_THRESHOLD = 0.05
 

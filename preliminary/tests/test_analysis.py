@@ -4,7 +4,7 @@ The ground-truth regression is the point of this file: `analysis.build_frame`
 must reproduce `analysis/truncated_keys.json`'s exact per-model non-
 terminating counts on real thinking-arm data. If a future change to the
 detection logic disagrees with any of those labelled rows, that is a bug
-in the new code, not a new finding -- see `docs/sweep-findings.md`, which
+in the new code, not a new finding -- see `preliminary/docs/sweep-findings.md`, which
 treats those counts as established.
 """
 
@@ -17,10 +17,10 @@ import pytest
 
 from graphtalk import analysis
 from graphtalk import node_naming
-from scripts import score_sweep
+from preliminary.scripts import score_sweep
 
-_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_TRUNCATED_KEYS = os.path.join(_REPO_ROOT, "analysis", "truncated_keys.json")
+_PRELIMINARY = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_TRUNCATED_KEYS = os.path.join(_PRELIMINARY, "analysis", "truncated_keys.json")
 
 # The historical figures, over the complete pre-rewording thinking arm. Kept as
 # documentation, not as the assertion: the prompt-rewording re-run regenerates 79
@@ -38,7 +38,7 @@ _HISTORICAL_NON_TERMINATING = {
 
 
 def _think_run_paths() -> list[str]:
-  paths = glob.glob(os.path.join(_REPO_ROOT, "runs", "*-think.shard*.jsonl"))
+  paths = glob.glob(os.path.join(_PRELIMINARY, "data", "runs", "*-think.shard*.jsonl"))
   return [p for p in paths if not analysis.is_excluded(p)]
 
 
@@ -440,8 +440,8 @@ def test_frame_node_naming_raises_on_a_mix():
 
 
 def test_desubstitution_before_scoring_is_what_build_sweep_frame_needs():
-  """`scripts/build_sweep_frame.py` must desubstitute a GoT response before
-  scoring, exactly like `scripts/score_sweep.py`'s own `main` already did --
+  """`preliminary/scripts/build_sweep_frame.py` must desubstitute a GoT response before
+  scoring, exactly like `preliminary/scripts/score_sweep.py`'s own `main` already did --
   a real gap this session found and fixed. Without it, "Ned" (node 0's GoT
   name) never resolves to the digit "0" and the row scores `unparsed`
   instead of `correct`.

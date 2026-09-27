@@ -2,19 +2,19 @@
 sweep frame for manual visual inspection, with full response text and the
 underlying graph's size joined back in. No GPU needed.
 
-Reads the CSV `scripts/build_sweep_frame.py` wrote -- does not re-score.
-`response` text is re-joined from `runs/*.jsonl` and `nodes`/`edges` from
-`prompts.jsonl`/`prompts_zero_shot.jsonl` on `(instance_id, condition,
+Reads the CSV `preliminary/scripts/build_sweep_frame.py` wrote -- does not re-score.
+`response` text is re-joined from `preliminary/data/runs/*.jsonl` and `nodes`/`edges` from
+`prompts.jsonl`/`preliminary/data/prompts/prompts_zero_shot.jsonl` on `(instance_id, condition,
 style[, model]), node_naming`, since neither lives in the canonical frame
 (see `graphtalk/analysis.py` for why). `node_naming` is part of both join
 keys so a `--responses`/`--prompts` glob that also catches the other
 scheme's files simply matches nothing for those rows, rather than joining in
 the wrong text. `--frame` must carry a single scheme -- raises otherwise.
 
-  PYTHONPATH=. .venv/bin/python scripts/sample_failures.py \
-      --frame csv2/sweep-small-graph/sweep_frame.csv --responses runs/*.jsonl \
-      --prompts prompts.jsonl prompts_zero_shot.jsonl \
-      --out analysis/failure_sample.csv
+  PYTHONPATH=. .venv/bin/python preliminary/scripts/sample_failures.py \
+      --frame preliminary/outputs/sweep-small-graph/sweep_frame.csv --responses preliminary/data/runs/*.jsonl \
+      --prompts prompts.jsonl preliminary/data/prompts/prompts_zero_shot.jsonl \
+      --out preliminary/analysis/failure_sample.csv
 """
 
 import argparse
@@ -24,7 +24,7 @@ import json
 import pandas as pd
 
 from graphtalk import analysis
-from scripts import score_sweep
+from preliminary.scripts import score_sweep
 
 # For quick spreadsheet scanning. The tail matters as much as the head: for a
 # non-terminating row the diagnostic content (the repeated re-verification,
@@ -69,17 +69,17 @@ def _load_prompt_sizes(paths: list[str]) -> dict[tuple, tuple]:
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--frame", required=True,
-                       help="canonical CSV from scripts/build_sweep_frame.py")
+                       help="canonical CSV from preliminary/scripts/build_sweep_frame.py")
   parser.add_argument("--responses", nargs="+", required=True)
   parser.add_argument("--prompts", nargs="+", default=[],
-                       help="prompts.jsonl / prompts_zero_shot.jsonl, for the "
+                       help="prompts.jsonl / preliminary/data/prompts/prompts_zero_shot.jsonl, for the "
                             "nodes/edges columns")
   parser.add_argument("--n-per-stratum", type=int, default=3,
                        help="max sampled rows per (model, failure_type)")
   parser.add_argument("--seed", type=int, default=1234)
   parser.add_argument("--out", default=None,
-                       help="default analysis/failure_sample.csv, or "
-                            "analysis/failure_sample.<scheme>.csv for a "
+                       help="default preliminary/analysis/failure_sample.csv, or "
+                            "preliminary/analysis/failure_sample.<scheme>.csv for a "
                             "non-integer node_naming scheme -- see "
                             "README.md#node-naming")
   args = parser.parse_args()
@@ -118,7 +118,7 @@ def main() -> None:
       nodes=nodes,
       edges=edges,
   )
-  out = args.out or analysis.tagged_path("analysis/failure_sample.csv", scheme)
+  out = args.out or analysis.tagged_path("preliminary/analysis/failure_sample.csv", scheme)
   sample.to_csv(out, index=False)
   print(f"wrote {len(sample)} sampled failure rows to {out} (node_naming: {scheme})")
   print(sample["failure_type"].value_counts().to_string())

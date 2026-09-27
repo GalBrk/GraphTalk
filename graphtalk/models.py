@@ -96,7 +96,7 @@ MODELS = {
                   {"enable_thinking": False}),
 
         # The headroom probe. Every model above sits at 83-100% pooled exact
-        # match, and `docs/sweep-findings.md` shows the consequence: all 144
+        # match, and `preliminary/docs/sweep-findings.md` shows the consequence: all 144
         # McNemar cells have fewer than 10 discordant pairs, and for
         # `gemma4-12b` that is a ceiling, not a sample size -- there is nothing
         # left for a primer to flip. That document's "Target the headroom" names
@@ -125,7 +125,7 @@ MODELS = {
         # accuracy, because at this size the two failure modes are easy to
         # confuse and only one of them is about primers.
         # Weights come from the lab-shared cache rather than a fresh download
-        # for the shared difficulty ladder (docs/ladder-and-rewiring.md) -- see
+        # for the shared difficulty ladder (preliminary/docs/ladder-and-rewiring.md) -- see
         # cluster/sweep.sbatch's GRAPHTALK_HF_HOME.
         ModelSpec("qwen3-0.6b", "Qwen/Qwen3-0.6B", "qwen3", "0.6B",
                   "AutoModelForCausalLM", 4,
@@ -241,7 +241,7 @@ MODELS = {
         # Expect this arm to truncate far more than the larger ones do. Small
         # models repeat rather than stop, and truncation has impersonated a
         # finding in this project three separate times (see "Truncation
-        # impersonates a finding" in docs/sweep-findings.md) -- a capped response
+        # impersonates a finding" in preliminary/docs/sweep-findings.md) -- a capped response
         # still parses, so it scores as a confident wrong answer rather than as
         # missing data. Filter on `hit_cap` before comparing anything here.
         ModelSpec("qwen3-0.6b-think", "Qwen/Qwen3-0.6B", "qwen3", "0.6B",

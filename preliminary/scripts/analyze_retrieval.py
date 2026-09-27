@@ -1,12 +1,12 @@
 """Turn retrieval-probe runs into per-model reading limits.
 
-`scripts/build_retrieval_probe.py` states one "Node X has degree Y." fact
+`preliminary/scripts/build_retrieval_probe.py` states one "Node X has degree Y." fact
 among `k` distractor statements and asks for it back -- no graph, nothing to
 compute. A model's accuracy here as `k` grows is therefore a pure measure of
 *reading*, not of graph reasoning, and the brackets it produces are exactly
-the `--reading-limits model=tokens` input `scripts/analyze_ladder.py` needs to
+the `--reading-limits model=tokens` input `preliminary/scripts/analyze_ladder.py` needs to
 tell "hard because the model can't read the graph" apart from "hard because
-the model reads it fine and still gets it wrong" (`docs/ladder-and-rewiring.md`).
+the model reads it fine and still gets it wrong" (`preliminary/docs/ladder-and-rewiring.md`).
 
 Two failure shapes are reported, because they call for different fixes:
 
@@ -21,7 +21,7 @@ Two failure shapes are reported, because they call for different fixes:
     where that gap exceeds `--middle-gap-threshold` (default 0.15).
 
 Token counts are `chars // 4` (`_APPROX_CHARS_PER_TOKEN`, the same heuristic
-`scripts/build_prompts.py` and `docs/difficulty-scaling.md` already use for an
+`preliminary/scripts/build_prompts.py` and `preliminary/docs/difficulty-scaling.md` already use for an
 overflow warning) applied to a prompt reconstructed with
 `build_retrieval_probe.build` -- not a real tokenizer count, since no model's
 actual tokenizer is available without `transformers`/GPU. Good enough for a
@@ -37,7 +37,7 @@ import statistics
 from collections import defaultdict
 
 from graphtalk import scoring
-from scripts.build_retrieval_probe import build
+from preliminary.scripts.build_retrieval_probe import build
 
 _APPROX_CHARS_PER_TOKEN = 4
 _INSTANCE = re.compile(r"^retrieval/k(\d+)/pos([\d.]+)/(small|large)/(\d+)$")

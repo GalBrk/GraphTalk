@@ -63,7 +63,7 @@ than this file's conclusion.
 
 **That trigger has now partly fired, and the answer was not what this section
 anticipated.** `reachability` was implemented (`scoring.ALL_TASKS`, and
-`docs/difficulty-scaling.md`), but it turned out to be degenerate on this
+`preliminary/docs/difficulty-scaling.md`), but it turned out to be degenerate on this
 corpus rather than a new axis for distance-based features: five of the seven
 generator families are connected by construction, so the gold answer is "Yes"
 for essentially every graph -- 210/210 under the recommended settings. A

@@ -73,7 +73,7 @@ def build(sizes, count, conditions, seed, style="zero_shot", densities=None,
   `densities=None` is the original size-sweep behaviour: sparsity is drawn
   per graph from U(0, 1), the instance_id carries only the size class, and
   no density keys are emitted -- so re-running this script with no new flags
-  reproduces `prompts.sizesweep.jsonl` byte for byte. Passing explicit
+  reproduces `preliminary/data/prompts/prompts.sizesweep.jsonl` byte for byte. Passing explicit
   levels pins sparsity to each one instead (`random.uniform(p, p) == p`),
   which is what turns density from corpus noise into a controlled variable.
   """
@@ -184,7 +184,7 @@ def main() -> None:
                            "Game-of-Thrones names instead of node integers "
                            "(graphtalk/node_naming.py); tags each row "
                            "node_naming: 'got'")
-  parser.add_argument("--out", default="prompts.sizesweep.jsonl")
+  parser.add_argument("--out", default="preliminary/data/prompts/prompts.sizesweep.jsonl")
   args = parser.parse_args()
 
   for task in args.tasks:
