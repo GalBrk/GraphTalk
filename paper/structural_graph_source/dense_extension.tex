@@ -1,0 +1,88 @@
+\begin{table*}[t]
+\centering\scriptsize
+\setlength{\tabcolsep}{3.4pt}
+\textbf{(a) Correct share}\par\smallskip
+\begin{tabular}{llrrrrrrr}
+\toprule
+Task & Arm & None & Degree & Cluster. & RWSE & All & Comp. & Filler\\
+\midrule
+Degree & 1.7P & 9.67 & $+0.3$ & $-3.3$ & $-5.3$ & $+2.7$ & $+0.3$ & $-5.3$\\ % [dense-frame]
+ & 1.7T & 46.33 & $+25.7$ & $-9.0$ & $-4.3$ & $+22.7$ & $-1.7$ & $-12.0$\\ % [dense-frame]
+ & 4P & 55.00 & $+9.3$ & $+11.3$ & $+7.7$ & $-21.3$ & $-1.0$ & $+2.0$\\ % [dense-frame]
+ & 4T & 97.33 & $-0.7$ & $-0.7$ & $-0.7$ & $+0.3$ & $-2.0$ & $+0.0$\\ % [dense-frame]
+\addlinespace[3pt]
+Edge exists & 1.7P & 77.00 & $+2.0$ & $+1.3$ & $+1.0$ & $+6.7$ & $-1.0$ & $-1.3$\\ % [dense-frame]
+ & 1.7T & 99.00 & $-0.7$ & $-0.3$ & $+0.3$ & $-0.7$ & $+0.0$ & $-0.7$\\ % [dense-frame]
+ & 4P & 90.00 & $-3.3$ & $+5.3$ & $-0.7$ & $-2.3$ & $-3.3$ & $-6.3$\\ % [dense-frame]
+ & 4T & 99.33 & $+0.7$ & $+0.7$ & $+0.3$ & $+0.3$ & $+0.7$ & $+0.7$\\ % [dense-frame]
+\bottomrule
+\end{tabular}
+\par\medskip
+\textbf{(b) Truncated share}\par\smallskip
+\begin{tabular}{llrrrrrrr}
+\toprule
+Task & Arm & None & Degree & Cluster. & RWSE & All & Comp. & Filler\\
+\midrule
+Degree & 1.7P & 0.33 & $-0.3$ & $-0.3$ & $-0.3$ & $-0.3$ & $-0.3$ & $-0.3$\\ % [dense-frame]
+ & 1.7T & 1.67 & $+9.0$ & $-1.3$ & $-1.3$ & $+0.0$ & $+0.3$ & $-1.0$\\ % [dense-frame]
+ & 4P & 0.00 & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$\\ % [dense-frame]
+ & 4T & 0.33 & $+0.3$ & $+0.0$ & $+0.7$ & $+0.7$ & $+0.3$ & $-0.3$\\ % [dense-frame]
+\addlinespace[3pt]
+Edge exists & 1.7P & 0.00 & $+1.3$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$\\ % [dense-frame]
+ & 1.7T & 0.00 & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$\\ % [dense-frame]
+ & 4P & 0.00 & $+0.3$ & $+0.0$ & $+0.0$ & $+0.3$ & $+0.3$ & $+0.0$\\ % [dense-frame]
+ & 4T & 0.00 & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$\\ % [dense-frame]
+\bottomrule
+\end{tabular}
+\par\medskip
+\textbf{(c) Edge-existence decisions}\par\smallskip
+\begin{minipage}[t]{.48\textwidth}
+\centering
+\begin{tabular}{llrrr}
+\toprule
+Arm & Primer & Raw & Bal. & Yes\\
+\midrule
+1.7P & none & 0.770 & 0.527 & 0.987\\ % [dense-frame]
+1.7P & degree & 0.790 & 0.606 & 0.926\\ % [dense-frame]
+1.7P & clustering & 0.783 & 0.564 & 0.960\\ % [dense-frame]
+1.7P & rwse & 0.780 & 0.548 & 0.977\\ % [dense-frame]
+1.7P & all & 0.837 & 0.674 & 0.907\\ % [dense-frame]
+1.7P & components & 0.760 & 0.507 & 0.997\\ % [dense-frame]
+1.7P & filler & 0.757 & 0.500 & 1.000\\ % [dense-frame]
+\addlinespace[2pt]
+1.7T & none & 0.990 & 0.993 & 0.747\\ % [dense-frame]
+1.7T & degree & 0.983 & 0.980 & 0.753\\ % [dense-frame]
+1.7T & clustering & 0.987 & 0.987 & 0.750\\ % [dense-frame]
+1.7T & rwse & 0.993 & 0.986 & 0.763\\ % [dense-frame]
+1.7T & all & 0.983 & 0.975 & 0.760\\ % [dense-frame]
+1.7T & components & 0.990 & 0.993 & 0.747\\ % [dense-frame]
+1.7T & filler & 0.983 & 0.984 & 0.747\\ % [dense-frame]
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill\begin{minipage}[t]{.48\textwidth}
+\centering
+\begin{tabular}{llrrr}
+\toprule
+Arm & Primer & Raw & Bal. & Yes\\
+\midrule
+4P & none & 0.900 & 0.832 & 0.803\\ % [dense-frame]
+4P & degree & 0.867 & 0.740 & 0.870\\ % [dense-frame]
+4P & clustering & 0.953 & 0.932 & 0.763\\ % [dense-frame]
+4P & rwse & 0.893 & 0.813 & 0.817\\ % [dense-frame]
+4P & all & 0.877 & 0.756 & 0.866\\ % [dense-frame]
+4P & components & 0.867 & 0.754 & 0.849\\ % [dense-frame]
+4P & filler & 0.837 & 0.697 & 0.873\\ % [dense-frame]
+\addlinespace[2pt]
+4T & none & 0.993 & 0.996 & 0.750\\ % [dense-frame]
+4T & degree & 1.000 & 1.000 & 0.757\\ % [dense-frame]
+4T & clustering & 1.000 & 1.000 & 0.757\\ % [dense-frame]
+4T & rwse & 0.997 & 0.998 & 0.753\\ % [dense-frame]
+4T & all & 0.997 & 0.993 & 0.760\\ % [dense-frame]
+4T & components & 1.000 & 1.000 & 0.757\\ % [dense-frame]
+4T & filler & 1.000 & 1.000 & 0.757\\ % [dense-frame]
+\bottomrule
+\end{tabular}
+\end{minipage}
+\caption{Complete dense-extension comparison at $p\in\{.65,.75,.85\}$ for degree and edge existence. (a,b) No-primer correct/truncated share (percent of all $300$ prompts), followed by paired primer changes (points); wrong share is the remainder. (c) Edge raw accuracy (Raw) and balanced accuracy (Bal.) include truncations as noncorrect; yes-rate (Yes) uses finished answers. All values are descriptive: no pooled or density-level significance is claimed, and plain-arm budgets differ from the lower-density sweep. P/T: plain/thinking.} % [dense-frame]
+\label{tab:densematrix}
+\end{table*}

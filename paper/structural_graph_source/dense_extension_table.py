@@ -1,0 +1,89 @@
+"""Audit the complete 40-node dense-extension primer comparisons.
+
+Usage: python dense_extension_table.py --frame PATH --output dense_extension.tex
+"""
+
+import argparse
+from pathlib import Path
+
+import pandas as pd
+
+from matrix_audit import ARMS, ARM_LABELS, CONDITIONS
+
+
+def dense_rows(frame, task, arm):
+    f = frame[(frame.task == task) & (frame.arm == arm)
+              & (frame.density_class >= .65)]
+    matched = {}
+    for condition in ("none", *CONDITIONS):
+        rows = f[f.condition == condition].set_index("instance_id").sort_index()
+        assert len(rows) == 300 and rows.index.is_unique, (task, arm, condition)
+        matched[condition] = rows
+    control = matched["none"]
+    assert all(r.index.equals(control.index) and (r.gold == control.gold).all()
+               for r in matched.values())
+    return matched
+
+
+def panel(frame, measure, title):
+    lines = [rf"\textbf{{{title}}}\par\smallskip",
+             r"\begin{tabular}{llrrrrrrr}", r"\toprule",
+             r"Task & Arm & None & Degree & Cluster. & RWSE & All & Comp. & Filler\\",
+             r"\midrule"]
+    for task, title in (("node_degree", "Degree"), ("edge_existence", "Edge exists")):
+        for arm in ARMS:
+            matched = dense_rows(frame, task, arm)
+            values = {condition: 100 * measure(rows) for condition, rows in matched.items()}
+            changes = " & ".join(f"${values[c] - values['none']:+.1f}$" for c in CONDITIONS)
+            lines.append(f"{title if arm == ARMS[0] else ''} & {ARM_LABELS[arm]} & "
+                         f"{values['none']:.2f} & {changes}" + r"\\ % [dense-frame]")
+        if task == "node_degree":
+            lines.append(r"\addlinespace[3pt]")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return lines
+
+
+def edge_decisions(frame, arms):
+    lines = [r"\begin{tabular}{llrrr}", r"\toprule",
+             r"Arm & Primer & Raw & Bal. & Yes\\", r"\midrule"]
+    for arm in arms:
+        matched = dense_rows(frame, "edge_existence", arm)
+        for condition, rows in matched.items():
+            good = rows.hit_cap.eq(0) & rows.exact.eq(1)
+            gold_yes = rows.gold_is_yes.astype(bool)
+            balanced = (good[gold_yes].mean() + good[~gold_yes].mean()) / 2
+            finished = rows[rows.hit_cap.eq(0)]
+            yes = finished.pred.astype(str).str.strip().str.lower().eq("yes").mean()
+            assert len(finished) > 0
+            lines.append(f"{ARM_LABELS[arm]} & {condition} & {good.mean():.3f} & "
+                         f"{balanced:.3f} & {yes:.3f}" + r"\\ % [dense-frame]")
+        if arm != arms[-1]:
+            lines.append(r"\addlinespace[2pt]")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return lines
+
+
+def latex(frame):
+    lines = [r"\begin{table*}[t]", r"\centering\scriptsize",
+             r"\setlength{\tabcolsep}{3.4pt}"]
+    lines += panel(frame, lambda r: (r.exact * (1-r.hit_cap)).mean(),
+                   "(a) Correct share")
+    lines += [r"\par\medskip"]
+    lines += panel(frame, lambda r: r.hit_cap.mean(), "(b) Truncated share")
+    lines += [r"\par\medskip", r"\textbf{(c) Edge-existence decisions}\par\smallskip",
+              r"\begin{minipage}[t]{.48\textwidth}", r"\centering"]
+    lines += edge_decisions(frame, ARMS[:2])
+    lines += [r"\end{minipage}\hfill\begin{minipage}[t]{.48\textwidth}", r"\centering"]
+    lines += edge_decisions(frame, ARMS[2:])
+    lines += [r"\end{minipage}",
+              r"\caption{Complete dense-extension comparison at $p\in\{.65,.75,.85\}$ for degree and edge existence. (a,b) No-primer correct/truncated share (percent of all $300$ prompts), followed by paired primer changes (points); wrong share is the remainder. (c) Edge raw accuracy (Raw) and balanced accuracy (Bal.) include truncations as noncorrect; yes-rate (Yes) uses finished answers. All values are descriptive: no pooled or density-level significance is claimed, and plain-arm budgets differ from the lower-density sweep. P/T: plain/thinking.} % [dense-frame]",
+              r"\label{tab:densematrix}", r"\end{table*}"]
+    return "\n".join(lines) + "\n"
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--frame", required=True)
+    parser.add_argument("--output", required=True)
+    args = parser.parse_args()
+    Path(args.output).write_text(latex(pd.read_csv(args.frame)))
