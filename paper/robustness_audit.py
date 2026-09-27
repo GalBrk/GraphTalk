@@ -1,6 +1,6 @@
 """Recompute supplementary 40-node contrasts from saved GraphTalk responses.
 
-Usage: python robustness_audit.py --repo /path/to/GraphTalk
+Usage: python paper/robustness_audit.py   (--repo points at another checkout)
 This performs no new model inference. The BH families are defined below before
 the tests: three density interactions, and six high-density all-vs-controls.
 """
@@ -108,7 +108,7 @@ def direct_comparisons(frame, scoring):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--repo", type=Path, required=True)
+    parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[1])
     args = parser.parse_args()
     repo = args.repo.resolve()
     sys.path.insert(0, str(repo))
@@ -117,7 +117,7 @@ def main():
     from graphtalk import scoring
 
     def runs(*names):
-        return [str(repo / "runs" / f"{name}.shard*.jsonl") for name in names]
+        return [str(repo / "data" / "runs" / f"{name}.shard*.jsonl") for name in names]
 
     plain = runs("qwen3-1.7b.degdens40", "qwen3-1.7b.degceil",
                  "qwen3-1.7b.degdens40hi", "qwen3-1.7b.degdensfill")
@@ -135,7 +135,7 @@ def main():
               f"interaction {r['difference']:+.2f} [{r['ci'][0]:+.2f}, {r['ci'][1]:+.2f}], "
               f"p={r['p']:.5g}, q={q:.5g}; n=1600/1200")
 
-    path = repo / "csv2/raw-trends/frame.csv"
+    path = repo / "outputs/n40-sweep/frame.csv"
     frame = pd.read_csv(path, usecols=["arm", "task", "condition", "density_class",
                                        "instance_id", "gold", "exact", "hit_cap"])
     print("[bundle-direct] Plain 4B node degree p>=.65 (n=300 paired per contrast): high-density all minus comparator, correct share of every prompt; exact McNemar p and BH q over six alternatives. All cells have zero truncations; the plain dense arm uses 2048 output tokens.")

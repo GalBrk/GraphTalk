@@ -1,7 +1,7 @@
 """Reproduce the Qwen3-4B thinking edge-count outcome figure.
 
 Values are copied from GraphTalk/results-sot at
-csv2/raw-trends/primer_findings.txt, [edgecount].
+outputs/n40-sweep/primer_findings.txt, [edgecount].
 """
 
 import matplotlib.pyplot as plt

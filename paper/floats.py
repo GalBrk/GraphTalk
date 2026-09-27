@@ -1,14 +1,12 @@
 """Generate the paper's Results floats from the repo's tagged outputs.
 
-Usage: python floats.py --repo /path/to/GraphTalk
+Usage: python paper/floats.py   (reads ../outputs; --repo points elsewhere)
 
 Writes, next to this file:
-  table_effects.tex  Table 1: every primer effect with q < .05 on the four tasks
-                     whose answer varies ([main] vs none and vs filler, [bars],
-                     [eemain]); cells at or above the truncation flag go in the caption.
   fig_headroom.pdf   Figure 1: node_degree effect against the no-primer correct
                      share, per arm and density, degree and all (primer_cells.csv,
-                     which primer_findings.py --csv-dir writes).
+                     which primer_findings.py --csv-dir writes); also
+                     docs/img/fig_headroom.png for the README.
   fig_clustering.pdf Figure 2: the clustering effect on node_degree, every arm on the same
                      graphs ([clustarms]), then the follow-ups ([replic], [fixdeg17],
                      [ddplainfill], [ddplain], [ddthink], [fixdeg8]).
@@ -23,12 +21,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from matrix_audit import ARMS, ARM_LABELS, parse_tagged_main
+from matrix_audit import ARMS, ARM_LABELS
 
 HERE = Path(__file__).resolve().parent
-TASKS = {"node_degree": "Degree", "connected_nodes": "Neighbors",
-         "edge_count": "Edge count", "edge_existence": "Edge exists"}
-PRIMERS = ["degree", "all", "clustering", "rwse", "components"]
 LABEL = {"degree": "degree", "all": "all", "clustering": "clustering", "rwse": "RWSE",
          "components": "components", "none": "none"}
 INK, MUTED = "#0b0b0b", "#52514e"
@@ -57,83 +52,6 @@ def interval(text, tag, key):
     return tuple(map(float, re.search(NUM, line).groups()))
 
 
-def qfmt(q):
-    return "$<$.001" if q < .001 else f"{q:.2g}".lstrip("0")
-
-
-def solver_bars(report):
-    bars = {}
-    for line in block(report, "bars").splitlines():
-        m = re.match(r"^  (\w+): (.*)$", line)
-        if m and m.group(1) in TASKS:
-            for cond, val in re.findall(r"(\w+) ([\d.]+)", m.group(2)):
-                bars[(m.group(1), cond)] = float(val)
-    return bars
-
-
-def discloses(bars, task, primer):
-    if bars[(task, primer)] >= 85:
-        return "answer"
-    if task == "connected_nodes" and primer in ("degree", "all"):
-        return "its size"
-    if bars[(task, primer)] - bars[(task, "none")] >= 5:
-        return "part"
-    return "--"
-
-
-def balanced(report):
-    """[eemain]: arm -> primer -> (change, q)."""
-    out, arm = {}, None
-    for line in block(report, "eemain").splitlines():
-        m = re.match(r"^  (qwen3-[\w.-]+)\s", line)
-        if m:
-            arm = m.group(1)
-        m = re.match(r"^    BA (\w+)\s+vs none ([+-][\d.]+) .*? q=(\S+)", line)
-        if m:
-            out.setdefault(arm, {})[m.group(1)] = (float(m.group(2)), float(m.group(3)))
-    return out
-
-
-def table_effects(report_path, report):
-    none, filler = parse_tagged_main(report_path), parse_tagged_main(report_path, "filler")
-    bars, ba = solver_bars(report), balanced(report)
-    rows, flagged = [], []
-    for task, tlabel in TASKS.items():
-        for arm in ARMS:
-            for c in PRIMERS:
-                before, after, d, q, dt, flag = none[(arm, task, c)]
-                if q >= .05:
-                    continue
-                if flag:
-                    flagged.append(f"{ARM_LABELS[arm]} {tlabel.lower()} {LABEL[c]} ${d:+.1f}$ "
-                                   f"(truncated ${dt:+.1f}$)")
-                    continue
-                fd, fq = filler[(arm, task, c)][2:4]
-                bal = ""
-                if task == "edge_existence":
-                    bd, bq = ba[arm][c]
-                    bal = f"${bd:+.1f}$" + ("$^{*}$" if bq < .05 else "")
-                rows.append(f"{tlabel} & {ARM_LABELS[arm]} & {LABEL[c]} & {discloses(bars, task, c)} & "
-                            f"{bars[(task, c)]:.1f} & {before:.2f}$\\to${after:.2f} & ${d:+.1f}$ & "
-                            f"{qfmt(q)} & ${dt:+.1f}$ & ${fd:+.1f}$" + ("$^{*}$" if fq < .05 else "")
-                            + f" & {bal}\\\\ % [main] [bars]" + (" [eemain]" if bal else ""))
-    lines = [r"\begin{table*}[t]", r"\centering\footnotesize", r"\setlength{\tabcolsep}{4pt}",
-             r"\begin{tabular}{lllcrrrrrrr}", r"\toprule",
-             r"Task & Arm & Primer & States & Solver & None$\to$primer & $\Delta$ & $q$ & "
-             r"$\Delta$trunc. & $\Delta$ vs filler & $\Delta$BA\\", r"\midrule", *rows,
-             r"\bottomrule", r"\end{tabular}",
-             r"\caption{Every primer effect with $q<.05$ on the four tasks whose answer varies "
-             r"(main sweep, $p\leq.50$, 400 paired graphs per row). Correct shares are percent "
-             r"of all responses; $\Delta$ is in points. \emph{States}: what the primer states "
-             r"about the answer, from the graph-blind solver (\emph{Solver}, percent correct from "
-             r"the primer text alone). $\Delta$ vs filler compares the primer with the "
-             r"structure-free filler on the same graphs; $\Delta$BA is the change in balanced "
-             r"accuracy. $^{*}$: $q<.05$. P/T: plain/thinking. At or above 15\% truncation, "
-             r"not shown: " + "; ".join(flagged) + r".} % [main] [bars] [eemain]",
-             r"\label{tab:effects}", r"\end{table*}"]
-    (HERE / "table_effects.tex").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
-
-
 def fig_headroom(cells_path):
     t = pd.read_csv(cells_path)
     t = t[(t.task == "node_degree") & t.condition.isin(["degree", "all"])]
@@ -158,6 +76,8 @@ def fig_headroom(cells_path):
     axes[0].legend(fontsize=7, frameon=False, loc="lower left", handletextpad=0.2)
     fig.tight_layout(w_pad=1.0)
     fig.savefig(HERE / "fig_headroom.pdf", bbox_inches="tight", pad_inches=0.02)
+    fig.savefig(HERE.parent / "docs" / "img" / "fig_headroom.png", dpi=200,
+                bbox_inches="tight", pad_inches=0.05, facecolor="white")
 
 
 def fig_clustering(report, followups):
@@ -258,11 +178,9 @@ def table_cycles(claims):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--repo", required=True)
+    ap.add_argument("--repo", default=str(HERE.parent))
     repo = Path(ap.parse_args().repo)
-    report_path = repo / "csv2/raw-trends/primer_findings.txt"
-    report = report_path.read_text(encoding="utf-8")
-    table_effects(report_path, report)
-    fig_headroom(repo / "csv2/raw-trends/primer_cells.csv")
-    fig_clustering(report, (repo / "csv2/density-followups/density_followups.txt").read_text(encoding="utf-8"))
-    table_cycles((repo / "csv2/raw-trends/check_cycle_claims.txt").read_text(encoding="utf-8"))
+    report = (repo / "outputs/n40-sweep/primer_findings.txt").read_text(encoding="utf-8")
+    fig_headroom(repo / "outputs/n40-sweep/primer_cells.csv")
+    fig_clustering(report, (repo / "outputs/density-followups/density_followups.txt").read_text(encoding="utf-8"))
+    table_cycles((repo / "outputs/n40-sweep/check_cycle_claims.txt").read_text(encoding="utf-8"))
