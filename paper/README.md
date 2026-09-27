@@ -52,9 +52,8 @@ density interactions, and `[bundle-direct]` within six paired high-density
 alternatives. Both count a truncated response as its own outcome. No new model
 inference was run for any of these.
 
-The paper cites the results at `results-sot` commit `746d2ab`
-(`graphtalkresults2026`), where these outputs were still under
-`csv2/raw-trends/`. They now live in `outputs/`, with the same content.
+The paper cites the results at `results-sot` commit `641ad66`
+(`graphtalkresults2026`), whose outputs are in `outputs/`.
 
 ## Where each part of the paper comes from
 
