@@ -48,6 +48,13 @@
     1.7B-T filler 79.9->77.1 (-2.8, n=388) | components 79.5->75.1 (-4.3, n=346) | clustering 80.1->80.9 (+0.8, n=376) | rwse 80.1->68.7 (-11.4*, n=386) | degree 80.2->62.1 (-18.1*, n=293) | all 79.9->73.2 (-6.7, n=373)
     4B     filler 34.3->44.0 (+9.7*, n=391) | components 34.4->39.1 (+4.7, n=384) | clustering 34.0->48.7 (+14.7*, n=394) | rwse 34.3->33.2 (-1.0, n=391) | degree 34.1->13.5 (-20.6*, n=384) | all 33.8->45.3 (+11.5*, n=391)
     4B-T   filler 96.5->94.4 (-2.0, n=396) | components 96.6->92.1 (-4.5*, n=381) | clustering 96.4->95.4 (-1.0, n=394) | rwse 96.5->55.4 (-41.0*, n=395) | degree 96.5->90.9 (-5.6*, n=372) | all 96.4->92.9 (-3.6, n=392)
+[ccthinktest] cycle_check, correct finished answers, thinking against plain on the same graphs and condition (graphs both answer correctly)
+  rests on a real cycle: % plain -> % thinking (change, * BH q < .05 over the conditions), pairs
+    1.7B   none 37.3->80.9 (+43.6*, n=351) | filler 33.3->77.1 (+43.7*, n=375) | components 27.7->75.0 (+47.3*, n=332) | clustering 39.7->80.4 (+40.7*, n=383) | rwse 33.7->68.2 (+34.5*, n=359) | degree 13.7->62.1 (+48.5*, n=227) | all 38.6->72.6 (+34.0*, n=376)
+    4B     none 34.4->96.4 (+62.1*, n=393) | filler 44.0->94.1 (+50.1*, n=393) | components 40.3->91.9 (+51.6*, n=372) | clustering 48.6->95.4 (+46.8*, n=395) | rwse 33.3->55.2 (+21.9*, n=393) | degree 13.7->90.7 (+77.0*, n=365) | all 45.1->92.8 (+47.7*, n=390)
+  rests on a false explanation (invented cycle or not a cycle): % plain -> % thinking (change, * BH q < .05 over the conditions), pairs
+    1.7B   none 59.0->17.7 (-41.3*, n=351) | filler 65.1->22.4 (-42.7*, n=375) | components 65.7->22.6 (-43.1*, n=332) | clustering 56.1->19.3 (-36.8*, n=383) | rwse 60.2->30.9 (-29.2*, n=359) | degree 22.0->29.1 (+7.0, n=227) | all 58.0->25.3 (-32.7*, n=376)
+    4B     none 30.0->3.3 (-26.7*, n=393) | filler 33.6->5.6 (-28.0*, n=393) | components 22.3->4.6 (-17.7*, n=372) | clustering 32.2->4.6 (-27.6*, n=395) | rwse 59.3->44.8 (-14.5*, n=393) | degree 6.0->5.2 (-0.8, n=365) | all 40.3->6.2 (-34.1*, n=390)
 [ccwhere] asserted invented cycles, all primers: invented steps; % of closing steps invented / % of inner steps invented; fake neighbour in the line of node a-1 or a+1, % (chance %); one off a real neighbour's id, % (chance %)
   1.7B    5398 steps; closing  56.6 / inner  21.6; adjacent line  38.1 (41.8); off by one  32.4 (44.8)
   1.7B-T  2838 steps; closing  56.8 / inner  16.1; adjacent line  38.9 (44.1); off by one  35.8 (48.6)

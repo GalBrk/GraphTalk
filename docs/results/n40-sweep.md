@@ -116,6 +116,10 @@ and against `filler`. The rows below answer the proposal's two questions.
 
 - On the aligned task the answer-carrying primer helps the arms that count
   poorly and costs plain Qwen3-4B, which already counts correctly (§4).
+- Under `all`, which also states every degree, the `node_degree` effects are
+  +10.2 [main] (q = 0.00086 [main]), +12.2 [main] (q = 3.4e-07 [main]),
+  −8.0 [main] (q = 1.2e-07 [main]) and +0.5 [main] (q = 0.98 [main]) for 1.7B,
+  1.7B-thinking, 4B and 4B-thinking.
 - The largest gains on adjacent and agnostic tasks come from answer leakage,
   from finishing within the budget, or from no mechanism the output
   identifies: `edge_count` under `degree` is leaked (§2); the 4B-thinking
@@ -148,6 +152,21 @@ and against `filler`. The rows below answer the proposal's two questions.
   by +12.5 [main] on 4B-thinking `edge_count` (†).
 - `filler` itself costs plain 4B −12.5 [main] on `connected_nodes` and plain
   1.7B −15.8 [main] on `edge_existence`.
+- Where `filler` costs accuracy, the structured primers beat it: on plain 1.7B
+  `edge_existence`, `clustering` by +19.5 [main], `rwse` by +20.8 [main] and
+  `components` by +7.5 [main]; on plain 4B `connected_nodes`, `clustering` by
+  +13.5 [main] and `rwse` by +12.5 [main]; on plain 1.7B `connected_nodes`,
+  `components`, `clustering` and `rwse` by +7.0 [main], +7.5 [main] and
+  +7.2 [main]; on plain 4B `edge_existence`, `clustering` by +11.0 [main] and
+  `components` by +4.2 [main] (q = 0.034 [main]), while `rwse` and `all` are
+  −3.0 [main] (q = 0.19 [main]).
+- On 1.7B-thinking `node_degree`, `clustering` and `rwse` beat `filler` by
+  +4.5 [main] (q = 0.044 [main]) and +5.5 [main] (q = 0.017 [main]).
+- `filler` beats the structured primers on plain 4B `edge_count` (`components`
+  −2.5 [main], `clustering` −2.5 [main], `rwse` −2.8 [main]) and on 4B-thinking
+  `node_degree` (`rwse` −3.2 [main], q = 0.022 [main]).
+- On 1.7B-thinking `connected_nodes`, `degree` is +3.8 [main] against `filler`
+  (q = 0.18 [main]).
 
 ## 4. A primer that states the answer changes the procedure
 
@@ -156,7 +175,12 @@ and against `filler`. The rows below answer the proposal's two questions.
 +7.0 [flip], +27.0 [flip] (p = .10 to .85), against no-primer accuracy of
 100.0 [flip], 99.0 [flip], 99.0 [flip], 99.0 [flip], 82.0 [flip], 50.0 [flip]
 and 33.0 [flip]. At p = .50, 13 [flip] answers break and 1 [flip] is fixed
-(p = 0.0018 [flip]).
+(p = 0.0018 [flip]). Over the 14 per-density tests of `degree` and `all`, the
+changes at p = .50 and .85 have q = 0.0064 [flip] and q = 0.0021 [flip]; the
+losses at p = .10 and .35 have q = 0.055 [flip] and q = 0.061 [flip]. Under
+`all`, which states the same degrees in a longer primer, the effect by density
+is −7.0 [flip], −3.0 [flip], −7.0 [flip], −15.0 [flip], −37.0 [flip],
+−19.0 [flip] and −8.0 [flip] (q = 3.4e-07 [flip] at p = .65).
 
 - Without a primer it lists the queried node's neighbours: at p = .50 it
   enumerates in 100% [route] of responses, correct in 99% [route].
@@ -177,8 +201,14 @@ and 33.0 [flip]. At p = .50, 13 [flip] answers break and 1 [flip] is fixed
   every wrong answer in the main sweep, 12 [lcopy] of 29 [lcopy] do, against a
   19.4% [lcopy] chance (p = 0.0055 [lcopy]).
 - Retrieval is more accurate for queried nodes 0–9 (95.7% [position]) than for
-  10–39 (83.1% [position]); node ids 0–9 are both single-digit and first in the
-  list, so the two cannot be separated here.
+  10–39 (83.1% [position]); under `all`, 88.5% [position] against
+  53.4% [position]. Node ids 0–9 are both single-digit and first in the list,
+  so the two cannot be separated here.
+- **Recovering a stated answer.** Where the solver scores 1.00, accuracy under
+  `degree` on `node_degree` is 0.43 [recover] (1.7B), 0.79 [recover]
+  (1.7B-thinking), 0.81 [recover] (4B) and 0.98 [recover] (4B-thinking); on
+  `edge_count` it is 0.04 [recover], 0.12 [recover], 0.29 [recover] and
+  0.28 [recover].
 
 **Qwen3-1.7B with thinking.** It keeps counting: it retrieves in at most
 2% [verify] of responses and enumerates in 90% [verify] at p ≥ .35. It reports a
@@ -195,7 +225,9 @@ the budget runs out.
 **Plain Qwen3-1.7B.** `degree` helps at p = .20, +10 [plain17] from a no-primer
 correct share of 80 [plain17], and at p = .35, +18 [plain17] from 41 [plain17];
 it does not at p = .50, −1 [plain17] from 30 [plain17], or above, between
-−1 [plain17] and +2 [plain17].
+−1 [plain17] and +2 [plain17]. None of the 39 [plaincite] answers `degree`
+fixes at p = .20 and .35 cites the stated degree or reports a discrepancy
+(0 [plaincite]).
 
 **Effect by baseline.** Binning every (arm, task, density, primer) cell of the
 four tasks whose answer varies, under the truncation flag, by its no-primer
@@ -266,6 +298,20 @@ equals the size of the stated neighbour set. Every item in J is in C.
   0.16 [fa] to 0.08 [fa].
 - The thinking arms show no bias: their false-alarm rate without a primer is
   0.01 [fa] (1.7B) and 0.00 [fa] (4B).
+- **Balanced accuracy, main sweep** (all responses; truncated is not correct),
+  against no primer with a paired permutation test and BH q over the six
+  conditions within an arm. Without a primer it is 79.86 [eemain] (plain 1.7B)
+  and 93.22 [eemain] (plain 4B). Plain 1.7B: `all` +7.8 [eemain]
+  (q = 0.001 [eemain]), `filler` −10.8 [eemain], `components` −5.6 [eemain];
+  `clustering`, `rwse` and `degree` +2.6 [eemain], +2.8 [eemain] and
+  +2.4 [eemain] (q = 0.13 [eemain]). Plain 4B: `clustering` +3.0 [eemain]
+  (q = 0.018 [eemain]), `rwse` and `all` −6.5 [eemain] (q = 0.0015 [eemain]),
+  `degree` −2.9 [eemain], `filler` −4.5 [eemain]. The thinking arms move by at
+  most 1.4 [eemain] points, none significantly.
+- At p ≥ .65, plain 1.7B's balanced-accuracy gains are significant by
+  permutation under `all` (p = 0.0005 [collapse]) and `degree`
+  (p = 0.002 [collapse]), not under `clustering` (p = 0.11 [collapse]) or
+  `rwse` (p = 0.47 [collapse]).
 
 ## 7. Side information is small and non-specific
 
@@ -274,7 +320,16 @@ equals the size of the stated neighbour set. Every item in J is in C.
   The printed coefficients barely vary within a graph there (standard deviation
   0.021 [cluster] at p = .65, lower above), and the procedure is unchanged:
   69% [clustproc] of responses enumerate, against 74% [clustproc] without a
-  primer.
+  primer. BH q over the six conditions: `clustering` q = 2.5e-05 [clusthi],
+  `rwse` q = 0.0064 [clusthi], `degree` +9.3 [clusthi] (q = 0.03 [clusthi]),
+  `all` q = 1.3e-07 [clusthi].
+- **No density hint.** At p ≥ .65 an Erdős–Rényi node's expected degree is 39p,
+  and the printed clustering values sit near p. Of plain 4B's answers that are
+  wrong both without a primer and with `clustering`, 16 [prior] per cent move
+  closer to 39p and 12 [prior] per cent farther (sign test p = 0.69 [prior]);
+  with `rwse`, 14 [prior] and 12 [prior] (p = 0.84 [prior]). The answers
+  these primers fix were over-counts, as under `filler`: 91% [prior]
+  (`clustering`) and 90% [prior] (`rwse`, `filler`).
 - **`clustering`, plain 1.7B, `node_degree`:** +3.0 [clusthi] in the main sweep
   (p = 0.26 [clusthi]). Dedicated runs replicate a gain: at p ≤ .50,
   +4.0 [replic] on 300 new graphs per density (p = 0.0047 [replic]) and

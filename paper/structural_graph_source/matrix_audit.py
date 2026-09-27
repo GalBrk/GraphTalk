@@ -18,23 +18,26 @@ ARM_LABELS = dict(zip(ARMS, ["1.7P", "1.7T", "4P", "4T"]))
 TASK_LABELS = ["Degree", "Neighbors", "Edge count", "Edge exists", "Node count", "Cycle"]
 
 
-def parse_tagged_main(path):
+def parse_tagged_main(path, control="none"):
+    """[main] rows against `control`: (arm, task, condition) -> (before, after,
+    delta, q, truncated change, flagged), as printed."""
     report = Path(path).read_text()
     section = report.split("[main] ", 1)[1].split("\n[", 1)[0]
     header = re.compile(r"^  (qwen3-[\w.-]+) (\w+) vs (none|filler):$")
-    row = re.compile(r"^    (\w+)\s+([\d.]+) -> ([\d.]+): ([+-][\d.]+) .*? q=([\deE.+-]+) ")
+    row = re.compile(r"^    (\w+)\s+([\d.]+) -> ([\d.]+): ([+-][\d.]+) .*? q=([\deE.+-]+) "
+                     r".*?truncated ([+-][\d.]+)")
     pairs = {}
     current = None
     for line in section.splitlines():
         h = header.match(line)
         if h:
-            arm, task, control = h.groups()
-            current = (arm, task) if control == "none" else None
+            arm, task, ctl = h.groups()
+            current = (arm, task) if ctl == control else None
         m = row.match(line)
         if m and current is not None:
-            cond, before, after, delta, q = m.groups()
-            pairs[(current[0], current[1], cond)] = tuple(map(float, [before, after, delta, q]))
-    assert len(pairs) == 4 * 6 * 6, len(pairs)
+            cond, *nums = m.groups()
+            pairs[(current[0], current[1], cond)] = (*map(float, nums), "FLAGGED" in line)
+    assert len(pairs) == 4 * 6 * (6 if control == "none" else 5), len(pairs)
     return pairs
 
 
@@ -48,11 +51,12 @@ def cell(frame, tagged, arm, task, cond):
     base = 100 * (a.exact * (1 - a.hit_cap)).mean()
     primed = 100 * (b.exact * (1 - b.hit_cap)).mean()
     eff = primed - base
-    old, new, reported, q = tagged[(arm, task, cond)]
+    old, new, reported, q, _, _ = tagged[(arm, task, cond)]
     assert abs(base - old) < .006 and abs(primed - new) < .006
     assert abs(eff - reported) <= .051, (arm, task, cond, eff, reported)
     flagged = max(a.hit_cap.mean(), b.hit_cap.mean()) >= .15
-    return base, eff, q, flagged
+    # The checks above tie the frame to the tag; the table prints the tag's values.
+    return old, reported, q, flagged
 
 
 def latex(frame, report):
@@ -76,18 +80,22 @@ def latex(frame, report):
             values = []
             for cond in CONDITIONS:
                 _, effect, q, flagged = data[cond]
-                marks = ("*" if q < .05 else "") + (r"\dagger" if flagged else "")
-                superscript = f"^{{{marks}}}" if marks else ""
-                values.append(f"${effect:+.1f}{superscript}$")
+                num = f"{effect:+.1f}"
+                shown = "$" + (rf"\mathbf{{{num}}}" if q < .05 else num) \
+                    + (r"^{\dagger}" if flagged else "") + "$"
+                # Shaded where the primer states the answer: [bars] scores 100.0.
+                if task in ("node_degree", "edge_count") and cond in ("degree", "all"):
+                    shown = r"\cellcolor{black!12}" + shown
+                values.append(shown)
             task_cell = label if arm == ARMS[0] else ""
             lines.append(f"{task_cell} & {ARM_LABELS[arm]} & {baseline:.2f} & "
-                         + " & ".join(values) + r"\\ % [main]")
+                         + " & ".join(values) + r"\\ % [main] [bars]")
         if idx not in (3, len(TASKS) - 1):
             lines.append(r"\addlinespace[2pt]")
     lines += [
         r"\bottomrule",
         r"\end{tabular}",
-        r"\caption{Complete main-sweep correct shares: no-primer baseline (percent of all prompts) and paired primer changes (points) on the same $40$-node graphs at $p\leq .50$. P/T: plain/thinking. $^{*}$ denotes $q<.05$ within the (arm, task, control) family; $^{\dagger}$ flags at least $15\%$ truncation on either side. Neighbor sets use exact-set correctness here; primary Set-F1 is in Table~\ref{tab:primarymetrics}(a). Edge existence uses raw correctness here; its balanced accuracy and finished-response yes-rate are in Table~\ref{tab:primarymetrics}(b). Node count and cycle have constant gold labels. Full truncation shares appear in Table~\ref{tab:truncmatrix}. Values are rounded from the tagged [main] results.} % [setup] [main]",
+        r"\caption{Main-sweep correct shares: no-primer baseline (\% of all prompts) and paired change (points) on the same $40$-node graphs, $p\leq.50$. Bold: $q<.05$ within (model, task, control); $^{\dagger}$: at least $15\%$ truncation on either side; shaded: the primer states the answer. Neighbor sets: exact set match (set-F1 in Table~\ref{tab:primarymetrics}(a)); edge existence: raw correctness (balanced accuracy in Table~\ref{tab:primarymetrics}(b)). Node count and cycle check have a constant answer at $40$ nodes; truncation shares are in Table~\ref{tab:truncmatrix}. P/T: plain/thinking.} % [setup] [main] [bars]",
         r"\label{tab:matrix}",
         r"\end{table*}",
     ]

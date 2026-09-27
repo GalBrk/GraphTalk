@@ -58,15 +58,15 @@ out += [
     r"\bottomrule",
     r"\end{tabular}",
     r"\end{minipage}",
-    r"\caption{Primary-metric audit on the same $400$ main-sweep prompts per "
-    r"arm and condition. (a) Neighbor-set Set-F1, with truncations scored "
+    r"\caption{Secondary metrics on the same $400$ main-sweep prompts per "
+    r"model and condition. (a) Neighbor-set set-F1, with truncations scored "
     r"zero: each row gives the no-primer baseline, the primer score and "
-    r"paired difference; $q$ adjusts six contrasts per arm. Components and "
-    r"filler are diagnostics. (b) Edge-existence raw and balanced accuracy "
+    r"paired difference; $q$ adjusts six contrasts per model (paired "
+    r"random-sign tests). (b) Edge-existence raw and balanced accuracy "
     r"(Bal.) and truncation (Trunc.) use all prompts; yes-rate (Yes) uses "
-    r"finished answers. Compare each primer row with its arm's none row. "
-    r"Only raw-accuracy contrasts have BH tests in Table~\ref{tab:matrix}; "
-    r"other edge measures are descriptive. P/T: plain/thinking.} "
+    r"finished answers. Compare each primer row with its model's none row; "
+    r"changes in balanced accuracy are tested in the text (\S\ref{sec:results}). "
+    r"P/T: plain/thinking.} "
     r"% [metric-audit-f1] [metric-audit-edge-main]",
     r"\label{tab:primarymetrics}",
     r"\end{table*}",

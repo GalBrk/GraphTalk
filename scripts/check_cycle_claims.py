@@ -721,6 +721,24 @@ def main():
   print_paired("asserts an invented cycle", paired(cyc, "asserted", CONDS, pf.ARMS))
   print_paired("rests on an invented cycle", paired(cyc, "on_invented", CONDS, pf.ARMS))
   print_paired("rests on a real cycle", paired(cyc, "on_real", CONDS, pf.ARMS))
+  print("[ccthinktest] cycle_check, correct finished answers, thinking against plain on the same "
+        "graphs and condition (graphs both answer correctly)")
+  cyc["on_false"] = cyc.rests.isin(["invented", "not a cycle"])
+  for col, label in (("on_real", "rests on a real cycle"),
+                     ("on_false", "rests on a false explanation (invented cycle or not a cycle)")):
+    print(f"  {label}: % plain -> % thinking (change, * BH q < .05 over the conditions), pairs")
+    for plain in ("qwen3-1.7b", "qwen3-4b"):
+      rows = []
+      for c in CONDS:
+        a, b = (cyc[(cyc.arm == arm) & (cyc.condition == c)].set_index("instance_id")[col]
+                for arm in (plain, plain + "-think"))
+        j = pd.concat([a, b], axis=1, join="inner").astype(bool)
+        p = scoring.mcnemar(j.iloc[:, 0].to_numpy(), j.iloc[:, 1].to_numpy())["p_value"]
+        rows.append([c, 100 * j.iloc[:, 0].mean(), 100 * j.iloc[:, 1].mean(), len(j), p])
+      for row, q in zip(rows, pf.bh([row[4] for row in rows])):
+        row[4] = q
+      print(f"    {SHORT[plain]:6s} " + " | ".join(
+          f"{c} {a:.1f}->{b:.1f} ({b - a:+.1f}{'*' if q < .05 else ''}, n={n})" for c, a, b, n, q in rows))
 
   w = pd.DataFrame(where)
   print("[ccwhere] asserted invented cycles, all primers: invented steps; % of closing steps invented / "

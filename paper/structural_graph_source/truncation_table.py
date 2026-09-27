@@ -5,11 +5,17 @@ The paired baseline and conditions are verified on the same instance IDs.
 """
 
 import argparse
+from decimal import ROUND_HALF_EVEN, Decimal
 from pathlib import Path
 
 import pandas as pd
 
 from matrix_audit import ARMS, ARM_LABELS, CONDITIONS, TASKS, TASK_LABELS
+
+
+def f1(x):
+    """One decimal, ties to even on the decimal value, as primer_findings prints [main]."""
+    return f"{Decimal(repr(round(float(x), 9))).quantize(Decimal('0.1'), rounding=ROUND_HALF_EVEN):+}"
 
 
 def latex(frame):
@@ -36,7 +42,7 @@ def latex(frame):
             base = 100 * control.hit_cap.mean()
             effects = [100 * (matched[condition].hit_cap.mean() - control.hit_cap.mean())
                        for condition in CONDITIONS]
-            cells = " & ".join(f"${effect:+.1f}$" for effect in effects)
+            cells = " & ".join(f"${f1(effect)}$" for effect in effects)
             label = task_label if arm == ARMS[0] else ""
             lines.append(f"{label} & {ARM_LABELS[arm]} & {base:.2f} & {cells}"
                          + r"\\ % [main] [trunc]")
