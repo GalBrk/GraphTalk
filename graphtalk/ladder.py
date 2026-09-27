@@ -14,7 +14,8 @@ axis, and they produce difficulty with opposite implications for primers:
 
   * Length-limited (large `n`, low degree): the model cannot read the graph, and
     cannot use a primer either -- where the plain arm collapses, the `degree`
-    control that writes the answer verbatim into the prompt is worth +0.7pp.
+    control that writes the answer verbatim into the prompt is worth +1.2pp,
+    not significant.
   * Magnitude-limited (moderate `n`, high degree): the model reads everything
     and miscounts, which is exactly the work a primer short-circuits -- the same
     control is worth +6.8pp there.

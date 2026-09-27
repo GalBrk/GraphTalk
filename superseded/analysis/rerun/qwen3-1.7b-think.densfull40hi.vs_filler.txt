@@ -1,0 +1,86 @@
+4200 unique rows loaded from 1 pattern(s)
+
+==========================================================================================
+TASK: edge_existence
+==========================================================================================
+blind bar (best constant answer):
+  p=0.65   modal  'Yes'  bar 0.660  (n=700)
+  p=0.75   modal  'Yes'  bar 0.760  (n=700)
+  p=0.85   modal  'Yes'  bar 0.850  (n=700)
+
+mean score by density x condition (hit_cap dropped):
+  p               all  clustering  components      degree      filler        none        rwse
+  0.65          0.970       0.990       0.990       1.000       0.990       0.990       1.000
+  0.75          0.990       1.000       0.980       0.980       0.990       0.980       0.990
+  0.85          0.990       0.970       1.000       0.970       0.970       1.000       0.990
+
+shortcut bar (primer-only solver, from shortcuts.json):
+  all p         0.741       0.727       0.735       0.746       0.735       0.735       0.554
+
+capped rows dropped by density x condition:
+  p               all  clustering  components      degree      filler        none        rwse
+  0.65              0           0           0           0           0           0           0
+  0.75              0           0           0           0           0           0           0
+  0.85              0           0           0           0           0           0           0
+
+unparsable rows (scored 0, not dropped) by density x condition:
+  p               all  clustering  components      degree      filler        none        rwse
+  0.65              0           0           0           0           0           0           0
+  0.75              0           0           0           0           0           0           0
+  0.85              0           0           0           0           0           0           0
+
+pooled across densities, paired vs 'filler' (exact McNemar):
+  (MDE printed under any row that did not survive BH -- the smallest true effect, in each direction, this row's data could reliably have detected; fast preset unless --mde was passed)
+          all - filler: n=  300 win    5 lose    5 delta +0.0000 p=1.0000  bar-adj -0.0057
+    MDE: delta=None realized=0.0164 (MDE exceeds 1.0 at this power target)  delta_negative=-0.0296875 realized_negative=-0.0302 (ok)
+   clustering - filler: n=  300 win    4 lose    3 delta +0.0033 p=1.0000  bar-adj +0.0119
+    MDE: delta=None realized=0.017066666666666667 (MDE exceeds 1.0 at this power target)  delta_negative=-0.025 realized_negative=-0.025333333333333333 (ok)
+   components - filler: n=  300 win    3 lose    1 delta +0.0067 p=0.6250  bar-adj +0.0067
+    MDE: delta=None realized=0.017133333333333334 (MDE exceeds 1.0 at this power target)  delta_negative=-0.025 realized_negative=-0.0266 (ok)
+       degree - filler: n=  300 win    3 lose    3 delta +0.0000 p=1.0000  bar-adj -0.0105
+    MDE: delta=None realized=0.018533333333333332 (MDE exceeds 1.0 at this power target)  delta_negative=-0.025 realized_negative=-0.025133333333333334 (ok)
+         none - filler: n=  300 win    4 lose    2 delta +0.0067 p=0.6875  bar-adj +0.0067
+    MDE: delta=None realized=0.016933333333333335 (MDE exceeds 1.0 at this power target)  delta_negative=-0.026562500000000003 realized_negative=-0.028 (ok)
+         rwse - filler: n=  300 win    4 lose    1 delta +0.0100 p=0.3750  bar-adj +0.1914
+    MDE: delta=None realized=0.01633333333333333 (MDE exceeds 1.0 at this power target)  delta_negative=-0.028125 realized_negative=-0.024733333333333333 (ok)
+
+==========================================================================================
+TASK: node_degree
+==========================================================================================
+blind bar (best constant answer):
+  p=0.65   modal   '27'  bar 0.164  (n=684)
+  p=0.75   modal   '30'  bar 0.163  (n=676)
+  p=0.85   modal   '33'  bar 0.201  (n=688)
+
+mean score by density x condition (hit_cap dropped):
+  p               all  clustering  components      degree      filler        none        rwse
+  0.65          0.820       0.390       0.455       0.779       0.354       0.520       0.430
+  0.75          0.698       0.384       0.388       0.761       0.364       0.469       0.390
+  0.85          0.586       0.350       0.526       0.872       0.320       0.424       0.444
+
+shortcut bar (primer-only solver, from shortcuts.json):
+  all p         1.000       0.144       0.144       1.000       0.144       0.144       0.210
+
+capped rows dropped by density x condition:
+  p               all  clustering  components      degree      filler        none        rwse
+  0.65              0           0           1          14           1           0           0
+  0.75              4           1           2          12           1           4           0
+  0.85              1           0           3           6           0           1           1
+
+unparsable rows (scored 0, not dropped) by density x condition:
+  p               all  clustering  components      degree      filler        none        rwse
+  0.65              0           0           0           0           0           0           0
+  0.75              0           0           0           0           0           0           0
+  0.85              0           0           0           0           0           0           0
+
+pooled across densities, paired vs 'filler' (exact McNemar):
+  (MDE printed under any row that did not survive BH -- the smallest true effect, in each direction, this row's data could reliably have detected; fast preset unless --mde was passed)
+          all - filler: n=  293 win  126 lose   22 delta +0.3549 p=0.0000  *sig(BH)  bar-adj -0.5008
+   clustering - filler: n=  297 win   49 lose   40 delta +0.0303 p=0.3966  bar-adj +0.0303
+    MDE: delta=0.09375 realized=0.09494949494949495 (ok)  delta_negative=-0.08750000000000001 realized_negative=-0.08457912457912457 (ok)
+   components - filler: n=  292 win   67 lose   34 delta +0.1130 p=0.0013  *sig(BH)  bar-adj +0.1130
+       degree - filler: n=  267 win  130 lose   13 delta +0.4382 p=0.0000  *sig(BH)  bar-adj -0.4175
+         none - filler: n=  293 win   68 lose   31 delta +0.1263 p=0.0003  *sig(BH)  bar-adj +0.1263
+         rwse - filler: n=  297 win   56 lose   32 delta +0.0808 p=0.0138  *sig(BH)  bar-adj +0.0146
+
+wrote analysis/rerun/qwen3-1.7b-think.densfull40hi.vs_filler.csv

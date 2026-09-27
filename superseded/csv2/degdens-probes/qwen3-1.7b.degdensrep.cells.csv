@@ -1,0 +1,9 @@
+density,condition,kept,capped,parsed,unparsable,mean_score,mean_abs_error,blind_bar_answer,blind_bar_score
+0.1,clustering,400,0,400,0,0.965,0.0475,4,0.2125
+0.1,none,400,0,400,0,0.945,0.0725,4,0.2125
+0.2,clustering,400,0,400,0,0.8,0.2475,7,0.1525
+0.2,none,400,0,400,0,0.76,0.31,7,0.1525
+0.35,clustering,400,0,400,0,0.515,0.7825,14,0.1525
+0.35,none,400,0,400,0,0.47,0.785,14,0.1525
+0.5,clustering,400,0,400,0,0.32,2.0075,21,0.15
+0.5,none,400,0,400,0,0.255,2.0125,21,0.15

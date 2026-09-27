@@ -6,7 +6,7 @@ bootstrap power simulation at the recommended size, for real cells, before
 trusting it to guide a `--count` choice that costs real GPU time.
 
 **Method.** For each cell, pulls its real `(control, treatment,
-cluster_ids)` from `analysis/sweep_frame.csv` (same reconstruction
+cluster_ids)` from `csv2/sweep-small-graph/sweep_frame.csv` (same reconstruction
 `scripts/benchmark_mde.py` uses), then runs many trials where each trial:
 bootstrap-resamples `n_clusters_needed` clusters (not `n_clusters`,
 i.e. genuinely more than currently exist -- oversampling with replacement
@@ -77,7 +77,7 @@ def simulate_power_at_n(
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--frame", default="analysis/sweep_frame.csv")
+  parser.add_argument("--frame", default="csv2/sweep-small-graph/sweep_frame.csv")
   parser.add_argument("--report", default="analysis/significance_report.csv")
   parser.add_argument("--n-cells", type=int, default=4)
   parser.add_argument("--n-trials", type=int, default=200)

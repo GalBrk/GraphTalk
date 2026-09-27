@@ -3,10 +3,10 @@
 Read `docs/ladder-and-rewiring.md` first — this is the design; this document is
 the first results pass over it, run with two scripts:
 
-- `scripts/analyze_ladder.py` → `analysis/ladder_matrix.csv` (215 rows), now
+- `scripts/analyze_ladder.py` → `csv2/ladder-retrieval/ladder_matrix.csv` (215 rows), now
   covering all 12 model arms (it previously covered only 6 — `gemma4-12b`,
   `gemma4-e4b(-think)`, `qwen3-8b-think`, and `qwen3-14b` were missing).
-- `scripts/analyze_retrieval.py` (new) → `analysis/retrieval_matrix.csv`
+- `scripts/analyze_retrieval.py` (new) → `csv2/ladder-retrieval/retrieval_matrix.csv`
   (445 rows), scoring the `retrieval_locate` reading-limit probe. Nothing
   turned this into per-model reading limits before this pass; the only
   numbers that existed were `graphtalk/ladder.py`'s `READING_CLEAN`/
@@ -68,7 +68,7 @@ that have a real one; the other 7 are scored with readability unassessed
 ```
 PYTHONPATH=. python scripts/analyze_ladder.py --responses 'runs/*.ladder_screen.jsonl' \
     --reading-limits qwen3-0.6b=0 qwen3-0.6b-think=0 qwen3-1.7b=1509 qwen3-1.7b-think=2449 \
-    --out analysis/ladder_matrix.csv
+    --out csv2/ladder-retrieval/ladder_matrix.csv
 ```
 
 | model | valid (hard but readable) rungs | reading limit applied? |
@@ -313,7 +313,7 @@ The goal this section answers: pick a `(n, k̄)` cell per model where `none`
 is informative (not ceiling, not floor) with enough margin that `filler` —
 the length-matched, content-free placebo — is expected to stay informative
 too rather than being dragged to floor by the length cost alone
-(`docs/primer-effects-and-power.md`'s `filler` finding: −11.7pp on dense
+(`docs/results/density-followups.md` §5, the `filler` finding: −11.4pp on dense
 graphs from length alone). **There is no single `k̄` that works for every
 model** — that's the whole reason the ladder has 18 rungs instead of one
 cell; the table below is per model, not a project-wide default.

@@ -1,0 +1,18 @@
+retrieval probe: task=node_degree  ~tokens = chars/4 (approx, see module docstring)
+
+==========================================================================
+qwen3-8b
+==========================================================================
+     k    ~tok   pooled     edge   middle     gap
+    10      63    1.000    1.000    1.000  +0.000
+    40     231    0.998    0.998    1.000  -0.002
+   160     922    0.997    0.995    1.000  -0.005
+   320    1862    0.988    0.990    0.985  +0.005
+   640    3742    0.992    0.988    1.000  -0.012
+  1280    7572    0.945    0.927    0.980  -0.052
+
+  reading_limit (pooled accuracy >= 0.9): ~7572 tokens (k=1280)
+  middle_collapse_onset: no lost-in-the-middle gap seen at any tested k
+  --reading-limits qwen3-8b=7572
+
+wrote 36 rows -> analysis/rerun/retrieval.qwen3-8b.csv

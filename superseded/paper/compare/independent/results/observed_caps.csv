@@ -1,0 +1,9 @@
+arm,tag,min,max,count
+qwen3-1.7b,densfull40,8192,8192,800
+qwen3-1.7b,densfull40hi,2048,2048,5
+qwen3-1.7b-think,densfull40,8192,8192,2582
+qwen3-1.7b-think,densfull40hi,8192,8192,52
+qwen3-4b,densfull40,8192,8192,48
+qwen3-4b,densfull40hi,2048,2048,3
+qwen3-4b-think,densfull40,8192,8192,1960
+qwen3-4b-think,densfull40hi,8192,8192,12

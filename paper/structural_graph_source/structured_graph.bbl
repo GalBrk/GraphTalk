@@ -1,0 +1,110 @@
+\begin{thebibliography}{14}
+\providecommand{\natexlab}[1]{#1}
+
+\bibitem[{Benjamini and Hochberg(1995)}]{benjaminihochberg1995controlling}
+Yoav Benjamini and Yosef Hochberg. 1995.
+\newblock \href {https://doi.org/10.1111/j.2517-6161.1995.tb02031.x}
+  {Controlling the false discovery rate: A practical and powerful approach to
+  multiple testing}.
+\newblock \emph{Journal of the Royal Statistical Society: Series B
+  (Methodological)}, 57(1):289--300.
+
+\bibitem[{Dwivedi et~al.(2022)Dwivedi, Luu, Laurent, Bengio, and
+  Bresson}]{dwivedi2022graph}
+Vijay~Prakash Dwivedi, Anh~Tuan Luu, Thomas Laurent, Yoshua Bengio, and Xavier
+  Bresson. 2022.
+\newblock \href {https://openreview.net/forum?id=wTTjnvGphYj} {Graph neural
+  networks with learnable structural and positional representations}.
+\newblock In \emph{International Conference on Learning Representations}.
+
+\bibitem[{Fatemi et~al.(2024)Fatemi, Halcrow, and
+  Perozzi}]{fatemi2023talklikeagraph}
+Bahare Fatemi, Jonathan Halcrow, and Bryan Perozzi. 2024.
+\newblock \href
+  {https://proceedings.iclr.cc/paper_files/paper/2024/hash/bf72f65f30eedf5d48da6980ee02b589-Abstract-Conference.html}
+  {Talk like a graph: Encoding graphs for large language models}.
+\newblock In \emph{International Conference on Learning Representations}.
+
+\bibitem[{Feng et~al.(2019)Feng, Wallace, and Boyd-Graber}]{feng2019misleading}
+Shi Feng, Eric Wallace, and Jordan Boyd-Graber. 2019.
+\newblock \href {https://doi.org/10.18653/v1/P19-1554} {Misleading failures of
+  partial-input baselines}.
+\newblock In \emph{Proceedings of the 57th Annual Meeting of the Association
+  for Computational Linguistics}, pages 5533--5538.
+
+\bibitem[{Ge et~al.(2025)Ge, Liu, Bi, Wang, Mei, Feng, Chen, and
+  Cheng}]{ge2025graph}
+Yuyao Ge, Shenghua Liu, Baolong Bi, Yiwei Wang, Lingrui Mei, Wenjie Feng, Lizhe
+  Chen, and Xueqi Cheng. 2025.
+\newblock \href {https://doi.org/10.18653/v1/2025.acl-long.321} {Can graph
+  descriptive order affect solving graph problems with {LLMs}?}
+\newblock In \emph{Proceedings of the 63rd Annual Meeting of the Association
+  for Computational Linguistics (Volume 1: Long Papers)}, pages 6404--6420.
+
+\bibitem[{Gilbert(1959)}]{gilbert1959random}
+E.~N. Gilbert. 1959.
+\newblock \href {https://doi.org/10.1214/aoms/1177706098} {Random graphs}.
+\newblock \emph{The Annals of Mathematical Statistics}, 30(4):1141--1144.
+
+\bibitem[{{GraphTalk Contributors}(2026)}]{graphtalkresults2026}
+{GraphTalk Contributors}. 2026.
+\newblock {GraphTalk}: Structural primer experiments and results.
+\newblock \url{https://github.com/GalBrk/GraphTalk/tree/results-sot}.
+\newblock Results-sot branch, commit 746d2abe448acbef3214fdbe7edbd8c1ddd60fc4.
+
+\bibitem[{Huang et~al.(2024)Huang, Zhang, Mei, and Ma}]{huang2024can}
+Jin Huang, Xingjian Zhang, Qiaozhu Mei, and Jiaqi Ma. 2024.
+\newblock \href {https://openreview.net/forum?id=L2jRavXRxs} {Can {LLMs}
+  effectively leverage graph structural information through prompts, and why?}
+\newblock \emph{Transactions on Machine Learning Research}.
+
+\bibitem[{Levy et~al.(2024)Levy, Jacoby, and Goldberg}]{levy2024sametask}
+Mosh Levy, Alon Jacoby, and Yoav Goldberg. 2024.
+\newblock \href {https://doi.org/10.18653/v1/2024.acl-long.818} {Same task,
+  more tokens: the impact of input length on the reasoning performance of large
+  language models}.
+\newblock In \emph{Proceedings of the 62nd Annual Meeting of the Association
+  for Computational Linguistics (Volume 1: Long Papers)}, pages 15339--15353.
+
+\bibitem[{McNemar(1947)}]{mcnemar1947note}
+Quinn McNemar. 1947.
+\newblock \href {https://doi.org/10.1007/BF02295996} {Note on the sampling
+  error of the difference between correlated proportions or percentages}.
+\newblock \emph{Psychometrika}, 12(2):153--157.
+
+\bibitem[{{Qwen Team}(2025)}]{qwen2025qwen3}
+{Qwen Team}. 2025.
+\newblock \href {https://arxiv.org/abs/2505.09388} {{Qwen3} technical report}.
+\newblock \emph{arXiv preprint arXiv:2505.09388}.
+
+\bibitem[{Ramp{\'a}{\v{s}}ek et~al.(2022)Ramp{\'a}{\v{s}}ek, Galkin, Dwivedi,
+  Luu, Wolf, and Beaini}]{rampasek2022recipe}
+Ladislav Ramp{\'a}{\v{s}}ek, Michael Galkin, Vijay~Prakash Dwivedi, Anh~Tuan
+  Luu, Guy Wolf, and Dominique Beaini. 2022.
+\newblock \href
+  {https://proceedings.neurips.cc/paper_files/paper/2022/hash/5d4834a159f1547b267a05a4e2b7cf5e-Abstract-Conference.html}
+  {Recipe for a general, powerful, scalable graph transformer}.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~35, pages 14501--14515.
+
+\bibitem[{Shi et~al.(2023)Shi, Chen, Misra, Scales, Dohan, Chi, Sch{\"a}rli,
+  and Zhou}]{shi2023distracted}
+Freda Shi, Xinyun Chen, Kanishka Misra, Nathan Scales, David Dohan, Ed~H. Chi,
+  Nathanael Sch{\"a}rli, and Denny Zhou. 2023.
+\newblock \href {https://proceedings.mlr.press/v202/shi23a.html} {Large
+  language models can be easily distracted by irrelevant context}.
+\newblock In \emph{Proceedings of the 40th International Conference on Machine
+  Learning}, volume 202 of \emph{Proceedings of Machine Learning Research},
+  pages 31210--31227.
+
+\bibitem[{Wang et~al.(2023)Wang, Feng, He, Tan, Han, and
+  Tsvetkov}]{wang2023nlgraph}
+Heng Wang, Shangbin Feng, Tianxing He, Zhaoxuan Tan, Xiaochuang Han, and Yulia
+  Tsvetkov. 2023.
+\newblock \href
+  {https://proceedings.neurips.cc/paper_files/paper/2023/hash/622afc4edf2824a1b6aaf5afe153fa93-Abstract-Conference.html}
+  {Can language models solve graph problems in natural language?}
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~36, pages 30840--30861.
+
+\end{thebibliography}

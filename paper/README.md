@@ -1,45 +1,65 @@
-# Building the paper
+# Paper
 
-`talk_like_a_graph.tex` is the paper (single ACL source, 8-page body plus
-appendix). Everything else in this directory is either a LaTeX input generated
-by a script, or the script that generates it — nothing here is hand-maintained
-except the `.tex` prose itself. See `docs/paper-revision-handoff.md` for the
-history of how it got to this shape.
+The current paper is `structured_graph.pdf`, built from
+`structural_graph_source/` (its README says how to compile it). This file
+says how to write the paper from the repo.
 
-## One command
+- `acl2023.sty`, `acl.sty`, `acl_natbib.bst`: the ACL style files.
+- `custom.bib`: the bibliography.
 
-```bash
-bash paper/make_all.sh
-```
+Build with `latexmk -pdf` from this directory. An ACL long paper has 8 pages of
+body; references, limitations and appendices do not count.
 
-Runs every analysis script that feeds the paper, in dependency order, then
-`paper/make_main_table.py` / `make_ci_table.py` / `make_tables.py` /
-`make_figure*.py` to regenerate the `\input`-ed tables (`main_table.tex`,
-`ci_table.tex`, `appendix_tables.tex`) and figures (`headline.pdf`,
-`continuum.pdf`, `crossfit.pdf`, `rewiring.pdf`, `density.pdf`), then
-`latexmk -pdf` to build `talk_like_a_graph.pdf`. Read the script itself for
-which analysis feeds which section — each step is labelled with the section
-number it covers. Takes roughly 20 minutes, dominated by `ci_all.py`.
+## Where each part of the paper comes from
 
-## Just the PDF
+| Paper part | Source |
+|---|---|
+| Question and motivation | [results/README.md](../docs/results/README.md), "The study" |
+| What the proposal planned and what was run (models, graphs, primers, tasks, metrics) | [results/README.md](../docs/results/README.md), "From the proposal to what was run"; primer definitions in `graphtalk/primers.py` |
+| The pilot, and why the main experiment moved to 40-node graphs | [results/README.md](../docs/results/README.md), "Earlier stages", the pilot row. Say it in words; the paper cites no pilot numbers |
+| Setup and measurement | [n40-sweep.md](../docs/results/n40-sweep.md) §1 |
+| Which primers state the answer (the graph-blind solver) | n40-sweep.md §2; design in [plans/shortcut-ceilings.md](../docs/plans/shortcut-ceilings.md) |
+| Main results | n40-sweep.md §3–9 |
+| The `node_degree` follow-ups: the `clustering` effect, its replication, thinking against plain, the `filler` control, fixed mean degree, the forensics | [density-followups.md](../docs/results/density-followups.md) §2–8 |
+| Limitations | n40-sweep.md §10, density-followups.md §9 |
+| Future work | n40-sweep.md, density-followups.md, and the newer [primer-directions.md](../docs/primer-directions.md), [primer-robustness.md](../docs/primer-robustness.md), [investigate_connections_and_cycles.md](../docs/investigate_connections_and_cycles.md) |
 
-If the tables and figures are already up to date and only the prose changed:
+The ladder, retrieval, rewiring, GoT-naming, probe and size-sweep runs are not
+part of the paper (see "Earlier stages" in the results index).
 
-```bash
-cd paper && latexmk -pdf -interaction=nonstopmode talk_like_a_graph.tex
-```
+## Rules for numbers
 
-## Checking a specific number
+1. **Every number comes from a tagged citation**, copied as printed, in
+   `docs/results/*.md` or in a doc written after them (`primer-directions.md`,
+   `primer-robustness.md`, `investigate_connections_and_cycles.md`). The
+   `docs/results/` validation checked the older data for staleness; newer docs
+   are current and just as citable. Put the tag in a LaTeX comment on the same
+   line, e.g. `+3.8~points % [ddplain]`, so each number can be traced to its
+   block in the script output. If the paper needs a number no doc cites, add
+   it to the script and the doc first, with a tag. `tests/test_results_docs.py`
+   checks the `docs/results/` numbers; the newer docs are checked against their
+   own scripts' output. Never cite `superseded/` or a doc with a "not
+   re-verified" banner.
+2. **Truncation is its own outcome.** A response is correct, wrong or truncated.
+   An effect is the paired change in the correct share of *all* responses, in
+   percentage points, with the change in the truncated share beside it when
+   that change is not small. A share computed over finished responses only
+   (error size, tokens, the "answers 39" share) must say so, and is never
+   called accuracy.
+3. **Exact match is the primary metric.** Set-F1 on `connected_nodes` is
+   secondary. For `edge_existence` report balanced accuracy and the yes-rate
+   next to raw accuracy.
+4. **Significance means q < .05**, with the Benjamini–Hochberg families the
+   docs name. A per-level effect whose q is above .05 is reported as a
+   direction, not a finding.
+5. **Current claims only.** Do not correct, hedge against or mention an
+   earlier draft's numbers.
 
-`NUMBERS.md` maps every hand-typed number in the prose (not the numbers inside
-`\input`-ed tables, which are self-evidently sourced from the script that
-wrote them) to the exact command that produces it. Use it to audit one claim
-without rerunning the full `make_all.sh`.
+## Earlier drafts
 
-## Not part of the build
-
-`density.pdf` and `appendix_tables.tex` are built by `make_all.sh` but not
-`\includegraphics`/`\input` anywhere in the current `.tex` — kept because a
-future extension of the paper may want them (see `docs/paper-revision-handoff.md`'s
-"What is NOT in the final paper" note for why they were cut and what they'd
-support).
+v1, v2, v3, the short draft, the independent reanalysis, the synthesis draft
+and two drafts built outside the repo are in
+[`superseded/paper/`](../superseded/paper/). None of them is current. Use them
+for wording and structure, never for numbers.
+[`superseded/paper/CLAIMS_LEDGER.md`](../superseded/paper/CLAIMS_LEDGER.md)
+records where and why they disagreed.

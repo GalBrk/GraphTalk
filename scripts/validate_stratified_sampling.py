@@ -5,7 +5,7 @@ so yield more discordant pairs per graph collected -- see that function's
 docstring in `scripts/build_prompts.py`), check that theory against
 *already-collected* responses instead of assuming it.
 
-**Method.** Joins `analysis/sweep_frame.csv` (which has `exact` per
+**Method.** Joins `csv2/sweep-small-graph/sweep_frame.csv` (which has `exact` per
 (model, instance_id, condition) but no graph-size columns) against
 `prompts.jsonl` (which has `nodes`/`edges` per `instance_id` but no
 response columns) to attach node/edge counts to every response row. For
@@ -151,7 +151,7 @@ def compare_strata(frame: pd.DataFrame, model: str, condition: str,
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__,
                                     formatter_class=argparse.RawDescriptionHelpFormatter)
-  parser.add_argument("--frame", default="analysis/sweep_frame.csv")
+  parser.add_argument("--frame", default="csv2/sweep-small-graph/sweep_frame.csv")
   parser.add_argument("--prompts", default="prompts.jsonl")
   parser.add_argument("--near-ceiling-threshold", type=float, default=0.95)
   parser.add_argument("--n-perm", type=int, default=500)

@@ -3,22 +3,12 @@
 Course project building on
 [Talk like a Graph: Encoding Graphs for Large Language Models](https://arxiv.org/abs/2310.04560).
 
-**Results live in [docs/primer-effects-and-power.md](docs/primer-effects-and-power.md).**
-It supersedes `docs/sweep-findings.md`, which analyses the 5-19 node corpus and
-is kept for its retractions. In one paragraph, as of 2026-09-09:
-
-Primers are not one intervention. On `node_degree` at n=40, `clustering` is
-worth **+3.8 pp** (p=0.0017) to `qwen3-1.7b`, and that replicated on 400 fresh
-graphs per level (**+4.3 pp**, p=0.0006); `components` is inert everywhere
-tested; `rwse` costs `qwen3-8b` **13.7 pp** on `edge_count`. Two controls decide
-how to read any of it. A primer-only solver that never sees the graph
-(`shortcuts.json`) scores 1.00 on three tasks for the `degree` primer, so effects
-must be read as `bar(cond) - bar(none)`, not against zero. And a *length-matched*
-placebo carrying no structure costs a thinking model **11.7 pp** on dense
-graphs, so an effect measured against `none` is content minus length, with the
-two terms comparable in size. Bigger than every primer effect measured: turning
-reasoning mode on is worth **+29.2 pp** pooled and +50.0 pp at the densest
-level, from the same checkpoint.
+**Results live in [docs/results/](docs/results/README.md)**: one document per
+family of runs, each checked against its script's committed output. The main
+experiment is the 40-node sweep ([n40-sweep.md](docs/results/n40-sweep.md)),
+and its `node_degree` follow-ups are in
+[density-followups.md](docs/results/density-followups.md). The index also lists
+every earlier family of runs with its document and status.
 
 `talk_like_a_graph/` is a vendored copy of Google Research's reference
 implementation. See [talk_like_a_graph/UPSTREAM.md](talk_like_a_graph/UPSTREAM.md)
@@ -167,11 +157,11 @@ scheme:
 ```bash
 PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py \
     --responses runs/gemma4-12b.jsonl --shortcuts shortcuts.json
-# -> analysis/sweep_frame.csv
+# -> csv2/sweep-small-graph/sweep_frame.csv
 
 PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py \
     --responses runs/gemma4-12b.got.jsonl --shortcuts shortcuts.json
-# -> analysis/sweep_frame.got.csv
+# -> csv2/sweep-small-graph/sweep_frame.got.csv
 ```
 
 Each `--out` left unset lands at its own scheme-tagged filename automatically

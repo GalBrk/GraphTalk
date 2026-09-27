@@ -59,9 +59,9 @@ out/
 # the command in their run's writeup, and `tests/test_build_size_sweep.py` pins
 # the two properties that guarantee it -- a level's graphs depend on its density
 # *value* rather than its position in `--densities`, and the no-`--densities`
-# default is unchanged. Regenerate with the `--densities/--tasks/--conditions`
-# line recorded in docs/primer-effects-and-power.md rather than reaching for a
-# copy.
+# default is unchanged. Regenerate them the way scripts/density_followups.py
+# does (its rebuilt() calls build_size_sweep.build once per density) rather
+# than reaching for a copy.
 /prompts.degdensity40.jsonl
 /prompts.degdensity40hi.jsonl
 /prompts.degdensity40think.jsonl
@@ -100,3 +100,13 @@ paper/*.fdb_latexmk
 paper/*.fls
 paper/*.log
 paper/*.out
+
+# Local holding pen for superseded data files. Everything in here has a
+# verified replacement (see archive/README.md for the check that was run on
+# each); it is kept only so a number in a doc can be traced back to the file
+# that produced it, and so a deletion is reversible without a trip through
+# git history. Deliberately NOT tracked: the tracked originals are already
+# recoverable from git, and shipping a second copy of known-wrong data to
+# every clone is the worst of both. Delete the directory once you stop
+# reaching for it.
+archive/

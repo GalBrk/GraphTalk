@@ -1,5 +1,11 @@
 # First full sweep: results, and what the design cannot yet answer
 
+> **Status (2026-09-25): not re-verified.** This document predates the
+> current scoring rule (a truncated response is its own outcome, never
+> counted as wrong or dropped), has not been re-checked under it, and is
+> not cited by the paper. Current results, and the status of every family
+> of runs: [results index](results/README.md).
+
 Four models over the 1,260-prompt file, 5,040 generations. Verified complete and
 clean: every model has all 1,260 unique `(instance_id, condition, style)` keys,
 with no duplicates, no gaps and no empty responses, across several preemptions and
@@ -31,7 +37,7 @@ difficulty and is shown here only for orientation — read the per-task table fr
 
 > **Stale in 14 of 16 cells** — carried forward unchanged when the 30 Aug
 > extraction fixes rescored 500+ rows. Correct values from
-> `analysis/sweep_frame.csv` (max error 6.7pp, `qwen3-14b`/`filler`):
+> `csv2/sweep-small-graph/sweep_frame.csv` (max error 6.7pp, `qwen3-14b`/`filler`):
 >
 > | model | `none` | `degree` | `all` | `filler` |
 > |---|---|---|---|---|
@@ -58,8 +64,8 @@ Two patterns hold across every model:
   penalty was the control being broken.** Read with the qualifier: this corpus is
   5–19 nodes, so a `none` prompt is a few hundred characters. At n=40 with dense
   graphs, where a `none` prompt runs 2,000–6,400 characters, the same primer costs
-  **6.3 points pooled and 11.7 on the densest levels** for a thinking model
-  (`docs/primer-effects-and-power.md`, "The `filler` control"). The two results do
+  **6.0 points pooled and 11.4 at p >= .65** for a thinking model
+  (`docs/results/density-followups.md` §5). The two results do
   not conflict: measured level by level, the penalty is absent or positive on
   sparse graphs and appears only as the base prompt grows. What is inert is filler
   in a short prompt, not filler as such. The hypothesis for this arm was never
@@ -190,9 +196,9 @@ Two separate results in this document turned out to be that and nothing else:
   on accuracy *and* had the highest non-termination rate. Both measures were
   responding to the primer's false numeral, not to padding. **On this corpus.**
   The retraction was correct here and does not generalise: at n=40 on dense
-  graphs the corrected, content-free `filler` does hurt, by 11.7 points on a
-  thinking model, and that is padding — see the `filler` control in
-  `docs/primer-effects-and-power.md`.
+  graphs the corrected, structure-free `filler` does hurt, by 11.4 points on a
+  thinking model at p >= .65, and that is padding — see
+  `docs/results/density-followups.md` §5.
 - **"GoT naming costs 4 points"** — GoT names are ~8% longer, on an arm already
   truncating 20% of responses. On terminated rows the effect is −0.1.
 
@@ -675,7 +681,7 @@ longer before getting cut off -- is wrong: its mean length on non-terminating ro
 instances finding above.
 
 A stratified read of raw `gemma4-e4b` non-terminating responses (in
-`analysis/non_termination_sample.csv`) shows a consistent pattern on both tasks:
+`csv2/sweep-small-graph/non_termination_sample.csv`) shows a consistent pattern on both tasks:
 exhaustive, node-by-node or edge-by-edge manual re-verification rather than a
 direct computation. On `edge_count`, it re-derives the adjacency list edge by edge
 with running "already counted" bookkeeping instead of summing degrees and dividing

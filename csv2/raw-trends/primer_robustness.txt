@@ -1,0 +1,306 @@
+[churn] main sweep, 400 questions per (arm, task): % of questions each condition flips against none (net change in % correct); * the primer's flips differ from filler's on the same questions, exact McNemar, BH q < .05 over the five primers within the pairing
+  pooled over the six tasks: % flipped (net change; % that cancel, 2 x the smaller of fixed and broken per task, averaged over the tasks)
+    1.7B   filler 18.6 (+3.3; 7.7) | components 15.6 (+2.8; 9.8) | clustering 23.6 (+13.9; 9.6) | rwse 20.8 (+1.8; 18.6) | degree 18.6 (+1.2; 11.6) | all 23.4 (+13.1; 10.3)
+    1.7B-T filler 10.4 (+1.6; 7.2) | components 12.3 (-1.0; 10.0) | clustering 11.8 (+1.6; 9.2) | rwse 11.2 (+1.6; 8.2) | degree 17.5 (-1.2; 9.5) | all 13.9 (+5.0; 8.1)
+    4B     filler 9.0 (-1.7; 3.8) | components 6.6 (+2.1; 2.5) | clustering 7.0 (+2.1; 4.3) | rwse 8.5 (-0.8; 4.7) | degree 13.7 (+3.1; 5.1) | all 10.7 (-1.2; 4.9)
+    4B-T   filler 6.2 (+2.8; 3.5) | components 8.7 (+3.6; 3.8) | clustering 8.5 (+4.2; 3.8) | rwse 7.1 (+1.5; 4.8) | degree 9.1 (+1.0; 6.2) | all 7.5 (+0.0; 6.6)
+  1.7B   node_count      filler 40.8 (+39.8) | components 35.2 (+21.2) | clustering 67.2* (+67.2) | rwse 41.5 (+2.0) | degree 14.8* (+6.8) | all 49.5* (+47.0)
+  1.7B   cycle_check     filler 14.5 (+3.0) | components 13.0 (+2.0) | clustering 9.5* (+8.5) | rwse 16.8 (-0.2) | degree 32.5* (-17.5) | all 10.5* (+7.0)
+  1.7B   node_degree     filler 16.5 (-0.5) | components 16.2 (+1.8) | clustering 23.5* (+3.0) | rwse 22.5* (+4.0) | degree 21.0 (+7.5) | all 28.2* (+10.2)
+  1.7B   edge_count      filler 1.5 (-0.5) | components 1.5 (-1.0) | clustering 2.0 (-0.5) | rwse 1.8 (-0.8) | degree 5.5* (+3.0) | all 3.2 (+0.8)
+  1.7B   connected_nodes filler 17.8 (-6.2) | components 13.8 (+0.8) | clustering 19.2 (+1.2) | rwse 19.5 (+1.0) | degree 17.5 (+3.5) | all 23.0 (+2.0)
+  1.7B   edge_existence  filler 20.8 (-15.8) | components 13.8* (-8.2) | clustering 20.2 (+3.8) | rwse 22.5 (+5.0) | degree 20.5 (+4.0) | all 26.0 (+11.5)
+  1.7B-T node_count      filler 9.0 (+9.0) | components 15.0* (+1.5) | clustering 9.0 (+9.0) | rwse 9.0 (+9.0) | degree 11.0 (+5.5) | all 9.0 (+9.0)
+  1.7B-T cycle_check     filler 3.0 (+3.0) | components 13.5* (-7.5) | clustering 5.5* (-0.5) | rwse 3.2 (+2.2) | degree 25.8* (-21.8) | all 6.8* (-0.8)
+  1.7B-T node_degree     filler 16.5 (-3.0) | components 12.0 (-1.0) | clustering 15.5 (+1.5) | rwse 19.5 (+2.5) | degree 22.2 (+8.8) | all 20.8 (+12.2)
+  1.7B-T edge_count      filler 18.0 (-1.5) | components 19.2 (-0.8) | clustering 20.8 (-1.2) | rwse 16.2 (-3.2) | degree 25.8* (-3.2) | all 27.5* (+5.0)
+  1.7B-T connected_nodes filler 13.5 (+2.5) | components 11.5 (+2.5) | clustering 17.5 (+2.0) | rwse 16.2 (+0.2) | degree 16.2 (+6.2) | all 16.2 (+6.2)
+  1.7B-T edge_existence  filler 2.5 (-0.5) | components 2.8 (-0.8) | clustering 2.5 (-1.0) | rwse 3.2 (-1.2) | degree 4.0 (-2.5) | all 3.2 (-1.8)
+  4B     node_count      filler 9.2 (+9.2) | components 9.5 (+9.0) | clustering 10.2 (+8.8) | rwse 10.2 (+9.2) | degree 10.5 (+8.0) | all 9.8 (+9.8)
+  4B     cycle_check     filler 2.0 (-0.5) | components 4.0 (-2.0) | clustering 1.5 (+0.5) | rwse 2.2 (-0.2) | degree 3.8 (-2.2) | all 2.2 (-0.2)
+  4B     node_degree     filler 2.0 (-0.5) | components 0.2* (+0.2) | clustering 2.0 (-0.5) | rwse 3.2 (-2.2) | degree 8.0* (-6.5) | all 9.0* (-8.0)
+  4B     edge_count      filler 3.8 (+1.2) | components 2.2 (-1.2) | clustering 2.8 (-1.2) | rwse 2.0 (-1.5) | degree 29.8* (+27.2) | all 6.8 (+3.8)
+  4B     connected_nodes filler 23.0 (-12.5) | components 12.8* (+9.2) | clustering 15.5* (+1.0) | rwse 17.0* (+0.0) | degree 18.0 (-3.0) | all 18.8 (-2.8)
+  4B     edge_existence  filler 14.0 (-7.0) | components 10.8 (-2.8) | clustering 10.0 (+4.0) | rwse 16.5 (-10.0) | degree 12.2 (-4.8) | all 17.5 (-10.0)
+  4B-T   node_count      filler 0.5 (+0.5) | components 1.0 (+0.0) | clustering 0.8 (+0.2) | rwse 0.8 (+0.2) | degree 0.8 (+0.2) | all 0.5 (+0.5)
+  4B-T   cycle_check     filler 1.0 (+0.5) | components 4.8* (-3.2) | clustering 1.5 (+0.0) | rwse 1.2 (+0.2) | degree 7.0* (-5.5) | all 2.0 (-0.5)
+  4B-T   node_degree     filler 3.0 (+2.0) | components 4.8 (+0.2) | clustering 4.2 (+1.8) | rwse 6.2* (-1.2) | degree 3.5 (+2.5) | all 4.5 (+0.5)
+  4B-T   edge_count      filler 27.8 (+12.2) | components 35.2* (+24.8) | clustering 36.8* (+24.8) | rwse 26.8 (+10.2) | degree 35.5* (+8.5) | all 29.8 (+1.8)
+  4B-T   connected_nodes filler 5.2 (+1.2) | components 5.5 (+0.5) | clustering 6.8 (-0.8) | rwse 6.0 (+0.5) | degree 7.5 (+0.5) | all 6.8 (-1.2)
+  4B-T   edge_existence  filler 0.0 (+0.0) | components 1.0 (-0.5) | clustering 0.8 (-0.8) | rwse 1.8 (-1.2) | degree 0.5 (+0.0) | all 1.5 (-1.0)
+[overlap] per arm, pooled over the six tasks: % of the questions filler flips that the primer flips too vs % of the others [the difference within (task, density), weighted by size, over the strata that have both]; permutation within (task, density), 2000 draws, BH over the five primers (* q < .05)
+  1.7B   filler flips 447 of 2400: components 49.9 vs 7.7 [+41.2]* (p=0.0005) | clustering 69.1 vs 13.2 [+46.6]* (p=0.0005) | rwse 47.0 vs 14.7 [+35.3]* (p=0.0005) | degree 38.5 vs 14.1 [+34.2]* (p=0.0005) | all 59.3 vs 15.2 [+39.0]* (p=0.0005)
+  1.7B-T filler flips 250 of 2400: components 57.2 vs 7.1 [+51.4]* (p=0.0005) | clustering 63.2 vs 5.8 [+56.4]* (p=0.0005) | rwse 61.6 vs 5.4 [+58.9]* (p=0.0005) | degree 59.2 vs 12.7 [+41.9]* (p=0.0005) | all 57.6 vs 8.8 [+55.2]* (p=0.0005)
+  4B     filler flips 216 of 2400: components 42.1 vs 3.1 [+32.5]* (p=0.0005) | clustering 44.4 vs 3.3 [+40.1]* (p=0.0005) | rwse 54.6 vs 4.0 [+40.9]* (p=0.0005) | degree 48.1 vs 10.3 [+36.3]* (p=0.0005) | all 55.6 vs 6.2 [+43.0]* (p=0.0005)
+  4B-T   filler flips 150 of 2400: components 52.7 vs 5.8 [+47.4]* (p=0.0005) | clustering 66.0 vs 4.6 [+61.7]* (p=0.0005) | rwse 51.3 vs 4.2 [+50.5]* (p=0.0005) | degree 54.0 vs 6.1 [+59.9]* (p=0.0005) | all 46.7 vs 4.9 [+48.1]* (p=0.0005)
+[fragile] main sweep, 400 questions per (arm, task): % right under all seven conditions / wrong under all / mixed | % mixed by density | % mixed where none is truncated (n) vs finished (n)
+  1.7B   node_count        7.5 /   0.2 /  92.2 | 0.1 99.0 0.2 100.0 0.35 91.0 0.5 79.0 | - (0) vs 92.2 (400)
+  1.7B   cycle_check      51.2 /   0.0 /  48.8 | 0.1 48.0 0.2 45.0 0.35 59.0 0.5 43.0 | 100.0 (36) vs 43.7 (364)
+  1.7B   node_degree      40.0 /  11.2 /  48.8 | 0.1 14.0 0.2 43.0 0.35 75.0 0.5 63.0 | - (0) vs 48.8 (400)
+  1.7B   edge_count        0.0 /  92.0 /   8.0 | 0.1 9.0 0.2 9.0 0.35 5.0 0.5 9.0 | 3.4 (119) vs 10.0 (281)
+  1.7B   connected_nodes  47.2 /   9.5 /  43.2 | 0.1 25.0 0.2 33.0 0.35 55.0 0.5 60.0 | - (0) vs 43.2 (400)
+  1.7B   edge_existence   45.2 /   4.2 /  50.5 | 0.1 29.0 0.2 59.0 0.35 69.0 0.5 45.0 | - (0) vs 50.5 (400)
+  1.7B-T node_count       81.5 /   0.0 /  18.5 | 0.1 8.0 0.2 11.0 0.35 26.0 0.5 29.0 | 100.0 (31) vs 11.7 (369)
+  1.7B-T cycle_check      60.5 /   0.0 /  39.5 | 0.1 29.0 0.2 34.0 0.35 53.0 0.5 42.0 | 100.0 (12) vs 37.6 (388)
+  1.7B-T node_degree      53.2 /   1.5 /  45.2 | 0.1 17.0 0.2 29.0 0.35 68.0 0.5 67.0 | 100.0 (3) vs 44.8 (397)
+  1.7B-T edge_count        0.0 /  44.0 /  56.0 | 0.1 91.0 0.2 69.0 0.35 34.0 0.5 30.0 | 47.4 (327) vs 94.5 (73)
+  1.7B-T connected_nodes  59.2 /   4.5 /  36.2 | 0.1 18.0 0.2 23.0 0.35 49.0 0.5 55.0 | 100.0 (5) vs 35.4 (395)
+  1.7B-T edge_existence   89.0 /   0.0 /  11.0 | 0.1 11.0 0.2 17.0 0.35 11.0 0.5 5.0 | 100.0 (1) vs 10.8 (399)
+  4B     node_count       88.2 /   0.0 /  11.8 | 0.1 15.0 0.2 32.0 0.35 0.0 0.5 0.0 | - (0) vs 11.8 (400)
+  4B     cycle_check      89.8 /   0.0 /  10.2 | 0.1 19.0 0.2 9.0 0.35 6.0 0.5 7.0 | 100.0 (3) vs 9.6 (397)
+  4B     node_degree      82.2 /   0.0 /  17.8 | 0.1 11.0 0.2 11.0 0.35 19.0 0.5 30.0 | - (0) vs 17.8 (400)
+  4B     edge_count        0.0 /  63.7 /  36.2 | 0.1 37.0 0.2 35.0 0.35 36.0 0.5 37.0 | - (0) vs 36.2 (400)
+  4B     connected_nodes  54.2 /   0.0 /  45.8 | 0.1 44.0 0.2 41.0 0.35 42.0 0.5 56.0 | - (0) vs 45.8 (400)
+  4B     edge_existence   66.2 /   1.2 /  32.5 | 0.1 10.0 0.2 30.0 0.35 50.0 0.5 40.0 | - (0) vs 32.5 (400)
+  4B-T   node_count       98.2 /   0.0 /   1.8 | 0.1 5.0 0.2 0.0 0.35 0.0 0.5 2.0 | - (0) vs 1.8 (400)
+  4B-T   cycle_check      86.2 /   0.0 /  13.8 | 0.1 14.0 0.2 6.0 0.35 17.0 0.5 18.0 | 100.0 (3) vs 13.1 (397)
+  4B-T   node_degree      89.2 /   0.0 /  10.8 | 0.1 17.0 0.2 11.0 0.35 7.0 0.5 8.0 | 100.0 (11) vs 8.2 (389)
+  4B-T   edge_count        0.2 /  21.2 /  78.5 | 0.1 98.0 0.2 97.0 0.35 78.0 0.5 41.0 | 73.3 (318) vs 98.8 (82)
+  4B-T   connected_nodes  83.0 /   0.2 /  16.8 | 0.1 19.0 0.2 26.0 0.35 10.0 0.5 12.0 | 100.0 (13) vs 14.0 (387)
+  4B-T   edge_existence   96.5 /   0.0 /   3.5 | 0.1 10.0 0.2 3.0 0.35 0.0 0.5 1.0 | 100.0 (1) vs 3.3 (399)
+[crossarm] Cohen's kappa of correct under none, per task, chance agreement taken within each density (nan: no variation)
+                        node_count     cycle_check     node_degree      edge_count connected_nodes  edge_existence
+  1.7B vs 1.7B-T              0.02           -0.04            0.24           -0.05            0.56            0.01
+  1.7B vs 4B                  0.00           -0.02            0.01            0.13            0.05            0.16
+  1.7B vs 4B-T                0.00            0.03            0.01            0.00           -0.04           -0.00
+  1.7B-T vs 4B               -0.03           -0.01            0.00            0.01            0.06           -0.03
+  1.7B-T vs 4B-T             -0.00           -0.01           -0.02            0.02            0.02           -0.00
+  4B vs 4B-T                  0.09           -0.01           -0.01            0.03           -0.07           -0.00
+[crossarm] questions both arms get wrong under none, pooled over the six tasks: per condition, % fixed in the first arm / in the second; fixed in both, observed (expected within (task, density)); permutation within (task, density), BH over the six conditions (* q < .05)
+  1.7B vs 1.7B-T   n=496: filler 7.9/18.3 both 33 (26.3)* | components 8.3/17.3 both 24 (18.6)* | clustering 11.3/21.0 both 40 (33.6)* | rwse 10.7/19.6 both 36 (25.0)* | degree 11.3/29.0 both 32 (27.5) | all 17.1/33.7 both 59 (54.5)
+  1.7B vs 4B       n=474: filler 5.9/13.3 both 22 (22.8) | components 6.5/13.5 both 27 (26.4) | clustering 12.0/15.4 both 52 (48.9) | rwse 5.5/13.1 both 14 (13.8) | degree 7.6/35.9 both 12 (14.1) | all 11.0/17.5 both 30 (32.8)
+  1.7B vs 4B-T     n=326: filler 1.2/27.0 both 4 (2.7) | components 0.6/38.7 both 2 (2.0) | clustering 2.8/39.9 both 8 (7.5) | rwse 2.1/24.5 both 6 (5.9) | degree 6.1/29.1 both 9 (9.1) | all 3.1/21.5 both 3 (3.9)
+  1.7B-T vs 4B     n=351: filler 11.1/3.4 both 5 (4.0) | components 11.4/3.7 both 3 (2.4) | clustering 13.7/4.3 both 7 (6.7) | rwse 9.4/3.1 both 3 (3.7) | degree 16.8/31.9 both 22 (21.5) | all 21.4/7.7 both 11 (8.3)
+  1.7B-T vs 4B-T   n=287: filler 7.7/22.3 both 9 (10.2) | components 7.3/34.5 both 14 (13.1) | clustering 9.8/35.2 both 11 (16.3) | rwse 7.0/20.6 both 9 (11.4) | degree 13.2/27.5 both 9 (12.0) | all 20.9/18.8 both 13 (10.9)
+  4B vs 4B-T       n=318: filler 1.9/24.5 both 2 (2.9) | components 0.9/37.7 both 2 (1.7) | clustering 0.9/38.4 both 2 (2.4) | rwse 0.9/23.0 both 2 (2.5) | degree 27.7/27.7 both 37 (24.4)* | all 6.3/19.8 both 8 (4.4)
+[loop] truncated responses, main sweep: n, % whose last 2000 characters are a loop (at least 98% equal one period earlier, period up to 800), median period of the loops
+  1.7B   800: loops 83.9%, median period 16
+  1.7B-T 2582: loops 6.8%, median period 29
+  4B     48: loops 89.6%, median period 75
+  4B-T   1960: loops 11.6%, median period 176
+  the score (best share equal one period earlier) of all truncated responses: [0, 0.3) 3371 | [0.3, 0.5) 695 | [0.5, 0.7) 44 | [0.7, 0.9) 150 | [0.9, 0.98) 12 | [0.98, 1] 1118
+  per (arm, task), % of responses truncated in a loop / truncated while working, by condition
+  1.7B   node_count      none 0.0/0.0 | filler 0.0/0.0 | components 0.0/0.0 | clustering 0.0/0.0 | rwse 0.0/0.0 | degree 0.0/0.0 | all 0.0/0.0
+  1.7B   cycle_check     none 9.0/0.0 | filler 6.2/0.0 | components 6.2/0.2 | clustering 0.8/0.0 | rwse 1.8/0.0 | degree 16.8/0.5 | all 0.8/0.2
+  1.7B   node_degree     none 0.0/0.0 | filler 0.0/0.0 | components 0.0/0.0 | clustering 0.0/0.0 | rwse 0.2/0.0 | degree 0.0/0.0 | all 0.0/0.0
+  1.7B   edge_count      none 22.2/7.5 | filler 21.0/5.2 | components 20.5/6.8 | clustering 13.8/4.2 | rwse 16.8/1.2 | degree 8.8/0.8 | all 22.5/5.5
+  1.7B   connected_nodes none 0.0/0.0 | filler 0.0/0.0 | components 0.0/0.0 | clustering 0.0/0.0 | rwse 0.0/0.0 | degree 0.0/0.0 | all 0.2/0.0
+  1.7B   edge_existence  none 0.0/0.0 | filler 0.0/0.0 | components 0.0/0.0 | clustering 0.0/0.0 | rwse 0.2/0.0 | degree 0.0/0.0 | all 0.0/0.0
+  1.7B-T node_count      none 5.2/2.5 | filler 0.0/0.0 | components 3.8/3.5 | clustering 0.0/0.0 | rwse 0.0/0.0 | degree 0.8/2.0 | all 0.0/0.0
+  1.7B-T cycle_check     none 1.0/2.0 | filler 0.0/0.0 | components 1.2/9.2 | clustering 0.5/3.0 | rwse 0.0/0.8 | degree 2.8/21.5 | all 0.5/3.2
+  1.7B-T node_degree     none 0.8/0.0 | filler 0.2/0.0 | components 0.5/0.0 | clustering 0.0/0.2 | rwse 0.5/0.2 | degree 0.5/4.8 | all 0.2/0.0
+  1.7B-T edge_count      none 1.8/80.0 | filler 1.5/81.5 | components 3.2/79.0 | clustering 1.5/81.0 | rwse 2.5/84.2 | degree 4.0/77.0 | all 6.8/62.7
+  1.7B-T connected_nodes none 0.8/0.5 | filler 0.5/0.0 | components 0.5/0.5 | clustering 0.0/0.2 | rwse 0.5/0.0 | degree 1.0/0.5 | all 0.2/0.5
+  1.7B-T edge_existence  none 0.2/0.0 | filler 0.0/0.0 | components 0.2/0.0 | clustering 0.0/0.2 | rwse 0.0/0.2 | degree 0.2/0.2 | all 0.0/0.0
+  4B     node_count      none 0.0/0.0 | filler 0.0/0.0 | components 0.0/0.0 | clustering 0.0/0.0 | rwse 0.0/0.0 | degree 0.0/0.0 | all 0.0/0.0
+  4B     cycle_check     none 0.8/0.0 | filler 1.2/0.0 | components 1.5/0.0 | clustering 0.2/0.2 | rwse 1.2/0.0 | degree 1.5/0.0 | all 0.5/0.0
+  4B     node_degree     none 0.0/0.0 | filler 0.0/0.0 | components 0.0/0.0 | clustering 0.0/0.0 | rwse 0.0/0.0 | degree 0.0/0.0 | all 0.0/0.0
+  4B     edge_count      none 0.0/0.0 | filler 0.0/0.0 | components 0.8/0.0 | clustering 0.2/0.0 | rwse 0.5/0.0 | degree 1.5/0.2 | all 0.0/0.8
+  4B     connected_nodes none 0.0/0.0 | filler 0.0/0.0 | components 0.0/0.0 | clustering 0.0/0.0 | rwse 0.0/0.0 | degree 0.0/0.0 | all 0.0/0.0
+  4B     edge_existence  none 0.0/0.0 | filler 0.0/0.0 | components 0.0/0.0 | clustering 0.0/0.0 | rwse 0.0/0.0 | degree 0.5/0.0 | all 0.2/0.0
+  4B-T   node_count      none 0.0/0.0 | filler 0.0/0.0 | components 0.0/0.0 | clustering 0.2/0.0 | rwse 0.2/0.0 | degree 0.0/0.2 | all 0.0/0.0
+  4B-T   cycle_check     none 0.2/0.5 | filler 0.0/0.2 | components 0.2/3.8 | clustering 0.5/0.2 | rwse 0.2/0.2 | degree 0.2/5.2 | all 0.2/1.0
+  4B-T   node_degree     none 2.8/0.0 | filler 1.0/0.0 | components 2.0/0.2 | clustering 0.8/0.0 | rwse 2.0/0.2 | degree 0.2/0.0 | all 1.8/0.0
+  4B-T   edge_count      none 1.2/78.2 | filler 1.5/65.0 | components 2.0/52.5 | clustering 2.2/51.2 | rwse 2.2/65.0 | degree 3.5/55.2 | all 3.0/52.8
+  4B-T   connected_nodes none 3.2/0.0 | filler 2.5/0.2 | components 3.5/0.0 | clustering 4.5/0.0 | rwse 2.5/0.5 | degree 2.8/0.2 | all 4.2/0.0
+  4B-T   edge_existence  none 0.2/0.0 | filler 0.2/0.0 | components 0.8/0.0 | clustering 1.0/0.0 | rwse 1.5/0.0 | degree 0.2/0.0 | all 1.2/0.0
+  changes against none, exact McNemar, BH q < .05 over the six conditions within (arm, task):
+    truncated in a loop: 1.7B cycle_check clustering 9.0->0.8; 1.7B cycle_check rwse 9.0->1.8; 1.7B cycle_check degree 9.0->16.8; 1.7B cycle_check all 9.0->0.8; 1.7B edge_count clustering 22.2->13.8; 1.7B edge_count degree 22.2->8.8; 1.7B-T node_count filler 5.2->0.0; 1.7B-T node_count clustering 5.2->0.0; 1.7B-T node_count rwse 5.2->0.0; 1.7B-T node_count degree 5.2->0.8; 1.7B-T node_count all 5.2->0.0; 1.7B-T edge_count all 1.8->6.8; 4B-T node_degree degree 2.8->0.2
+    truncated while working: 1.7B edge_count rwse 7.5->1.2; 1.7B edge_count degree 7.5->0.8; 1.7B-T node_count filler 2.5->0.0; 1.7B-T node_count clustering 2.5->0.0; 1.7B-T node_count rwse 2.5->0.0; 1.7B-T node_count all 2.5->0.0; 1.7B-T cycle_check filler 2.0->0.0; 1.7B-T cycle_check components 2.0->9.2; 1.7B-T cycle_check degree 2.0->21.5; 1.7B-T node_degree degree 0.0->4.8; 1.7B-T edge_count all 80.0->62.7; 4B-T cycle_check components 0.5->3.8; 4B-T cycle_check degree 0.5->5.2; 4B-T edge_count filler 78.2->65.0; 4B-T edge_count components 78.2->52.5; 4B-T edge_count clustering 78.2->51.2; 4B-T edge_count rwse 78.2->65.0; 4B-T edge_count degree 78.2->55.2; 4B-T edge_count all 78.2->52.8
+[cyclecons] same arm, condition and graph, finished answers: cycle_check answers of no; of those, with a finished edge_count answer; of those, 40 or more edges (the model's own count implies a cycle) | the same share among answers of yes | per condition, no answers / of them with 40 or more
+  1.7B   no 77; with a count 69; 40 or more 69 (100.0%) | yes: 99.6% of 1964 | none 1/0, filler 0/0, components 3/3, clustering 0/0, rwse 31/26, degree 37/36, all 5/4
+  1.7B-T no 2; with a count 1; 40 or more 1 (100.0%) | yes: 99.4% of 508 | none 0/0, filler 0/0, components 0/0, clustering 0/0, rwse 0/0, degree 2/1, all 0/0
+  4B     no 18; with a count 18; 40 or more 17 (94.4%) | yes: 99.1% of 2737 | none 1/1, filler 1/1, components 6/6, clustering 0/0, rwse 0/0, degree 7/6, all 3/3
+  4B-T   no 3; with a count 1; 40 or more 1 (100.0%) | yes: 100.0% of 1041 | none 0/0, filler 0/0, components 0/0, clustering 0/0, rwse 0/0, degree 3/1, all 0/0
+[faithful] thinking arms, finished responses with a scored answer: n whose trace concludes an answer (of n); how many differ from the scored answer; of those, the scored answer right / the trace's right
+  1.7B-T node_count      2729 of 2729; differ 24 (0.9%); right: final 21 / trace 2
+  1.7B-T cycle_check     2617 of 2617; differ 1 (0.0%); right: final 1 / trace 0
+  1.7B-T node_degree     2768 of 2768; differ 3 (0.1%); right: final 1 / trace 1
+  1.7B-T edge_count      533 of 533; differ 1 (0.2%); right: final 0 / trace 1
+  1.7B-T edge_existence  2794 of 2794; differ 0 (0.0%); right: final 0 / trace 0
+  1.7B-T differ by condition: none 7, filler 2, components 0, clustering 3, rwse 2, degree 9, all 6
+  4B-T   node_count      2797 of 2797; differ 2 (0.1%); right: final 2 / trace 0
+  4B-T   cycle_check     2748 of 2748; differ 0 (0.0%); right: final 0 / trace 0
+  4B-T   node_degree     2756 of 2756; differ 1 (0.0%); right: final 1 / trace 0
+  4B-T   edge_count      1057 of 1057; differ 0 (0.0%); right: final 0 / trace 0
+  4B-T   edge_existence  2779 of 2779; differ 0 (0.0%); right: final 0 / trace 0
+  4B-T   differ by condition: none 0, filler 0, components 1, clustering 0, rwse 1, degree 1, all 0
+[boxed] finished answers whose answer part holds a \boxed{} integer: n; how many differ from the scored answer; of those, boxed right and scored wrong / scored right and boxed wrong / both wrong
+  1.7B   node_count 559; differ 0: 0 / 0 / 0 | node_degree 1518; differ 0: 0 / 0 / 0 | edge_count 2159; differ 6: 3 / 0 / 3
+  1.7B-T node_count 1647; differ 3: 3 / 0 / 0 | node_degree 1047; differ 0: 0 / 0 / 0 | edge_count 530; differ 0: 0 / 0 / 0
+  4B     node_count 0; differ 0: 0 / 0 / 0 | node_degree 3; differ 0: 0 / 0 / 0 | edge_count 359; differ 20: 0 / 0 / 20
+  4B-T   node_count 671; differ 2: 2 / 0 / 0 | node_degree 904; differ 0: 0 / 0 / 0 | edge_count 1051; differ 0: 0 / 0 / 0
+[lenmed] finished pairs against none: median change in new tokens, all pairs / questions the condition fixes (n, % shorter) / questions it breaks (n, % shorter); * fixed and broken differ, Mann-Whitney, BH q < .05 over the arm's cells with 10 or more of each
+  1.7B   node_count      filler -124 / -189 (161, 99.4) / -193 (2, 100.0) | components -9 / -197 (113, 98.2) / +140 (28, 14.3)* | clustering -193 / -197 (269, 98.9) / - (0, -) | rwse -12 / -195 (87, 96.6) / +124 (79, 3.8)* | degree +0 / -175 (43, 93.0) / +191 (16, 12.5)* | all -192 / -200 (193, 94.3) / +0 (5, 40.0)
+  1.7B   cycle_check     filler -46 / -646 (1, 100.0) / - (0, -) | components -59 / - (0, -) / +726 (2, 0.0) | clustering +76 / -672 (1, 100.0) / - (0, -) | rwse +177 / -755 (1, 100.0) / +2657 (28, 3.6) | degree +931 / - (0, -) / +1197 (38, 0.0) | all +220 / -406 (1, 100.0) / +622 (5, 20.0)
+  1.7B   node_degree     filler -1 / -4 (32, 56.2) / -11 (34, 70.6) | components +0 / +4 (36, 33.3) / +2 (29, 41.4) | clustering +3 / +2 (53, 37.7) / +2 (41, 36.6) | rwse +7 / +20 (53, 28.3) / +17 (37, 18.9) | degree +6 / +14 (57, 31.6) / +12 (27, 33.3) | all +2 / +4 (77, 44.2) / +0 (36, 47.2)
+  1.7B   edge_count      filler -155 / +384 (2, 0.0) / +527 (3, 0.0) | components -30 / -2355 (1, 100.0) / -299 (4, 50.0) | clustering -10 / +21 (3, 33.3) / +472 (4, 0.0) | rwse +183 / +33 (2, 0.0) / +426 (4, 0.0) | degree -777 / -245 (13, 69.2) / -560 (3, 100.0) | all -66 / -466 (8, 62.5) / +630 (3, 33.3)
+  1.7B   connected_nodes filler +0 / +3 (23, 43.5) / -2 (48, 50.0) | components +0 / +8 (29, 34.5) / -0 (26, 50.0) | clustering -4 / -4 (41, 58.5) / -12 (36, 63.9) | rwse +10 / +16 (41, 26.8) / +22 (37, 24.3) | degree +7 / +12 (42, 33.3) / -4 (28, 57.1) | all +1 / +3 (50, 40.0) / -1 (42, 52.4)
+  1.7B   edge_existence  filler -30 / -10 (10, 60.0) / -83 (73, 98.6)* | components +0 / -36 (11, 63.6) / -60 (44, 79.5) | clustering +33 / +78 (48, 25.0) / +8 (33, 48.5)* | rwse +68 / +108 (55, 7.3) / +84 (34, 20.6)* | degree +16 / +92 (49, 10.2) / +2 (33, 48.5)* | all +97 / +135 (75, 4.0) / +99 (29, 3.4)*
+  1.7B-T node_count      filler -366 / -2817 (5, 100.0) / - (0, -) | components -114 / -2324 (4, 100.0) / +1499 (1, 0.0) | clustering -245 / -2219 (5, 100.0) / - (0, -) | rwse -14 / -1943 (5, 100.0) / - (0, -) | degree +422 / -1853 (5, 60.0) / +544 (2, 0.0) | all -262 / -2369 (5, 100.0) / - (0, -)
+  1.7B-T cycle_check     filler -594 / - (0, -) / - (0, -) | components -40 / - (0, -) / - (0, -) | clustering +119 / - (0, -) / - (0, -) | rwse -226 / - (0, -) / - (0, -) | degree +1891 / - (0, -) / +4528 (2, 0.0) | all +178 / - (0, -) / - (0, -)
+  1.7B-T node_degree     filler -204 / -340 (24, 91.7) / -254 (38, 68.4) | components +23 / -105 (21, 57.1) / +224 (25, 36.0) | clustering -190 / -240 (31, 67.7) / -289 (27, 66.7) | rwse +200 / -57 (41, 58.5) / +223 (31, 29.0) | degree +374 / +846 (59, 23.7) / +3101 (15, 6.7)* | all -48 / +273 (63, 41.3) / +618 (17, 35.3)
+  1.7B-T edge_count      filler -204 / -411 (2, 100.0) / -175 (1, 100.0) | components -55 / +262 (2, 0.0) / - (0, -) | clustering -788 / -788 (1, 100.0) / +356 (3, 33.3) | rwse +153 / - (0, -) / -120 (1, 100.0) | degree +703 / - (0, -) / +1046 (8, 37.5) | all -474 / -3321 (2, 100.0) / -7 (4, 50.0)
+  1.7B-T connected_nodes filler -226 / -310 (29, 75.9) / -208 (21, 61.9) | components -81 / -218 (27, 63.0) / +68 (16, 43.8) | clustering -191 / -329 (36, 69.4) / -202 (30, 70.0) | rwse +225 / +108 (30, 36.7) / +618 (31, 19.4)* | degree -38 / -180 (44, 59.1) / +494 (15, 33.3) | all -179 / -247 (41, 65.9) / +31 (17, 47.1)
+  1.7B-T edge_existence  filler -94 / -183 (3, 66.7) / +14 (6, 50.0) | components +37 / +95 (3, 33.3) / -220 (6, 83.3) | clustering -32 / -702 (2, 50.0) / -220 (6, 66.7) | rwse +138 / +583 (3, 33.3) / +837 (8, 12.5) | degree +145 / +631 (2, 0.0) / -99 (11, 63.6) | all +55 / -980 (2, 100.0) / +60 (10, 40.0)
+  4B     node_count      filler -52 / -25 (37, 100.0) / - (0, -) | components -6 / +0 (37, 8.1) / -17 (1, 100.0) | clustering -26 / -25 (38, 89.5) / -70 (3, 100.0) | rwse -6 / +2 (39, 10.3) / -70 (2, 100.0) | degree -29 / -1 (37, 86.5) / -45 (5, 100.0) | all +0 / +6 (39, 17.9) / - (0, -)
+  4B     cycle_check     filler -113 / - (0, -) / -20 (1, 100.0) | components -40 / -1101 (1, 100.0) / +63 (6, 33.3) | clustering +14 / -942 (1, 100.0) / - (0, -) | rwse -128 / -1248 (1, 100.0) / - (0, -) | degree +403 / - (0, -) / +1130 (6, 16.7) | all -123 / -1177 (1, 100.0) / +83 (3, 0.0)
+  4B     node_degree     filler -7 / -2 (3, 66.7) / +1 (5, 40.0) | components +0 / +11 (1, 0.0) / - (0, -) | clustering -17 / -107 (3, 66.7) / -6 (5, 80.0) | rwse +11 / +26 (2, 0.0) / +11 (11, 27.3) | degree -85 / -67 (3, 100.0) / -142 (29, 96.6) | all -70 / -131 (2, 100.0) / -140 (34, 94.1)
+  4B     edge_count      filler -494 / -514 (10, 80.0) / -1040 (5, 100.0) | components -12 / +786 (2, 0.0) / -3 (7, 57.1) | clustering -565 / -286 (3, 66.7) / -722 (8, 100.0) | rwse -383 / -666 (1, 100.0) / -630 (7, 100.0) | degree -136 / -45 (114, 51.8) / -180 (5, 60.0) | all -315 / -156 (21, 52.4) / -728 (6, 100.0)
+  4B     connected_nodes filler -7 / +3 (21, 38.1) / -80 (71, 74.6)* | components +17 / +74 (44, 4.5) / +133 (7, 0.0) | clustering +0 / +14 (33, 24.2) / +3 (29, 44.8)* | rwse -4 / +3 (34, 47.1) / -85 (34, 79.4)* | degree +0 / +42 (30, 23.3) / -3 (42, 54.8)* | all -9 / +3 (32, 43.8) / -70 (43, 62.8)*
+  4B     edge_existence  filler -16 / +106 (14, 21.4) / -120 (42, 73.8)* | components +0 / +166 (16, 12.5) / -118 (27, 74.1)* | clustering -1 / +30 (28, 28.6) / -142 (12, 83.3)* | rwse -2 / +127 (13, 23.1) / -98 (53, 73.6)* | degree +0 / +161 (15, 20.0) / -171 (32, 87.5)* | all -5 / +26 (15, 33.3) / -102 (54, 85.2)*
+  4B-T   node_count      filler -300 / -244 (2, 100.0) / - (0, -) | components +83 / +66 (2, 50.0) / -354 (2, 50.0) | clustering -225 / -224 (2, 50.0) / - (0, -) | rwse -224 / +744 (2, 50.0) / - (0, -) | degree +2 / -328 (2, 100.0) / - (0, -) | all -207 / -463 (2, 100.0) / - (0, -)
+  4B-T   cycle_check     filler -226 / - (0, -) / - (0, -) | components +27 / - (0, -) / - (0, -) | clustering -146 / - (0, -) / - (0, -) | rwse +607 / - (0, -) / - (0, -) | degree +729 / - (0, -) / +2965 (3, 0.0) | all -88 / - (0, -) / - (0, -)
+  4B-T   node_degree     filler -236 / - (0, -) / - (0, -) | components +36 / - (0, -) / +2215 (1, 0.0) | clustering -322 / -2041 (1, 100.0) / -454 (2, 50.0) | rwse -254 / - (0, -) / +2422 (8, 12.5) | degree -64 / -2073 (1, 100.0) / +3326 (1, 0.0) | all -338 / - (0, -) / +2052 (3, 0.0)
+  4B-T   edge_count      filler -660 / - (0, -) / -3097 (1, 100.0) | components -872 / +159 (1, 0.0) / - (0, -) | clustering -1216 / -1136 (2, 100.0) / -119 (1, 100.0) | rwse -400 / -798 (1, 100.0) / +322 (1, 0.0) | degree -2308 / - (0, -) / -2630 (8, 87.5) | all -3133 / - (0, -) / -2562 (17, 76.5)
+  4B-T   connected_nodes filler -116 / -1259 (4, 100.0) / -5 (1, 100.0) | components +103 / -1031 (3, 100.0) / -347 (1, 100.0) | clustering -98 / -846 (3, 100.0) / +421 (3, 33.3) | rwse -109 / -1103 (4, 100.0) / -36 (4, 75.0) | degree -50 / -1278 (4, 100.0) / +134 (4, 50.0) | all -144 / -1143 (3, 100.0) / -53 (5, 60.0)
+  4B-T   edge_existence  filler -37 / - (0, -) / - (0, -) | components +90 / - (0, -) / - (0, -) | clustering -25 / - (0, -) / - (0, -) | rwse -5 / - (0, -) / - (0, -) | degree -2 / - (0, -) / - (0, -) | all -75 / - (0, -) / - (0, -)
+[churnwhy] flips against none, main sweep, all six tasks: n, and % where either response hit the token budget
+  1.7B   filler 447: 13.0 | components 374: 13.6 | clustering 567: 6.7 | rwse 498: 8.0 | degree 447: 21.9 | all 562: 6.8
+  1.7B-T filler 250: 48.4 | components 296: 64.5 | clustering 283: 50.2 | rwse 270: 44.4 | degree 420: 61.2 | all 334: 51.8
+  4B     filler 216: 3.2 | components 158: 5.7 | clustering 168: 3.0 | rwse 205: 3.9 | degree 329: 3.3 | all 256: 2.3
+  4B-T   filler 150: 94.7 | components 209: 95.2 | clustering 203: 93.1 | rwse 171: 88.3 | degree 219: 89.5 | all 180: 83.3
+[fillerband] side-information cells of [bands], baseline 0.25-0.75, under the truncation flag: mean effect against none (cells)
+  clustering +2.4 (17), components -0.8 (17), rwse +3.1 (17); the three +1.6 (51) | filler on the same (arm, task, density) -6.9 (17)
+[samequestion] questions with both a right and a wrong finished response across the seven conditions: median over questions of (mean new tokens of the right ones - of the wrong ones), % of questions where the right ones are longer, n questions
+  1.7B   node_count -132 (1.1%, 369) | cycle_check -1270 (4.1%, 74) | node_degree +2 (57.4%, 195) | edge_count -527 (18.8%, 32) | connected_nodes +3 (54.9%, 173) | edge_existence +71 (83.6%, 201)
+  1.7B-T node_count - (9) | cycle_check - (2) | node_degree +36 (53.2%, 173) | edge_count -306 (35.7%, 42) | connected_nodes -209 (39.1%, 133) | edge_existence +70 (59.0%, 39)
+  4B     node_count -7 (38.3%, 47) | cycle_check -727 (43.8%, 16) | node_degree +46 (73.2%, 71) | edge_count +246 (79.3%, 145) | connected_nodes +48 (79.8%, 183) | edge_existence +95 (87.5%, 128)
+  4B-T   node_count - (4) | cycle_check - (3) | node_degree -2223 (13.3%, 15) | edge_count +912 (68.3%, 104) | connected_nodes -250 (35.0%, 20) | edge_existence - (0)
+[eedegree] edge_existence non-edges, finished answers of the plain arms: correlation of shared neighbours and the pair's degree sum within density: p=0.1 0.40, p=0.2 0.65, p=0.35 0.73, p=0.5 0.87
+  false yes minus correct no: mean shared neighbours, p within density / within density x degree-sum quartile; mean degree sum, p within density x shared bin (0, 1, 2-3, 4+); permutation within strata (and condition)
+  1.7B none      n=293, false yes 118: shared +4.48, p=0.0005 / 0.0035 | degree sum +13.60, p=0.011
+  1.7B all seven n=2050, false yes 821: shared +3.45, p=0.0005 / 0.0005 | degree sum +10.67, p=0.0005
+  4B   none      n=293, false yes 37: shared +2.81, p=0.012 / 0.081 | degree sum +8.63, p=0.31
+  4B   all seven n=2048, false yes 384: shared +3.89, p=0.0005 / 0.0005 | degree sum +11.88, p=0.0005
+[loopsample] truncated tails (last 200 characters), at random: two loops and two others per arm
+  -- 1.7B components cycle_check/size40/p0.2/30 match 1.000 period 10 loop=True
+     '0 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 10 → 18 → 1'
+  -- 1.7B components edge_count/size40/p0.5/5 match 1.000 period 10 loop=True
+     '20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + 20 + 19 + '
+  -- 1.7B components edge_count/size40/p0.35/89 match 0.848 period 420 loop=False
+     '600 + 17 = 4617  \n- 4617 + 19 = 4636  \n- 4636 + 10 = 4646  \n- 4646 + 14 = 4660  \n- 4660 + 17 = 4677  \n- 4677 + 19 = 4696  \n- 4696 + 10 = 4706  \n- 4706 + 14 = 4720  \n- 4720 + 17 = 4737  \n- 4737 + 19 = '
+  -- 1.7B none edge_count/size40/p0.35/10 match 0.879 period 420 loop=False
+     ' + 15 = 6408  \n- 6408 + 15 = 6423  \n- 6423 + 15 = 6438  \n- 6438 + 15 = 6453  \n- 6453 + 15 = 6468  \n- 6468 + 15 = 6483  \n- 6483 + 15 = 6498  \n- 6498 + 15 = 6513  \n- 6513 + 15 = 6528  \n- 6528 + 15 = 654'
+  -- 1.7B-T all edge_count/size40/p0.1/90 match 1.000 period 3 loop=True
+     '1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,'
+  -- 1.7B-T degree edge_count/size40/p0.5/89 match 1.000 period 20 loop=True
+     '22, 23, 20, 23, 26, 22, 23, 20, 23, 26, 22, 23, 20, 23, 26, 22, 23, 20, 23, 26, 22, 23, 20, 23, 26, 22, 23, 20, 23, 26, 22, 23, 20, 23, 26, 22, 23, 20, 23, 26, 22, 23, 20, 23, 26, 22, 23, 20, 23, 26, '
+  -- 1.7B-T clustering edge_count/size40/p0.5/10 match 0.406 period 4 loop=False
+     " So degree 17.\n\nNode 32: 1, 6, 7, 9, 10, 11, 12, 15, 16, 18, 20, 21, 22, 24, 26, 29, 31, 34, 35, 38. Let me count:\n\n1, 6, 7, 9, 10, 11, 12, 15, 16, 18, 20, 21, 22, 24, 26, 29, 31, 34, 35, 38. That's 2"
+  -- 1.7B-T components edge_count/size40/p0.5/2 match 0.410 period 34 loop=False
+     'again.\n\nFor example, node 15: 24, node 16: 20, node 17: 21, node 18: 18, node 19: 24, node 20: 16, node 21: 22, node 22: 23, node 23: 18, node 24: 20, node 25: 22, node 26: 15, node 27: 21, node 28: 2'
+  -- 4B filler cycle_check/size40/p0.1/80 match 1.000 period 160 loop=True
+     '→ 6 → 10** is not valid.\n\nA valid simple cycle is:\n\n- **Node 10 → 6 → 10** is not valid.\n\nAfter checking the connections, a valid simple cycle is:\n\n- **Node 10 → 6 → 10** is not valid.\n\nA valid simple'
+  -- 4B rwse cycle_check/size40/p0.2/32 match 1.000 period 38 loop=True
+     '16 → Node 15 → Node 4 → Node 5 → Node 16 → Node 15 → Node 4 → Node 5 → Node 16 → Node 15 → Node 4 → Node 5 → Node 16 → Node 15 → Node 4 → Node 5 → Node 16 → Node 15 → Node 4 → Node 5 → Node 16 → Node '
+  -- 4B all edge_count/size40/p0.35/16 match 0.388 period 14 loop=False
+     'egrees = 581\n\nNumber of edges = 581 / 2 = 290.5\n\nThis is not an integer, which indicates a mistake in the degree counts. However, since the problem provides the adjacency lists, we can count the edges'
+  -- 4B degree edge_count/size40/p0.1/12 match 0.269 period 21 loop=False
+     '- Node 21: 3 edges  \n- Node 22: 1 edge  \n- Node 23: 3 edges  \n- Node 24: 5 edges  \n- Node 25: 4 edges  \n- Node 26: 4 edges  \n- Node 27: 2 edges  \n- Node 28: 5 edges  \n- Node 29: 2 edges  \n- Node 30: 3'
+  -- 4B-T none connected_nodes/size40/p0.1/6 match 1.000 period 156 loop=True
+     ':\n\nLooking at the original problem\'s text:\n\nThe user wrote:\n\n"Node 31 is connected to nodes 16, 18." Wait, no, the user\'s list is:\n\nWait, the user\'s list is:\n\nLooking at the original problem\'s text:\n\n'
+  -- 4B-T all node_degree/size40/p0.1/21 match 1.000 period 392 loop=True
+     "So which one is correct?\n\nAlternatively, maybe the user made a mistake in the connections. For example, maybe node 37 is connected to 5 and 28, but not 38. But according to the text, it's connected to"
+  -- 4B-T components edge_count/size40/p0.35/81 match 0.245 period 36 loop=False
+     '| 10     |\n| 9    | 18     |\n| 10   | 12     |\n| 11   | 16     |\n| 12   | 13     |\n| 13   | 13     |\n| 14   | 20     |\n| 15   | 20     |\n| 16   | 14     |\n| 17   | 16     |\n| 18   | 22     |\n| 19   | '
+  -- 4B-T filler edge_count/size40/p0.35/80 match 0.274 period 24 loop=False
+     'he grouping, I considered 11*13=143, 5*14=70, 3*15=45, 1*18=18, 1*10=10, 5*17=85, 5*12=60, 3*16=48, 2*9=18, 3*11=33. Total is 143+70=213, +45=258, +18=276, +10=286, +85=371, +60=431, +48=479, +18=497,'
+[faithsample] every [faithful] disagreement: scored answer / the trace's; the trace's last 250 characters | the answer's first 250
+  -- 1.7B-T none node_count/size40/p0.1/0: final 40 (right) / trace 39 (wrong)
+     '8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39." So that\'s 40 nodes. Therefore, the answer is 40. I think that\'s it. The question is straightforward, and the answer is 40.\n'
+     | '\n\nThe graph is defined over nodes numbered from 0 to 39, inclusive. To determine the number of nodes, we count the integers in this range:\n\n$$\n0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 2'
+  -- 1.7B-T all node_count/size40/p0.2/37: final 40 (right) / trace 39 (wrong)
+     '31, 32, 33, 34, 35, 36, 37, 38, and 39." So that\'s 40 nodes. Therefore, the answer is 40. But maybe the user is confused because they thought that the nodes are up to 38? But no, the last node is 39. So the answer is 40. Therefore, the answer is 40.\n'
+     | "\n\nThe graph is described with nodes numbered from **0 to 39** inclusive. This range includes **40 distinct nodes** (0, 1, 2, ..., 39). Each node's connections and properties are provided in the problem statement, but the question specifically asks fo"
+  -- 1.7B-T degree node_count/size40/p0.2/99: final 40 (right) / trace 39 (wrong)
+     '" So that\'s all the numbers from 0 to 39. Therefore, the number of nodes is 40. So the answer is 40. But maybe the user is confused because the degrees are given, but the question is about the number of nodes. So the answer is 40. I think that\'s it.\n'
+     | '\n\nThe graph is defined for nodes numbered from **0 to 39** inclusive. Each node is uniquely identified by an integer in this range. \n\n**Count of nodes:**  \nFrom 0 to 39, the total number of integers is calculated as:  \n$$\n39 - 0 + 1 = 40\n$$\n\n**Answer'
+  -- 1.7B-T degree node_count/size40/p0.1/83: final 40 (right) / trace 39 (wrong)
+     ', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, and 39." So that\'s all the nodes from 0 to 39. Therefore, the answer is 40. So I think the answer is 40.\n'
+     | '\n\nThe graph is defined for nodes numbered from **0 to 39** inclusive. To determine the number of nodes, we calculate the total count of integers in this range:\n\n$$\n39 - 0 + 1 = 40\n$$\n\n**Answer:**  \n$$\n\\boxed{40}\n$$'
+  -- 1.7B-T degree node_count/size40/p0.2/33: final 40 (right) / trace 39 (wrong)
+     "ing me to check if there's a mistake in the list? For example, maybe node 39 is not included? But the list says up to 39. So I think the answer is 40. But let me check again. The nodes listed are 0 through 39, which is 40 nodes. So the answer is 40.\n"
+     | '\n\nThe graph is defined for nodes numbered from **0 to 39**, inclusive. Each node is uniquely identified by its integer value in this range. \n\n**Count of nodes:**  \n$$\n0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 2'
+  -- 1.7B-T clustering node_count/size40/p0.35/30: final 40 (right) / trace 39 (wrong)
+     "here's a mistake in the problem statement, the answer is 40. \n\nAlternatively, maybe the question is a trick question where the answer is 39? But no, because the nodes are numbered up to 39. So 0 to 39 is 40 nodes. Therefore, the answer should be 40.\n"
+     | '\n\nThe graph contains nodes labeled from 0 to 39, inclusive. To determine the number of nodes, we calculate the total count of these labels:\n\n$$\n39 - 0 + 1 = 40\n$$\n\n**Answer:** 40 nodes.'
+  -- 1.7B-T rwse node_degree/size40/p0.35/63: final 20 (right) / trace 19 (wrong)
+     " typo in the list. For example, maybe node 13 is connected to 35, but maybe there's a mistake. But according to the given data, it's 20. So unless there's a mistake in the problem statement, the answer is 20.\n\nTherefore, the degree of node 13 is 20.\n"
+     | '\n\nThe degree of a node in a graph is the number of edges connected to it. For **node 13**, we are given its connections as follows:\n\n- **0, 1, 2, 3, 4, 5, 6, 7, 11, 14, 16, 19, 21, 22, 24, 26, 27, 30, 34, 35**\n\nCounting these, there are **20 distinct'
+  -- 1.7B-T all node_count/size40/p0.5/2: final 40 (right) / trace 39 (wrong)
+     'graph. The graph is described with all these nodes, so the answer is 40. But maybe I need to check if any of the nodes are not present. For example, in the list of nodes, each node is listed once. So 0 to 39 is 40 nodes. Therefore, the answer is 40.\n'
+     | '\n\nThe graph is described for nodes numbered from 0 to 39, inclusive. Each node is uniquely identified by its number, and the list explicitly includes all integers from 0 through 39. \n\n**Total number of nodes:**  \n$$\n39 - 0 + 1 = 40\n$$\n\n**Answer:**  \n'
+  -- 1.7B-T none node_count/size40/p0.5/70: final 41 (wrong) / trace 40 (right)
+     " the user accidentally wrote 39 twice. But in that case, the answer is 40. However, without more information, I have to go with the exact wording. Therefore, the answer is 41. But I'm not sure. However, given the problem as stated, the answer is 41.\n"
+     | '\n\nThe graph is defined with nodes numbered from **0 to 39**, inclusive. The problem explicitly lists the nodes as:\n\n```\n0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, '
+  -- 1.7B-T degree node_count/size40/p0.2/42: final 40 (right) / trace 39 (wrong)
+     'st seems to be correct. So the answer is 40. But wait, the user might have made a mistake in the list? Let me check again. The nodes are listed as 0,1,2,...,39. So 0 to 39 inclusive. 40 nodes. So the answer is 40. Therefore, the answer should be 40.\n'
+     | '\n\nThe graph is defined for nodes numbered from **0 to 39** inclusive. Each node is uniquely identified by an integer in this range. \n\n**Count of nodes:**  \n$$\n39 - 0 + 1 = 40\n$$\n\n**Answer:**  \n$$\n\\boxed{40}\n$$'
+  -- 1.7B-T all node_count/size40/p0.1/83: final 40 (right) / trace 1 (wrong)
+     'maybe the answer is different because some nodes are not connected? But the question is about the number of nodes, not the number of edges. So even if some nodes are not connected, the number of nodes is still 40. Therefore, the answer should be 40.\n'
+     | '\n\nThe graph is defined for nodes numbered from 0 to 39, inclusive. Each node is uniquely identified by its integer index in this range. Since the problem explicitly lists all nodes from 0 through 39, the total number of nodes in the graph is:\n\n**Answ'
+  -- 1.7B-T none node_count/size40/p0.5/82: final 42 (wrong) / trace 41 (wrong)
+     ' inclusive is n+1. So 41-0+1=42. So yes, 42 nodes. Therefore, the answer is 42. But maybe the user made a mistake in the problem statement? But according to the given information, the nodes are from 0 to 41, so 42 nodes. Therefore, the answer is 42.\n'
+     | '\n\nThe graph is defined among nodes numbered from **0 to 41** inclusive. To determine the number of nodes:\n\n1. **Count the numbers in the range**:  \n   The nodes are listed as $ 0, 1, 2, 3, \\dots, 41 $.  \n   The total count is $ 41 - 0 + 1 = 42 $.\n\n2.'
+  -- 1.7B-T none node_count/size40/p0.2/78: final 40 (right) / trace 39 (wrong)
+     " maybe the user is expecting a different answer? For example, sometimes in some contexts, nodes might be labeled differently, but here it's clearly stated as 0 to 39. So I think the answer is 40. \n\nTherefore, the number of nodes in this graph is 40.\n"
+     | '\n\nThe graph is defined with nodes numbered from **0 to 39** inclusive. To determine the number of nodes, we calculate the total count of integers in this range:\n\n$$\n\\text{Number of nodes} = 39 - 0 + 1 = 40\n$$\n\nEach node is explicitly listed in the pr'
+  -- 1.7B-T degree node_count/size40/p0.35/54: final 40 (right) / trace 39 (wrong)
+     'confused because the degrees are given, but the question is about the number of nodes. So the answer is 40. But let me check again. The list of nodes is from 0 to 39 inclusive. So 0 to 39 is 40 numbers. So yes, 40 nodes. Therefore, the answer is 40.\n'
+     | "\n\nThe graph is defined among nodes numbered from 0 to 39, inclusive. Each node's degree is provided, and the list of nodes explicitly includes all integers from 0 through 39. \n\n**Step-by-Step Explanation:**\n1. **Node List:** The nodes are listed as 0"
+  -- 1.7B-T all node_count/size40/p0.35/67: final 40 (right) / trace 39 (wrong)
+     'es 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, and 39." So that\'s 40 nodes. So the answer is 40. Therefore, the number of nodes in the graph is 40.\n'
+     | '\n\nThe graph is described to include nodes numbered from 0 to 39. Each node is uniquely identified by its integer index in this range. Counting the numbers from 0 to 39 inclusive, there are **40 nodes** in total.\n\n**Answer:** 40'
+  -- 1.7B-T clustering node_count/size40/p0.35/4: final 40 (right) / trace 39 (wrong)
+     "here's a typo in the list, which I don't see, the answer is 40. \n\nAlternatively, maybe the question is a trick question where the answer is 39? But no, because node 0 is included. The nodes are 0 through 39, which is 40. So I think the answer is 40.\n"
+     | '\n\nThe graph contains nodes labeled from 0 to 39, inclusive. Each node is uniquely identified by its integer label in this range. \n\n**Number of nodes:**  \n$$\n39 - 0 + 1 = 40\n$$\n\n**Answer:**  \n$$\n\\boxed{40}\n$$'
+  -- 1.7B-T degree node_count/size40/p0.35/57: final 40 (right) / trace 39 (wrong)
+     'estion is not about the number of edges, but the number of nodes. So the answer is 40. But maybe the user is tricking me? Let me check again. The nodes are numbered from 0 to 39, so 40 nodes. Therefore, the answer is 40. So I think the answer is 40.\n'
+     | '\n\nThe graph is defined for nodes numbered from **0 to 39**, inclusive. Each node is uniquely identified by its integer value in this range. \n\nTo determine the number of nodes:\n- The nodes are listed as: 0, 1, 2, 3, ..., 39.\n- The count of nodes is ca'
+  -- 1.7B-T filler node_count/size40/p0.35/98: final 40 (right) / trace 39 (wrong)
+     "re present. Therefore, the total number of nodes is 40. \n\nI don't see any trick here. The question is straightforward. The user might have included the nodes in a list, but the answer is just the count of numbers from 0 to 39 inclusive. So 40 nodes.\n"
+     | '\n\nThe graph contains nodes numbered from 0 to 39, inclusive. To determine the total number of nodes:\n\n$$\n\\text{Number of nodes} = 39 - 0 + 1 = 40\n$$\n\n**Answer:** 40 nodes.'
+  -- 1.7B-T clustering node_count/size40/p0.1/57: final 40 (right) / trace 39 (wrong)
+     ". up to 39. So 0 to 39 is 40 numbers. So yes, 40 nodes. Therefore, the answer is 40. But maybe the user is confused because the clustering coefficients are given, but the question is about the number of nodes. So the answer is 40. I think that's it.\n"
+     | '\n\nThe graph is defined for nodes numbered from 0 to 39, inclusive. Each node in this range is explicitly listed in the problem statement. The total number of nodes is calculated as follows:\n\n$$\n39 - 0 + 1 = 40\n$$\n\n**Answer:** 40 nodes.'
+  -- 1.7B-T rwse node_count/size40/p0.2/60: final 40 (right) / trace 39 (wrong)
+     'raph among nodes 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, and 39." So that\'s 40 nodes. Therefore, the answer is 40. So I think the answer is 40.\n'
+     | '\n\nThe graph is defined with nodes numbered from **0 to 39** inclusive. Each node is uniquely identified by its integer value in this range. \n\nTo determine the total number of nodes:\n- The sequence starts at **0** and ends at **39**.\n- The count of in'
+  -- 1.7B-T none node_count/size40/p0.5/72: final 40 (right) / trace 41 (wrong)
+     'which is the number of unique nodes. In the list, the nodes are 0, 1, 2, ..., 38, 39, 39. So the unique nodes are 0 to 39, which is 40 nodes. The duplicate 39 is just an error. So the answer is 40.\n\nTherefore, the number of nodes in the graph is 40.\n'
+     | '\n\nThe graph is defined among nodes numbered from **0 to 39**. The problem explicitly lists the nodes as:\n\n```\n0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37'
+  -- 1.7B-T degree node_count/size40/p0.35/25: final 39 (wrong) / trace 40 (right)
+     "). So that's okay. The minimum degree is 9 (nodes 11, 13, 14, 19, 39). So all degrees are between 9 and 19, which is okay. So the graph is valid. Therefore, the number of nodes is 40.\n\nSo the answer is 40. Therefore, the answer should be \\boxed{40}.\n"
+     | '\n\nTo determine the number of nodes in the graph described, we begin by analyzing the information provided.\n\n---\n\n### Step 1: Identify the Nodes\n\nThe problem explicitly states:\n\n> "G describes a graph among nodes 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, '
+  -- 1.7B-T filler node_count/size40/p0.35/19: final 40 (right) / trace 39 (wrong)
+     'the problem says all nodes from 0 to 39 are present. So the answer is 40. \n\nAlternatively, maybe the question is a trick question where the answer is 39? But no, because node 0 is included. So 0 to 39 is 40 nodes. Therefore, the answer should be 40.\n'
+     | '\n\nThe graph contains nodes numbered from 0 to 39, inclusive. To determine the total number of nodes:\n\n1. **List of Nodes**: The nodes are explicitly listed as 0, 1, 2, ..., 39.\n2. **Counting**: The number of nodes is calculated as $ 39 - 0 + 1 = 40 $'
+  -- 1.7B-T none node_degree/size40/p0.5/73: final 17 (wrong) / trace 18 (wrong)
+     " typo in the list. \n\nAlternatively, maybe the user intended to write that node 34 is connected to 1, 2, 3, 4, 7, 9, 11, 17, 18, 20, 21, 22, 25, 33, 36, 37, 38, and the 15th entry is 34, but that's a mistake. \n\nTherefore, the degree of node 34 is 17.\n"
+     | '\n\nThe degree of a node in a graph is the number of edges connected to it, i.e., the number of nodes it is directly connected to. \n\nFor **node 34**, the provided list of connected nodes is:\n\n**1, 2, 3, 4, 7, 9, 11, 17, 18, 20, 21, 22, 25, 33, 34, 36, '
+  -- 1.7B-T none node_count/size40/p0.2/43: final 40 (right) / trace 39 (wrong)
+     "ifferent? Wait, sometimes in graph theory, nodes can be labeled differently, but here the problem explicitly lists all nodes from 0 to 39. So unless there's a typo in the problem, the answer is 40. Therefore, the number of nodes in this graph is 40.\n"
+     | '\n\nThe graph is defined over nodes labeled from 0 to 39, inclusive. To determine the number of nodes, we count the integers in this range:\n\n$$\n0, 1, 2, 3, \\ldots, 39\n$$\n\nThe total number of nodes is calculated as:\n\n$$\n39 - 0 + 1 = 40\n$$\n\nEach node is '
+  -- 1.7B-T all node_count/size40/p0.5/0: final 40 (right) / trace 39 (wrong)
+     '34, 35, 36, 37, 38, and 39." So that\'s all the nodes from 0 to 39. Therefore, the total number is 40. So the answer is 40. But maybe the answer is different? Let me check again. The user lists nodes 0 to 39, so 40 nodes. Therefore, the answer is 40.\n'
+     | '\n\nThe graph is described among nodes numbered from 0 to 39, inclusive. Each node is uniquely identified by its integer index in this range. Since the nodes are explicitly listed from 0 to 39, the total number of nodes in the graph is:\n\n**Answer:** 40'
+  -- 1.7B-T all cycle_check/size40/p0.2/23: final Yes (right) / trace No (wrong)
+     "t there are no other cycles. However, given the complexity of the graph, it's possible that there are multiple cycles, but the question is just whether there is at least one cycle.\n\nTherefore, based on the connections, there is a cycle in the graph.\n"
+     | '\n\nYes, there is a cycle in the graph. \n\n**Explanation:**\nA cycle is a closed path where nodes are visited only once (except the starting node). The graph contains multiple cycles, as evidenced by the connections between nodes. For example:\n\n1. **Cycl'
+  -- 1.7B-T degree edge_count/size40/p0.35/47: final 280 (wrong) / trace 276 (right)
+     "nnections. So that's correct. \n\nSo, even though there's a discrepancy in Node 0's connections, the sum of degrees is 552, so the number of edges is 276. Therefore, the answer is 276.\n\n**Final Answer**\nThe number of edges in the graph is \\boxed{276}.\n"
+     | '\n\nTo determine the number of edges in the given graph, we can use a fundamental property of graphs: the sum of the degrees of all nodes is equal to twice the number of edges. This is because each edge connects two nodes, and thus is counted twice in '
+  -- 1.7B-T degree node_degree/size40/p0.35/29: final 12 (wrong) / trace 13 (right)
+     "ncluded for other purposes. So the answer is 13.\n\nBut I'm really confused. However, since the user provided the initial list, and the question is to find the degree of node 35, the answer is 13.\n\n**Final Answer**\nThe degree of node 35 is \\boxed{13}.\n"
+     | '\n\nTo determine the degree of **node 35**, we need to carefully analyze the information provided.\n\n---\n\n### Step 1: Understand the Data\n\nThe problem provides a list of degrees for each node from 0 to 39. This is the **most direct and reliable source**'
+  -- 4B-T degree node_degree/size40/p0.5/40: final 26 (right) / trace 21 (wrong)
+     "statement. But since I have to answer based on the given data, I think the answer is 21. But I'm not sure. Alternatively, maybe the connections are correct, and the initial list is wrong. But that's not possible. Therefore, I think the answer is 21.\n"
+     | '\n\nThe problem provides a list of degrees for each node in the graph, and the connections for each node. The question specifically asks for the degree of **node 6**.\n\n---\n\n### Step 1: Check the Initial Degree List\n\nFrom the problem statement, the degr'
+  -- 4B-T rwse node_count/size40/p0.5/44: final 40 (right) / trace -39 (wrong)
+     '0 nodes. But the problem statement lists up to 39, but misses 38. However, the user is asking for the number of nodes in the graph, which is given by the connections. Since node 38 is connected, it must be present. Therefore, the answer is 40 nodes.\n'
+     | '\n\nThe graph includes nodes numbered from 0 to 39. This is confirmed by the connections provided, which explicitly mention node 38 and node 39. Although the problem statement lists nodes up to 37 and 39, the presence of node 38 in the connections indi'
+  -- 4B-T components node_count/size40/p0.5/21: final 40 (right) / trace 1 (wrong)
+     ' The problem says "nodes 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, and 39." So that\'s 40 nodes. So the answer is 40. Therefore, the answer is 40.\n'
+     | '\n\nThe graph is described with nodes numbered from 0 to 39, inclusive. This sequence includes all integers from 0 through 39, which totals **40 nodes**. The problem explicitly states that the graph has **1 connected component**, confirming that all no'
+wrote csv2/raw-trends\robustness_responses.csv

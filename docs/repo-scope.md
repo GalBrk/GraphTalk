@@ -30,15 +30,15 @@ one of its conditions.** `scripts/build_size_sweep.py`'s docstring says this
 directly: "Nothing in the tracked corpus answers 'does this model degrade as
 graphs get big?', because the corpus has no big graphs."
 
-`docs/primer-effects-and-power.md` is the results document to read first for
-what's actually been found; it supersedes `docs/sweep-findings.md` (the
-original 5-19 node corpus). Two rules from it govern every number in this
+[results/README.md](results/README.md) is the index to read first for
+what's actually been found; `docs/sweep-findings.md` (the original 5-19 node
+corpus) is kept for its retractions. Two rules govern every number in this
 repo: read a primer effect against `bar(cond) - bar(none)` from
 `shortcuts.json`, not against zero (a primer-only solver that never sees the
 graph already scores 1.00 on several cells), and against a length-matched
-control rather than `none` — a content-free primer of the same length costs a
-thinking model 11.7pp on dense graphs, larger than most measured primer
-effects.
+control rather than `none` — a structure-free primer of about the same length
+costs a thinking model 11.4pp at p ≥ .65 (`docs/results/density-followups.md` §5), larger than most
+measured primer effects.
 
 ## The canonical n=40 experiment
 
@@ -51,16 +51,18 @@ comparable:
 
 ```bash
 PYTHONPATH=. python scripts/build_size_sweep.py --sizes 40 --densities 0.10 0.20 0.35 0.50 --count 100
-PYTHONPATH=. python scripts/score_density_sweep.py --responses "runs/qwen3-1.7b.degdens40.shard*of5.jsonl"
 ```
+
+Its results, and the commands that score it, are in
+[docs/results/n40-sweep.md](results/n40-sweep.md).
 
 Four model arms: `qwen3-1.7b`, `qwen3-1.7b-think`, `qwen3-4b`,
 `qwen3-4b-think` (see `cluster/run-4b-density-sweep.md` for the exact
 submission recipe, including the `--max-new-tokens 8192` override
 `edge_count` needs at this density).
 
-**Read results with the same validity caveats `docs/primer-effects-and-power.md`
-documents at this size/density:** `node_count` is contaminated by nearly every
+**Read results with the validity caveats [results/n40-sweep.md](results/n40-sweep.md)
+§1–2 documents at this size/density:** `node_count` is contaminated by nearly every
 primer (a per-node sentence lets a solver count sentences instead of reading
 the graph), `cycle_check`'s gold is "yes" for almost every graph past the
 sparsest level, and the `degree` primer states the `node_degree` answer
@@ -83,7 +85,7 @@ PYTHONPATH=. python scripts/build_size_sweep.py --sizes 40 --densities 0.10 0.20
     --out prompts_got.densfull40.degree.jsonl
 ```
 
-Score with `scripts/score_density_sweep.py` as above — `node_degree` isn't
+Score as in `docs/results/n40-sweep.md` — `node_degree` isn't
 the task `docs/DATA.md` flags as corrupted by GoT naming (that's
 `connected_nodes` only), so no desubstitution step is needed here.
 

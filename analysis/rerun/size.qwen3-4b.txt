@@ -1,0 +1,27 @@
+600 rows loaded
+
+blind bar (best constant answer, per level):
+  p=None   modal gold   'No'  bar 0.128  (n=600)
+
+mean score by density x condition (hit_cap dropped):
+  p                 none
+  None             0.897
+
+mean |error| by density x condition (hit_cap dropped):
+  p                 none
+  None             1.163
+
+capped rows dropped by density x condition:
+  p                 none
+  None                 0
+
+unparsable rows (scored 0, not dropped) by density x condition:
+  p                 none
+  None                 0
+
+pooled across levels, paired vs 'none' (exact McNemar on rows sharing an instance_id):
+
+per level (descriptive -- these are a family, correct before quoting any one):
+  (MDE printed under any row that did not survive BH -- the smallest true effect, in each direction, this row's data could reliably have detected; fast preset unless --mde was passed)
+
+wrote analysis/rerun/size.qwen3-4b.tests.csv

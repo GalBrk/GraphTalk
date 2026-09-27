@@ -18,7 +18,7 @@ smaller values for fast iteration and check `r_hat`/`ess_bulk`/
 `n_divergences` before trusting anything from a reduced run.
 
 Reads the same joined table `scripts/build_sweep_frame.py` writes that
-`check_significance.py` does (`analysis/sweep_frame.csv`) -- no re-scoring.
+`check_significance.py` does (`csv2/sweep-small-graph/sweep_frame.csv`) -- no re-scoring.
 
 `--method gee`'s output is directly diffable, cell for cell, against
 `analysis/significance_report.csv`'s `main_sweep`/`excluded`-bound rows:
@@ -33,10 +33,10 @@ an independent method agree", not to produce a second set of citable
 numbers.
 
   PYTHONPATH=. .venv/bin/python scripts/check_significance_glmm.py \
-      --frame analysis/sweep_frame.csv --method gee
+      --frame csv2/sweep-small-graph/sweep_frame.csv --method gee
 
   PYTHONPATH=. .venv/bin/python scripts/check_significance_glmm.py \
-      --frame analysis/sweep_frame.csv --method bayes \
+      --frame csv2/sweep-small-graph/sweep_frame.csv --method bayes \
       --compare-against analysis/significance_report.csv
 
 Pass `--compare-against analysis/significance_report.csv` to also print a
@@ -176,7 +176,7 @@ def _compare_against(result: pd.DataFrame, report_path: str, alpha: float) -> No
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--frame", default="analysis/sweep_frame.csv")
+  parser.add_argument("--frame", default="csv2/sweep-small-graph/sweep_frame.csv")
   parser.add_argument("--method", choices=("gee", "bayes"), default="gee")
   parser.add_argument("--metric", default="exact",
                        help="the sweep_frame.csv column to model (default 'exact')")

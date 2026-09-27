@@ -1,0 +1,8 @@
+# LaTeX build intermediates; short.pdf is committed, like ../talk_like_a_graph.pdf
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.fls
+*.fdb_latexmk

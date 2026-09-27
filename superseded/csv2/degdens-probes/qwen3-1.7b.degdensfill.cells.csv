@@ -1,0 +1,8 @@
+density,condition,kept,capped,parsed,unparsable,mean_score,mean_abs_error,blind_bar_answer,blind_bar_score
+0.1,filler,400,0,400,0,0.9525,0.0575,4,0.23
+0.2,filler,400,0,400,0,0.77,0.2975,7,0.1625
+0.35,filler,400,0,400,0,0.4025,1.06,13,0.15
+0.5,filler,400,0,400,0,0.275,3.3375,20,0.1475
+0.65,filler,400,0,400,0,0.045,7.935,26,0.1325
+0.75,filler,400,0,400,0,0.0275,7.0625,29,0.165
+0.85,filler,400,0,400,0,0.0175,5.34,34,0.1725

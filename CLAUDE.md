@@ -101,18 +101,20 @@ PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500 --json shor
 PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.json
 ```
 
-Runs from `build_size_sweep.py --densities` are scored by density level instead,
-since `score_sweep.py` groups by (task, style) and would average the levels
-together:
+Runs from `build_size_sweep.py --densities` are scored by level instead, since
+`score_sweep.py` groups by (task, style) and would average the levels together.
+Reproduce every number in `docs/results/density-followups.md` (the density
+follow-up runs) with:
 
 ```bash
-PYTHONPATH=. python scripts/score_density_sweep.py \
-    --responses "runs/qwen3-1.7b.degdens40.shard*of5.jsonl"
+PYTHONPATH=. python scripts/density_followups.py > csv2/density-followups/density_followups.txt
 ```
 
-It drops `hit_cap` rows rather than scoring them zero, prints the count dropped
-per cell, and separates the pooled test from the per-level family so a pooled
-p-value cannot drag a per-level one under the threshold.
+It needs `statsmodels` (the `analysis` extra) for the forensics. It runs
+each run set through `scripts/score_density_sweep.py` (levels are the
+density, the (size, density) cell, or the (task, density) pair; a truncated
+response is its own outcome, never dropped) and `scripts/analyze_rq3_leads.py`
+(the `clustering` forensics).
 
 Check statistical significance beyond `score_sweep.py`'s per-cell McNemar (that test is
 underpowered at 30 pairs/cell — see `docs/sweep-findings.md`). Needs the `analysis` extra
@@ -121,7 +123,7 @@ underpowered at 30 pairs/cell — see `docs/sweep-findings.md`). Needs the `anal
 ```bash
 PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py --responses runs/*.jsonl \
     --shortcuts shortcuts.json --truncated-keys analysis/truncated_keys.json
-PYTHONPATH=. .venv/bin/python scripts/check_significance.py --frame analysis/sweep_frame.csv
+PYTHONPATH=. .venv/bin/python scripts/check_significance.py --frame csv2/sweep-small-graph/sweep_frame.csv
 ```
 
 `check_significance.py` pools pairs across task and style per (model, condition) instead of
@@ -130,19 +132,17 @@ and a Benjamini-Hochberg correction — for both main-sweep accuracy and thinkin
 non-termination rate. Pass `--out <path.csv>` to save the printed rows instead of only
 seeing them in the terminal.
 
-Reproduce the baseline-accuracy result the paper's Results section rests on
-(the shortcut-bar split, the density continuum, the held-out arms, and the
-negative control that bounds the claim):
+Reproduce every number in the main experiment's results document,
+`docs/results/n40-sweep.md` (the 40-node sweep):
 
 ```bash
-PYTHONPATH=. python scripts/analyze_baseline_law.py --shortcuts shortcuts.json
+PYTHONPATH=. python scripts/build_raw_frame.py
+PYTHONPATH=. python scripts/primer_findings.py --csv-dir csv2/raw-trends > csv2/raw-trends/primer_findings.txt
+PYTHONPATH=. python scripts/legacy_claims.py > csv2/raw-trends/legacy_claims.txt
 ```
 
-Each of the four tests can be run alone with `--test split|continuum|heldout|
-instrument`. It reads `runs/` directly and needs no frame built first; see
-`docs/primer-effects-and-power.md`'s "Is the primer effect organised by
-baseline accuracy?" section for what each one establishes and for the n=40
-bar correction it applies, which is the part that is easy to get wrong.
+`tests/test_results_docs.py` checks every number a doc in `docs/results/` cites
+against these outputs.
 
 Other one-off scripts:
 
@@ -212,11 +212,8 @@ python scripts/measure_real_rows.py                           # re-measures corp
   `score_density_sweep.py` are the size/density pair: the first generates
   graphs at chosen sizes and pinned ER densities, the second scores them
   grouped by density level rather than by (task, style), which is the grouping
-  `score_sweep.py` collapses. `score_full_density_sweep.py` extends that
-  scorer with `task` as a third grouping key, for a density sweep that (unlike
-  every earlier one) covers more than one or two tasks at once -- see
-  `docs/primer-effects-and-power.md`'s "full-task, full-condition density
-  sweep" section. The directory holds ~40 further one-off analysis scripts
+  `score_sweep.py` collapses; `density_followups.py` runs the density
+  follow-up family through it. The directory holds ~40 further one-off analysis scripts
   (`analyze_*.py`, `check_*.py`, `validate_*.py`, and similar); each belongs to
   a specific finding and is referenced from the `docs/*.md` file that reports
   that finding, rather than listed individually here — grep `docs/` for a
@@ -225,36 +222,43 @@ python scripts/measure_real_rows.py                           # re-measures corp
   actually runs on the TAU CS cluster (partitions, memory sizing, driver
   incompatibilities, chained-job submission for jobs that exceed the 24h
   partition limit).
-- `docs/` — **`primer-effects-and-power.md` is the current results document and
-  the one to read first**; it supersedes `sweep-findings.md` (the 5-19 node
-  corpus, kept for its retractions). Two rules from it govern every number
-  elsewhere in the repo: read effects against `bar(cond) - bar(none)` from
-  `shortcuts.json` rather than against zero, and against a length-matched
-  control rather than `none` — a content-free primer of the same length costs a
-  thinking model 11.7 points on dense graphs, which is larger than most measured
-  primer effects. Every other file in `docs/` (and `docs/plans/`), so nothing
-  here is only discoverable by grepping:
+- `docs/results/` — **the current results, read first**: one document per
+  family of runs, each stating only what its script's committed output shows;
+  start at `docs/results/README.md`. The main experiment is the 40-node sweep,
+  `docs/results/n40-sweep.md`; its `node_degree` follow-ups (dedicated density,
+  thinking, filler, replication and fixed-mean-degree runs) are in
+  `docs/results/density-followups.md`. Every earlier paper version, analysis and doc
+  those documents replace is in `superseded/` (see `superseded/README.md`).
+  `docs/results/README.md` also lists every earlier family of runs with its
+  document and status. Other files in `docs/` and `docs/plans/`:
 
   | File | Status | What it's for |
   |---|---|---|
   | `DATA.md` | current | Authority on every tracked file's schema, the `(instance_id, condition, style)` pairing key, and per-row caveats (truncated/`hit_cap` rows, CPU- vs GPU-generated rows, the `filler`/`edge_existence` rewording) |
   | `sweep-findings.md` | retracted | The original 5-19 node analysis; kept for its retractions, not its conclusions |
-  | `rq3-leads.md` | current | CPU-only forensics on the `clustering`/`node_degree` effect (selection artifacts, heterogeneity, error shape, response behaviour); GPU follow-up design lives in `plans/rq3-gpu-tests.md` |
-  | `candidate-analyses.md` | working notes | Six directions considered for the paper, run against existing `runs/` data, each with an adopt/reject verdict |
+  | `primer-effects-and-power.md` | not re-verified | Earlier results for the published-split probes, the small models, the size sweep and the clean-condition cells; its 40-node sections are replaced by `results/` |
+  | `primer-impact-and-truncation.md` | not reproducible | A size sweep whose runs were removed in `b49ce3b` |
+  | `repo-scope.md` | current | Map of the repo's scope and how the n=40 work relates to the paper's 5-19 node benchmark |
+  | `graph-corpus-status.md` | current | Which graph to generate, for which model, for a fair primer test |
+  | `graph-design-requirements.md` | current | The four requirements a graph corpus must meet to be a valid primer test |
   | `difficulty-scaling.md` | current | Four additive eval-pipeline changes (larger synthetic graphs, denser topology, a `reachability` task, an overflow guard) via `--graph-source diverse` |
   | `features-considered.md` | current | Which graph features were evaluated for the primer (degree, clustering, RWSE, components) and why the rest were rejected, against a four-test selection criterion |
-  | `full-task-density-sweep.md` | current | Full per-task, per-density tables behind the `densfull40` sweep summarized in `primer-effects-and-power.md` |
   | `ladder-and-rewiring.md` | current | Design notes for the shared `(n, mean_degree)` ladder and the rewiring experiment; read before `ladder-and-retrieval-results.md` |
   | `ladder-and-retrieval-results.md` | current | First results pass over the ladder design above, plus the reading-limit retrieval probe |
+  | `investigate_connections_and_cycles.md` | current | Opens with paper-ready conclusions (C1-C5, every number tagged). Every primer against no primer in the 40-node sweep, and whether correct answers rest on true claims about the graph: invented cycles in `cycle_check`, fabricated edges and misread neighbour lists in the other tasks, the `node_count` off-by-one, the same checks at high density, and why wrong answers are wrong (shared neighbours and false "is listed" claims behind `edge_existence` false alarms, error sources in `connected_nodes`). Pipeline `scripts/check_cycle_claims.py` (reuses `scripts/response_patterns.py`'s `[rpchain]`), output `csv2/raw-trends/check_cycle_claims.txt`, `cycle_claims.csv`, `response_claims.csv`. Not checked by `tests/test_results_docs.py` |
+  | `primer-directions.md` | exploratory | Nine further questions about what the primers do to the 40-node sweep's responses: which value a reported conflict ends on, misread clustering/rwse values, early commitment in thinking traces, line position in the primer, consistency between `edge_existence` and `connected_nodes` on the same node, primer values as `edge_existence` heuristics, the density split of the rwse/clustering effects, effects by the queried node's degree tercile, and the direction of numeric errors. Pipeline `scripts/primer_directions.py` (reuses `scripts/response_patterns.py`), output `csv2/raw-trends/primer_directions.txt`. Its text measures are not hand-validated; not checked by `tests/test_results_docs.py` |
+  | `primer-directions-validation.md` | human-labelled (the user, checked against three LLM labellers), all checks pass | The hand validation `primer-directions.md` waits on: six checks (C1–C6) on a blind, seeded sheet, `csv2/raw-trends/directions_validation_sheet.csv` (key kept apart in `directions_validation_key.csv`), drawn and scored by `scripts/validate_directions.py --make / --score`; what each check's pass or fail changes in the findings |
+  | `primer-robustness.md` | current | Opens with paper-ready conclusions (R1-R5, every number tagged). How much of each primer's effect in the 40-node sweep is prompt churn (filler flips as many questions as most primers, and the same ones; in the thinking arms most flips are at the token budget), whether the arms fail and get fixed on the same questions (only where they share an error mechanism), why responses truncate (plain arms loop, thinking arms run out mid-work), `cycle_check` "no" answers against the same model's edge count, trace vs final answer, a boxed-answer check on the scorer, response length of fixes vs breaks, and checks of alternative explanations (filler against the side statistics' gain; shared neighbours against the pair's degree). Pipeline `scripts/primer_robustness.py` (reuses `scripts/check_cycle_claims.py` and `analyze_primer_window.cells`), output `csv2/raw-trends/primer_robustness.txt`, `robustness_responses.csv`. Not checked by `tests/test_results_docs.py` |
   | `collaborator-access.md` | current | How a teammate gets at the data and cached models — off-cluster clone vs. reading in place on the TAU cluster |
-  | `paper-revision-handoff.md` | done | Log of rewriting the paper to a single ACL source: what changed, what was cut for page budget, and where to pick it back up |
   | `plans/primer-computation.md` | executed | Original design for `primers.py`'s statistics and renderer; record of why, not current behaviour — read `graphtalk/primers.py` for that |
   | `plans/shortcut-ceilings.md` | executed | Original design for `shortcuts.py`'s theorem/heuristic/fitted rules |
   | `plans/run_improved_tests.md` | partially executed, still live | Phased plan for statistical-power work across GOT/integer sweeps; phases 1-2 landed, later phases are outstanding — follow its instructions rather than treating it as history |
-  | `plans/scale-vs-topology-investigation.md` | done | Investigation into whether a GOT-naming effect's significance flip at n=500 was added power or a real effect shift |
-  | `plans/rq3-gpu-tests.md` | planned, not run | GPU test design for the `clustering` effect (shuffled/reversed-order primers); see `rq3-leads.md` for the CPU findings that motivate it |
+  | `plans/scale-vs-topology-investigation.md` | done, not re-verified | Investigation into whether a GOT-naming effect's significance flip at n=500 was added power or a real effect shift |
+  | `plans/finding-graphs-that-make-primer-effects-measurable.md` | superseded | A brief realised as the ladder/rewiring design |
+  | `plans/2026-09-2*-single-source-of-truth*.md` | executed | The design and phase plans of the one-source-of-truth cleanup that produced `results/` and `superseded/` |
+  | `plans/rq3-gpu-tests.md` | planned, not run | GPU test design for the `clustering` effect (shuffled/reversed-order primers); the CPU findings that motivate it are in `results/density-followups.md` |
 
-  Read `sweep-findings.md` and `docs/plans/` (`shortcut-ceilings.md`,
+  Read `docs/results/README.md` and `docs/plans/` (`shortcut-ceilings.md`,
   `primer-computation.md`) before interpreting a new sweep result — they
   explain what the measured numbers mean.
 

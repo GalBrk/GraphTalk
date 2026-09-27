@@ -1,0 +1,41 @@
+\begin{table*}[t]
+\centering\scriptsize
+\setlength{\tabcolsep}{3.4pt}
+\begin{tabular}{llrrrrrrr}
+\toprule
+Task & Arm & None & Degree & Cluster. & RWSE & All & Comp. & Filler\\
+\midrule
+Degree & 1.7P & 0.00 & $+0.0$ & $+0.0$ & $+0.2$ & $+0.0$ & $+0.0$ & $+0.0$\\ % [main] [trunc]
+ & 1.7T & 0.75 & $+4.5$ & $-0.5$ & $+0.0$ & $-0.5$ & $-0.2$ & $-0.5$\\ % [main] [trunc]
+ & 4P & 0.00 & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$\\ % [main] [trunc]
+ & 4T & 2.75 & $-2.5$ & $-2.0$ & $-0.5$ & $-1.0$ & $-0.5$ & $-1.8$\\ % [main] [trunc]
+\addlinespace[2pt]
+Neighbors & 1.7P & 0.00 & $+0.0$ & $+0.0$ & $+0.0$ & $+0.2$ & $+0.0$ & $+0.0$\\ % [main] [trunc]
+ & 1.7T & 1.25 & $+0.2$ & $-1.0$ & $-0.8$ & $-0.5$ & $-0.2$ & $-0.8$\\ % [main] [trunc]
+ & 4P & 0.00 & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$\\ % [main] [trunc]
+ & 4T & 3.25 & $-0.2$ & $+1.2$ & $-0.2$ & $+1.0$ & $+0.2$ & $-0.5$\\ % [main] [trunc]
+\addlinespace[2pt]
+Edge count & 1.7P & 29.75 & $-20.2$ & $-11.8$ & $-11.8$ & $-1.8$ & $-2.5$ & $-3.5$\\ % [main] [trunc]
+ & 1.7T & 81.75 & $-0.8$ & $+0.8$ & $+5.0$ & $-12.2$ & $+0.5$ & $+1.2$\\ % [main] [trunc]
+ & 4P & 0.00 & $+1.8$ & $+0.2$ & $+0.5$ & $+0.8$ & $+0.8$ & $+0.0$\\ % [main] [trunc]
+ & 4T & 79.50 & $-20.8$ & $-26.0$ & $-12.2$ & $-23.8$ & $-25.0$ & $-13.0$\\ % [main] [trunc]
+\addlinespace[2pt]
+Edge exists & 1.7P & 0.00 & $+0.0$ & $+0.0$ & $+0.2$ & $+0.0$ & $+0.0$ & $+0.0$\\ % [main] [trunc]
+ & 1.7T & 0.25 & $+0.2$ & $+0.0$ & $+0.0$ & $-0.2$ & $+0.0$ & $-0.2$\\ % [main] [trunc]
+ & 4P & 0.00 & $+0.5$ & $+0.0$ & $+0.0$ & $+0.2$ & $+0.0$ & $+0.0$\\ % [main] [trunc]
+ & 4T & 0.25 & $+0.0$ & $+0.8$ & $+1.2$ & $+1.0$ & $+0.5$ & $+0.0$\\ % [main] [trunc]
+\midrule
+Node count & 1.7P & 0.00 & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$\\ % [main] [trunc]
+ & 1.7T & 7.75 & $-5.0$ & $-7.8$ & $-7.8$ & $-7.8$ & $-0.5$ & $-7.8$\\ % [main] [trunc]
+ & 4P & 0.00 & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$ & $+0.0$\\ % [main] [trunc]
+ & 4T & 0.00 & $+0.2$ & $+0.2$ & $+0.2$ & $+0.0$ & $+0.0$ & $+0.0$\\ % [main] [trunc]
+\addlinespace[2pt]
+Cycle & 1.7P & 9.00 & $+8.2$ & $-8.2$ & $-7.2$ & $-8.0$ & $-2.5$ & $-2.8$\\ % [main] [trunc]
+ & 1.7T & 3.00 & $+21.2$ & $+0.5$ & $-2.2$ & $+0.8$ & $+7.5$ & $-3.0$\\ % [main] [trunc]
+ & 4P & 0.75 & $+0.8$ & $-0.2$ & $+0.5$ & $-0.2$ & $+0.8$ & $+0.5$\\ % [main] [trunc]
+ & 4T & 0.75 & $+4.8$ & $+0.0$ & $-0.2$ & $+0.5$ & $+3.2$ & $-0.5$\\ % [main] [trunc]
+\bottomrule
+\end{tabular}
+\caption{Complete main-sweep truncated shares: no-primer baseline (percent of all prompts) and paired changes (percentage points), for the same queries as Table~\ref{tab:matrix}. Each of its cells' \emph{wrong} share equals $100\%$ minus its correct and truncated shares. P/T: plain/thinking; components and filler are diagnostics. No significance marks are assigned to truncation contrasts.} % [setup] [main]
+\label{tab:truncmatrix}
+\end{table*}

@@ -1,0 +1,23 @@
+
+==============================================================================
+qwen3-0.6b
+
+  cycle_check / zero_shot   baseline 83.2% (always 'Yes, there is a cycle')
+    condition        acc   exact  parsed  shortcut  McNemar p  vs control
+    clustering    80.4%  80.4%  99.0%         -      0.350  +8 net (56 discordant)
+    components    83.4%  83.4% 100.0%         -      0.000  +23 net (31 discordant)
+    none          78.8%  78.8%  99.0%         -             
+    rwse          82.4%  82.4%  99.6%         -      0.008  +18 net (42 discordant)
+
+==============================================================================
+qwen3-0.6b-think
+
+  cycle_check / zero_shot   baseline 83.2% (always 'Yes, there is a cycle')
+    condition        acc   exact  parsed  shortcut  McNemar p  vs control
+    clustering    87.8%  87.8%  99.8%         -      0.013  +21 net (65 discordant)
+    components    85.2%  85.2%  99.0%         -      0.215  +8 net (32 discordant)
+    none          83.6%  83.6% 100.0%         -             
+    rwse          84.2%  84.2%  99.6%         -      0.690  +3 net (25 discordant)
+
+20/4000 responses could not be parsed
+  cycle_check / zero_shot: 20

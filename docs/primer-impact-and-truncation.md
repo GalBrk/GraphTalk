@@ -1,12 +1,18 @@
 # Primer impact on success rate, and truncation among all rows
 
+> **Status (2026-09-25): not reproducible from this tree.** The size-sweep runs
+> this document reads were removed in `b49ce3b`; rerun it from that commit's
+> parent. It predates the current scoring rule (a truncated response is its own
+> outcome) and is not cited by the paper. The status of every family of runs:
+> [results/README.md](results/README.md).
+
 Scope: every `qwen3-1.7b` / `qwen3-1.7b-think` run file completed so far across the
 n20/40/60/80 size sweep (`runs/qwen3-1.7b*.jsonl`, per-task named files only — the
 old undifferentiated `qwen3-1.7b[-think].n{20,40,80}.jsonl` files are superseded
 duplicates of the `node_degree_n*` files and excluded to avoid double-counting).
 Scored directly from the raw per-file records with `graphtalk.scoring.score_one`
 (the `primary` metric — accuracy for 6 tasks, F1 for `connected_nodes`), not from
-`analysis/sweep_frame.qwen3-1.7b.csv`, because `instance_id` doesn't encode graph
+`csv2/sweep-small-graph/sweep_frame.qwen3-1.7b.csv`, because `instance_id` doesn't encode graph
 size and a pooled frame can't otherwise be split by `n`.
 
 **Complete.** Every task/model/size cell below has `n=30` per condition — the two

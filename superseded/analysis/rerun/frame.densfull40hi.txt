@@ -1,0 +1,49 @@
+wrote 16800 rows to analysis/rerun/frame.densfull40hi.csv (node_naming: integer)
+
+=== Objective 1: Zeroshot / none baseline ===
+  -- main sweep --
+    qwen3-1.7b           primary= 43.3%  exact= 43.3%  parsed=100.0%  n=600
+    qwen3-4b             primary= 72.5%  exact= 72.5%  parsed=100.0%  n=600
+  -- thinking arm --
+    qwen3-1.7b-think     primary= 72.7%  exact= 72.7%  parsed=100.0%  n=600
+    qwen3-4b-think       primary= 98.3%  exact= 98.3%  parsed=100.0%  n=600
+
+=== Objective 2: cross-condition comparison (primary metric, mean over tasks) ===
+condition           all  clustering  components  degree  filler   none   rwse
+model                                                                        
+qwen3-1.7b        0.480       0.423       0.430   0.445   0.400  0.433  0.412
+qwen3-1.7b-think  0.837       0.680       0.718   0.852   0.663  0.727  0.707
+qwen3-4b          0.607       0.808       0.703   0.755   0.703  0.725  0.760
+qwen3-4b-think    0.987       0.983       0.977   0.983   0.987  0.983  0.982
+
+=== Objective 3: thinking-arm non-termination ===
+  by model:
+                   n      rate  count
+model                                
+qwen3-1.7b-think  52  0.012381   4200
+qwen3-4b-think    12  0.002857   4200
+  by task:
+                 n      rate  count
+task                               
+edge_existence   0  0.000000   4200
+node_degree     64  0.015238   4200
+  by condition:
+             n      rate  count
+condition                      
+all          8  0.006667   1200
+clustering   2  0.001667   1200
+components   8  0.006667   1200
+degree      34  0.028333   1200
+filler       2  0.001667   1200
+none         6  0.005000   1200
+rwse         4  0.003333   1200
+
+  112 additional rows flagged by the length-outlier heuristic beyond the 64 ground-truth rows -- UNVALIDATED, inspect before trusting.
+
+=== Objective 5: failure_type breakdown ===
+failure_type      non_terminating  unparsed  wrong  correct
+model                                                      
+qwen3-1.7b                      5         0   2381     1814
+qwen3-1.7b-think               52         0   1038     3110
+qwen3-4b                        3         0   1160     3037
+qwen3-4b-think                 12         0     59     4129

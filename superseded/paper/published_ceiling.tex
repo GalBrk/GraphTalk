@@ -1,0 +1,22 @@
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrrrrrrr}
+\toprule
+Arm & \texttt{node\_count} & \texttt{node\_degree} & \texttt{edge\_count} & \texttt{connected\_nodes} & \texttt{cycle\_check} & all & cap \\
+\midrule
+\texttt{gemma4-12b} & $1.00$ & $1.00$ & $0.93$ & $1.00$ & $1.00$ & $0.987$ & $0/150$ \\
+\texttt{gemma4-12b-think} & $1.00$ & $1.00$ & $1.00$ & $1.00$ & $1.00$ & $1.000$ & $43/150$ \\
+\texttt{gemma4-e4b} & $1.00$ & $1.00$ & $0.96$ & $1.00$ & $0.97$ & $0.986$ & $5/150$ \\
+\texttt{gemma4-e4b-think} & $0.97$ & $1.00$ & $0.93$ & $1.00$ & $0.97$ & $0.973$ & $0/150$ \\
+\texttt{qwen3-8b} & $1.00$ & $1.00$ & $0.43$ & $1.00$ & $0.97$ & $0.880$ & $0/150$ \\
+\texttt{qwen3-8b-think} & $1.00$ & $1.00$ & $1.00$ & $1.00$ & $1.00$ & $1.000$ & $7/150$ \\
+\texttt{qwen3-14b} & $0.97$ & $1.00$ & $0.40$ & $1.00$ & $0.97$ & $0.867$ & $0/150$ \\
+\texttt{qwen3-14b-think} & $1.00$ & $1.00$ & $1.00$ & $0.97$ & $1.00$ & $0.993$ & $2/150$ \\
+\bottomrule
+\end{tabular}}
+\caption{The published GraphQA split ($5$--$19$ nodes, $30$ graphs per cell) under \texttt{none}, exact match. Every arm scores $0.97$--$1.00$ on four of the five tasks; only \texttt{edge\_count} separates them, and only for the two plain Qwen arms ($0.40$--$0.43$ against $0.93$--$1.00$ for the rest). \emph{cap} counts generations that hit the token budget, excluded from the accuracies. This corpus cannot measure a primer effect, which is why the main sweep moves to $n{=}40$.}
+\label{tab:ceiling}
+\end{table}

@@ -347,6 +347,13 @@ def test_mcnemar_counts_only_discordant_pairs():
   assert scoring.mcnemar([1] * 5, [0] * 5)["p_value"] == pytest.approx(0.0625)
 
 
+def test_mcnemar_handles_more_than_1023_discordant_pairs():
+  # 2.0 * tail overflowed a float once the discordant count passed ~1,023.
+  result = scoring.mcnemar([1] * 800 + [0] * 400, [0] * 800 + [1] * 400)
+  assert result["discordant"] == 1200
+  assert 0 < result["p_value"] < 1e-20
+
+
 def test_mcnemar_rejects_misaligned_pairs():
   """A silent length mismatch would invert the pairing and the conclusion."""
   with pytest.raises(ValueError, match="equal lengths"):

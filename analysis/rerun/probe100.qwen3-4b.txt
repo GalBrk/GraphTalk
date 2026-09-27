@@ -1,0 +1,39 @@
+
+==============================================================================
+qwen3-4b
+  shortcut is an exact-match figure; compare it against the 'exact' column,
+  not against F1.
+
+  connected_nodes / zero_shot   baseline 7.0% (always 'No nodes')  -- degenerate, no useful constant
+    condition         F1   exact  parsed  shortcut  McNemar p  vs control
+    degree        95.9%  90.0% 100.0%     20.8%      0.791  -2 net (14 discordant)
+    none          97.4%  92.0% 100.0%      8.2%             
+
+  cycle_check / zero_shot   baseline 86.0% (always 'Yes, there is a cycle')
+    condition        acc   exact  parsed  shortcut  McNemar p  vs control
+    degree        91.0%  91.0% 100.0%     94.6%      0.250  +3 net (3 discordant)
+    none          88.0%  88.0%  98.0%     83.2%             
+
+  edge_count / zero_shot   baseline 5.0% (always '20')  -- degenerate, no useful constant
+    condition        acc   exact  parsed  shortcut  McNemar p  vs control
+    degree        68.0%  68.0% 100.0%    100.0%      0.000  +22 net (32 discordant)
+    none          46.0%  46.0% 100.0%      1.8%             
+
+  edge_existence / zero_shot   baseline 58.0% (always 'No')
+    condition        acc   exact  parsed  shortcut  McNemar p  vs control
+    degree        96.0%  96.0% 100.0%     79.4%      1.000  +1 net (5 discordant)
+    none          95.0%  95.0%  98.0%     49.8%             
+
+  node_count / zero_shot   baseline 9.0% (always '18')  -- degenerate, no useful constant
+    condition        acc   exact  parsed  shortcut  McNemar p  vs control
+    degree        99.0%  99.0% 100.0%    100.0%      1.000  -1 net (1 discordant)
+    none         100.0% 100.0% 100.0%      6.4%             
+
+  node_degree / zero_shot   baseline 13.0% (always '1')  -- degenerate, no useful constant
+    condition        acc   exact  parsed  shortcut  McNemar p  vs control
+    degree       100.0% 100.0% 100.0%    100.0%      0.500  +2 net (2 discordant)
+    none          98.0%  98.0% 100.0%      8.2%             
+
+4/1200 responses could not be parsed
+  cycle_check / zero_shot: 2
+  edge_existence / zero_shot: 2

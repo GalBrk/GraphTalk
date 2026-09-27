@@ -1,5 +1,11 @@
 # Primer/task shortcut audit
 
+> **Status (2026-09-25): not re-verified.** This document predates the
+> current scoring rule (a truncated response is its own outcome, never
+> counted as wrong or dropped), has not been re-checked under it, and is
+> not cited by the paper. Current results, and the status of every family
+> of runs: [results index](../docs/results/README.md).
+
 `docs/plans/run_improved_tests.md` Phase 1, step 1: which `(condition,
 task)` pairs let the primer answer the task directly, without the model
 needing the graph encoding at all. This is a different, sharper confound
