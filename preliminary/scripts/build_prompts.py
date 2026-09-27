@@ -40,7 +40,7 @@ _APPROX_CHARS_PER_TOKEN = 4
 # The published split ships one particular query draw per row, and that draw is
 # what a model gets scored against. Re-sampling queries here would score the model
 # on questions the dataset never asked -- see the provenance section of
-# docs/plans/primer-computation.md, where the two draws differ by five points on
+# docs/design/primer-computation.md, where the two draws differ by five points on
 # `edge_existence`.
 SPLIT = "zero_shot_test"
 

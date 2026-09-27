@@ -9,7 +9,7 @@ recipe for the two remaining arms, `qwen3-4b` and `qwen3-4b-think`, against the
 `n=40` fixed, ER density pinned to `{0.10, 0.20, 0.35, 0.50}`, all 7 primer
 conditions (`none`, `components`, `degree`, `clustering`, `rwse`, `filler`,
 `all`), all 6 tasks, 100 graphs per (density, task) cell -- 16,800 prompts.
-Already built at `/home/dcor/galbarak2/GraphTalk/prompts.densfull40.jsonl`; you
+Already built at `data/prompts/prompts.densfull40.jsonl`; you
 do not need to rebuild it (it's tracked in git, or read it in place on the
 cluster).
 
@@ -18,7 +18,7 @@ documents that at this size/density, `node_count` is contaminated by nearly
 every primer (any per-node sentence lets you count sentences), `cycle_check`'s
 gold is "yes" for almost every graph past the sparsest level, and the `degree`
 primer states the `node_degree` answer verbatim (bar 1.00) -- read effects
-against `shortcuts.json`'s bar, not against zero, especially for those cells.
+against `data/shortcuts_n40_flat.json`'s bar, not against zero, especially for those cells.
 `node_degree` with `{none, components, clustering, filler}` is the one cell
 this project has already validated as clean.
 
@@ -62,7 +62,7 @@ Don't override `--max-new-tokens` on the `-think` arm -- it already defaults to
 
 Output lands at `data/runs/qwen3-4b.densfull40-inbal.shard<i>of25.jsonl` and
 `data/runs/qwen3-4b-think.densfull40-inbal.shard<i>of25.jsonl`.
-`preliminary/scripts/score_sweep.py`/`score_density_sweep.py` pool by each row's `model`
+`scripts/build_raw_frame.py` and `score_density_sweep.py` pool by each row's `model`
 field, not by filename, so the `-inbal` tag rejoins the arm automatically --
 nothing to reassemble.
 

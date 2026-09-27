@@ -133,5 +133,5 @@ prompt-length confound that shaped the inert control.
 Feature selection turned out to matter less than task classification. The proposal calls
 cycle check primer-agnostic, but the clustering primer already supplies a decision
 procedure for it at 100% precision and 97% recall — see the taxonomy correction in
-`docs/plans/primer-computation.md`. Fixing that classification costs no cluster time and
+`docs/design/primer-computation.md`. Fixing that classification costs no cluster time and
 changes the interpretation of the results more than any additional feature would.

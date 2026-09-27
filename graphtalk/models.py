@@ -193,7 +193,7 @@ MODELS = {
         # document. Verified supported by the env's transformers 5.15.0.
         #
         # Key is `qwen35-2b`, not `qwen3.5-2b`. The key becomes a filename
-        # component (`runs/<key>.jsonl`) and this repo delimits run tags and
+        # component (`data/runs/<key>.jsonl`) and this repo delimits run tags and
         # shard suffixes with dots (`.probe100.`, `.shard0of6.`). `qwen3-0.6b`
         # already carries one dot harmlessly, but a second in the family
         # position is where that convention would start to be ambiguous.
@@ -207,7 +207,7 @@ MODELS = {
         # channel, so this is comparable row-for-row against the specs above.
         #
         # Separate keys rather than a flag because the output path is derived from
-        # the key: `runs/<key>.jsonl`. Sharing a path would let the resume logic
+        # the key: `data/runs/<key>.jsonl`. Sharing a path would let the resume logic
         # treat a thinking row as satisfying a non-thinking one and silently mix
         # the two arms in a file nothing could unmix afterwards.
         #

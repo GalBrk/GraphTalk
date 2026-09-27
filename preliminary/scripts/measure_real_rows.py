@@ -1,7 +1,7 @@
 """Re-measures the provisional generator-derived statistics on real GraphQA rows.
 
-Every quantity in docs/plans/primer-computation.md and
-docs/plans/shortcut-ceilings.md was originally measured on
+Every quantity in docs/design/primer-computation.md and
+docs/design/shortcut-ceilings.md was originally measured on
 `graph_generators.generate_graphs(500, "er", False, random_seed=1234)`, because
 the HuggingFace rows API was unreachable (403 at the proxy) when those documents
 were written. Both flagged the numbers as provisional. This script is the
@@ -70,7 +70,7 @@ CONFIGS = (
 # The paper's own figures, for the two quantities it reports (arXiv:2310.04560).
 PAPER = {"edge_existence_no": 0.5396, "cycle_check_yes": 0.8196}
 
-# What docs/plans/primer-computation.md and docs/plans/shortcut-ceilings.md
+# What docs/design/primer-computation.md and docs/design/shortcut-ceilings.md
 # recorded from the generator, keyed the way the report prints them. Held here so
 # the script prints the comparison rather than leaving it to a reader with two
 # documents open.

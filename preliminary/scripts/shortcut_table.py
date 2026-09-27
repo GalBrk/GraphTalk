@@ -8,7 +8,7 @@ The table says how to read each cell's model result, not which cells to run. A
 ~100% shortcut is what a *program* scores; the paper's models get 18.8% on
 `node_count`, whose shortcut is 100%, so a high shortcut bounds the interpretation
 of a win rather than predicting where a model lands. See the four regimes section
-of docs/plans/shortcut-ceilings.md.
+of docs/design/shortcut-ceilings.md.
 
   PYTHONPATH=. .venv/bin/python preliminary/scripts/shortcut_table.py --graphs 500
   PYTHONPATH=. .venv/bin/python preliminary/scripts/shortcut_table.py --json preliminary/data/shortcuts.json

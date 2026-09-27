@@ -4,7 +4,7 @@
 > this document reads were removed in `b49ce3b`; rerun it from that commit's
 > parent. It predates the current scoring rule (a truncated response is its own
 > outcome) and is not cited by the paper. The status of every family of runs:
-> [results/README.md](results/README.md).
+> [results/README.md](../../docs/README.md).
 
 Scope: every `qwen3-1.7b` / `qwen3-1.7b-think` run file completed so far across the
 n20/40/60/80 size sweep (`runs/qwen3-1.7b*.jsonl`, per-task named files only — the

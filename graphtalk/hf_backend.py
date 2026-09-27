@@ -25,7 +25,7 @@ class Completion:
   Recorded per row because non-termination is a measurement, not a hunch. A
   response cut off at the cap still parses -- the extractor finds an integer in
   the abandoned working -- so it scores as a confident wrong answer rather than
-  as missing data, and `docs/DATA.md` puts the difference on `gemma4-12b-think`
+  as missing data, and `preliminary/docs/DATA.md` puts the difference on `gemma4-12b-think`
   at 81.2% against 99.1%. Until now the only record of which rows those were was
   the hand-maintained `preliminary/analysis/truncated_keys.json`, derived by a route nothing
   in the repo scripts; the generator states it directly instead.

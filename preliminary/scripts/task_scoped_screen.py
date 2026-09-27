@@ -12,7 +12,7 @@ cell.
 
 **On "shortcut-ceiling-bound tasks."** The plan that requested this script
 originally assumed a fixed list of *tasks* a graph-blind primer-only
-solver already solves near 100% (see `docs/plans/shortcut-ceilings.md`,
+solver already solves near 100% (see `docs/design/shortcut-ceilings.md`,
 `graphtalk/shortcuts.py`), to be excluded from this screen as an
 uninteresting confound. Checking the real, current `preliminary/data/shortcuts.json`
 (embedded in every row of the frame as `shortcut_score`) shows this isn't

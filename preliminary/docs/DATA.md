@@ -136,7 +136,7 @@ for its 1,831 characters. Any comparison of a primer against `none` therefore
 mixes content with length. The conditions differ enormously in size --
 `components` adds 39 characters, `degree` 871-911, `clustering` 1,631,
 `filler` 1,831 -- so `filler` is a rough length control for `clustering` and
-for nothing else. See [results/density-followups.md](results/density-followups.md) §5.
+for nothing else. See [results/density-followups.md](../../docs/results/density-followups.md) §5.
 
 **Styles (1)** — `zero_shot`. Chain-of-thought is measured by the thinking arm
 (native reasoning at `zero_shot`) rather than by a separate prompt style.

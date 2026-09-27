@@ -3,14 +3,14 @@
 > **Status (2026-09-25): not re-verified.** The 40-node sweep (`densfull40`,
 > `densfull40hi`) and its `node_degree` follow-ups (`degdens*`, `degceil`,
 > `degfixdeg`, `density40`) have current results documents,
-> [results/n40-sweep.md](results/n40-sweep.md) and
-> [results/density-followups.md](results/density-followups.md), which replace
+> [results/n40-sweep.md](../../docs/results/n40-sweep.md) and
+> [results/density-followups.md](../../docs/results/density-followups.md), which replace
 > everything this document says about those runs, its Summary included. The
 > rest (the published-split probes, the small models, the size sweep, the
 > clean-condition cells) predates the current scoring rule (a truncated
 > response is its own outcome, never counted as wrong or dropped), has not been
 > re-checked under it, and is not cited by the paper. The status of every
-> family of runs: [results/README.md](results/README.md).
+> family of runs: [results/README.md](../../docs/README.md).
 
 Written 2026-09-05, after adding `qwen3-0.6b`/`qwen3-1.7b`/`qwen35-2b` to the
 suite and probing at `--count 100` on the `none`/`degree` conditions.

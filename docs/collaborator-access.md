@@ -9,10 +9,10 @@ the models and the environments as well, without re-downloading 111 GB.
 git clone git@github.com:GalBrk/GraphTalk.git
 ```
 
-**[DATA.md](DATA.md) documents every file's schema and how they join.** Everything needed to score and analyse is tracked: `preliminary/data/runs/*.jsonl` (the raw model
+**[DATA.md](../preliminary/docs/DATA.md) documents every file's schema and how they join.** Everything needed to score and analyse is tracked: `preliminary/data/runs/*.jsonl` (the raw model
 responses), `prompts.jsonl` (the exact prompts they answer), and `preliminary/data/shortcuts.json`
 (the primer-only solver score each cell is read against). See `preliminary/data/runs/README.md` for
-the row schema. **Read [results/README.md](results/README.md) first** -- the
+the row schema. **Read [results/README.md](README.md) first** -- the
 index of current results; `preliminary/docs/sweep-findings.md` is the older analysis of the
 5-19 node corpus, kept for its retractions rather than its conclusions. Two
 things decide how every other number should be read: effects are judged against `bar(cond) - bar(none)` from `preliminary/data/shortcuts.json`

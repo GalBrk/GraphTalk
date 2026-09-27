@@ -1,5 +1,5 @@
 """Every number a results doc cites must appear, as printed, in the output it
-names (rule R3 of docs/plans/2026-09-24-single-source-of-truth.md).
+names (rule R3 of docs/README.md#conventions).
 
 A doc in docs/results/ other than README.md names its sources on lines
 "Source: `<path>`" and cites a number as "<value> [<tag>]". The value must occur

@@ -374,7 +374,7 @@ class Context:
     The renderer emits exactly one sentence per node, including the isolated ones
     the encoding body omits, so this is exact for every node-level condition --
     which is why the rung ladder does not separate on those arms. See the rung
-    section of docs/plans/shortcut-ceilings.md.
+    section of docs/design/shortcut-ceilings.md.
 
     It assumes the renderer's one-sentence-per-node contract, which `_pad` breaks
     for a *graph-level* primer padded with per-node filler. The table is computed

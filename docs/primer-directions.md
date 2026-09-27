@@ -8,9 +8,9 @@ the user's labels agree with the final labels. Every pass/fail check passes (see
 [Validation](#validation) and
 [`primer-directions-validation.md`](primer-directions-validation.md)). A4 and
 B5–B9 are numeric (answers and node ids against the graph and the primer text)
-and need no labels. Intervals are unadjusted across the many comparisons below. Nothing here is checked by
-`tests/test_results_docs.py`; the verified results are in
-[`results/n40-sweep.md`](results/n40-sweep.md).
+and need no labels. Intervals are unadjusted across the many comparisons below. Every number cited
+here is checked against the two outputs below by `tests/test_results_docs.py`;
+the main results are in [`results/n40-sweep.md`](results/n40-sweep.md).
 
 Source: `outputs/n40-sweep/directions_validation.txt`
 Source: `outputs/n40-sweep/primer_directions.txt`, printed by

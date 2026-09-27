@@ -1,30 +1,28 @@
-# Running the sweep on the TAU CS cluster
+# Generating responses on the TAU CS cluster
+
+How every response in [`data/runs/`](../data/README.md) was generated.
+[← back to the repo](../README.md)
 
 Account `galbarak2`, DCOR lab, partition `killable` / account `gpu-research`.
 The general cluster reference lives in the SlidesGen repo
 (`training/CLUSTER.md`); this file covers only what GraphTalk needs on top of it.
 
-## The pipeline is three stages, and only the middle one needs a GPU
+## Only generation needs a GPU
 
-| stage | script | where | needs |
+| Stage | Script | Where | Needs |
 |---|---|---|---|
-| 1. build prompts | `preliminary/scripts/build_prompts.py` | login node | network, no torch |
-| 2. generate | `scripts/run_sweep.py` | compute node | GPU, torch, transformers |
-| 3. score | `preliminary/scripts/score_sweep.py` | login node | nothing |
+| 1. Build prompts | `scripts/build_size_sweep.py` | anywhere | no network, no torch |
+| 2. Generate | `scripts/run_sweep.py`, via `cluster/sweep.sbatch` | compute node | GPU, torch, transformers |
+| 3. Analyse | `scripts/build_raw_frame.py` and the rest ([scripts/README.md](../scripts/README.md)) | anywhere | no GPU |
 
-Splitting it this way means the prompt set is a file you can read and diff before
-spending GPU time, every model is handed the identical file, and the scoring can
-be re-run and changed without regenerating anything.
-
-Stage 1 runs on the **login node**, not a laptop: it fetches rows from the
-HuggingFace datasets-server over plain `urllib`, and compute nodes have no
-outbound network.
+The prompt set is a file you can read and diff before spending GPU time, every
+model is handed the identical file, and the analysis can be rerun and changed
+without regenerating anything.
 
 ## One-time setup
 
 Home is a **6 GB** quota with a 102k file cap, so everything goes on the lab
-netapp. Anaconda is already installed at `/home/dcor/galbarak2/anaconda3` from
-the SlidesGen work; only the env is new.
+netapp. Anaconda is already installed at `/home/dcor/galbarak2/anaconda3`.
 
 ```bash
 source /home/dcor/galbarak2/anaconda3/etc/profile.d/conda.sh
@@ -32,30 +30,18 @@ conda create -y -p /home/dcor/galbarak2/conda_envs/graphtalk python=3.11
 ```
 
 Use `-p` and the full path, not `-n graphtalk`. `envs_dirs` does not include
-`conda_envs/` — it resolves to `anaconda3/envs` — so `-n` would silently put the
+`conda_envs/`; it resolves to `anaconda3/envs`, so `-n` would silently put the
 env somewhere `cluster/sweep.sbatch` does not look.
 
 ```bash
 export PIP_CACHE_DIR=/home/dcor/galbarak2/pip_cache
 export TMPDIR=/home/dcor/galbarak2/tmp
-/home/dcor/galbarak2/conda_envs/graphtalk/bin/pip install -e ".[dev,analysis]"
-/home/dcor/galbarak2/conda_envs/graphtalk/bin/pip install \
-    torch transformers accelerate huggingface_hub
+/home/dcor/galbarak2/conda_envs/graphtalk/bin/pip install -e ".[dev,gpu]"
 ```
 
 Redirect the pip cache before installing. The CUDA wheels are several GB and the
-default `~/.cache/pip` would eat most of the 6 GB home quota.
-
-`pip install -e` works normally here; the `PYTHONPATH=.` prefix in the top-level
-README is a macOS-only workaround for a broken editable install. Verify with
-`pytest -q --ignore=tests/test_hierarchical_model.py
---ignore=tests/test_mixed_models.py`. The two ignores are
-required, not tidiness: those files import `statsmodels`/`pymc`, which neither
-`conda_envs/graphtalk` nor `conda_envs/graphtalk-cu126` has, and a missing
-import at module scope aborts *collection* so a bare `pytest -q` reports zero
-passes and looks like a broken checkout. Install the `analysis` extra as above and not `[dev]`
-alone: `tests/test_analysis.py` imports `pandas` at module scope, so without it
-pytest aborts during *collection* and reports an error rather than 348 passes.
+default `~/.cache/pip` would eat most of the 6 GB home quota. Verify with
+`pytest -q`.
 
 Then pre-download the models **on the login node**, because compute nodes run
 with `HF_HUB_OFFLINE=1`:
@@ -64,145 +50,61 @@ with `HF_HUB_OFFLINE=1`:
 export HF_HOME=/home/dcor/galbarak2/hf_cache
 python -c "
 from huggingface_hub import snapshot_download
-for repo in ('google/gemma-4-E4B-it', 'google/gemma-4-12B-it',
-             'Qwen/Qwen3-8B', 'Qwen/Qwen3-14B'):
+for repo in ('Qwen/Qwen3-1.7B', 'Qwen/Qwen3-4B', 'Qwen/Qwen3-8B'):
     snapshot_download(repo)
 "
 ```
 
-Roughly 85 GB across the four. Run it inside `tmux` — a dropped SSH connection
-kills it. None of the four is gated: the Gemma repos report `gated: false` and
-download without a licence acceptance or a `huggingface-cli login`, though a
-token from earlier work was present and does no harm.
+Run it inside `tmux`, since a dropped SSH connection kills it.
 
 ## Running
 
-```bash
-# stage 1, on the login node
-python preliminary/scripts/build_prompts.py --count 30      # writes 1260 prompts
-
-# stage 2, on the cluster, a chain per model (see below)
-sbatch --exclude=n-801 --mem=32G cluster/sweep.sbatch qwen3-8b
-
-# stage 3, on the login node
-python preliminary/scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v '\.got\.')
-```
-
-Smoke-test first. Passing a second argument runs that many generations and
-writes them to `runs/archive/smoke-<model>.jsonl` rather than the sweep's own file, so a
-run that reveals a broken template cannot leave rows the real sweep then skips:
+[run-4b-density-sweep.md](run-4b-density-sweep.md) is the exact recipe the
+Qwen3-4B arms of the main sweep were run with. In short:
 
 ```bash
-sbatch --time=00:40:00 --exclude=n-801 cluster/sweep.sbatch gemma4-e4b 20
+sbatch --array=0-24 --exclude=n-801 --mem=24G --time=24:00:00 \
+  --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=data/prompts/prompts.densfull40.jsonl,GRAPHTALK_MAX_NEW_TOKENS=8192 \
+  cluster/sweep.sbatch qwen3-4b
 ```
 
-**A 20-row smoke test is not a representative one.** The prompt file is ordered
-by task, so the first 420 rows are all `node_count`, and a 20-row limit sees one
-task out of six. That matters because a truncated generation shows up as
-unparseable on `cycle_check` but as a confident *wrong answer* on `node_count`,
-where the extractor picks an integer out of the abandoned working. The first
-smoke test here reported a 100% parse rate while half the sweep was truncated.
-Check a spread of tasks before trusting it.
+A plain arm needs `GRAPHTALK_MAX_NEW_TOKENS=8192` instead of the 2048 default,
+or `edge_count` truncates at n=40, p >= 0.35; thinking arms default to 8192
+already. Generation still stops at
+EOS, so a higher cap only costs anything on rows that actually run long.
 
-### Regenerating part of a sweep
-
-When a prompt changes, only the affected rows need re-running. Two overrides make
-that a first-class operation rather than a hand-edit:
+Smoke-test first. A second argument runs that many generations and writes them
+to `data/runs/archive/smoke-<model>.jsonl`, which every analysis excludes by
+directory:
 
 ```bash
-# 1. strip the affected rows from the arm -- run_sweep.py skips keys it already
-#    has, so a row left in place will NOT be regenerated, silently.
-# 2. point at a subset file and tag the output.
-GRAPHTALK_PROMPTS=prompts.rerun.jsonl GRAPHTALK_RUN_TAG=rerun \
-  sbatch --time=12:00:00 --mem=40G cluster/sweep.sbatch gemma4-12b
-#   -> runs/gemma4-12b.rerun.jsonl   (or .rerun.shardNofM.jsonl under --array)
+sbatch --time=00:40:00 cluster/sweep.sbatch qwen3-4b 20
 ```
 
-`score_sweep.py` pools by each row's `model` field, so a tagged file rejoins its
-arm with no reassembly. Verify afterwards that the arm is back to its full unique
-key count -- that is the check that catches a silent skip.
+**A short smoke test is not a representative one.** The prompt file is ordered
+by task, so the first rows are all `node_count`. A truncated generation shows up
+as unparseable on `cycle_check` but as a confident *wrong answer* on counting
+tasks, where the extractor picks an integer out of the abandoned working. Check
+a spread of tasks before trusting it.
 
-**Never tag a regeneration `redo`.** `analysis._EXCLUDE_SUBSTRINGS` matches
-`.redo.shard`, so those rows would be dropped from every frame with no error;
-`sweep.sbatch` refuses the tag outright for that reason. The existing
-`runs/archive/*.redo.shard*.jsonl` are a different artefact that `docs/DATA.md`
-deliberately excludes -- and since exclusion is now by directory, keeping
-regenerated rows out of `runs/archive/` is what matters more than the tag.
+### Regenerating part of a run
 
-A third override, `GRAPHTALK_MAX_NEW_TOKENS`, raises the generation budget for
-every row in the job (added for the `densfull40` sweep, which mixes
-`edge_count` in with short-answer tasks and needs ~8192 tokens instead of the
-2048 default or `edge_count` truncates at n=40/p>=0.35):
+`run_sweep.py` skips keys the output already has, so a row left in place is
+**not** regenerated. Strip the affected rows first, then point at a subset file
+and tag the output:
 
 ```bash
-GRAPHTALK_MAX_NEW_TOKENS=8192 sbatch cluster/sweep.sbatch qwen3-1.7b
+GRAPHTALK_PROMPTS=subset.jsonl GRAPHTALK_RUN_TAG=rerun \
+  sbatch --time=12:00:00 cluster/sweep.sbatch qwen3-4b
+#   -> data/runs/qwen3-4b.rerun.jsonl   (or .rerun.shardNofM.jsonl under --array)
 ```
 
-Harmless for the tasks that don't need it -- generation still stops at EOS,
-so a higher cap only costs anything on rows that actually run long.
+Every row carries its `model`, so a tagged file rejoins its arm with no
+reassembly. **Never tag a regeneration `redo`**: `graphtalk.analysis` drops
+`.redo.shard` files, and `sweep.sbatch` refuses the tag for that reason.
 
-### Running the GoT node-naming scheme
-
-`GRAPHTALK_PROMPTS`/`GRAPHTALK_RUN_TAG` above are also how a
-Game-of-Thrones-named arm is run (`graphtalk/node_naming.py`; see
-`README.md#node-naming` for what the scheme is). `cluster/submit_sweep.sh`
-wraps that into one flag, and does stage 1 for you first if it hasn't run yet:
-
-```bash
-cluster/submit_sweep.sh --node-naming got --exclude=n-801 --mem=32G \
-    cluster/sweep.sbatch gemma4-12b
-```
-
-Every other `sbatch` flag or positional (`--array`, `--exclude`, the model
-key, the smoke-test limit) passes straight through in whatever position it's
-given -- only `--node-naming`, `--count`, and `--dry-run` are consumed by the
-wrapper. `--count N` (GoT scheme only) requests a prompt file larger than the
-tracked sweep's 30-per-task default -- e.g. for a targeted follow-up sized by
-`preliminary/scripts/recommend_count.py` (see `analysis/README.md`'s Track 2 section) --
-tagged into both the prompt filename and `GRAPHTALK_RUN_TAG` so it can't
-collide with the tracked `--count 30` sweep's own files:
-
-```bash
-cluster/submit_sweep.sh --node-naming got --count 500 \
-    cluster/sweep.sbatch qwen3-8b
-```
-
-`--dry-run` prints what would run (and whether `prompts_got.jsonl` would be
-built) without touching anything, which is worth doing once before the real
-submission since the wrapper still can't be tested on a scheduler you don't
-have.
-
-That's exactly the two-step recipe from `README.md#node-naming` collapsed
-into one call: **stage 1 still runs on the login node**, not inside the
-job -- `build_prompts.py` fetches over plain `urllib`, and compute nodes have
-no outbound network (`HF_HUB_OFFLINE=1`, same reason as everywhere else in
-this file). The wrapper builds `prompts_got.jsonl` right there, before
-`sbatch` is ever called, and reuses it on every later invocation rather than
-rebuilding (`load_rows()`'s cache makes that safe -- see `README.md#node-naming`).
-Omit `--node-naming` (or pass `--node-naming integer`) for the plain scheme;
-nothing else about the wrapper's behavior changes.
-
-### Running the ladder/rewiring sweep
-
-The graph-structure ladder and the degree-preserving rewiring experiment
-(`preliminary/docs/ladder-and-rewiring.md`) have their own driver, `cluster/run_ladder.sh`,
-rather than going through `sweep.sbatch` by hand:
-
-```bash
-cluster/run_ladder.sh              # submits the probe + ladder-screen stages, both arms
-cluster/run_ladder.sh --dry-run    # print what would submit; build and submit nothing
-STAGES=ladder MODELS=qwen3-1.7b cluster/run_ladder.sh   # one stage, one model
-```
-
-It builds `prompts.retrieval_locate.jsonl` / `prompts.ladder_screen.jsonl` if
-they don't already exist, sizes each model's GPU tier and `--mem` itself (see
-`tier_for()` in the script), and submits one job per model per stage --
-writing to `runs/<model>.retrieval_locate.jsonl` / `runs/<model>.ladder_screen.jsonl`
-(see `runs/README.md`). The rewiring stage is deliberately **not** included in
-the default run (`STAGES` defaults to `probe ladder`); it needs a rewire
-prompt file built separately with `preliminary/scripts/build_ladder.py --stage rewire`,
-restricted to the rungs that cleared both screens for the models being run --
-read `preliminary/docs/ladder-and-rewiring.md` before spending GPU time on it.
+The Game-of-Thrones and ladder/rewiring drivers of the preliminary work are in
+[preliminary/cluster/](../preliminary/cluster/README.md).
 
 ## Warm the page cache, or the job dies loading
 
@@ -476,6 +378,9 @@ every one of them start over.
 
 ## Sizing
 
+Measured on the pilot's 1,260-prompt file; the main sweep is 16,800 prompts
+per model, so it runs as a 25-way `--array`.
+
 At 30 rows per task the prompt file is **1,260 prompts** per model (180 instances
 x 7 conditions), so 5,040 generations across the four models.
 
@@ -497,7 +402,7 @@ them and add links to the chain rather than assuming three is enough.
   defaults to `padding_side='left'`, but **`Qwen3-8B` defaults to `'right'`**, so
   a naive implementation would corrupt half the sweep. Wrong padding produces
   fluent garbage, not an error. Verify against the single-stream responses in
-  `analysis/budget-*.jsonl`: decoding is greedy, so a correct
+  `preliminary/analysis/budget-*.jsonl`: decoding is greedy, so a correct
   batched implementation reproduces them near-identically.
 
   Implemented as `graphtalk.hf_backend.generate_batch` and
@@ -507,7 +412,7 @@ them and add links to the chain rather than assuming three is enough.
   batch's ragged finish times require (see the function's docstring).
 
   **Now validated on a GPU, and the answer is: do not use it.** Run with
-  `cluster/validate_batching.sbatch` (2026-09-04, L40S, `--batch-size 4`,
+  `cluster/validate_batching.sbatch` (now in git tag `pre-cleanup`; 2026-09-04, L40S, `--batch-size 4`,
   the 24 budget-reference prompts, both families):
 
   | | gemma4-e4b | qwen3-8b |
@@ -579,5 +484,5 @@ Check on a run:
 ```bash
 squeue --me -o "%.10i %.20j %.8T %.10M %R"
 sacct -j <jobid> --format=JobID,State,ExitCode,Elapsed,NodeList
-wc -l runs/*.jsonl
+wc -l data/runs/*.jsonl
 ```

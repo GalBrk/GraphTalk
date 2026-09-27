@@ -4,11 +4,11 @@
 > current scoring rule (a truncated response is its own outcome, never
 > counted as wrong or dropped), has not been re-checked under it, and is
 > not cited by the paper. Current results, and the status of every family
-> of runs: [results index](../docs/results/README.md).
+> of runs: [results index](../../docs/README.md).
 >
 > Every primer delta in this file is measured against `none`, a shorter
 > prompt, so it is content minus length; the length cost is measured in
-> [density-followups.md](../docs/results/density-followups.md) §5.
+> [density-followups.md](../../docs/results/density-followups.md) §5.
 
 
 Small, expensive-to-reproduce measurements that decisions in this project rest
@@ -27,7 +27,7 @@ should not have to spend again to check the claim.
 | `non_termination_sample.csv` | inspection sample of non-terminating responses. |
 
 **Every significance and cross-check artifact has moved to
-[`analysis/superseded/`](superseded/)** — the two `significance_report`
+`analysis/superseded/` (git tag `pre-cleanup`)** — the two `significance_report`
 CSVs, `.txt`, `_mae.csv`, the three `*_by_style`/`_mde` CSVs, both
 `glmm_report`s, and `failure_sample.csv`. Four defects in the code that
 wrote them; that directory's README lists them. **Numbers quoted below came

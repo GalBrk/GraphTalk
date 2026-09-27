@@ -4,7 +4,7 @@
 > current scoring rule (a truncated response is its own outcome, never
 > counted as wrong or dropped), has not been re-checked under it, and is
 > not cited by the paper. Current results, and the status of every family
-> of runs: [results index](../results/README.md).
+> of runs: [results index](../../docs/README.md).
 
 ## Context
 
