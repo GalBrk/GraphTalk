@@ -9,59 +9,16 @@ build/
 dist/
 figures/
 .cache/
-# Sweep artefacts are tracked, not ignored. They were excluded as "regenerable",
-# but that only ever applied to the prompt files: the responses are regenerable
-# solely by re-running the models, which cost ~40 GPU-hours, and "backed up
-# somewhere on the cluster" is not access for anyone without an account here.
-# 17 MB is a small price for a collaborator being able to clone the results.
-#
-# The prompt files are tracked too, and deliberately: a response is only
-# interpretable against the exact prompt that produced it, and `--count` is a
-# prefix, so the file is the record of which rows the sweep actually used.
-#
-# Slurm logs stay out -- they are per-job noise, and the numbers worth keeping
-# from them are written up in docs/sweep-findings.md instead.
+
+# Slurm logs: per-job noise.
 out/
 
-# Prompt subsets used to drive a partial regeneration. Regenerable by filtering
-# the tracked prompt files (see analysis/README.md), and misleading if committed:
-# they look like a prompt set the sweep used in full, which they never are.
-/preliminary/data/prompts/prompts.rerun.jsonl
-/preliminary/data/prompts/prompts.smoke.jsonl
+# Local holding pen for replaced data files (see archive/README.md); never tracked.
+archive/
 
-# Same reasoning, two more of them.
-#
-# `batch_validation_prompts.jsonl` is regenerable exactly, by the script that
-# consumes it (`scripts/validate_batch_generation.py --build-prompts`), and it
-# is a diagnostic input rather than a record of any tracked response.
-#
-# `prompts_got.count500.jsonl` is the full seven-condition build at --count 500
-# (21,000 prompts, 39 MB). The replication only ever ran the none/degree subset,
-# which IS tracked -- `prompts_got.count500.degree.jsonl` -- because a response
-# is only interpretable against the exact prompt that produced it. Keeping the
-# unused superset out avoids 39 MB that no tracked row is scored against, and it
-# rebuilds deterministically from `scripts/build_prompts.py --count 500
-# --node-naming got`.
-/batch_validation_prompts.jsonl
-/preliminary/data/prompts/prompts_got.count500.jsonl
-
-# The density-sweep prompt sets, which are large and exactly regenerable.
-#
-# `prompts.degdensity40.jsonl` (18 MB) and `prompts.degdensity40hi.jsonl` (also
-# ~18 MB) are n=40 builds, and a 40-node graph's `incident` encoding lists every
-# one of its hundreds of edges -- so these are roughly twice the largest prompt
-# file this repo does track (`prompts_got.count500.degree.jsonl`, 8.7 MB) while
-# carrying a fraction as many prompts.
-#
-# Tracked prompt files exist because a response is only interpretable against
-# the exact prompt that produced it. That still holds here, and is met a
-# different way: `scripts/build_size_sweep.py` rebuilds both byte for byte from
-# the command in their run's writeup, and `tests/test_build_size_sweep.py` pins
-# the two properties that guarantee it -- a level's graphs depend on its density
-# *value* rather than its position in `--densities`, and the no-`--densities`
-# default is unchanged. Regenerate them the way scripts/density_followups.py
-# does (its rebuilt() calls build_size_sweep.build once per density) rather
-# than reaching for a copy.
+# Prompt files are tracked (a response is only interpretable against its exact
+# prompt), except these: each is rebuilt exactly by the script that uses it, or
+# was never run in full.
 /data/prompts/prompts.degdensity40.jsonl
 /data/prompts/prompts.degdensity40hi.jsonl
 /data/prompts/prompts.degdensity40think.jsonl
@@ -69,30 +26,20 @@ out/
 /data/prompts/prompts.degdensrep.jsonl
 /data/prompts/prompts.degfixdeg.jsonl
 /data/prompts/prompts.degceil.jsonl
-
-# The retrieval probe prompt set (34 MB), regenerable exactly by
-# `scripts/build_retrieval_probe.py` with the command in its run writeup. Larger
-# than any tracked prompt file because 1,280 statements of surrounding text is
-# the point of the design rather than an accident of it.
+/preliminary/data/prompts/prompts.rerun.jsonl
+/preliminary/data/prompts/prompts.smoke.jsonl
+/preliminary/data/prompts/prompts_got.count500.jsonl
 /preliminary/data/prompts/prompts.retrieval.jsonl
-
-# The threshold-bisection follow-up to the retrieval probe above: three
-# statement counts (226/452/905) that bisect, in log space, the two collapse
-# boundaries the base probe only bracketed. Regenerable exactly by the command
-# in docs/primer-effects-and-power.md's "What this makes worth running next".
 /preliminary/data/prompts/prompts.retrieval_threshold.jsonl
 
-# The GoT-node-naming build of the densfull40 sweep. `prompts.densfull40.jsonl`
-# (the integer-named version, 86 MB) IS tracked, because it has tracked
-# responses under runs/ that are only interpretable against it. This one has
-# none yet (see PARKED.md, "Setup Node naming") and, at 125 MB, is over
-# GitHub's 100 MB hard limit regardless -- so it stays out until a generation
-# pass against it exists to justify tracking it, at which point it'll need
-# Git LFS rather than a plain blob.
+# The Game-of-Thrones-named build of the 40-node prompts: no runs use it, and at
+# 125 MB it is over GitHub's 100 MB file limit.
 /prompts.densfull40.got.jsonl
 
-# LaTeX build artefacts. The .tex sources and the built .pdf are tracked
-# (see paper/LONG.md); these are regenerated by any `latexmk -pdf` run.
+# primer_flips.py output (16 MB), regenerable from the committed frame and runs.
+/outputs/n40-sweep/primer_flips.csv
+
+# LaTeX build files.
 paper/*.aux
 paper/*.bbl
 paper/*.blg
@@ -100,16 +47,3 @@ paper/*.fdb_latexmk
 paper/*.fls
 paper/*.log
 paper/*.out
-
-# Local holding pen for superseded data files. Everything in here has a
-# verified replacement (see archive/README.md for the check that was run on
-# each); it is kept only so a number in a doc can be traced back to the file
-# that produced it, and so a deletion is reversible without a trip through
-# git history. Deliberately NOT tracked: the tracked originals are already
-# recoverable from git, and shipping a second copy of known-wrong data to
-# every clone is the worst of both. Delete the directory once you stop
-# reaching for it.
-archive/
-
-# primer_flips.py output (16 MB), regenerable from the committed frame and runs.
-/outputs/n40-sweep/primer_flips.csv

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) in this repository.
 
 ## What this project is
 
@@ -12,255 +12,94 @@ text encoding and question improves an LLM's accuracy on GraphQA tasks, and
 separately measures how much of that accuracy a primer-only (no-graph) solver can
 already reach without seeing the graph at all.
 
+## Where things are
+
+Every folder has a README; start at [README.md](README.md)'s repository map.
+
+| Question | Read |
+|---|---|
+| What was found, and the status of each doc | [docs/README.md](docs/README.md) |
+| Which script makes which output; the reproduce commands | [scripts/README.md](scripts/README.md) |
+| File schemas and the pairing key | [data/README.md](data/README.md) |
+| Building the paper and where each of its numbers comes from | [paper/README.md](paper/README.md) |
+| Generating responses on the GPU cluster | [cluster/README.md](cluster/README.md) |
+| The pilot and screens that chose the settings | [preliminary/README.md](preliminary/README.md) |
+
 ## Setup
 
 ```bash
-uv venv --python 3.11 && uv pip install -e ".[dev]"
+uv venv --python 3.11 && uv pip install -e ".[dev]"      # add ,gpu for scripts/run_sweep.py
 ```
 
-Python is pinned to `>=3.11,<3.12` (`pyproject.toml`) because `seqio` and
-`tensorflow-gnn` don't resolve cleanly on 3.12+.
-
-**On this machine there is no `.venv`, and the setup above was never run here.**
-Every doc and script docstring in this repo spells commands as
-`PYTHONPATH=. .venv/bin/python ...`; that is correct for a fresh clone that
-follows the step above, and it is not what exists on the lab machines. Use the
-conda env directly instead:
+**On the lab machines there is no `.venv`.** Docstrings spell commands as
+`PYTHONPATH=. .venv/bin/python ...`, which is right for a fresh clone. There, use
+the conda env instead (`cluster/README.md` documents how it was built):
 
 ```bash
 /home/dcor/galbarak2/conda_envs/graphtalk/bin/python
 ```
 
-`cluster/README.md` documents how that env was built. The `.venv` paths are left
-in place because they are right for anyone who does run `uv venv`; just do not
-expect them to work here without creating one first.
-
-Optional TensorFlow pipeline (only `graph_tasks_utils.py` needs it, ~2 GB):
-
-```bash
-uv pip install -e ".[pipeline]"
-```
-
-`tensorflow_gnn` 1.0.3 requires Keras 2, but TF 2.20 ships Keras 3, so
-`TF_USE_LEGACY_KERAS=1` must be set before importing it (`.venv/bin/activate`
-exports it already).
-
 ## Commands
 
-Run the full test suite:
-
 ```bash
-uv run --no-sync pytest -q --ignore=tests/test_hierarchical_model.py \
-                           --ignore=tests/test_mixed_models.py
-```
-
-Always use `--no-sync` — a plain `uv run` re-syncs to the default dependency set
-and uninstalls the optional `pipeline` extras.
-
-The two ignored files import `statsmodels`, which is **not** installed in either
-`conda_envs/graphtalk` or `conda_envs/graphtalk-cu126` — the only envs this
-project runs in. (It does exist at 0.12.0 in the base `anaconda3` install and at
-0.15.0 in the unrelated `ember` env, so "is statsmodels on this machine" is the
-wrong question to ask.) Without it pytest aborts during *collection* with a
-`ModuleNotFoundError` and reports **zero** passes rather than two failures, so a
-plain `pytest -q` looks catastrophically broken when nothing is wrong. Those
-files hold 24 further test functions that only run where `statsmodels` is
-present; installing it into the graphtalk env would fold them back into the
-default command, but do not do that while a sweep is running — `sweep.sbatch`
-activates that same env.
-
-Run a single test file or test:
-
-```bash
+uv run --no-sync pytest -q                                   # the whole suite, preliminary/ included
 uv run --no-sync pytest -q tests/test_primers.py
 uv run --no-sync pytest -q tests/test_primers.py::test_round_trip
 ```
 
-Score the shortcut-ceiling table (what a primer-only solver, with no access to the
-graph, scores — the bar a model result has to clear):
+Always use `--no-sync`; a plain `uv run` re-syncs the environment. The
+commands that reproduce every output are in
+[scripts/README.md](scripts/README.md#reproduce-everything). After a
+regeneration, `git diff outputs/` should show no change except lines that print
+a path.
 
-```bash
-PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500
-```
+## Rules for results and docs
 
-Full three-stage sweep (only stage 2 needs a GPU — see `cluster/README.md` for
-running it on the TAU CS cluster):
+- **Current claims only.** State what the current output shows; never correct,
+  hedge against or mention an earlier version. Replaced drafts live only in git
+  tag `pre-cleanup`.
+- **Every number is tagged.** A number in a doc or the paper is copied as printed
+  from a script's output and followed by its tag (`+7.5 [main]`);
+  `tests/test_results_docs.py` checks the results docs. The conventions R1–R4
+  (truncation is its own outcome, the metrics) are in
+  [docs/README.md](docs/README.md#conventions).
+- **Never cite `preliminary/`** in a results doc or the paper.
+- **Stage commits by explicit file path.** Others may write into this working
+  tree during a session.
 
-```bash
-# 1. build every prompt to a file, on the laptop/login node
-PYTHONPATH=. .venv/bin/python scripts/build_prompts.py --count 30
-# node identifiers default to plain integers; pass --node-naming got for
-# Game-of-Thrones character names instead (see graphtalk/node_naming.py) --
-# build and score each naming scheme as a separate run to compare them
-
-# 2. generate, on a GPU node, once per model
-sbatch cluster/sweep.sbatch gemma4-12b
-
-# 3. score, back on the laptop
-PYTHONPATH=. .venv/bin/python scripts/shortcut_table.py --graphs 500 --json shortcuts.json
-PYTHONPATH=. .venv/bin/python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.json
-```
-
-Runs from `build_size_sweep.py --densities` are scored by level instead, since
-`score_sweep.py` groups by (task, style) and would average the levels together.
-Reproduce every number in `docs/results/density-followups.md` (the density
-follow-up runs) with:
-
-```bash
-PYTHONPATH=. python scripts/density_followups.py > csv2/density-followups/density_followups.txt
-```
-
-It needs `statsmodels` (the `analysis` extra) for the forensics. It runs
-each run set through `scripts/score_density_sweep.py` (levels are the
-density, the (size, density) cell, or the (task, density) pair; a truncated
-response is its own outcome, never dropped) and `scripts/analyze_rq3_leads.py`
-(the `clustering` forensics).
-
-Check statistical significance beyond `score_sweep.py`'s per-cell McNemar (that test is
-underpowered at 30 pairs/cell — see `docs/sweep-findings.md`). Needs the `analysis` extra
-(`uv pip install -e ".[dev,analysis]"`) and the joined sweep table built first:
-
-```bash
-PYTHONPATH=. .venv/bin/python scripts/build_sweep_frame.py --responses runs/*.jsonl \
-    --shortcuts shortcuts.json --truncated-keys analysis/truncated_keys.json
-PYTHONPATH=. .venv/bin/python scripts/check_significance.py --frame csv2/sweep-small-graph/sweep_frame.csv
-```
-
-`check_significance.py` pools pairs across task and style per (model, condition) instead of
-testing 288 tiny cells, reporting a permutation p-value, a bootstrap CI on the effect size,
-and a Benjamini-Hochberg correction — for both main-sweep accuracy and thinking-arm
-non-termination rate. Pass `--out <path.csv>` to save the printed rows instead of only
-seeing them in the terminal.
-
-Reproduce every number in the main experiment's results document,
-`docs/results/n40-sweep.md` (the 40-node sweep):
-
-```bash
-PYTHONPATH=. python scripts/build_raw_frame.py
-PYTHONPATH=. python scripts/primer_findings.py --csv-dir csv2/raw-trends > csv2/raw-trends/primer_findings.txt
-```
-
-`tests/test_results_docs.py` checks every number a doc in `docs/results/` cites
-against these outputs.
-
-Other one-off scripts:
-
-```bash
-python scripts/draw_graph.py --config node_degree --index 0   # parse+draw a GraphQA row
-python scripts/show_primers.py --generated 3                  # eyeball rendered primer text
-python scripts/measure_real_rows.py                           # re-measures corpus stats against real HF rows
-```
-
-## Architecture
-
-### Package layout
+## Package layout
 
 - `talk_like_a_graph/` — a **vendored, mostly-unmodified copy** of Google
-  Research's reference implementation (graph generators, text encoders, task
-  generators, metrics). See `talk_like_a_graph/UPSTREAM.md` for the exact commit
-  and the two local modifications (test class MRO fixes). Treat this directory as
-  third-party code; prefer changing `graphtalk/` over editing it.
-- `graphtalk/` — this project's own package:
-  - `graphqa.py` — fetches GraphQA rows over the HF `datasets-server` rows API
-    (deliberately *not* the `datasets` library, which brings pyarrow/fsspec pins
-    that would disturb the hand-tuned TF/tf-keras/tensorflow-gnn combination),
-    parses a networkx graph back out of a row's `question` prose, and recomputes
-    gold answers (`gold_answer` / `expected_answer`). `canonical()` normalizes
-    node/edge insertion order so re-encoding the same graph is reproducible.
+  Research's reference implementation (graph generators, text encoders). See
+  `talk_like_a_graph/UPSTREAM.md` for the commit and the local modifications.
+  Treat it as third-party code; prefer changing `graphtalk/`.
+- `graphtalk/` — this project's package:
   - `primers.py` — primer statistics (degree, clustering, RWSE, connected
     components) and `render_primer` / `build_primer`, the **single renderer**
-    every experimental condition goes through. Every rendered float goes through
-    `_fmt` (round-to-6-then-format-to-2 decimals, to sidestep BLAS-order tie
-    instability). Graphs must arrive already canonicalized.
+    every condition goes through. Every rendered float goes through `_fmt`
+    (round-to-6-then-format-to-2, to sidestep BLAS-order tie instability).
+    Graphs must arrive already canonicalized.
   - `shortcuts.py` — the primer-only solvers, deliberately **sharing no code with
-    `primers.py`**: a strict parser (`parse_primer`) that reads rendered primer
-    text back into structured data (re-deriving the join/separator rules rather
-    than importing `primers._join`, so the round-trip test is a real
-    cross-check, not a tautology), 16 exact "theorem" rules, 1 heuristic, 8
-    fitted rules (which must be fit/scored on disjoint graph sets via `Split`),
-    and an exact enumeration bound (`exact_island`) for small graphs (≤6 nodes).
-    Parsing is strict — an unrecognized or conflicting sentence raises rather
-    than being silently skipped.
-  - `prompts.py` — assembles one prompt as `primer + "\n\n" + encoding +
-    task_description [+ CoT suffix]`. Uses the `incident` encoding (not
-    `adjacency`, which is what the published dataset's `question` field
-    contains — that's why prompts are rebuilt from the parsed graph rather than
-    reused verbatim).
-  - `scoring.py` — answer extraction from free model text (per-task regex logic,
-    tuned for CoT responses that reason before concluding) and the metrics named
-    in the proposal: exact match for integer/boolean tasks, set-F1 for
-    `connected_nodes`, plus MAE, majority baseline, and exact McNemar.
-  - `node_naming.py` — Game-of-Thrones node naming, additive on top of the
-    integer pipeline rather than a change to it: nothing in `primers.py`,
-    `prompts.py`, `graphqa.py`, or `scoring.py` is modified. A named prompt is
-    built by rendering the ordinary integer primer/encoding/question exactly as
-    today and substituting node-id references for names as a text pass
-    (`build_named_prompt`); a named model response is desubstituted back to
-    integers (`desubstitute_response`) before it reaches the existing,
-    unmodified scorer. Also patches around a vendored bug where
-    `incident_encoder`'s per-node sentence opener hardcodes the raw node id
-    regardless of the name dict it's given.
-  - `models.py` — model configs only (`ModelSpec`), deliberately free of `torch`/
-    `transformers` so prompt-building and scoring stay importable without a GPU
-    stack.
-  - `hf_backend.py` — the only module that imports `torch`/`transformers`;
-    loading and greedy generation. Imported only by `scripts/run_sweep.py`.
-- `scripts/` — the three pipeline stages (`build_prompts.py`, `run_sweep.py`,
-  `score_sweep.py`) plus `shortcut_table.py`, `draw_graph.py`,
-  `show_primers.py`, `measure_real_rows.py`. `build_size_sweep.py` and
-  `score_density_sweep.py` are the size/density pair: the first generates
-  graphs at chosen sizes and pinned ER densities, the second scores them
-  grouped by density level rather than by (task, style), which is the grouping
-  `score_sweep.py` collapses; `density_followups.py` runs the density
-  follow-up family through it. The directory holds ~40 further one-off analysis scripts
-  (`analyze_*.py`, `check_*.py`, `validate_*.py`, and similar); each belongs to
-  a specific finding and is referenced from the `docs/*.md` file that reports
-  that finding, rather than listed individually here — grep `docs/` for a
-  script's name before assuming it's undocumented.
-- `cluster/` — `sweep.sbatch` and `README.md`, the authority on how the sweep
-  actually runs on the TAU CS cluster (partitions, memory sizing, driver
-  incompatibilities, chained-job submission for jobs that exceed the 24h
-  partition limit).
-- `docs/results/` — **the current results, read first**: one document per
-  family of runs, each stating only what its script's committed output shows;
-  start at `docs/results/README.md`. The main experiment is the 40-node sweep,
-  `docs/results/n40-sweep.md`; its `node_degree` follow-ups (dedicated density,
-  thinking, filler, replication and fixed-mean-degree runs) are in
-  `docs/results/density-followups.md`. Every earlier paper version, analysis and doc
-  those documents replace is in `superseded/` (see `superseded/README.md`).
-  `docs/results/README.md` also lists every earlier family of runs with its
-  document and status. Other files in `docs/` and `docs/plans/`:
-
-  | File | Status | What it's for |
-  |---|---|---|
-  | `DATA.md` | current | Authority on every tracked file's schema, the `(instance_id, condition, style)` pairing key, and per-row caveats (truncated/`hit_cap` rows, CPU- vs GPU-generated rows, the `filler`/`edge_existence` rewording) |
-  | `sweep-findings.md` | retracted | The original 5-19 node analysis; kept for its retractions, not its conclusions |
-  | `primer-effects-and-power.md` | not re-verified | Earlier results for the published-split probes, the small models, the size sweep and the clean-condition cells; its 40-node sections are replaced by `results/` |
-  | `primer-impact-and-truncation.md` | not reproducible | A size sweep whose runs were removed in `b49ce3b` |
-  | `repo-scope.md` | current | Map of the repo's scope and how the n=40 work relates to the paper's 5-19 node benchmark |
-  | `graph-corpus-status.md` | current | Which graph to generate, for which model, for a fair primer test |
-  | `graph-design-requirements.md` | current | The four requirements a graph corpus must meet to be a valid primer test |
-  | `difficulty-scaling.md` | current | Four additive eval-pipeline changes (larger synthetic graphs, denser topology, a `reachability` task, an overflow guard) via `--graph-source diverse` |
-  | `features-considered.md` | current | Which graph features were evaluated for the primer (degree, clustering, RWSE, components) and why the rest were rejected, against a four-test selection criterion |
-  | `ladder-and-rewiring.md` | current | Design notes for the shared `(n, mean_degree)` ladder and the rewiring experiment; read before `ladder-and-retrieval-results.md` |
-  | `ladder-and-retrieval-results.md` | current | First results pass over the ladder design above, plus the reading-limit retrieval probe |
-  | `investigate_connections_and_cycles.md` | current | Opens with paper-ready conclusions (C1-C5, every number tagged). Every primer against no primer in the 40-node sweep, and whether correct answers rest on true claims about the graph: invented cycles in `cycle_check`, fabricated edges and misread neighbour lists in the other tasks, the `node_count` off-by-one, the same checks at high density, and why wrong answers are wrong (shared neighbours and false "is listed" claims behind `edge_existence` false alarms, error sources in `connected_nodes`). Pipeline `scripts/check_cycle_claims.py` (reuses `scripts/response_patterns.py`'s `[rpchain]`), output `csv2/raw-trends/check_cycle_claims.txt`, `cycle_claims.csv`, `response_claims.csv`. Not checked by `tests/test_results_docs.py` |
-  | `primer-directions.md` | exploratory | Nine further questions about what the primers do to the 40-node sweep's responses: which value a reported conflict ends on, misread clustering/rwse values, early commitment in thinking traces, line position in the primer, consistency between `edge_existence` and `connected_nodes` on the same node, primer values as `edge_existence` heuristics, the density split of the rwse/clustering effects, effects by the queried node's degree tercile, and the direction of numeric errors. Pipeline `scripts/primer_directions.py` (reuses `scripts/response_patterns.py`), output `csv2/raw-trends/primer_directions.txt`. Its text measures are not hand-validated; not checked by `tests/test_results_docs.py` |
-  | `density-interaction.md` | exploratory | Whether density changes each primer's effect (per arm × task × primer, permutation tests, BH) and whether it matters beyond the no-primer accuracy (split-half band model): density moves a minority of effects, and adds nothing detectable at a fixed baseline. Pipeline `scripts/density_interaction.py` from `csv2/raw-trends/frame.csv`, output `csv2/raw-trends/density_interaction.txt`; not checked by `tests/test_results_docs.py` |
-  | `primer-directions-validation.md` | human-labelled (the user, checked against three LLM labellers), all checks pass | The hand validation `primer-directions.md` waits on: six checks (C1–C6) on a blind, seeded sheet, `csv2/raw-trends/directions_validation_sheet.csv` (key kept apart in `directions_validation_key.csv`), drawn and scored by `scripts/validate_directions.py --make / --score`; what each check's pass or fail changes in the findings |
-  | `primer-robustness.md` | current | Opens with paper-ready conclusions (R1-R5, every number tagged). How much of each primer's effect in the 40-node sweep is prompt churn (filler flips as many questions as most primers, and the same ones; in the thinking arms most flips are at the token budget), whether the arms fail and get fixed on the same questions (only where they share an error mechanism), why responses truncate (plain arms loop, thinking arms run out mid-work), `cycle_check` "no" answers against the same model's edge count, trace vs final answer, a boxed-answer check on the scorer, response length of fixes vs breaks, and checks of alternative explanations (filler against the side statistics' gain; shared neighbours against the pair's degree). Pipeline `scripts/primer_robustness.py` (reuses `scripts/check_cycle_claims.py` and `analyze_primer_window.cells`), output `csv2/raw-trends/primer_robustness.txt`, `robustness_responses.csv`. Not checked by `tests/test_results_docs.py` |
-  | `collaborator-access.md` | current | How a teammate gets at the data and cached models — off-cluster clone vs. reading in place on the TAU cluster |
-  | `plans/primer-computation.md` | executed | Original design for `primers.py`'s statistics and renderer; record of why, not current behaviour — read `graphtalk/primers.py` for that |
-  | `plans/shortcut-ceilings.md` | executed | Original design for `shortcuts.py`'s theorem/heuristic/fitted rules |
-  | `plans/run_improved_tests.md` | partially executed, still live | Phased plan for statistical-power work across GOT/integer sweeps; phases 1-2 landed, later phases are outstanding — follow its instructions rather than treating it as history |
-  | `plans/scale-vs-topology-investigation.md` | done, not re-verified | Investigation into whether a GOT-naming effect's significance flip at n=500 was added power or a real effect shift |
-  | `plans/finding-graphs-that-make-primer-effects-measurable.md` | superseded | A brief realised as the ladder/rewiring design |
-  | `plans/2026-09-2*-single-source-of-truth*.md` | executed | The design and phase plans of the one-source-of-truth cleanup that produced `results/` and `superseded/` |
-  | `plans/rq3-gpu-tests.md` | planned, not run | GPU test design for the `clustering` effect (shuffled/reversed-order primers); the CPU findings that motivate it are in `results/density-followups.md` |
-
-  Read `docs/results/README.md` and `docs/plans/` (`shortcut-ceilings.md`,
-  `primer-computation.md`) before interpreting a new sweep result — they
-  explain what the measured numbers mean.
+    `primers.py`**: a strict parser (`parse_primer`) that re-derives the
+    renderer's join rules, 16 exact "theorem" rules, 1 heuristic, 8 fitted rules
+    (fit and scored on disjoint graph sets via `Split`), and an exact
+    enumeration bound for small graphs. Parsing is strict: an unrecognized or
+    conflicting sentence raises.
+  - `prompts.py` — one prompt is `primer + "\n\n" + encoding + task_description`,
+    with the `incident` encoding.
+  - `scoring.py` — answer extraction from free model text and the metrics (exact
+    match, set-F1, MAE, majority baseline, exact McNemar). `outcomes.py` applies
+    rule R1: a truncated response is its own outcome.
+  - `graphqa.py` — parses a graph out of a GraphQA row, recomputes gold answers;
+    `canonical()` fixes node/edge order so re-encoding is reproducible.
+    `diverse_corpus.py` generates the synthetic graphs.
+  - `models.py` — model configs only, free of `torch`/`transformers`;
+    `hf_backend.py` is the only module that imports them (used by
+    `scripts/run_sweep.py`).
+  - `node_naming.py` — Game-of-Thrones node names as a text pass over the integer
+    prompt, desubstituted before scoring.
+  - `significance.py`, `analysis.py`, `ladder.py`, `rewiring.py`, `cell_screen.py`
+    serve the `preliminary/` work.
 
 ### Core design invariants
 
@@ -294,16 +133,11 @@ break them:
 
 ### Testing conventions
 
-- Tests cover: vendored generator/encoder/metric tests, primer statistics/renderer/
-  golden-string tests, shortcut-solver tests, prompt-assembly/scoring tests,
-  node-naming, analysis, the size/density sweep builders, and the density-sweep
-  scorer. A further 24 test
-  functions live in the two `statsmodels`-dependent files above and do not run
-  in this env — see "Commands" for why they must be `--ignore`d rather than
-  left to fail.
 - Theorem rule precision is asserted at exactly 1.0 over both an Erdős–Rényi
   corpus and an adversarial corpus (trees, forests, cycles, complete bipartite
   graphs) — the ER generator alone never produces a tree, so a rule that's
   secretly keyed on the `m = n-1` boundary can pass on ER data alone.
 - Network access (`graphqa.fetch_rows`) is only exercised by scripts, not by the
   test suite — tests use the vendored generator for graphs.
+- `tests/test_results_docs.py` reads the committed outputs; a doc edit that
+  changes a cited number must change the output first.
