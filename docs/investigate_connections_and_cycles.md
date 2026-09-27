@@ -5,12 +5,10 @@ models' correct answers rest on the graph or on claims about the graph that are
 false. Research question: when a black-box language model reads a textual
 graph, do explicit structural statistics improve execution of graph queries?
 
-Runs: the 40-node sweep (`runs/qwen3-{1.7b,4b}[-think].densfull40*`, Erdős–Rényi
-graphs with 40 nodes, p = .10–.50, 100 graphs per density) and its high-density
-extension (p = .65–.85); the `cycle_check` clean-condition runs
-(`runs/qwen3-0.6b[-think].cc500*`, 500 published graphs of 5–19 nodes, 84 of
-them acyclic). Models: Qwen3-1.7B and Qwen3-4B with thinking off (plain) and on
-(-T), and Qwen3-0.6B for `cc500`.
+Runs: the 40-node sweep (`runs/qwen3-{1.7b,4b}[-think].densfull40*`), Erdős–Rényi
+graphs with 40 nodes, p = .10–.50, 100 graphs per density. Also its
+high-density extension, p = .65–.85. Models: Qwen3-1.7B and Qwen3-4B, each
+with thinking off (plain) and on (-T).
 
 This file is not in `docs/results/`, and `tests/test_results_docs.py` does not
 check it. Every number names its source:
@@ -20,6 +18,7 @@ check it. Every number names its source:
 | **P** `[tag]` | `csv2/raw-trends/primer_findings.txt` (`scripts/primer_findings.py`), or `csv2/raw-trends/primer_cells.csv` |
 | **D** `[tag]` | `csv2/density-followups/density_followups.txt` (`scripts/density_followups.py`) |
 | **C** `[tag]` | `csv2/raw-trends/check_cycle_claims.txt` (`scripts/check_cycle_claims.py`); per-claim rows in `cycle_claims.csv` and `response_claims.csv` |
+| **R** `[tag]` | `csv2/raw-trends/primer_robustness.txt` (`scripts/primer_robustness.py`, see `primer-robustness.md`) |
 
 Throughout: an *effect* is the paired change in % correct against no primer on
 the same graphs, in percentage points; *significant* is Benjamini–Hochberg
@@ -68,13 +67,19 @@ flag, four tasks whose answer varies, all four models pooled (P `[bands]`):
 - The side-information gain in 0.25–0.75 is mostly degree information again:
   `degree` and `all` on CN and EE give +9.5 over 16 cells; `components`,
   `clustering` and `rwse` give +1.6 over 51 (P `[bands]`).
+- **The +1.6 is not what any block of text does.** On the same (arm, task,
+  density), `filler`, 1,829 characters without structure, *loses* 6.9 points
+  (R `[fillerband]`). Filler costs graph reading (§3), so the side
+  statistics' own effect lies between +1.6 (against none) and about +8.5
+  (against `filler`).
 - On the aligned task (ND under `degree`), the primer helps the models that count
   poorly and costs the one that already counts: 1.7B +7.5, 1.7B-T +8.8, 4B
   −6.5, 4B-T +2.5 (q 0.078) (P `[main]`).
 
 **Answer.** Statistics that state the answer raise accuracy where the model
-cannot compute it well itself; statistics that do not state it add about
-+1.6 points where there is room, and about 0 at ceiling.
+cannot compute it well itself. Statistics that do not state it add about +1.6
+points where there is room, and about 0 at ceiling. That is more than an
+equally long text without statistics does, which loses 6.9 in the same cells.
 
 ## 2. Every primer against no primer
 
@@ -255,9 +260,24 @@ Plain 1.7B's "no" answers rise significantly under `rwse` (+7.5) and `degree`
 - Under `rwse` (31), 68% call the graph *directed* ("The graph is a directed
   graph (not necessarily undirected)"). All mention return probabilities, but
   the samples set them aside as "not directly relevant"; none mention an odd
-  sum. The primer seems to make the model read the undirected encoding as
-  directed, not reason from the probabilities.
+  sum.
 - The other models answer no to at most 1.8% of graphs under any primer.
+
+**It is not the sentences themselves.** `all` prints the same return
+probabilities *and* every degree. Yet 1.7B answers no to only 1.3% of graphs
+under it (5 answers), and none of those calls the graph directed or cites an
+odd degree sum (0% and 0%, C `[ccno]`). Three explanations fit:
+- **The statistic shown alone sets the frame.** Under `rwse`, return
+  probabilities are the only thing said about each node, and random-walk
+  probabilities describe a directed process. Under `degree`, 40 numbers to
+  add invite the handshaking argument. In `all`, each node's line opens with
+  its degree and mixes three statistics, so neither frame dominates.
+- **Summing is harder in `all`.** The degrees sit inside longer sentences, so
+  the model may not try to add them. That removes the odd sum but not the
+  directed reading.
+- **Chance.** 5 "no" answers under `all` is a small sample.
+
+Only the first explains both errors at once.
 
 ### 5.1 What the correct answers rest on
 
@@ -363,8 +383,15 @@ cycle of length 2").
 `rwse` raises the share of correct answers resting on a non-cycle (a length-2
 or retraced walk) for every model: 4B-T 0.0 → 42.5%, 4B 6.8 → 38.7%, 1.7B-T
 1.0 → 10.6%, 1.7B 16.0 → 19.9% (C `[ccanswer]`).
-A plausible link, not tested: the primer's wording, "return probability … after
-2 steps".
+
+The obvious link is the primer's wording, "return probability … after 2
+steps": a walk that returns in 2 steps goes to a neighbour and back. But `all`
+prints the same words and hardly produces these claims: 4B-T 0.0%, 4B 6.6%,
+1.7B-T 3.1%, 1.7B 7.9% (C `[ccanswer]`). So the wording alone does not cause
+them. As with the directed reading (§5), what differs is that under `rwse` the
+return probabilities are the only statistic. A graph described only by how
+often a walk returns may lead the model to treat "going and coming back" as
+the cycle it is asked for.
 
 ### 5.4 Thinking traces
 
@@ -381,29 +408,6 @@ one / withdrawing an invented one:
   against 6% for 4B-T), and part of it is withdrawn in the trace.
 - Paired change in traces asserting an invented cycle: 1.7B-T `components`
   **−9.2**, `clustering` **+9.0**, `all` **+13.4**; nothing significant for 4B-T.
-
-### 5.5 Graphs without a cycle (`cc500`, Qwen3-0.6B)
-
-On an acyclic graph a named cycle is necessarily invented and a "yes" is wrong.
-Finished answers (C `[ccacyclic]`):
-
-| Model | Primer | Acyclic: says yes | Of those: invented / not a cycle / none named | Cyclic, correct: rests on a real cycle |
-|---|---|---:|---|---:|
-| 0.6B | none | 94.0 | 13.9 / 67.1 / 19.0 | 47.4 |
-| | components | 97.6 | 13.8 / 66.2 / 20.0 | 36.4 |
-| | clustering | 89.0 | 30.1 / 50.7 / 19.2 | 43.3 |
-| | rwse | 95.1 | 11.5 / 69.2 / 19.2 | 45.5 |
-| 0.6B-T | none | 91.7 | 20.8 / 68.8 / 10.4 | 70.6 |
-| | components | 82.1 | 35.9 / 53.1 / 10.9 | 69.8 |
-| | clustering | **49.4** (−42.2) | 41.5 / 56.1 / 2.4 | 65.1 |
-| | rwse | 86.9 | 20.5 / 71.2 / 8.2 | 63.7 |
-
-- The model says yes to nearly every acyclic graph, citing mostly a length-2 or
-  retraced walk.
-- `clustering` halves the false yes of 0.6B-T: on a forest every printed
-  clustering coefficient is 0.
-- No real cycle is ever found on an acyclic graph (the script asserts it).
-- The pilot's published split has 2 acyclic graphs of 30, too few to use.
 
 ## 6. Fabricated edges in the other tasks
 
@@ -455,6 +459,17 @@ primers pooled; pairs in brackets (C `[eeshared]`):
   0 → 5 → 17 → 31%. Without a primer, the pairs a model calls edges share more
   neighbours than those it correctly calls non-edges, with the answers permuted
   within each density: +4.5 for 1.7B (p = 0.0005), +2.8 for 4B (p = 0.014).
+- **It is not only the pair's degree.** Pairs that share many neighbours also
+  have long lines to read: within density, shared neighbours and the pair's
+  degree sum correlate 0.40 (p = .10) to 0.87 (p = .50). With the degree sum
+  held fixed (quartile within density), shared neighbours still predict a false
+  yes for 1.7B: p = .0035 without a primer, .0005 over all seven conditions.
+  For 4B they do over all seven conditions (p = .0005), but not without a
+  primer alone (p = .081, 37 false alarms). The degree sum also predicts a
+  false yes with shared neighbours held fixed (1.7B p = .011 without a primer;
+  both models p = .0005 over all seven) (R `[eedegree]`).
+- **So both matter.** A pair is called an edge more often when the two nodes
+  share neighbours, and also when their lines are long.
 - A typical answer: "Node 18 is connected to Node 17, and Node 9 is connected to
   Node 17. Therefore, there is an edge between Node 18 and Node 9."
 
@@ -660,10 +675,13 @@ lists "Node 27: degree 6" where the true degree, which the primer states, is 9.
 ## 7. Findings
 
 1. **Explicit statistics help where they state the answer and the model cannot
-   compute it.** Degree statistics raise `node_degree` accuracy for the 1.7B
-   models (1.7B-T +21.5 over its middle-band cells) and cost plain 4B, which
-   already counts. Statistics that do not state the answer add about +1.6
-   points where there is room.
+   compute it.**
+   - Degree statistics raise `node_degree` accuracy for the 1.7B models
+     (1.7B-T +21.5 over its middle-band cells), and cost plain 4B, which
+     already counts.
+   - Statistics that do not state the answer add about +1.6 points where
+     there is room. An equally long text without statistics (`filler`) loses
+     6.9 in the same cells, so their own effect is between +1.6 and about +8.5.
 2. **Correct answers often rest on claims that are false.** A made-up cycle
    backs 43.5% of plain 1.7B's correct `cycle_check` answers without a primer,
    and 3.3% of 4B-T's. Thinking separates the two: the traces still invent, and
@@ -671,13 +689,22 @@ lists "Node 27: degree 6" where the true degree, which the primer states, is 9.
 3. **No primer reduces fabrication while keeping real reasoning.** `degree`
    lowers invented cycles only by replacing cycle-finding with an edge-count
    argument; `clustering` and `all` raise invented cycles.
-4. **`filler` increases fabrication for the plain models across tasks:**
-   invented cycles +12.4 (1.7B), stated fake edges +9.6 (1.7B), invented
-   neighbours +14.8 (4B). It is not a neutral length control.
-5. **`rwse` increases invented claims for the thinking models:** length-2
-   "cycles" (4B-T real cycles −41.0), invented edges and neighbours for 1.7B-T
-   on `edge_existence` (+7.0), `node_degree` (+4.8) and `connected_nodes`
-   (+4.8).
+4. **`filler` increases fabrication for the plain models across tasks.**
+   - Invented cycles +12.4 (1.7B), stated fake edges +9.6 (1.7B), invented
+     neighbours +14.8 (4B).
+   - It is not a neutral length control.
+   - Why is not tested. Three explanations fit:
+     - It adds 40 lines that open "Node X", which can be mistaken for the
+       queried node's line.
+     - Its sentence "Node X is simply present" matches the "is
+       present / listed" claims behind false alarms (§6.1).
+     - It moves the graph further from the question.
+5. **`rwse` shown alone draws the thinking models to invented claims.**
+   - Length-2 "cycles" (4B-T real cycles −41.0).
+   - Invented edges and neighbours for 1.7B-T on `edge_existence` (+7.0),
+     `node_degree` (+4.8) and `connected_nodes` (+4.8).
+   - `all`, which prints the same return probabilities, hardly produces the
+     length-2 claims. So it is not the wording alone.
 6. **Misreading is mostly omission.** Missed neighbours outnumber invented ones
    about 7 to 1 in plain 1.7B's `node_degree` lists; invented cycle edges are
    mostly the closing step.
@@ -685,33 +712,34 @@ lists "Node 27: degree 6" where the true degree, which the primer states, is 9.
    No model counts; plain 1.7B's error is reporting the last id (39), and only
    `clustering` fixes its direct path completely. Plain 4B's smaller error
    (9.8%) disappears under every primer.
-8. **Where a primer carries the answer's key fact, it works even for a small
-   model.** On acyclic graphs, `clustering` (all coefficients 0) halves 0.6B-T's
-   false yes (−42.2).
-9. **A false yes on `edge_existence` comes from shared neighbours and false
-   membership claims.** The plain models' false-alarm rate rises from about 0
-   with no shared neighbour to 66% (1.7B) and 39% (4B) with 4 or more, and the
-   link holds within density (permutation p = 0.0005, 0.014). Plain 4B mostly
-   claims the other node is "listed among" a list that does not contain it;
-   `clustering` is the only primer that cuts that claim significantly. On
-   pairs sharing 4 or more neighbours, `filler` and `components` raise false
-   alarms for both plain models, and `rwse`, `degree` and `all` lower them for
-   1.7B but raise them for 4B.
-10. **A false no comes from misreading one list and trusting it.** Misses are
-    rare (75 in all, 68 at p ≥ .65); the thinking models see the edge in one
-    list, miss it in the other, and rule that both lists must agree.
-11. **At high density the same splits hold.** Primers stop plain 1.7B stating
+8. **A false yes on `edge_existence` comes from shared neighbours, long lines
+   and false membership claims.**
+   - The plain models' false-alarm rate rises from about 0 with no shared
+     neighbour to 66% (1.7B) and 39% (4B) with 4 or more.
+   - The link holds within density, and for 1.7B also with the pair's degree
+     sum held fixed. The degree sum predicts false alarms on its own too.
+   - Plain 4B mostly claims the other node is "listed among" a list that does
+     not contain it. `clustering` is the only primer that cuts that claim
+     significantly.
+   - On pairs sharing 4 or more neighbours, `filler` and `components` raise
+     false alarms for both plain models. `rwse`, `degree` and `all` lower them
+     for 1.7B but raise them for 4B.
+9. **A false no comes from misreading one list and trusting it.** Misses are
+   rare (75 in all, 68 at p ≥ .65); the thinking models see the edge in one
+   list, miss it in the other, and rule that both lists must agree.
+10. **At high density the same splits hold.** Primers stop plain 1.7B stating
     the fake edge (−42 to −52) but not answering yes; every primer raises
     1.7B-T's invented neighbours on `node_degree` (+5.5 to +23.1, significant
     for all but `all`).
-12. **Copying errors are positional.** The 1.7B models drop the last neighbour
+11. **Copying errors are positional.** The 1.7B models drop the last neighbour
     on a line, plain 4B the first (and adds the queried node itself, more so
     under `filler`); invented neighbours come from the line of the next or
     previous node somewhat more often than chance.
-13. **`rwse` makes plain 1.7B read the graph as directed.** Its `cycle_check`
-    "no" answers rise from 0.3% to 7.8%, and 68% of them call the graph
-    directed; under `degree` the "no" answers (12.3%) come from a misapplied
-    handshaking lemma instead.
+12. **A statistic shown alone can change how plain 1.7B reads the task.** Its
+    `cycle_check` "no" answers rise from 0.3% to 7.8% under `rwse` (68% of them
+    call the graph directed) and to 12.3% under `degree` (a misapplied
+    handshaking lemma). Under `all`, which prints both statistics, it answers
+    no to 1.3% of graphs and gives neither reason.
 
 ## 8. Method
 
@@ -805,15 +833,19 @@ uses, has its own output (pattern shifts per primer; not cited here):
   choice between writing 40 and 39 on the direct path is a single token. A GPU
   probe of P("40") against P("39") after "This is a total of", under each primer
   and with the two primers' number formats swapped, would locate it.
-- **Whether `rwse` causes length-2 claims through its "after 2 steps" wording.**
-  Rewording the primer (for example "return probability after a 2-step walk")
-  would test it.
+- **Why `rwse` alone causes length-2 claims when `all` does not.** Both print
+  "return probability … after 2 steps". Showing the return probabilities with
+  a second statistic other than degree, or rewording them, would separate "the
+  only statistic shown" from the wording.
 - **Missed edges on `edge_existence`.** Even at p = .65–.85, where 76% of
   queried pairs are edges, no model answers no to more than 3.5% of true edges
   (75 misses in all), too few to test a primer against.
-- **Acyclic graphs for the larger models.** Only Qwen3-0.6B ran `cc500`; the same
-  check on 1.7B and 4B would need new runs.
+- **Acyclic graphs.** Every 40-node graph has a cycle, so a false "yes" on
+  `cycle_check` cannot be measured here, and neither can whether a primer helps
+  a model recognise a graph without one. That needs acyclic 40-node graphs,
+  which means new runs.
 - **Whether `rwse` makes the model read the graph as directed.** 68% of plain
-  1.7B's `rwse` "no" answers on `cycle_check` call the graph directed. Checking
-  the same words in its answers to the other tasks, and rewording the primer,
-  would show whether the primer's "random walk" framing causes it.
+  1.7B's `rwse` "no" answers on `cycle_check` call the graph directed, and none
+  of its `all` answers do. Checking the same words in its answers to the other
+  tasks, and rewording the primer, would show whether the "random walk"
+  framing causes it.
