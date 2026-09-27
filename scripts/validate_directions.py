@@ -20,7 +20,7 @@ the key (KEY), so the labeller is blind to them.
 
   PYTHONPATH=. python scripts/validate_directions.py --make
   PYTHONPATH=. python scripts/validate_directions.py --score \\
-      > csv2/raw-trends/directions_validation.txt
+      > outputs/n40-sweep/directions_validation.txt
 """
 import argparse
 import os
@@ -35,8 +35,8 @@ import primer_directions as pd_  # noqa: E402
 import primer_findings as pf  # noqa: E402
 import response_patterns as rp  # noqa: E402
 
-SHEET = "csv2/raw-trends/directions_validation_sheet.csv"
-KEY = "csv2/raw-trends/directions_validation_key.csv"
+SHEET = "outputs/n40-sweep/directions_validation_sheet.csv"
+KEY = "outputs/n40-sweep/directions_validation_key.csv"
 PASS = 0.9                                  # the repo's bar for a text marker
 THINK, TASKS2 = pd_.THINK, ("node_degree", "edge_count")
 

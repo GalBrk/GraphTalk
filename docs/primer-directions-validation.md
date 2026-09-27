@@ -5,7 +5,7 @@ hand, and three independent LLM labellers labelled it blind as well. C1's texts
 were relabelled after a fix that also shows mentions of N at the end of a
 sentence. The user decided the 8 items where the LLM labellers disagreed (each
 row's `note` says which), and the user's own labels agree with the final labels
-in the sheet. The scores are in `csv2/raw-trends/directions_validation.txt`, and
+in the sheet. The scores are in `outputs/n40-sweep/directions_validation.txt`, and
 what they mean for the findings is in `primer-directions.md` under Validation.
 The rules below are the ones used, with the user's C3 rule. A second human
 labeller, working on a copy, would give an inter-rater agreement score.
@@ -17,7 +17,7 @@ and B5–B9 are numeric and need no labels.
 
 **What you do** (about 226 items, roughly an hour):
 
-1. Open `csv2/raw-trends/directions_validation_sheet.csv` in Excel, LibreOffice
+1. Open `outputs/n40-sweep/directions_validation_sheet.csv` in Excel, LibreOffice
    or Google Sheets.
 2. For each row, read `question` and `text`, and type the answer in `label`:
    `y` or `n` (C2: `a`, `b`, `c` or `d`); `?` if you cannot tell. `note` is
@@ -25,9 +25,9 @@ and B5–B9 are numeric and need no labels.
 3. Run the scorer and paste its output back to Claude (or save it):
 
        PYTHONPATH=. python scripts/validate_directions.py --score \
-           > csv2/raw-trends/directions_validation.txt
+           > outputs/n40-sweep/directions_validation.txt
 
-Do **not** open `csv2/raw-trends/directions_validation_key.csv`. It holds each
+Do **not** open `outputs/n40-sweep/directions_validation_key.csv`. It holds each
 item's model, primer and the detector's verdict. The sheet hides them so your
 labels are blind; the scorer joins them back.
 
@@ -96,7 +96,7 @@ one sheet at a time.
 `scripts/response_patterns.py`'s text markers (`reports_conflict`, `degree_sum`,
 `enumerate`, `restates_line`, `lookup_any`/`lookup_both`, `id_range` and the
 `names_*` vocabulary markers) were validated on
-`csv2/raw-trends/response_pattern_validation.csv` by an LLM labeller only. Only
+`outputs/n40-sweep/response_pattern_validation.csv` by an LLM labeller only. Only
 `reports_conflict` feeds the primer-directions findings (check C6 above). The rest
 matter if the `response_patterns` shifts are ever reported. Label that file's
 `label` column (`1`/`0`) the same way to confirm them.

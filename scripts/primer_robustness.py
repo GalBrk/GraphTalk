@@ -1,6 +1,6 @@
 """How much of a primer's effect is any change to the prompt, whether the models agree on which
 questions a primer fixes, and checks on the responses themselves, for the 40-node
-sweep (runs/qwen3-{1.7b,4b}[-think].densfull40*, p <= .50).
+sweep (data/runs/qwen3-{1.7b,4b}[-think].densfull40*, p <= .50).
 
 Outcomes follow rule R1 (graphtalk/outcomes.py) through frame.csv: a truncated
 response is never correct. A question is one (task, graph); a condition flips a
@@ -64,8 +64,8 @@ docs/investigate_connections_and_cycles.md:
   [loopsample]  random truncated tails on each side of the loop threshold
   [faithsample] every [faithful] disagreement
 
-  PYTHONPATH=. python scripts/primer_robustness.py --csv-dir csv2/raw-trends \\
-      > csv2/raw-trends/primer_robustness.txt
+  PYTHONPATH=. python scripts/primer_robustness.py --csv-dir outputs/n40-sweep \\
+      > outputs/n40-sweep/primer_robustness.txt
 """
 import argparse
 import glob
@@ -384,7 +384,7 @@ def text_pass(ok):
   loops, faith, boxed = [], [], []
   for arm in pf.ARMS:
     seen = set()   # a response repeated across shards counts once, the first, as in pf.load_runs
-    for path in sorted(glob.glob(f"runs/{arm}.densfull40.shard*.jsonl")):
+    for path in sorted(glob.glob(f"data/runs/{arm}.densfull40.shard*.jsonl")):
       for line in open(path, encoding="utf-8"):
         r = json.loads(line)
         key = (arm, r["instance_id"], r["condition"])

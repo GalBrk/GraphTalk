@@ -1,10 +1,6 @@
 """Shared helpers for the analyses of the 40-node and density follow-up runs:
 the graph-blind solver's route split (`route_gain`, `offers_route`), instance-id
 parsing (`density_of`, `is_replication_seed`), and a scipy-free Pearson r.
-
-The tests this script used to run are in superseded/scripts/analyze_baseline_law.py.
-The density continuum it last ran is printed by scripts/score_density_sweep.py
-(`continuum`) under rule R1, through scripts/density_followups.py.
 """
 
 import math

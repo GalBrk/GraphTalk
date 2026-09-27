@@ -41,27 +41,27 @@ cd /home/dcor/galbarak2/GraphTalk
 # non-think -- fast, ~1 link should suffice (qwen3-1.7b's non-think chain
 # finished its 25-way array comfortably inside one 24h link at this scale)
 sbatch --array=0-24 --exclude=n-801 --mem=24G --time=24:00:00 \
-  --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=prompts.densfull40.jsonl,GRAPHTALK_RUN_TAG=densfull40-inbal,GRAPHTALK_MAX_NEW_TOKENS=8192 \
+  --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=data/prompts/prompts.densfull40.jsonl,GRAPHTALK_RUN_TAG=densfull40-inbal,GRAPHTALK_MAX_NEW_TOKENS=8192 \
   --job-name=q4b-densfull cluster/sweep.sbatch qwen3-4b
 
 # thinking -- much slower (the same design's qwen3-1.7b-think chain needed
 # multiple 24h links), so chain it. Submit link 1, then once it's running
 # add more links depending on the previous one (afterany):
 sbatch --array=0-24 --exclude=n-801 --mem=24G --time=24:00:00 \
-  --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=prompts.densfull40.jsonl,GRAPHTALK_RUN_TAG=densfull40-inbal \
+  --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=data/prompts/prompts.densfull40.jsonl,GRAPHTALK_RUN_TAG=densfull40-inbal \
   --job-name=q4bT-densfull cluster/sweep.sbatch qwen3-4b-think
 
 # capture the job id above as $PREV, then for each additional link:
 sbatch --parsable --dependency=afterany:$PREV --array=0-24 --exclude=n-801 --mem=24G --time=24:00:00 \
-  --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=prompts.densfull40.jsonl,GRAPHTALK_RUN_TAG=densfull40-inbal \
+  --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=data/prompts/prompts.densfull40.jsonl,GRAPHTALK_RUN_TAG=densfull40-inbal \
   --job-name=q4bT-densfull cluster/sweep.sbatch qwen3-4b-think
 ```
 
 Don't override `--max-new-tokens` on the `-think` arm -- it already defaults to
 8192 (`models.THINK_MAX_NEW_TOKENS`), same value.
 
-Output lands at `runs/qwen3-4b.densfull40-inbal.shard<i>of25.jsonl` and
-`runs/qwen3-4b-think.densfull40-inbal.shard<i>of25.jsonl`.
+Output lands at `data/runs/qwen3-4b.densfull40-inbal.shard<i>of25.jsonl` and
+`data/runs/qwen3-4b-think.densfull40-inbal.shard<i>of25.jsonl`.
 `scripts/score_sweep.py`/`score_density_sweep.py` pool by each row's `model`
 field, not by filename, so the `-inbal` tag rejoins the arm automatically --
 nothing to reassemble.

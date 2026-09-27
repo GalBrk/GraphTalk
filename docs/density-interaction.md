@@ -8,10 +8,10 @@ is named. Nothing here is checked by `tests/test_results_docs.py`; the verified
 results are in [`results/n40-sweep.md`](results/n40-sweep.md) and
 [`results/density-followups.md`](results/density-followups.md).
 
-Source: `csv2/raw-trends/density_interaction.txt`, printed by
-`scripts/density_interaction.py` from `csv2/raw-trends/frame.csv`. Reproduce:
+Source: `outputs/n40-sweep/density_interaction.txt`, printed by
+`scripts/density_interaction.py` from `outputs/n40-sweep/frame.csv`. Reproduce:
 
-    PYTHONPATH=. python scripts/density_interaction.py > csv2/raw-trends/density_interaction.txt
+    PYTHONPATH=. python scripts/density_interaction.py > outputs/n40-sweep/density_interaction.txt
 
 Data: the main experiment's runs, Qwen3-1.7B and Qwen3-4B with and without
 thinking (*1.7B*, *1.7B-T*, *4B*, *4B-T*), the four tasks whose answer varies,
@@ -30,7 +30,7 @@ every arm, task and primer at once.
 - §6: plain 1.7B's `edge_existence` collapses to "yes" at high density.
 - `density-followups.md`: `node_degree` at 400 graphs per density, with a
   fixed-mean-degree grid that separates density from graph size.
-- `csv2/raw-trends/primer_cells.csv` holds every (arm, task, density, primer)
+- `outputs/n40-sweep/primer_cells.csv` holds every (arm, task, density, primer)
   effect, but not a test of whether it varies.
 
 ## Method

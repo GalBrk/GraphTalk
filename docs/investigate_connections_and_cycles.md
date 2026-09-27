@@ -5,7 +5,7 @@ models' correct answers rest on the graph or on claims about the graph that are
 false. Research question: when a black-box language model reads a textual
 graph, do explicit structural statistics improve execution of graph queries?
 
-Runs: the 40-node sweep (`runs/qwen3-{1.7b,4b}[-think].densfull40*`), Erdős–Rényi
+Runs: the 40-node sweep (`data/runs/qwen3-{1.7b,4b}[-think].densfull40*`), Erdős–Rényi
 graphs with 40 nodes, p = .10–.50, 100 graphs per density. Also its
 high-density extension, p = .65–.85. Models: Qwen3-1.7B and Qwen3-4B, each
 with thinking off (plain) and on (-T).
@@ -15,10 +15,10 @@ check it. Every number names its source:
 
 | Tag | Source |
 |---|---|
-| **P** `[tag]` | `csv2/raw-trends/primer_findings.txt` (`scripts/primer_findings.py`), or `csv2/raw-trends/primer_cells.csv` |
-| **D** `[tag]` | `csv2/density-followups/density_followups.txt` (`scripts/density_followups.py`) |
-| **C** `[tag]` | `csv2/raw-trends/check_cycle_claims.txt` (`scripts/check_cycle_claims.py`); per-claim rows in `cycle_claims.csv` and `response_claims.csv` |
-| **R** `[tag]` | `csv2/raw-trends/primer_robustness.txt` (`scripts/primer_robustness.py`, see `primer-robustness.md`) |
+| **P** `[tag]` | `outputs/n40-sweep/primer_findings.txt` (`scripts/primer_findings.py`), or `outputs/n40-sweep/primer_cells.csv` |
+| **D** `[tag]` | `outputs/density-followups/density_followups.txt` (`scripts/density_followups.py`) |
+| **C** `[tag]` | `outputs/n40-sweep/check_cycle_claims.txt` (`scripts/check_cycle_claims.py`); per-claim rows in `cycle_claims.csv` and `response_claims.csv` |
+| **R** `[tag]` | `outputs/n40-sweep/primer_robustness.txt` (`scripts/primer_robustness.py`, see `primer-robustness.md`) |
 
 Throughout: an *effect* is the paired change in % correct against no primer on
 the same graphs, in percentage points; *significant* is Benjamini–Hochberg
@@ -918,14 +918,14 @@ reading is tested in `tests/test_response_patterns.py`.
 
 **Reproduce:**
 
-    PYTHONPATH=. python scripts/check_cycle_claims.py --csv-dir csv2/raw-trends \
-        > csv2/raw-trends/check_cycle_claims.txt
+    PYTHONPATH=. python scripts/check_cycle_claims.py --csv-dir outputs/n40-sweep \
+        > outputs/n40-sweep/check_cycle_claims.txt
 
 `scripts/response_patterns.py`, whose `degree_table` and `edge_chain` §6.4
 uses, has its own output (pattern shifts per primer; not cited here):
 
-    PYTHONPATH=. python scripts/response_patterns.py --csv-dir csv2/raw-trends \
-        > csv2/raw-trends/response_patterns.txt
+    PYTHONPATH=. python scripts/response_patterns.py --csv-dir outputs/n40-sweep \
+        > outputs/n40-sweep/response_patterns.txt
 
 ## 8. Open questions
 

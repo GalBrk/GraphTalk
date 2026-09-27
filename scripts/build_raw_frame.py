@@ -1,4 +1,4 @@
-"""Raw `runs/*.jsonl` -> one tidy per-response frame for the 40-node density sweep.
+"""Raw `data/runs/*.jsonl` -> one tidy per-response frame for the 40-node density sweep.
 
 Everything downstream (`scripts/primer_findings.py`) reads this one CSV. Nothing here
 consults an existing analysis CSV or doc -- the point of this frame is to be an
@@ -13,7 +13,7 @@ silently built against the wrong graphs.
 
   PYTHONPATH=. python scripts/build_raw_frame.py
 
-Writes csv2/raw-trends/frame.csv.
+Writes outputs/n40-sweep/frame.csv.
 """
 
 import argparse
@@ -45,7 +45,8 @@ _KEY = re.compile(r"^(.+)/size(\d+)/p([\d.]+)/(\d+)$")
 # hand-validation showed 20/20 of its positives cite the *edge list* ("Node N is
 # connected to ...") and none cite the primer, so it is named for what it measures.
 # Deliberately conservative: each is validated against a
-# hand-labelled sample by `superseded/scripts/raw_trends.py --question markers`, and any marker under
+# hand-labelled sample by `superseded/scripts/raw_trends.py --question markers` (tag
+# `pre-cleanup`), and any marker under
 # 0.9 precision is dropped rather than loosened until it agrees.
 _MARKERS = {
     "uses_degree_sum": re.compile(
@@ -170,7 +171,7 @@ FIELDS = [
 
 def main():
   ap = argparse.ArgumentParser(description=__doc__)
-  ap.add_argument("--out", default="csv2/raw-trends/frame.csv")
+  ap.add_argument("--out", default="outputs/n40-sweep/frame.csv")
   ap.add_argument("--arms", nargs="+", default=list(ARMS))
   args = ap.parse_args()
 
@@ -186,8 +187,8 @@ def main():
 
     for arm in args.arms:
       for tag in TAGS:
-        paths = sorted(glob.glob("runs/%s.%s.shard*.jsonl" % (arm, tag)))
-        paths += sorted(glob.glob("runs/%s.%s.jsonl" % (arm, tag)))
+        paths = sorted(glob.glob("data/runs/%s.%s.shard*.jsonl" % (arm, tag)))
+        paths += sorted(glob.glob("data/runs/%s.%s.jsonl" % (arm, tag)))
         for path in paths:
           for line in open(path, encoding="utf-8"):
             rec = json.loads(line)

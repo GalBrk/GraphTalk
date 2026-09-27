@@ -1,6 +1,6 @@
 # The density follow-ups
 
-Source: `csv2/density-followups/density_followups.txt`
+Source: `outputs/density-followups/density_followups.txt`
 
 Dedicated `node_degree` runs that follow up the 40-node sweep
 ([n40-sweep.md](n40-sweep.md)): Qwen3-1.7B with thinking off (*plain*) and on
@@ -19,11 +19,11 @@ that preceded them. Runs:
 | `degfixdeg` | 1.7B plain, 8B plain | eight (n, p) cells at mean degree 8 and 16 | `none`, `clustering` |
 | `density40` | 1.7B plain | n = 40, six densities; `node_degree` and `connected_nodes` | `none`, `degree` |
 
-Files: `runs/qwen3-1.7b.{degdens40,degceil,degdens40hi,degdensfill,degdensrep,degfixdeg,density40}.shard*.jsonl`,
-`runs/qwen3-1.7b-think.{degdensthink,degdensfillT}.shard*.jsonl`,
-`runs/qwen3-8b.degfixdeg.shard*.jsonl`. Reproduce:
+Files: `data/runs/qwen3-1.7b.{degdens40,degceil,degdens40hi,degdensfill,degdensrep,degfixdeg,density40}.shard*.jsonl`,
+`data/runs/qwen3-1.7b-think.{degdensthink,degdensfillT}.shard*.jsonl`,
+`data/runs/qwen3-8b.degfixdeg.shard*.jsonl`. Reproduce:
 
-    PYTHONPATH=. python scripts/density_followups.py > csv2/density-followups/density_followups.txt
+    PYTHONPATH=. python scripts/density_followups.py > outputs/density-followups/density_followups.txt
 
 The forensics need `statsmodels` (the `analysis` extra). The driver rebuilds
 the graphs and prompts of the plain, thinking and fixed-mean-degree runs with

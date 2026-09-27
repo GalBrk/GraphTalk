@@ -1,14 +1,15 @@
 """Refits the shortcut bars at n=40, per density level.
 
-`shortcuts.json` (from `shortcut_table.py`) is fit and scored on the vendored
-generator's 5-19 node graphs, which the paper's `_long.tex` itself says "do
-not transfer" to the n=40 corpus the models are actually evaluated on -- see
-superseded/docs/paper-revision-handoff.md. This refits the same rung-3 solver (theorem +
+`preliminary/data/shortcuts.json` (from `preliminary/scripts/shortcut_table.py`)
+is fit and scored on the vendored generator's 5-19 node graphs, which do not
+transfer to the n=40 corpus the models are evaluated on. This refits the same
+rung-3 solver (theorem +
 heuristic + fitted rules, disjoint fit/test graph sets) on n=40 ER graphs at
 each density densfull40/densfull40hi actually used, so route-vs-no-route
 classification and any bar-relative Δ can be computed honestly.
 
-  PYTHONPATH=. python scripts/shortcut_table_n40.py --json shortcuts_n40.json
+  PYTHONPATH=. python scripts/shortcut_table_n40.py --json data/shortcuts_n40.json \
+      --flat-json data/shortcuts_n40_flat.json
 """
 
 import argparse
@@ -39,7 +40,7 @@ def main(argv=None):
   parser.add_argument("--graphs", type=int, default=300)
   parser.add_argument("--fit-seed", type=int, default=555_555)
   parser.add_argument("--test-seed", type=int, default=777_777)
-  parser.add_argument("--json", default="shortcuts_n40.json")
+  parser.add_argument("--json", default="data/shortcuts_n40.json")
   parser.add_argument("--json-rung", type=int, default=3, choices=shortcuts.RUNGS)
   parser.add_argument("--flat-json", default=None,
                       help="also write the density-averaged flat table "

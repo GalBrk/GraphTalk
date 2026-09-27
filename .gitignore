@@ -62,13 +62,13 @@ out/
 # default is unchanged. Regenerate them the way scripts/density_followups.py
 # does (its rebuilt() calls build_size_sweep.build once per density) rather
 # than reaching for a copy.
-/prompts.degdensity40.jsonl
-/prompts.degdensity40hi.jsonl
-/prompts.degdensity40think.jsonl
-/prompts.degdensfiller.jsonl
-/prompts.degdensrep.jsonl
-/prompts.degfixdeg.jsonl
-/prompts.degceil.jsonl
+/data/prompts/prompts.degdensity40.jsonl
+/data/prompts/prompts.degdensity40hi.jsonl
+/data/prompts/prompts.degdensity40think.jsonl
+/data/prompts/prompts.degdensfiller.jsonl
+/data/prompts/prompts.degdensrep.jsonl
+/data/prompts/prompts.degfixdeg.jsonl
+/data/prompts/prompts.degceil.jsonl
 
 # The retrieval probe prompt set (34 MB), regenerable exactly by
 # `scripts/build_retrieval_probe.py` with the command in its run writeup. Larger
@@ -110,3 +110,6 @@ paper/*.out
 # every clone is the worst of both. Delete the directory once you stop
 # reaching for it.
 archive/
+
+# primer_flips.py output (16 MB), regenerable from the committed frame and runs.
+/outputs/n40-sweep/primer_flips.csv
