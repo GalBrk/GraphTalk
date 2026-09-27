@@ -24,11 +24,7 @@ it appears; otherwise on the last cycle it does not reject (invented, or not a
 cycle); otherwise on none, where an edge-count argument ("more than n - 1
 edges") is counted.
 
-The same reading runs on the thinking traces (the text before </think>), and on
-the cycle_check clean-condition runs (runs/qwen3-0.6b[-think].cc500*: 500
-published graphs of 5-19 nodes, 84 of them acyclic), where a cycle named on an
-acyclic graph is necessarily invented and the answer that rests on it is wrong.
-The pilot's published split has 2 acyclic graphs of 30, too few to use.
+The same reading runs on the thinking traces (the text before </think>).
 
 The other tasks of the main sweep, finished responses. "Node x is connected to
 (nodes) a, b, c" -- or "node x's neighbours are ..." -- states those edges; the
@@ -90,9 +86,6 @@ the primers within each arm, as in primer_findings.
   [ccdensity]  per arm: % asserting an invented cycle, by density
   [ccthink]    thinking traces of the correct answers: % naming a real cycle /
                asserting an invented one / rejecting an invented one; tested
-  [ccacyclic]  cc500: on acyclic graphs, the wrong "yes" answers by what they
-               rest on; on cyclic graphs, correct answers resting on a real
-               cycle; wrong "yes" on acyclic graphs tested
   [eeclaims]   edge_existence: fabricated and dropped queried edges, and how
                many false alarms / misses they account for; tested
   [ndlist]     node_degree: stated lists and why the wrong answers are wrong;
@@ -154,13 +147,10 @@ import response_patterns as rp  # noqa: E402  (edge_chain: the [rpchain] reading
 
 PROMPTS = "prompts.densfull40.jsonl"
 PROMPTS_HI = "prompts.densfull40hi.jsonl"
-CC500 = "prompts.cyclecheck500.clean.jsonl"
-CC500_ARMS = ["qwen3-0.6b", "qwen3-0.6b-think"]
 THINK = [a for a in pf.ARMS if a.endswith("-think")]
 SHORT = {"qwen3-1.7b": "1.7B", "qwen3-1.7b-think": "1.7B-T", "qwen3-4b": "4B",
-         "qwen3-4b-think": "4B-T", "qwen3-0.6b": "0.6B", "qwen3-0.6b-think": "0.6B-T"}
+         "qwen3-4b-think": "4B-T"}
 CONDS = ["none", "filler"] + pf.PRIMERS
-CC500_CONDS = ["none", "components", "clustering", "rwse"]
 DENS = ["p0.1", "p0.2", "p0.35", "p0.5"]
 HI = ["0.65", "0.75", "0.85"]
 CHAIN = ["right", "values", "nodes", "sum", "halving", "answer", "no table", "unparsed", "cut"]
@@ -709,29 +699,7 @@ def main():
           if pred == "39":
             samples["nc39"].append((arm, cond, iid, listing, answer_part(text)))
 
-  # cc500: the published graphs, some acyclic.
-  cg, cc = graphs(CC500), []
-  for arm in CC500_ARMS:
-    for path in sorted(glob.glob(f"runs/{arm}.cc500.shard*.jsonl")):
-      for line in open(path, encoding="utf-8"):
-        r = json.loads(line)
-        iid, cond, text = r["instance_id"], r["condition"], r["response"] or ""
-        es, nb, lines, _, gold, n = cg[iid]
-        if r["hit_cap"]:
-          continue
-        pred = scoring.extract_answer(text, "cycle_check")
-        correct = scoring.score_one(pred, gold, "cycle_check")["exact"] == 1
-        acyclic = not gold.strip().lower().startswith("yes")
-        rests, info, edgearg = read(answer_part(text), es)
-        assert not (acyclic and rests == "real"), (arm, iid, cond)
-        cc.append(dict(arm=arm, condition=cond, instance_id=iid, acyclic=acyclic, correct=correct,
-                       said_yes=pred is not None and pred.strip().lower().startswith("yes"), rests=rests,
-                       asserted=any(x["verdict"] == "invented" and not x["rejected"] for x in info)))
-        claim_log(dict(arm=arm, condition=cond, instance_id=iid, density="", source="cc500",
-                       rests_on=rests, edge_count_argument=int(rests == "none" and edgearg),
-                       rejected_real=0, n_named=len(info)), info, es, nb, n, "answer")
-
-  cyc, trace, ee, nd, cn, ec, nc, cc = map(pd.DataFrame, (cyc, trace, ee, nd, cn, ec, nc, cc))
+  cyc, trace, ee, nd, cn, ec, nc = map(pd.DataFrame, (cyc, trace, ee, nd, cn, ec, nc))
   ccall, cninv, cnmiss = map(pd.DataFrame, (ccall, cninv, cnmiss))
   cell = lambda d, arm, c: d[(d.arm == arm) & (d.condition == c)]
   main_part, high_part = (lambda d: d[~d.density.isin(HI)]), (lambda d: d[d.density.isin(HI)])
@@ -777,18 +745,6 @@ def main():
       print(f"  {SHORT[arm]:6s} {c:10s} n={len(x):3d}  {pc(x.named)} / {pc(x.real)} / {pc(x.asserted)} / "
             f"{pc(x.caught)}")
   print_paired("trace asserts an invented cycle", paired(trace, "asserted", CONDS, THINK))
-
-  print("[ccacyclic] cc500, finished answers. Acyclic graphs: n, % answering yes (wrong); of those, % resting "
-        "on an invented cycle / not a cycle / none named. Cyclic graphs: n correct, % resting on a real cycle")
-  for arm in CC500_ARMS:
-    for c in CC500_CONDS:
-      x = cell(cc, arm, c)
-      a, y = x[x.acyclic], x[~x.acyclic & x.correct]
-      wy = a[a.said_yes]
-      print(f"  {SHORT[arm]:6s} {c:10s} acyclic n={len(a):3d} yes {pc(a.said_yes)}; of those {pc(wy.rests == 'invented')} / "
-            f"{pc(wy.rests == 'not a cycle')} / {pc(wy.rests == 'none')} | cyclic correct n={len(y):3d} "
-            f"real {pc(y.rests == 'real')}")
-  print_paired("answers yes on an acyclic graph", paired(cc[cc.acyclic], "said_yes", CC500_CONDS, CC500_ARMS))
 
   def ee_block(d):
     for arm in pf.ARMS:
