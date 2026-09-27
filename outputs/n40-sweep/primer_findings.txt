@@ -675,6 +675,103 @@
     BA rwse       vs filler -1.1 [-2.4, -0.2] p=0.096 q=0.43
     BA degree     vs filler +0.0 [-0.5, +0.5] p=1 q=1
     BA all        vs filler -0.7 [-1.5, +0.0] p=0.22 q=0.43
+[vsthink] main sweep (p<=.50), per model and task: correct share of the plain arm under each condition against the thinking arm without a primer, same graphs: plain -> thinking none, difference (thinking minus plain) [95% CI], exact McNemar p, BH q over the seven conditions; share of the plain-to-thinking gap the condition closes; truncated share plain / thinking
+  qwen3-1.7b node_degree: plain none 60.50, thinking none 76.25, gap +15.8
+    none       60.50 -> 76.25: +15.8 [+11.0, +20.5] p=1.4e-09 q=5e-09 n=400 | closes 0% | truncated 0.0 / 0.8
+    filler     60.00 -> 76.25: +16.2 [+11.5, +21.0] p=5.7e-10 q=4e-09 n=400 | closes -3% | truncated 0.0 / 0.8
+    components 62.25 -> 76.25: +14.0 [+8.8, +19.5] p=5.1e-07 q=1.2e-06 n=400 | closes 11% | truncated 0.0 / 0.8
+    clustering 63.50 -> 76.25: +12.8 [+8.0, +17.5] p=8.4e-07 q=1.5e-06 n=400 | closes 19% | truncated 0.0 / 0.8
+    rwse       64.50 -> 76.25: +11.8 [+6.5, +16.5] p=2.3e-05 q=3.2e-05 n=400 | closes 25% | truncated 0.2 / 0.8
+    degree     68.00 -> 76.25: +8.2 [+3.5, +12.8] p=0.00092 q=0.0011 n=400 | closes 48% | truncated 0.0 / 0.8
+    all        70.75 -> 76.25: +5.5 [+0.5, +10.3] p=0.043 q=0.043 n=400 | closes 65% | truncated 0.0 / 0.8
+  qwen3-1.7b connected_nodes: plain none 72.50, thinking none 78.75, gap +6.2
+    none       72.50 -> 78.75: +6.2 [+2.8, +9.8] p=0.001 q=0.0036 n=400 | closes 0% | truncated 0.0 / 1.2
+    filler     66.25 -> 78.75: +12.5 [+8.0, +17.0] p=1.6e-07 q=1.1e-06 n=400 | closes -100% | truncated 0.0 / 1.2
+    components 73.25 -> 78.75: +5.5 [+1.5, +9.8] p=0.014 q=0.033 n=400 | closes 12% | truncated 0.0 / 1.2
+    clustering 73.75 -> 78.75: +5.0 [+1.0, +9.2] p=0.029 q=0.041 n=400 | closes 20% | truncated 0.0 / 1.2
+    rwse       73.50 -> 78.75: +5.2 [+1.0, +9.8] p=0.029 q=0.041 n=400 | closes 16% | truncated 0.0 / 1.2
+    degree     76.00 -> 78.75: +2.8 [-1.0, +6.8] p=0.24 q=0.24 n=400 | closes 56% | truncated 0.0 / 1.2
+    all        74.50 -> 78.75: +4.2 [-0.2, +8.8] p=0.097 q=0.11 n=400 | closes 32% | truncated 0.2 / 1.2
+  qwen3-1.7b edge_count: plain none 1.25, thinking none 15.75, gap +14.5
+    none       1.25 -> 15.75: +14.5 [+11.2, +17.8] p=7.7e-14 q=1.1e-13 n=400 | closes 0% | truncated 29.8 / 81.8
+    filler     0.75 -> 15.75: +15.0 [+11.8, +18.2] p=1.3e-15 q=2.3e-15 n=400 | closes -3% | truncated 26.2 / 81.8
+    components 0.25 -> 15.75: +15.5 [+12.2, +18.5] p=7e-18 q=4.9e-17 n=400 | closes -7% | truncated 27.3 / 81.8
+    clustering 0.75 -> 15.75: +15.0 [+12.0, +18.0] p=1.3e-15 q=2.3e-15 n=400 | closes -3% | truncated 18.0 / 81.8
+    rwse       0.50 -> 15.75: +15.2 [+12.2, +18.5] p=1.2e-16 q=4.1e-16 n=400 | closes -5% | truncated 18.0 / 81.8
+    degree     4.25 -> 15.75: +11.5 [+8.0, +15.0] p=6.2e-08 q=6.2e-08 n=400 | closes 21% | truncated 9.5 / 81.8
+    all        2.00 -> 15.75: +13.8 [+10.5, +17.0] p=1e-11 q=1.2e-11 n=400 | closes 5% | truncated 28.0 / 81.8
+  qwen3-1.7b edge_existence: plain none 70.50, thinking none 99.00, gap +28.5
+    none       70.50 -> 99.00: +28.5 [+24.0, +33.0] p=4.2e-32 q=9.9e-32 n=400 | closes 0% | truncated 0.0 / 0.2
+    filler     54.75 -> 99.00: +44.2 [+39.8, +49.0] p=1.1e-50 q=7.5e-50 n=400 | closes -55% | truncated 0.0 / 0.2
+    components 62.25 -> 99.00: +36.8 [+32.0, +41.5] p=8e-42 q=2.8e-41 n=400 | closes -29% | truncated 0.0 / 0.2
+    clustering 74.25 -> 99.00: +24.8 [+20.2, +29.0] p=9.5e-27 q=1.7e-26 n=400 | closes 13% | truncated 0.0 / 0.2
+    rwse       75.50 -> 99.00: +23.5 [+19.5, +27.8] p=2.6e-25 q=3.1e-25 n=400 | closes 18% | truncated 0.2 / 0.2
+    degree     74.50 -> 99.00: +24.5 [+20.0, +29.0] p=1.8e-26 q=2.6e-26 n=400 | closes 14% | truncated 0.0 / 0.2
+    all        82.00 -> 99.00: +17.0 [+13.2, +21.2] p=3.6e-17 q=3.6e-17 n=400 | closes 40% | truncated 0.0 / 0.2
+  qwen3-1.7b node_count: plain none 31.50, thinking none 91.00, gap +59.5
+    none       31.50 -> 91.00: +59.5 [+56.0, +63.0] p=6.1e-57 q=4.3e-56 n=400 | closes 0% | truncated 0.0 / 7.8
+    filler     71.25 -> 91.00: +19.8 [+15.8, +23.5] p=4.2e-11 q=5.8e-11 n=400 | closes 67% | truncated 0.0 / 7.8
+    components 52.75 -> 91.00: +38.2 [+33.2, +43.0] p=1.2e-29 q=2.1e-29 n=400 | closes 36% | truncated 0.0 / 7.8
+    clustering 98.75 -> 91.00: -7.8 [-10.5, -5.0] p=7.8e-07 q=9.1e-07 n=400 | closes 113% | truncated 0.0 / 7.8
+    rwse       33.50 -> 91.00: +57.5 [+52.2, +62.8] p=4.3e-54 q=1.5e-53 n=400 | closes 3% | truncated 0.0 / 7.8
+    degree     38.25 -> 91.00: +52.8 [+48.8, +56.5] p=1.2e-45 q=2.7e-45 n=400 | closes 11% | truncated 0.0 / 7.8
+    all        78.50 -> 91.00: +12.5 [+8.0, +17.2] p=5.7e-06 q=5.7e-06 n=400 | closes 79% | truncated 0.0 / 7.8
+  qwen3-1.7b cycle_check: plain none 90.75, thinking none 97.00, gap +6.2
+    none       90.75 -> 97.00: +6.2 [+3.0, +9.5] p=0.00047 q=0.0011 n=400 | closes 0% | truncated 9.0 / 3.0
+    filler     93.75 -> 97.00: +3.2 [+0.5, +6.0] p=0.041 q=0.048 n=400 | closes 48% | truncated 6.2 / 3.0
+    components 92.75 -> 97.00: +4.2 [+1.5, +7.5] p=0.012 q=0.02 n=400 | closes 32% | truncated 6.5 / 3.0
+    clustering 99.25 -> 97.00: -2.2 [-4.2, -0.5] p=0.035 q=0.048 n=400 | closes 136% | truncated 0.8 / 3.0
+    rwse       90.50 -> 97.00: +6.5 [+3.5, +9.8] p=0.00016 q=0.00055 n=400 | closes -4% | truncated 1.8 / 3.0
+    degree     73.25 -> 97.00: +23.8 [+19.5, +28.2] p=9.8e-23 q=6.9e-22 n=400 | closes -280% | truncated 17.2 / 3.0
+    all        97.75 -> 97.00: -0.8 [-3.0, +1.5] p=0.66 q=0.66 n=400 | closes 112% | truncated 1.0 / 3.0
+  qwen3-4b node_degree: plain none 99.25, thinking none 97.00, gap -2.2
+    none       99.25 -> 97.00: -2.2 [-4.2, -0.5] p=0.035 q=0.062 n=400 | closes - | truncated 0.0 / 2.8
+    filler     98.75 -> 97.00: -1.8 [-3.8, +0.2] p=0.14 q=0.17 n=400 | closes - | truncated 0.0 / 2.8
+    components 99.50 -> 97.00: -2.5 [-4.2, -0.8] p=0.013 q=0.03 n=400 | closes - | truncated 0.0 / 2.8
+    clustering 98.75 -> 97.00: -1.8 [-3.8, +0.2] p=0.14 q=0.17 n=400 | closes - | truncated 0.0 / 2.8
+    rwse       97.00 -> 97.00: +0.0 [-2.2, +2.2] p=1 q=1 n=400 | closes - | truncated 0.0 / 2.8
+    degree     92.75 -> 97.00: +4.2 [+1.2, +7.2] p=0.0095 q=0.03 n=400 | closes - | truncated 0.0 / 2.8
+    all        91.25 -> 97.00: +5.8 [+2.8, +9.0] p=0.00061 q=0.0042 n=400 | closes - | truncated 0.0 / 2.8
+  qwen3-4b connected_nodes: plain none 86.00, thinking none 95.50, gap +9.5
+    none       86.00 -> 95.50: +9.5 [+5.5, +13.8] p=1.1e-05 q=1.6e-05 n=400 | closes 0% | truncated 0.0 / 3.2
+    filler     73.50 -> 95.50: +22.0 [+17.5, +27.0] p=4.8e-18 q=3.3e-17 n=400 | closes -132% | truncated 0.0 / 3.2
+    components 95.25 -> 95.50: +0.2 [-2.5, +3.0] p=1 q=1 n=400 | closes 97% | truncated 0.0 / 3.2
+    clustering 87.00 -> 95.50: +8.5 [+4.8, +12.2] p=2.4e-05 q=2.8e-05 n=400 | closes 11% | truncated 0.0 / 3.2
+    rwse       86.00 -> 95.50: +9.5 [+5.8, +13.5] p=1.9e-06 q=3.3e-06 n=400 | closes 0% | truncated 0.0 / 3.2
+    degree     83.00 -> 95.50: +12.5 [+8.8, +16.5] p=5e-09 q=1.2e-08 n=400 | closes -32% | truncated 0.0 / 3.2
+    all        83.25 -> 95.50: +12.2 [+8.2, +16.2] p=2.6e-09 q=9.2e-09 n=400 | closes -29% | truncated 0.0 / 3.2
+  qwen3-4b edge_count: plain none 2.00, thinking none 20.00, gap +18.0
+    none       2.00 -> 20.00: +18.0 [+14.2, +21.8] p=2.8e-18 q=4.8e-18 n=400 | closes 0% | truncated 0.0 / 79.5
+    filler     3.25 -> 20.00: +16.8 [+13.0, +20.8] p=3.2e-15 q=4.4e-15 n=400 | closes 7% | truncated 0.0 / 79.5
+    components 0.75 -> 20.00: +19.2 [+15.5, +22.8] p=2e-20 q=4.6e-20 n=400 | closes -7% | truncated 0.8 / 79.5
+    clustering 0.75 -> 20.00: +19.2 [+15.8, +22.8] p=2.6e-22 q=9.3e-22 n=400 | closes -7% | truncated 0.2 / 79.5
+    rwse       0.50 -> 20.00: +19.5 [+16.0, +23.2] p=1.3e-22 q=9.3e-22 n=400 | closes -8% | truncated 0.5 / 79.5
+    degree     29.25 -> 20.00: -9.2 [-14.5, -4.0] p=0.002 q=0.002 n=400 | closes 151% | truncated 1.8 / 79.5
+    all        5.75 -> 20.00: +14.2 [+10.2, +18.5] p=3e-09 q=3.5e-09 n=400 | closes 21% | truncated 0.8 / 79.5
+  qwen3-4b edge_existence: plain none 90.50, thinking none 99.75, gap +9.2
+    none       90.50 -> 99.75: +9.2 [+6.5, +12.2] p=1.5e-10 q=1.7e-10 n=400 | closes 0% | truncated 0.0 / 0.2
+    filler     83.50 -> 99.75: +16.2 [+12.8, +20.0] p=9.2e-19 q=2.2e-18 n=400 | closes -76% | truncated 0.0 / 0.2
+    components 87.75 -> 99.75: +12.0 [+9.0, +15.0] p=9.1e-14 q=1.3e-13 n=400 | closes -30% | truncated 0.0 / 0.2
+    clustering 94.50 -> 99.75: +5.2 [+3.0, +7.5] p=5.7e-06 q=5.7e-06 n=400 | closes 43% | truncated 0.0 / 0.2
+    rwse       80.50 -> 99.75: +19.2 [+15.5, +23.0] p=2.6e-22 q=9.3e-22 n=400 | closes -108% | truncated 0.0 / 0.2
+    degree     85.75 -> 99.75: +14.0 [+10.5, +17.5] p=4.1e-16 q=7.2e-16 n=400 | closes -51% | truncated 0.5 / 0.2
+    all        80.50 -> 99.75: +19.2 [+15.8, +23.2] p=2.6e-22 q=9.3e-22 n=400 | closes -108% | truncated 0.2 / 0.2
+  qwen3-4b node_count: plain none 90.25, thinking none 99.50, gap +9.2
+    none       90.25 -> 99.50: +9.2 [+6.8, +11.8] p=1.5e-11 q=1e-10 n=400 | closes 0% | truncated 0.0 / 0.0
+    filler     99.50 -> 99.50: +0.0 [+0.0, +0.0] p=1 q=1 n=400 | closes 100% | truncated 0.0 / 0.0
+    components 99.25 -> 99.50: +0.2 [-0.5, +1.0] p=1 q=1 n=400 | closes 97% | truncated 0.0 / 0.0
+    clustering 99.00 -> 99.50: +0.5 [-0.5, +1.8] p=0.69 q=1 n=400 | closes 95% | truncated 0.0 / 0.0
+    rwse       99.50 -> 99.50: +0.0 [-1.0, +1.0] p=1 q=1 n=400 | closes 100% | truncated 0.0 / 0.0
+    degree     98.25 -> 99.50: +1.2 [+0.0, +2.5] p=0.12 q=0.44 n=400 | closes 86% | truncated 0.0 / 0.0
+    all        100.00 -> 99.50: -0.5 [-1.2, +0.0] p=0.5 q=1 n=400 | closes 105% | truncated 0.0 / 0.0
+  qwen3-4b cycle_check: plain none 99.00, thinking none 99.25, gap +0.2
+    none       99.00 -> 99.25: +0.2 [-1.0, +1.5] p=1 q=1 n=400 | closes 0% | truncated 0.8 / 0.8
+    filler     98.50 -> 99.25: +0.8 [-0.8, +2.2] p=0.51 q=1 n=400 | closes -200% | truncated 1.2 / 0.8
+    components 97.00 -> 99.25: +2.2 [+0.5, +4.0] p=0.022 q=0.079 n=400 | closes -800% | truncated 1.5 / 0.8
+    clustering 99.50 -> 99.25: -0.2 [-1.5, +0.8] p=1 q=1 n=400 | closes 200% | truncated 0.5 / 0.8
+    rwse       98.75 -> 99.25: +0.5 [-1.0, +2.0] p=0.73 q=1 n=400 | closes -100% | truncated 1.2 / 0.8
+    degree     96.75 -> 99.25: +2.5 [+0.5, +4.5] p=0.021 q=0.079 n=400 | closes -900% | truncated 1.5 / 0.8
+    all        98.75 -> 99.25: +0.5 [-1.0, +2.0] p=0.73 q=1 n=400 | closes -100% | truncated 0.5 / 0.8
 [joint] degree and neighbours of the same node, p<=.50: J both correct, C consistent, C-J consistent but not both correct (J is inside C), % of items; then J against none, with BH q over the six primers
   qwen3-1.7b        none J 54.00 C 62.25 C-J 8.25, filler J 52.00 C 62.50 C-J 10.50, components J 54.50 C 63.25 C-J 8.75, clustering J 58.00 C 67.00 C-J 9.00, rwse J 58.25 C 63.25 C-J 5.00, degree J 62.50 C 73.00 C-J 10.50, all J 61.75 C 68.00 C-J 6.25
     J filler     -2.0 [-5.5, +1.8] broke 34 fixed 26 p=0.37 n=400 q=0.44

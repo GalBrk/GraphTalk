@@ -55,6 +55,17 @@
   rests on a false explanation (invented cycle or not a cycle): % plain -> % thinking (change, * BH q < .05 over the conditions), pairs
     1.7B   none 59.0->17.7 (-41.3*, n=351) | filler 65.1->22.4 (-42.7*, n=375) | components 65.7->22.6 (-43.1*, n=332) | clustering 56.1->19.3 (-36.8*, n=383) | rwse 60.2->30.9 (-29.2*, n=359) | degree 22.0->29.1 (+7.0, n=227) | all 58.0->25.3 (-32.7*, n=376)
     4B     none 30.0->3.3 (-26.7*, n=393) | filler 33.6->5.6 (-28.0*, n=393) | components 22.3->4.6 (-17.7*, n=372) | clustering 32.2->4.6 (-27.6*, n=395) | rwse 59.3->44.8 (-14.5*, n=393) | degree 6.0->5.2 (-0.8, n=365) | all 40.3->6.2 (-34.1*, n=390)
+[ccvalid] cycle_check: correct answers resting on a valid argument (a real cycle, or the edge-count argument): % of correct finished answers (as [ccanswer]) and % of all prompts (wrong and truncated count as not valid); exact McNemar over all prompts on the same graphs, BH q over the conditions
+  1.7B plain | thinking without a primer: % of correct 80.4, % of all prompts 78.0
+    against the plain arm without a primer: condition % of correct / % of all prompts (reference % of all prompts, * BH q < .05), pairs
+      none 37.7 / 34.2 (ref 34.2, n=400) | filler 33.3 / 31.2 (ref 34.2, n=400) | components 32.1 / 29.8 (ref 34.2, n=400) | clustering 40.6 / 40.2 (ref 34.2, n=400) | rwse 35.4 / 32.0 (ref 34.2, n=400) | degree 68.6 / 50.2 (ref 34.2*, n=400) | all 39.6 / 38.8 (ref 34.2, n=400)
+    against the thinking arm without a primer: condition % of correct / % of all prompts (reference % of all prompts, * BH q < .05), pairs
+      none 37.7 / 34.2 (ref 78.0*, n=400) | filler 33.3 / 31.2 (ref 78.0*, n=400) | components 32.1 / 29.8 (ref 78.0*, n=400) | clustering 40.6 / 40.2 (ref 78.0*, n=400) | rwse 35.4 / 32.0 (ref 78.0*, n=400) | degree 68.6 / 50.2 (ref 78.0*, n=400) | all 39.6 / 38.8 (ref 78.0*, n=400)
+  4B plain | thinking without a primer: % of correct 96.5, % of all prompts 95.8
+    against the plain arm without a primer: condition % of correct / % of all prompts (reference % of all prompts, * BH q < .05), pairs
+      none 59.1 / 58.5 (ref 58.5, n=400) | filler 46.4 / 45.8 (ref 58.5*, n=400) | components 65.7 / 63.7 (ref 58.5, n=400) | clustering 54.5 / 54.2 (ref 58.5, n=400) | rwse 33.7 / 33.2 (ref 58.5*, n=400) | degree 79.1 / 76.5 (ref 58.5*, n=400) | all 45.8 / 45.2 (ref 58.5*, n=400)
+    against the thinking arm without a primer: condition % of correct / % of all prompts (reference % of all prompts, * BH q < .05), pairs
+      none 59.1 / 58.5 (ref 95.8*, n=400) | filler 46.4 / 45.8 (ref 95.8*, n=400) | components 65.7 / 63.7 (ref 95.8*, n=400) | clustering 54.5 / 54.2 (ref 95.8*, n=400) | rwse 33.7 / 33.2 (ref 95.8*, n=400) | degree 79.1 / 76.5 (ref 95.8*, n=400) | all 45.8 / 45.2 (ref 95.8*, n=400)
 [ccwhere] asserted invented cycles, all primers: invented steps; % of closing steps invented / % of inner steps invented; fake neighbour in the line of node a-1 or a+1, % (chance %); one off a real neighbour's id, % (chance %)
   1.7B    5398 steps; closing  56.6 / inner  21.6; adjacent line  38.1 (41.8); off by one  32.4 (44.8)
   1.7B-T  2838 steps; closing  56.8 / inner  16.1; adjacent line  38.9 (44.1); off by one  35.8 (48.6)

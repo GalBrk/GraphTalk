@@ -1358,6 +1358,39 @@ def figure_data(f, bars, out):
         "node_degree_routes.csv to", out)
 
 
+def vs_think(f):
+  """Each plain-arm condition against the same model's thinking arm without a primer, on
+  the same graphs: how much of what thinking adds a primer gives the plain mode."""
+  tasks = ["node_degree", "connected_nodes", "edge_count", "edge_existence", "node_count",
+           "cycle_check"]
+  print("[vsthink] main sweep (p<=.50), per model and task: correct share of the plain arm under "
+        "each condition against the thinking arm without a primer, same graphs: plain -> thinking "
+        "none, difference (thinking minus plain) [95% CI], exact McNemar p, BH q over the seven conditions; share of the "
+        "plain-to-thinking gap the condition closes; truncated share plain / thinking")
+  key = ["density_class", "graph_id"]
+  for plain in ("qwen3-1.7b", "qwen3-4b"):
+    for task in tasks:
+      d = f[(f.task == task) & f.density_class.isin(DENS4)]
+      think = d[(d.arm == plain + "-think") & (d.condition == "none")].set_index(key)
+      base = d[(d.arm == plain) & (d.condition == "none")].set_index(key)
+      gap = 100 * (think.correct.mean() - base.correct.mean())
+      rows = []
+      for c in ["none", "filler"] + PRIMERS:
+        x = d[(d.arm == plain) & (d.condition == c)].set_index(key)
+        j = x.join(think, lsuffix="_a", rsuffix="_b", how="inner")
+        rows.append((c, j, effect(j)))
+      q = bh([e[5] for _, _, e in rows])
+      print(f"  {plain} {task}: plain none {100 * base.correct.mean():.2f}, thinking none "
+            f"{100 * think.correct.mean():.2f}, gap {f1(gap)}")
+      for (c, j, e), qq in zip(rows, q):
+        d_, lo, hi, _, _, p, n, _ = e
+        closes = (f"{(100 * j.correct_a.mean() - 100 * base.correct.mean()) / gap:.0%}"
+                  if gap > 0 else "-")
+        print(f"    {c:10s} {100 * j.correct_a.mean():.2f} -> {100 * j.correct_b.mean():.2f}: "
+              f"{f1(d_)} [{f1(lo)}, {f1(hi)}] p={p:.2g} q={qq:.2g} n={n} | closes {closes} | "
+              f"truncated {100 * j.truncated_a.mean():.1f} / {100 * j.truncated_b.mean():.1f}")
+
+
 def main():
   ap = argparse.ArgumentParser(description=__doc__)
   ap.add_argument("--frame", default=FRAME)
@@ -1384,6 +1417,7 @@ def main():
   edge_count(f)
   edge_existence(f)
   edge_existence_main(f)
+  vs_think(f)
   joint(f)
   clustering_high(f)
   clustering_arms(f)
