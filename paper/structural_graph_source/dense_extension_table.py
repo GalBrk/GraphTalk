@@ -76,7 +76,7 @@ def latex(frame):
     lines += [r"\end{minipage}\hfill\begin{minipage}[t]{.48\textwidth}", r"\centering"]
     lines += edge_decisions(frame, ARMS[2:])
     lines += [r"\end{minipage}",
-              r"\caption{Complete dense-extension comparison at $p\in\{.65,.75,.85\}$ for degree and edge existence. (a,b) No-primer correct/truncated share (percent of all $300$ prompts), followed by paired primer changes (points); wrong share is the remainder. (c) Edge raw accuracy (Raw) and balanced accuracy (Bal.) include truncations as noncorrect; yes-rate (Yes) uses finished answers. Per-level values are not tested here; the pooled dense contrasts cited in the text are. The plain models' budget here is $2{,}048$ tokens. P/T: plain/thinking.} % [dense-frame]",
+              r"\caption{Complete dense-extension comparison at $p\in\{.65,.75,.85\}$ for degree and edge existence. (a,b) No-primer correct/truncated share (percent of all $300$ prompts), followed by paired primer changes (points); wrong share is the remainder. (c) Edge raw accuracy (Raw) and balanced accuracy (Bal.) include truncations as noncorrect; yes-rate (Yes) uses finished answers. Values pool the three levels; the contrasts cited in the text are tested, and the other cells are descriptive. The plain models' budget here is $2{,}048$ tokens. P/T: plain/thinking.} % [dense-frame]",
               r"\label{tab:densematrix}", r"\end{table*}"]
     return "\n".join(lines) + "\n"
 

@@ -95,7 +95,7 @@ def latex(frame, report):
     lines += [
         r"\bottomrule",
         r"\end{tabular}",
-        r"\caption{Main-sweep correct shares: no-primer baseline (\% of all prompts) and paired change (points) on the same $40$-node graphs, $p\leq.50$. Bold: $q<.05$ within (model, task, control); $^{\dagger}$: at least $15\%$ truncation on either side; shaded: the primer states the answer. Neighbor sets: exact set match (set-F1 in Table~\ref{tab:primarymetrics}(a)); edge existence: raw correctness (balanced accuracy in Table~\ref{tab:primarymetrics}(b)). Node count and cycle check have a constant answer at $40$ nodes; truncation shares are in Table~\ref{tab:truncmatrix}. P/T: plain/thinking.} % [setup] [main] [bars]",
+        r"\caption{Main-sweep correct shares: no-primer baseline (\% of all prompts) and paired change (points) on the same graphs at four densities ($p\leq.50$). Bold: $q<.05$ within (model, task, control); $^{\dagger}$: at least $15\%$ truncation on either side; shaded: the primer states the answer. Neighbor sets: exact set match (set-F1 in Table~\ref{tab:primarymetrics}(a)); edge existence: raw correctness (balanced accuracy in Table~\ref{tab:primarymetrics}(b)). Node count and cycle check have a constant answer at $40$ nodes; truncation shares are in Table~\ref{tab:truncmatrix}. P/T: plain/thinking.} % [setup] [main] [bars]",
         r"\label{tab:matrix}",
         r"\end{table*}",
     ]
