@@ -270,5 +270,4 @@ From the plain runs at the default seed, with the fresh seed held out.
 - One model family. The density runs use Qwen3-1.7B only; Qwen3-8B is run only
   at fixed mean degree, where it is near ceiling in five of the eight cells.
 - The per-level effects are many tests; read them by their q-values.
-- `prompts.degfixdegfill*.jsonl` (the fixed-mean-degree graphs with `filler`
-  and `degree`) were built but never run.
+- The fixed-mean-degree graphs were not run with `filler` or `degree`.

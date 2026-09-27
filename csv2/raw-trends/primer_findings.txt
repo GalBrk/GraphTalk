@@ -786,4 +786,18 @@
 [plaincite] qwen3-1.7b items degree fixes at p=.20/.35: 39; citing the stated degree or reporting a discrepancy: 0
 [extract] parsed 99.84% of 84000; unparsed 133, of which truncated 132, cycle_check 128; terminated 78538, unparsed among them 1
 [extract] high-density extension: largest truncation rate 2.5% (qwen3-1.7b-think node_degree)
+[lcopy] copy test: plain qwen3-4b, node_degree under degree, finished wrong answers equal to the degree stated for node k-1 or k+1
+  main sweep, p<=.50: 12 of 29; background 19.4%; one-sided binomial p=0.0055
+  all seven densities: 27 of 136; background 13.1%; one-sided binomial p=0.018
+[lmde] null comparisons against none (400 paired graphs each, under the truncation flag): per arm, null comparisons, share where a gain or a harm cannot be detected (floor or ceiling), median detectable gain (points) where a gain can be
+  qwen3-1.7b        16 of 29 null; floor or ceiling 0/16; median detectable gain 6.2
+  qwen3-1.7b-think  17 of 29 null; floor or ceiling 8/17; median detectable gain 5.5
+  qwen3-4b          18 of 36 null; floor or ceiling 11/18; median detectable gain 3.7
+  qwen3-4b-think    28 of 30 null; floor or ceiling 18/28; median detectable gain 3.2
+  qwen3-1.7b arms pooled: median detectable gain 5.7 over 25 cells
+  qwen3-4b arms pooled: median detectable gain 3.2 over 20 cells
+[lcross] cross-fitted baseline vs effect on route cells (node_degree/rwse, node_degree/degree, node_degree/all, edge_count/clustering, edge_count/degree, edge_count/all), cells under the truncation flag: points, r, p, slope (points per unit baseline)
+  node_degree 168 points, r=-0.248 (p=0.0012), slope -9.0
+  edge_count  30 points, r=-0.142 (p=0.45), slope -80.6
+  pooled      198 points, r=-0.275 (p=8.7e-05), slope -8.5
 wrote primer_cells.csv, edge_existence_collapse.csv and node_degree_routes.csv to csv2/raw-trends

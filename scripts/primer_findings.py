@@ -31,7 +31,7 @@ import sys
 
 import numpy as np
 import pandas as pd
-from scipy.stats import binomtest
+from scipy.stats import binomtest, pearsonr
 
 from graphtalk import outcomes, scoring
 
@@ -44,9 +44,13 @@ BARS = "shortcuts_n40_flat.json"
 ARMS = ["qwen3-1.7b", "qwen3-1.7b-think", "qwen3-4b", "qwen3-4b-think"]
 PRIMERS = ["components", "clustering", "rwse", "degree", "all"]
 TASKS4 = ["edge_existence", "node_degree", "connected_nodes", "edge_count"]
+TASKS6 = ["node_count", "node_degree", "connected_nodes", "edge_count",
+          "edge_existence", "cycle_check"]
 DENS4 = [0.10, 0.20, 0.35, 0.50]
 DENSHI = [0.65, 0.75, 0.85]
 BAND = (0.25, 0.75)          # where both kinds of primer gain (Table 2's bins)
+Z80 = 1.959964 + 0.841621    # two-sided .05, 80% power
+ROUTE_GAIN = 0.05            # a route cell: the solver bar beats `none`'s by more than this
 # Every bootstrap restarts from SEED, so an interval does not depend on which
 # analyses ran before it (a shared generator shifted them whenever one was added).
 # [replic] is the exception: it runs through score_density_sweep.effect, with
@@ -851,6 +855,123 @@ def power(f, t):
         f"{med:.3f} over {len(dm)} cells -> {100 * z * np.sqrt(med / 100):.1f} points")
 
 
+def mde_points(discordance, n):
+  """Smallest paired effect (points) detectable at 80% power, two-sided .05,
+  from the discordance; floored at one discordant pair, since a cell with none
+  cannot be tested at all."""
+  return 100 * Z80 * np.sqrt(max(discordance, 1 / n) / n)
+
+
+def route_gains(bars, tasks=TASKS4, primers=PRIMERS):
+  """bar(task/cond) - bar(task/none) for every (task, primer)."""
+  return {f"{t}/{c}": bars[f"{t}/{c}"] - bars[f"{t}/none"] for t in tasks for c in primers}
+
+
+def copy_test(f):
+  """When plain qwen3-4b is wrong under `degree`, does its answer equal the
+  degree stated for node k-1 or k+1 (its neighbours in the primer's list) more
+  often than chance? One-sided binomial over finished wrong answers; the
+  background is the mean per-answer chance that one of those two lines states
+  the answer, from the rate at which the other nodes' stated degrees equal it."""
+  deg = re.compile(r"Node (\d+) has degree (\d+)")
+  stated = {}
+  for path in ("prompts.densfull40.jsonl", "prompts.densfull40hi.jsonl"):
+    for line in open(path, encoding="utf-8"):
+      r = json.loads(line)
+      if r["task"] == "node_degree" and r["condition"] == "degree":
+        stated[r["instance_id"]] = {int(a): int(b) for a, b in deg.findall(r["prompt"])}
+  d = f[(f.arm == "qwen3-4b") & (f.task == "node_degree") & (f.condition == "degree")
+        & (f.hit_cap == 0) & (f.exact == 0)].copy()
+  d["v"] = pd.to_numeric(d.pred, errors="coerce")
+  d = d[d.v.notna()]
+  print("[lcopy] copy test: plain qwen3-4b, node_degree under degree, finished wrong answers "
+        "equal to the degree stated for node k-1 or k+1")
+  for label, dens in (("main sweep, p<=.50", DENS4), ("all seven densities", DENS4 + DENSHI)):
+    s = d[d.density_class.isin(dens)]
+    copied, chance = 0, []
+    for iid, k, v in zip(s.instance_id, s.target_id.astype(int), s.v.astype(int)):
+      sd = stated[iid]
+      near = [j for j in (k - 1, k + 1) if j in sd]
+      copied += any(sd[j] == v for j in near)
+      q = np.mean([sd[j] == v for j in sd if j != k and j not in near])
+      chance.append(1 - (1 - q) ** len(near))
+    bg = float(np.mean(chance))
+    p = binomtest(copied, len(s), bg, alternative="greater").pvalue
+    print(f"  {label}: {copied} of {len(s)}; background {100 * bg:.1f}%; one-sided binomial "
+          f"p={p:.2g}")
+
+
+def detectability(f):
+  """Among the null comparisons (every arm x task x primer against `none`,
+  main sweep, 400 paired graphs each, Benjamini-Hochberg q >= .05 within arm
+  and task; comparisons under the truncation flag only), the share where the
+  no-primer correct share leaves less room in some direction than the smallest
+  detectable effect (mde_points), and the median detectable gain where a gain
+  is detectable."""
+  rows = []
+  for arm in ARMS:
+    for task in TASKS6:
+      group = []
+      for c in ["filler"] + PRIMERS:
+        j = pairs(f, arm, task, "none", c, DENS4)
+        a, b = j.correct_a.astype(bool).to_numpy(), j.correct_b.astype(bool).to_numpy()
+        group.append(dict(arm=arm, task=task, condition=c, n=len(j),
+                          p=scoring.mcnemar(a, b)["p_value"], base=a.mean(),
+                          disc=(a != b).mean(),
+                          flagged=max(j.truncated_a.mean(), j.truncated_b.mean()) >= 0.15))
+      for row, q in zip(group, bh([g["p"] for g in group])):
+        row["q"] = q
+      rows += group
+  t = pd.DataFrame(rows)
+  null = t[(t.q >= 0.05) & ~t.flagged].copy()
+  null["mde"] = [mde_points(d, n) for d, n in zip(null.disc, null.n)]
+  null["no_gain"] = 100 * (1 - null.base) < null.mde
+  null["no_harm"] = 100 * null.base < null.mde
+  print("[lmde] null comparisons against none (400 paired graphs each, under the "
+        "truncation flag): per arm, null comparisons, share where a gain or a harm cannot "
+        "be detected (floor or ceiling), median detectable gain (points) where a gain can be")
+  for arm in ARMS:
+    s = null[null.arm == arm]
+    either = s.no_gain | s.no_harm
+    print(f"  {arm:17s} {len(s)} of {int(((t.arm == arm) & ~t.flagged).sum())} null; floor or ceiling "
+          f"{int(either.sum())}/{len(s)}; median detectable gain "
+          f"{f1(s[~s.no_gain].mde.median(), sign=False)}")
+  for size in ("1.7b", "4b"):
+    s = null[null.arm.str.startswith("qwen3-" + size)]
+    print(f"  qwen3-{size} arms pooled: median detectable gain "
+          f"{f1(s[~s.no_gain].mde.median(), sign=False)} over {int((~s.no_gain).sum())} cells")
+
+
+def crossfit(f, bars):
+  """Route cells (the solver bar beats `none`'s by more than ROUTE_GAIN) on
+  node_degree and edge_count. Each cell's graphs split into two folds by graph
+  index parity; the baseline (the no-primer correct share) from one fold and
+  the effect from the other, both ways, so each cell gives two points. Pearson
+  r and OLS slope of the effect (points) on the baseline, per task and pooled,
+  over cells under the truncation flag."""
+  gains = route_gains(bars, tasks=("node_degree", "edge_count"))
+  route_cells = [k for k, g in gains.items() if g > ROUTE_GAIN]
+  points = []
+  for arm in ARMS:
+    for key in route_cells:
+      task, c = key.split("/")
+      for dens in sorted(f[(f.arm == arm) & (f.task == task)].density_class.unique()):
+        j = pairs(f, arm, task, "none", c, [dens])
+        if max(j.truncated_a.mean(), j.truncated_b.mean()) >= 0.15:
+          continue
+        for fold in (0, 1):
+          a, b = j[j.index_a % 2 == fold], j[j.index_a % 2 != fold]
+          points.append((task, a.correct_a.mean(), 100 * (b.correct_b.mean() - b.correct_a.mean())))
+  t = pd.DataFrame(points, columns=["task", "base", "eff"])
+  print(f"[lcross] cross-fitted baseline vs effect on route cells ({', '.join(route_cells)}), "
+        "cells under the truncation flag: points, r, p, slope (points per unit baseline)")
+  for label, s in (("node_degree", t[t.task == "node_degree"]),
+                   ("edge_count", t[t.task == "edge_count"]), ("pooled", t)):
+    r, p = pearsonr(s.base, s.eff)
+    slope = np.polyfit(s.base, s.eff, 1)[0]
+    print(f"  {label:11s} {len(s)} points, r={r:+.3f} (p={p:.2g}), slope {f1(slope)}")
+
+
 def position(f):
   """qwen3-4b retrieval accuracy by where the queried node's line sits in the primer
   (lines are in node order): nodes 0-9 against 10-39, within density."""
@@ -1281,6 +1402,9 @@ def main():
   rerun()
   other_procedures(f)
   extraction(f)
+  copy_test(f)
+  detectability(f)
+  crossfit(f, bars)
   if args.csv_dir:
     figure_data(f, bars, args.csv_dir)
 

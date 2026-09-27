@@ -25,7 +25,7 @@ grid (with Qwen3-8B).
 
 | Family of runs | Runs | Document | Pipeline | Output |
 |---|---|---|---|---|
-| 40-node sweep (main experiment) | `runs/*.densfull40*`, `runs/*.densfull40hi*`; its `clustering` replication also reads `runs/qwen3-1.7b.{degdens40,degdens40hi,degdensrep,degfixdeg}.*` | [n40-sweep.md](n40-sweep.md) | `scripts/build_raw_frame.py` → `scripts/primer_findings.py`, `scripts/legacy_claims.py` | `csv2/raw-trends/primer_findings.txt`, `csv2/raw-trends/legacy_claims.txt` |
+| 40-node sweep (main experiment) | `runs/*.densfull40*`, `runs/*.densfull40hi*`; its `clustering` replication also reads `runs/qwen3-1.7b.{degdens40,degdens40hi,degdensrep,degfixdeg}.*` | [n40-sweep.md](n40-sweep.md) | `scripts/build_raw_frame.py` → `scripts/primer_findings.py` | `csv2/raw-trends/primer_findings.txt` |
 | Density follow-ups (`node_degree`: dedicated densities, thinking, `filler`, replication, fixed mean degree, the `density40` pilot) | `runs/qwen3-1.7b.{degdens40,degceil,degdens40hi,degdensfill,degdensrep,degfixdeg,density40}.*`, `runs/qwen3-1.7b-think.{degdensthink,degdensfillT}.*`, `runs/qwen3-8b.degfixdeg.*` | [density-followups.md](density-followups.md) | `scripts/density_followups.py` → `scripts/score_density_sweep.py`, `scripts/analyze_rq3_leads.py` | `csv2/density-followups/density_followups.txt` |
 
 ## Earlier stages

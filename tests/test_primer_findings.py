@@ -179,3 +179,14 @@ def test_relative_error_uses_finished_parsed_answers():
   d = pd.DataFrame({"pred": ["90", "110", "", "50"], "gold": ["100", "100", "100", "100"],
                     "hit_cap": [0, 0, 0, 1]})
   assert pf.median_relative_error(d) == pytest.approx(0.10)
+
+
+def test_mde_points_is_floored_at_one_discordant_pair():
+  assert pf.mde_points(0.0, 400) == pytest.approx(pf.mde_points(1 / 400, 400))
+  assert pf.mde_points(0.08, 100) == pytest.approx(100 * pf.Z80 * (0.08 / 100) ** 0.5)
+
+
+def test_route_gains_are_measured_against_none():
+  bars = {"node_degree/none": 0.1, "node_degree/rwse": 0.2, "node_degree/degree": 1.0}
+  g = pf.route_gains(bars, tasks=("node_degree",), primers=("rwse", "degree"))
+  assert g == pytest.approx({"node_degree/rwse": 0.1, "node_degree/degree": 0.9})
