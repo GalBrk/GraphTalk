@@ -1,4 +1,4 @@
-"""Generate the appendix's complete paired main-sweep exact-correctness matrix.
+"""Generate the paper's complete paired main-sweep exact-correctness matrix.
 
 Usage: python matrix_audit.py --frame PATH --report PATH --output main_matrix.tex
 The report is the tagged [main] output on GraphTalk/results-sot. We check every
@@ -87,7 +87,7 @@ def latex(frame, report):
     lines += [
         r"\bottomrule",
         r"\end{tabular}",
-        r"\caption{Complete main-sweep correct shares: no-primer baseline (percent of all prompts) and paired primer changes (points) on the same $40$-node graphs at $p\leq .50$. P/T: plain/thinking. $^{*}$ denotes $q<.05$ within the (arm, task, control) family; $^{\dagger}$ flags at least $15\%$ truncation on either side. For neighbor sets, this is exact-set correctness; primary Set-F1 is in Table~\ref{tab:f1}. Node count and cycle have constant gold labels. Values are rounded from the tagged [main] results.} % [setup] [main]",
+        r"\caption{Complete main-sweep correct shares: no-primer baseline (percent of all prompts) and paired primer changes (points) on the same $40$-node graphs at $p\leq .50$. P/T: plain/thinking. $^{*}$ denotes $q<.05$ within the (arm, task, control) family; $^{\dagger}$ flags at least $15\%$ truncation on either side. Neighbor sets use exact-set correctness here; primary Set-F1 is in Table~\ref{tab:primarymetrics}(a). Edge existence uses raw correctness here; its balanced accuracy and finished-response yes-rate are in Table~\ref{tab:primarymetrics}(b). Node count and cycle have constant gold labels. Full truncation shares appear in Table~\ref{tab:truncmatrix}. Values are rounded from the tagged [main] results.} % [setup] [main]",
         r"\label{tab:matrix}",
         r"\end{table*}",
     ]

@@ -22,18 +22,24 @@ body; references, limitations and appendices do not count.
 | Main results | n40-sweep.md §3–9 |
 | The `node_degree` follow-ups: the `clustering` effect, its replication, thinking against plain, the `filler` control, fixed mean degree, the forensics | [density-followups.md](../docs/results/density-followups.md) §2–8 |
 | Limitations | n40-sweep.md §10, density-followups.md §9 |
+| Future work | n40-sweep.md, density-followups.md, and the newer [primer-directions.md](../docs/primer-directions.md), [primer-robustness.md](../docs/primer-robustness.md), [investigate_connections_and_cycles.md](../docs/investigate_connections_and_cycles.md) |
 
 The ladder, retrieval, rewiring, GoT-naming, probe and size-sweep runs are not
 part of the paper (see "Earlier stages" in the results index).
 
 ## Rules for numbers
 
-1. **Every number comes from a tagged citation** in `docs/results/*.md`, copied
-   as printed. Put the tag in a LaTeX comment on the same line, e.g.
-   `+3.8~points % [ddplain]`, so each number can be traced to its block in the
-   script output. If the paper needs a number no doc cites, add it to the
-   script and the doc first, with a tag. `tests/test_results_docs.py` then
-   checks it.
+1. **Every number comes from a tagged citation**, copied as printed, in
+   `docs/results/*.md` or in a doc written after them (`primer-directions.md`,
+   `primer-robustness.md`, `investigate_connections_and_cycles.md`). The
+   `docs/results/` validation checked the older data for staleness; newer docs
+   are current and just as citable. Put the tag in a LaTeX comment on the same
+   line, e.g. `+3.8~points % [ddplain]`, so each number can be traced to its
+   block in the script output. If the paper needs a number no doc cites, add
+   it to the script and the doc first, with a tag. `tests/test_results_docs.py`
+   checks the `docs/results/` numbers; the newer docs are checked against their
+   own scripts' output. Never cite `superseded/` or a doc with a "not
+   re-verified" banner.
 2. **Truncation is its own outcome.** A response is correct, wrong or truncated.
    An effect is the paired change in the correct share of *all* responses, in
    percentage points, with the change in the truncated share beside it when

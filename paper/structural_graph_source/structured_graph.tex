@@ -2,218 +2,165 @@
 \usepackage[final]{acl2023}
 \usepackage{times}
 \usepackage{latexsym}
-\usepackage{amsmath,amssymb,booktabs,graphicx}
+\usepackage{amsmath,amssymb,booktabs,graphicx,float,placeins}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{microtype}
 \title{Talk Like a Structured Graph: Augmenting Text Encodings with Structural Statistics}
 \author{
   Inbal Moryles\\
-  \footnotesize\texttt{github.com/iinbal}
+  \footnotesize\texttt{github.com/iinbal}\\
+  \footnotesize\texttt{inbalmoryles@tau.ac.il}
   \And
   Gal Barak\\
-  \footnotesize\texttt{github.com/GalBrk}
+  \footnotesize\texttt{github.com/GalBrk}\\
+  \footnotesize\texttt{galbarak2@mail.tau.ac.il}
   \And
   Nitzan Zacharia\\
-  \footnotesize\texttt{github.com/NitzanZacharia}
+  \footnotesize\texttt{github.com/NitzanZacharia}\\
+  \footnotesize\texttt{zacharia1@mail.tau.ac.il}
 }
 \date{}
 \begin{document}
 \maketitle
 \begin{abstract}
-Can verbalized graph statistics improve language-model graph reasoning beyond supplying answers or changing response procedures? We prepend degree, clustering, and random-walk return probabilities to incident-text graph encodings. In paired tests on 40-node graphs, Qwen3-1.7B and Qwen3-4B answer six GraphQA questions with plain and thinking prompts. Degree helps most where it states the answer, but harms a model that already counts neighbors reliably. A smaller clustering effect replicates on fresh graphs but varies with node position. Thinking helps some tasks yet often exhausts the response budget on edge counts. We audit primer-only shortcuts and report truncation separately: gains depend on disclosed information, reading procedure, and output budget.
+Can natural-language descriptions of graph statistics improve a language model's answers to graph queries? We prepend node degree, local clustering, or random-walk return statistics to an incident-text graph encoding and evaluate two Qwen3 models, each with plain and thinking prompts, on six tasks across several edge-density levels. Paired comparisons reveal gains in some conditions and losses in others; a statistic that helps one model or task can hinder another. Primer-only shortcut checks and explicit truncation reporting temper the interpretation of score gains. Overall, verbalized structural features do not provide a consistent improvement across the tested settings.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
-\textbf{Research question.} When a black-box language model reads a textual graph, do explicit structural statistics improve execution of graph queries, and can their effect be distinguished from answer leakage and changes in how the graph is read? This question matters because a graph encoding may contain every necessary edge while leaving the model unable to execute a simple count or maintain consistency between related answers.
+\textbf{Research question.} When a black-box language model reads a textual graph, do explicit structural statistics improve execution of graph queries?
 
-GraphQA reports that graph representation, task, and topology jointly affect language-model performance \citep{fatemi2023talklikeagraph}; NLGraph likewise documents limits on solving graph problems described in text \citep{wang2023nlgraph}. Graph Transformers can consume structural or positional information numerically, including random-walk structural encodings (RWSE) \citep{rampasek2022recipe,dwivedi2022graph}. Translating these compact numerical features into a long, node-indexed English preamble is an uncertain interface: the model must locate the right node, interpret rounded statistics, and still read the original edges. Results for a graph Transformer do not establish that the same information will help a frozen LLM.
+Graph neural networks and graph Transformers often receive explicitly constructed structural or positional features. These features can improve performance when the model consumes them numerically; GraphGPS, for example, incorporates random-walk structural encodings (RWSE) \citep{dwivedi2022graph,rampasek2022recipe}. Their benefit in a learned graph architecture motivates testing whether a frozen language model can use related facts when they are written out as text.
 
-We distinguish three mechanisms: a feature can \emph{state} an answer, change its extraction \emph{procedure}, or offer \emph{side information} for graph reading. Our paired study tests gains and failures with a graph-blind shortcut audit, length control, task-sensitive scores, and truncation as a third outcome.
+As LLMs are increasingly asked to solve graph problems, GraphQA shows that the choice of text encoding can substantially improve results, but success still depends on the task and graph structure \citep{fatemi2023talklikeagraph}. NLGraph likewise finds uneven performance across graph problems \citep{wang2023nlgraph}. This makes explicit structural information a plausible complement to a textual edge description, while leaving open whether it improves the model's use of the graph.
+
+We test this question by adding degree, local clustering, and RWSE sentences before a fixed incident encoding and comparing the same graphs, questions, and models with and without those sentences. Related structural prompting exists \citep{huang2024can}; the specific gap here is a paired, task-by-task evaluation of these three statistics on GraphQA queries. A degree primer can already state a degree answer, or reveal the edge count through the degree sum. We therefore check what can be answered from the primer alone and separate answer disclosure from improvements on tasks requiring the edges. The results vary by task, feature, and model; no primer consistently improves performance.
 
 \section{Related Work}
-Fatemi et al.\ (2024) compare graph verbalizations and prompting strategies in GraphQA and find the incident encoding comparatively effective; their results motivate holding that encoding fixed \citep{fatemi2023talklikeagraph}. Wang et al.\ (2023) explore natural-language graph tasks and algorithmic prompting but do not isolate the effect of explicitly verbalized, precomputed node statistics \citep{wang2023nlgraph}. GraphGPS combines message passing, attention and structural/positional encodings, demonstrating the value of such statistics \emph{inside} a learned architecture \citep{rampasek2022recipe}; it does not establish that the same information survives conversion into text. Structural prompting experiments suggest that models may read graph text as a sequence rather than exploit the intended topology \citep{huang2024can}. Ge et al.\ (2025) show that graph-description order also affects performance, but do not separate a statistic's informational value from its effect on locating the queried node \citep{ge2025graph}. Our paired comparison fixes the incident graph text and question while varying the preamble; even then, positional mechanisms remain a possible explanation.
+Structural encodings help trained graph models by giving them information their architectures may otherwise miss. Learnable structural and positional features improve some GNN benchmarks, while GraphGPS integrates numerical encodings such as RWSE with local message passing and global attention \citep{dwivedi2022graph,rampasek2022recipe}. Our question differs: a frozen LLM sees rounded values as sentences before a graph description, without the learned pathway by which a graph model consumes a feature. Benefits in one setting therefore cannot be assumed to transfer to the other.
 
-Partial-input and shortcut tests show that correct outputs need not use the intended evidence \citep{feng2019misleading,geirhos2020shortcut}. Transformer graph-algorithm theory addresses representational capacity, not a frozen model's use of verbalized features \citep{sanford2024understanding}. Distracting prompts and unreliable explanations motivate our response-level audit \citep{shi2023distracted,turpin2023unfaithful}. We study \emph{explicit statistics}, not learned embeddings.
+GraphQA and NLGraph establish that textual graph queries are sensitive to representation, task, and graph structure \citep{fatemi2023talklikeagraph,wang2023nlgraph}. We retain GraphQA's incident encoding to isolate the addition of structural facts. Prior work has already put structural descriptions into LLM prompts for text-rich node classification, but finds that improved predictions need not mean the model interpreted topology as intended \citep{huang2024can}. Graph-description order can itself change answers \citep{ge2025graph}; partial-input checks likewise expose shortcuts in model evaluations \citep{feng2019misleading}. Together, these findings motivate paired query comparisons plus our filler and graph-blind controls. They leave open whether degree, clustering, and RWSE sentences help the same LLM answer the same GraphQA query when the graph encoding is held fixed.
 
 \section{Methodology}
-\subsection{Graphs, tasks, and paired conditions}
-The main evaluation uses undirected Erd\H{o}s--R\'enyi graphs with exactly $n=40$ nodes % [setup]
-at $p\in\{.10,.20,.35,.50\}$ for every task and additionally $p\in\{.65,.75,.85\}$ for node degree and edge existence % [setup]
-\citep{gilbert1959random}. Each density has 100 graphs % [setup]
-per task, shared across conditions and model arms. There are six tasks: \texttt{node\_degree} (primer-aligned); \texttt{connected\_nodes} (return the queried node's neighbor set) and \texttt{edge\_count} (primer-adjacent); and \texttt{node\_count}, \texttt{cycle\_check}, and \texttt{edge\_existence} (primer-agnostic). The latter labels express the expected relation to the supplied \emph{local} features, not a proof of independence. At fixed graph size, node count is always 40 % [setup]
-and the cycle answer is always yes % [setup]
-on these sampled graphs, so success on those tasks cannot demonstrate graph reading.
+\subsection{Models and graph corpus}
+Our preliminary evaluation used the published GraphQA graphs with $5$--$19$ nodes and tested Gemma 4 E4B/12B and Qwen3-8B/14B, each with and without thinking. % [docs/results/README.md]
+Most unprimed pilot arms were near ceiling on most evaluated tasks, leaving little room to measure a primer effect with the available graph samples. % [docs/results/README.md]
+We therefore evaluated Qwen3-1.7B and Qwen3-4B, each in plain and native thinking mode, in the final paired study \citep{qwen2025qwen3}. We increased the graph size to make baseline queries more demanding, while capping it at exactly $40$ nodes % [setup]
+because node-wise RWSE text and thinking responses consume substantial context and output tokens.
 
-We rebuild the same incident encoding and question for every graph, then prefix one of five conditions: no primer, degree, clustering, RWSE, or their concatenation (\emph{all}). Separate diagnostic conditions state the number of connected components or provide structure-free filler naming each node. The latter is approximately length matched to clustering; neither belongs to \emph{all}. Thus the comparison controls graph identity, node naming, encoding, task wording, and model, while the diagnostic conditions help distinguish feature content from generic preamble effects. The primer precedes the incident encoding, which precedes the question; no-primer prompts omit the first field.
+Our graphs use the undirected Erd\H{o}s--R\'enyi generator family also available in GraphQA, with newly sampled instances rather than the original graphs \citep{fatemi2023talklikeagraph,gilbert1959random}. Every task is evaluated at edge probabilities $p\in\{.10,.20,.35,.50\}$; only node degree and edge existence have an additional extension at $p\in\{.65,.75,.85\}$. % [setup]
+Each task--density level has $100$ graphs, % [setup]
+and the same instance is used for all primer conditions and model arms. The main sweep permits $8{,}192$ output tokens; % [setup]
+in the dense extension plain arms receive $2{,}048$ and thinking arms $8{,}192$. % [setup]
+Different limits complicate between-density comparisons, so primer comparisons are made within a fixed arm, task, and graph set.
 
-For $A$ the adjacency matrix and $P=D^{-1}A$ (zero rows for isolated vertices), the per-node features are
+\subsection{Tasks, primers, and paired prompts}
+We use the six GraphQA tasks \citep{fatemi2023talklikeagraph}: \texttt{node\_degree}, \texttt{connected\_nodes} (the queried node's neighbors), \texttt{edge\_count}, \texttt{node\_count}, \texttt{cycle\_check}, and \texttt{edge\_existence}. Because every graph has $40$ nodes, % [setup]
+the node-count answer is fixed; every graph in the sampled corpus also contains a cycle. % [setup]
+The resulting constant gold labels make these two tasks useful for observing prompt sensitivity but unable to establish discrimination between different answers.
+
+Each prompt keeps the same incident graph encoding, node names, and question. We prepend either no primer, degree statements, clustering statements, RWSE statements, or all three types together. Two diagnostics sit outside this five-condition comparison: a sentence stating the graph's component count and a \emph{filler} preamble that names every node but gives no structural facts. The filler checks whether a longer preamble and repeated node names change answers even without useful graph information. Its mean length is $1{,}829$ characters, near clustering's $1{,}629$, % [length]
+but wording and exact length are not matched, so it cannot isolate length alone. The primer is placed before the graph encoding, followed by the question.
+
+For adjacency matrix $A$ and transition matrix $P=D^{-1}A$ (zero rows at isolated vertices), the rendered per-node features are
 \begin{align}
 d_v&=\sum_u A_{vu},\quad c_v=\frac{2t_v}{d_v(d_v-1)},\\
 r_v^{(k)}&=(P^k)_{vv},\qquad k\in\{2,3\}.
 \end{align}
-Here $t_v$ counts edges between $v$'s neighbors and $c_v=0$ when $d_v<2$. The RWSE return probabilities and clustering values are printed to two decimal places % [rwse]
-in canonical node order. RWSE is therefore a discretized summary, not a learned embedding. One-step returns would be identically zero for these loop-free graphs and are omitted.
+Here $t_v$ is the number of edges among $v$'s neighbors and $c_v=0$ when $d_v<2$. Clustering and return probabilities are rounded to two decimals % [rwse]
+and printed in node order. These are explicit statistics, not learned graph embeddings.
 
-\subsection{Models and outcome protocol}
-Preliminary screens evaluated Gemma 4 E4B/12B and Qwen3-8B/14B on published $5$--$19$-node graphs; the repository reports ceiling effects on most piloted tasks. % [docs/results/README.md]
-A separate $20/40/80$-node screen has not been reverified; it supplies no numerical selection claim here. % [docs/results/README.md]
-These observations and the cost of long thinking traces and node-indexed RWSE motivated a final, exclusively $40$-node experiment with compact Qwen3-1.7B and Qwen3-4B models % [setup]
-\citep{qwen2025qwen3}. We evaluate each in \emph{plain} and native \emph{thinking} modes with otherwise identical zero-shot prompts. The node cap protects the usable structural context within the effective budget. Appendix~\ref{app:pilot} separates earlier screens from the final evaluation. Main-sweep generations allow 8,192 tokens % [setup]
-per response; the high-density extension gives plain arms 2,048 % [setup]
-and thinking arms 8,192 % [setup]
-tokens. Budgets differ across density blocks; comparisons within each arm and density remain paired.
+\subsection{Outcomes and paired analysis}
+We record \textbf{correct}, \textbf{wrong}, and \textbf{truncated} as distinct outcomes on every prompt. Truncations receive no correctness credit, and every reported correct or truncated share has all prompts in its denominator. Degree, node count, and edge count use integer exact match; cycle check uses Boolean exact match. For connected nodes, the primary score is Set-F1, $2|\hat S\cap S|/(|\hat S|+|S|)$, assigning zero to truncations and one to two correctly empty sets; exact set match is an additional diagnostic. For edge existence, we report raw accuracy with balanced accuracy $(\mathrm{TPR}+\mathrm{TNR})/2$ over all prompts and the yes-rate among \emph{finished} responses. Truncations count as incorrect within their gold class when calculating balanced accuracy.
 
-Every response is categorized \textbf{correct}, \textbf{wrong}, or \textbf{truncated}. For each primer we report the difference in the \emph{correct share of all prompts}, paired by graph; truncation is neither silently discarded nor treated as an answered error. Integer node degree, node count, and edge count use exact match; cycle check uses exact Boolean match. The primary \texttt{connected\_nodes} score is set-F1, $2|\hat S\cap S|/(|\hat S|+|S|)$; a truncated output receives zero F1, and exact set match is reported separately. For \texttt{edge\_existence}, raw accuracy is accompanied by balanced accuracy $(\mathrm{TPR}+\mathrm{TNR})/2$ and the yes-rate among finished answers. A truncated answer contributes no correct response; class recalls used for balanced accuracy count truncations as incorrect within their true class.
-
-We use exact paired McNemar tests for binary correct shares and graph-bootstrap intervals; Benjamini--Hochberg adjustment is applied within each (model arm, task, control) family of primer contrasts \citep{mcnemar1947note,benjaminihochberg1995controlling}. A supplemental paired sign-permutation test evaluates mean all-response F1 with the same within-arm correction over primers. A result is called significant only at $q<.05$; $q\geq .05$ is described as a direction. Balanced-accuracy contrasts without corrected tests are descriptive. A graph-blind solver receives only rendered primer text, never the edge encoding, and evaluates how much each condition reveals without graph reasoning. The recorded runs contain 84,000 responses % [setup]
-over 700 distinct graph instances % [setup]
-and the task-specific prompt combinations.
-Appendix~\ref{app:audit} records the task grid, primer lengths and scoring provenance.
+Every control--primer comparison pairs responses to the same graph and question. Exact McNemar tests use the two kinds of disagreement within those pairs: control correct/primer wrong, and the reverse \citep{mcnemar1947note}. Paired graph bootstraps provide intervals. Within each (model arm, task, control) family we adjust six primer contrasts by Benjamini--Hochberg \citep{benjaminihochberg1995controlling}. The supplemental Set-F1 comparisons use paired random-sign tests with within-arm adjustment. We call an effect significant only at $q<.05$; effects at $q\geq .05$ are directions, and balanced-accuracy contrasts without corrected tests are descriptive. A graph-blind solver receives only the primer, checking whether it already supplies the answer. The main study records $84{,}000$ responses % [setup]
+on $700$ distinct graph instances % [setup]
+across task-specific density grids; Appendix~\ref{app:audit} details coverage and provenance.
 
 \section{Results}
-\subsection{Answer disclosure and the alignment spectrum}
-The graph-blind solver obtains 100\% % [bars]
-on degree and edge count from a degree primer (or \emph{all}): it reads the queried degree or uses the handshaking identity $|E|=\frac12\sum_v d_v$. This is direct answer disclosure. On neighbor-set queries its score never exceeds 0.8\%, % [bars]
-so gains there cannot be explained by a primer that simply lists the neighbors. The strongest other variable-answer shortcut is 74.6\% % [bars]
-on edge existence using degree; density-related correlations warrant caution there.
+\label{sec:results}
+Table~\ref{tab:matrix} reports every main-sweep task, model arm, and primer: the no-primer correct share and the change on the \emph{same} graph queries. All correct shares include truncated responses in the denominator. Asterisks identify BH-adjusted $q<.05$; unmarked changes are directions only. The table uses exact set match for neighbors and raw correctness for edge existence; their required primary and diagnostic measures appear in Table~\ref{tab:primarymetrics}. Appendix~\ref{app:audit} gives the complete truncation matrix (Table~\ref{tab:truncmatrix}) and the two-task dense extension (Table~\ref{tab:densematrix}); wrong share is the remainder after correct and truncated shares.
 
-\begin{table}[t]
-\centering\small
-\setlength{\tabcolsep}{1.8pt}
-\footnotesize
-\begin{tabular}{llrrr}
-\toprule
-Task / arm & Primer & None & With & $\Delta$; $q$\\
-\midrule
-Degree / 1.7P & degree & 60.5 & 68.0 & $+7.5$; .0042\\ % [main]
-Degree / 1.7T & degree & 76.3 & 85.0 & $+8.8$; .0008\\ % [main]
-Degree / 4P & degree & 99.3 & 92.8 & $-6.5$; $<.001$\\ % [main]
-Degree / 4T & degree & 97.0 & 99.5 & $+2.5$; .078\\ % [main]
-Edge count / 4P & degree & 2.0 & 29.3 & $+27.2$; $<.001$\\ % [main]
-Neighbors / 4P & components & 86.0 & 95.3 & $+9.2$; $<.001$\\ % [main]
-Edge exists / 1.7P & all & 70.5 & 82.0 & $+11.5$; $<.001$\\ % [main]
-Edge exists / 4P & RWSE & 90.5 & 80.5 & $-10.0$; $<.001$\\ % [main]
-\bottomrule
-\end{tabular}
-\caption{Correct shares (\%) of \emph{all} prompts in paired main-sweep contrasts; $\Delta$ is in points. P/T: plain/thinking. ``Neighbors'' uses exact set match here; set-F1 is in text. Effects and $q$ use unrounded paired data.}
-\label{tab:contrasts}
-\end{table}
+\input{main_matrix.tex}
 
-Table~\ref{tab:matrix} in Appendix~\ref{app:audit} reports every arm--task--primer comparison. Direct disclosure has a non-uniform effect. Plain 4B gains $27.2$ points % [main]
-on edge count with degree, yet plain 1.7B gains only $7.5$ % [main]
-on node degree, and plain 4B \emph{loses} $6.5$ % [main]
-on the latter ($q<.001$). % [main]
-This failure is informative: the feature is correct, but the model need not read it more reliably than the original neighbor list. With no primer, plain 4B enumerates neighbors in 100\% % [route]
-of degree responses at $p=.50$, % [route]
-correct in 99\%; % [route]
-with degree it often retrieves the printed count without enumerating, and some retrievals copy a nearby node's number. Retrieval is correct for $95.7\%$ of nodes $0$--$9$ versus $83.1\%$ of nodes $10$--$39$; index position and digit length coincide. % [position]
-These responses suggest a changed procedure, not an internal-process measurement. Thinking 1.7B enumerates in 90\% % [verify]
-of degree responses at $p\geq .35$, % [verify]
-but the resulting conflicts lengthen some outputs.
+\subsection{Answer availability does not ensure a gain}
+The graph-blind solver answers every queried degree from the degree primer and every edge count by summing degrees. % [bars]
+Such gains demonstrate use of information already present in the preamble, not necessarily better inference from the incident encoding. Even for these directly disclosed answers, Table~\ref{tab:matrix} shows opposite effects across arms: degree improves node-degree correctness in both 1.7B arms but reduces it in plain 4B; the latter also gains substantially on edge count. Near-ceiling unprimed performance limits the improvement available to thinking 4B. The three-feature bundle does not consistently outperform its constituents; in the dense plain-4B degree extension, clustering alone exceeds the bundle in a corrected paired contrast (Appendix~\ref{app:robust}). % [bundle-direct]
 
-The observed task--primer interaction varies across densities at fixed graph size. For plain 4B, degree hurts node-degree correctness at $p=.50$ ($-12$ points) but has a positive direction at $p=.85$ ($+27$ points) as its unprimed correct share drops from $99\%$ to $33\%$; % [flip]
-these per-density contrasts are exploratory and have no reported BH-adjusted $q$-values. In dedicated thinking 1.7B degree runs, the pooled gains are $+11.3$ points at $p\leq .50$ and $+24.8$ points at $p\geq .65$ (both $q<.05$), while truncation rises by $2.3$ and $9.0$ points, respectively. % [ddthink]
-For clustering on the same thinking task, a lower-density gain ($+2.5$, $q=.043$) reverses to a high-density loss ($-5.4$, $q=.0015$). % [ddthink]
-A direct high-minus-low interaction gives $-7.9$ points ($q<.001$) for thinking clustering; % [interaction]
-three exploratory interactions are BH-adjusted (Appendix~\ref{app:robust}). Effects vary within the fixed-size corpus; the cause is unresolved.
+Effects also differ when the primer does not state the answer. The graph-blind solver recovers at most $0.8\%$ % [bars]
+of queried neighbor sets, yet the short component-count diagnostic improves plain-4B neighbor Set-F1 ($q<.001$); % [metric-audit-f1]
+degree and the bundle reduce it ($q<.05$). % [metric-audit-f1]
+For thinking 1.7B, degree's improvement in \emph{exact} neighbor sets does not extend to primary Set-F1 ($q=.425$). % [main] [metric-audit-f1]
+Thus the metric used to assess a relational answer changes the conclusion. Table~\ref{tab:primarymetrics}(a) gives every paired Set-F1 comparison, including the filler and component controls.
 
-The adjacent neighbor-set task shows a distinct pattern. For plain 4B, the short component-count sentence raises exact set match from 86.0\% to 95.25\% ($q<.001$); % [main]
-the primary all-response set-F1 rises from $.9871$ to $.9976$ ($q<.001$). % [metric-audit-f1]
-Yet virtually all sampled graphs at $p\geq .20$ are connected, % [comp]
-so this sentence may alter graph reading rather than convey the requested neighbors. Conversely, degree and the three-feature bundle \emph{lower} plain 4B set-F1 ($q=.038$ and $.021$), % [metric-audit-f1]
-showing that an answer-carrying feature can interfere with a different relational task. For thinking 1.7B, degree raises exact neighbor-set match by $6.2$ points ($q=.0079$), % [main]
-but the Set-F1 change is a downward direction ($-.0105$, $q=.425$); % [metric-audit-f1]
-the exact-match finding alone does not establish an F1 gain. Table~\ref{tab:primarymetrics}(a) supplies all arm--primer F1 comparisons.
+\subsection{Density and prompt content modify the effect}
+At the same node count, the effect of a primer can change across densities. The dedicated degree follow-ups find that clustering helps plain 1.7B at lower densities, with a fresh-seed replication, but provides no supported gain in the denser group; a corrected exploratory interaction supports the difference between groups. % [ddplain] [ddrep] [interaction]
+For thinking 1.7B, the clustering direction reverses and degree's benefit grows at higher densities, alongside more truncations (Appendix~\ref{app:robust}). % [ddthink] [interaction]
+The groups contain different graphs, so density is a plausible moderator rather than an isolated cause. Early-listed queried nodes account for much of the plain clustering gain; node position and name length coincide in this setup. % [position]
+A structure-free filler also improves that task in the dedicated comparison, making an explanation based only on clustering's topology untenable. % [ddplainfill]
 
-\begin{table}[t]
-\centering\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{llrrr}
-\toprule
-Arm & Primer & Set-F1 (all) & $\Delta$ & $q_{\rm F1}$\\
-\midrule
-1.7P & degree & .9721$\to$.9794 & +.0074 & .335\\ % [metric-audit-f1]
-1.7T & degree & .9732$\to$.9627 & $-$.0105 & .425\\ % [metric-audit-f1]
-4P & components & .9871$\to$.9976 & +.0105 & $<$.001\\ % [metric-audit-f1]
-4P & degree & .9871$\to$.9768 & $-$.0103 & .038\\ % [metric-audit-f1]
-4P & all & .9871$\to$.9743 & $-$.0128 & .021\\ % [metric-audit-f1]
-\bottomrule
-\end{tabular}
-\caption{Neighbor-set task: no primer $\to$ indicated primer. Set-F1 includes every prompt, assigning zero to truncations. Paired sign-permutation tests with BH correction within each arm yield $q_{\rm F1}$; the audit script and complete comparison family accompany the source. P/T: plain/thinking.}
-\label{tab:f1}
-\end{table}
+Constant-answer tasks offer a second warning. Every graph has $40$ nodes and every sampled graph contains a cycle. % [setup]
+Large changes on node count, including an improvement from filler, therefore reveal prompt sensitivity without testing whether the model distinguishes graph sizes. On cycle check, degree can lower correct share primarily by increasing truncation. Table~\ref{tab:matrix} retains these tasks so negative and positive effects remain visible, but they cannot establish structural generalization.
 
-\subsection{Side information, degenerate tasks, and decisions}
-The main sweep's plain 1.7B clustering direction on degree is $+3.0$ points, $q=.38$, % [main]
-and is not a finding. Dedicated paired 40-node runs give $+3.8$ points, with a $95\%$ interval of $[+1.6,+6.1]$ and $q=.0035$ over the lower four densities; % [ddplain]
-a fresh graph seed gives $+4.2$ points ($p=.00055$). % [ddrep]
-This condition emerged from a $40$-cell screen, and $700$ dedicated graphs overlapped with it; the fresh seed also passes a screen-wide Bonferroni check (adjusted $p=.022$). % [rqselection]
-Within the dedicated per-density family, only $p=.35$ survives BH correction: $+7.5$ points, $q=.044$. % [ddplain]
-At higher density the estimated effect is $-0.7$ points ($p=.57$), without evidence of a nonzero effect; % [ddplain]
-and is more concentrated on early-listed queried nodes than later ones. This replicable but localized result is consistent with an easier node-location or copying procedure, not evidence that the model computes degrees from clustering coefficients. The length-matched filler comparison is $+3.2$ points at the lower densities ($p=.007$), % [ddplainfill]
-but filler is only an approximate control for wording and location.
+\subsection{Decisions, thinking, and completion}
+Edge existence changes require class-sensitive reading. In the main sweep, the bundle improves plain-1.7B raw and balanced accuracy as its finished-response yes-rate falls; RWSE has the opposite pattern for plain 4B. % [main] [metric-audit-edge-main]
+Table~\ref{tab:primarymetrics}(b) gives raw accuracy, balanced accuracy, yes-rate, and truncation for each main-sweep condition. The dense plain-1.7B extension in Table~\ref{tab:edgeprofile} illustrates why raw accuracy alone is misleading: the unprimed arm almost always answers yes as positive-edge prevalence rises, whereas the bundle reduces this response bias and improves balanced accuracy descriptively. % [collapse] [metric-audit-edge]
+The main-sweep $q$-values test raw correctness; balanced-accuracy contrasts are descriptive.
 
-For the agnostic node-count task, plain 1.7B rises from 31.5\% to 98.75\% with clustering ($q<.001$), % [main]
-and even the structure-free filler reaches 71.25\%. % [main]
-Because the answer is constant at 40 nodes, % [setup]
-these changes diagnose prompt susceptibility, not structural generalization. On cycle check, degree lowers correct share in the 1.7B thinking arm by $21.8$ points, % [main]
-largely through additional truncation. The bundle's descriptive average over unflagged combinations is only $+0.3$ points; % [bundle]
-on dense degree queries, plain 4B loses $32.7$ points versus clustering alone ($q<.001$), with no truncation in either condition. % [bundle-direct]
-The bundle is non-additive here; length and order remain confounded.
-
-Edge existence needs separate class-balance diagnostics because positive prevalence rises with density. In the main sweep, plain 1.7B's raw accuracy improves from $70.5\%$ to $82.0\%$ under \emph{all} ($q<.001$); % [main]
-balanced accuracy changes from $.799$ to $.877$ and finished-response yes-rate from $.563$ to $.448$. % [metric-audit-edge-main]
-For plain 4B, RWSE lowers raw accuracy from $90.5\%$ to $80.5\%$ ($q<.001$), % [main]
-balanced accuracy from $.932$ to $.867$, and raises yes-rate from $.358$ to $.463$. % [metric-audit-edge-main]
-At high density the unprimed arm says yes to nearly every query; under \emph{all}, its pooled balanced accuracy rises by $14.9$ points (bootstrap interval $[+8.7,+21.4]$), while the yes-rate falls. % [collapse]
-The matched metrics for every model and primer in the main sweep and the dense plain-1.7B diagnostic appear in Table~\ref{tab:primarymetrics}(b) and Table~\ref{tab:edgeprofile}, respectively. Dense cells have no truncation. % [metric-audit-edge]
-Matched main-sweep errors clarify these directions: plain 1.7B's false positives fall from $118$ to $72$ with \emph{all}, whereas plain 4B's rise from $37$ to $78$ with RWSE. % [metric-audit-edge-errors]
-Both retain almost all true positives; edge prevalence is $26.8\%$. % [metric-audit-edge-errors]
-These are descriptive counts, not measurements of the models' internal decision rules. Balanced-accuracy comparisons are descriptive; the main-sweep $q$-values test \emph{raw} correctness only.
-
-\subsection{Thinking and the truncation trade-off}
-Thinking can improve degree extraction on dense graphs, but may exhaust the finite generation budget. On edge count, 4B thinking without a primer is correct on 20.0\%, wrong on 0.5\%, and truncated on 79.5\% of all responses; % [edgecount]
-among its \emph{finished} responses, 97.6\% are correct. % [edgecount]
-The last figure is explicitly conditional and must not be mistaken for overall accuracy. With the diagnostic component-count primer, correct share rises to 44.75\% ($+24.8$ points, $q<.001$) % [main]
-while truncation falls to 54.5\% ($-25.0$ points). % [edgecount]
-This mostly measures finishing rather than improved graph computation. Figure~\ref{fig:outcomes} shows why the combined primer cannot be summarized by its truncation reduction alone: it also increases the wrong share substantially. Conversely, degree on cycle check raises truncation for 1.7B thinking by $21.2$ points, % [main]
-nearly the entire $21.8$-point decrease in correct share. % [main]
-For degree extraction across all tested 40-node densities, degree increases thinking 1.7B truncations from $8/700$ to $53/700$ responses % [trunc]
-even while improving correct share. Benefits and costs are thus properties of the complete generation process, not accuracy over a selected subset of answers.
+Thinking exposes a separate limit: finishing the query. Unprimed thinking 4B is correct on only $20.0\%$ % [edgecount]
+of edge-count prompts because $79.5\%$ truncate, % [edgecount]
+although $97.6\%$ of \emph{finished} answers are correct. % [edgecount]
+A component-count preamble raises correct share mainly by lowering truncation, whereas the bundle reduces truncation while increasing wrong answers (Figure~\ref{fig:outcomes}). % [edgecount]
+Degree also raises thinking-1.7B truncations on degree extraction even where total correct share rises. % [trunc]
+These three-outcome shifts prohibit interpreting conditional accuracy over finished responses as the principal result. Finally, on matched degree and neighbor queries, the share on which \emph{both} plain-4B answers are correct falls with degree ($q<.001$), despite its edge-count gain. % [joint]
+The primer can improve one score while weakening cross-task consistency.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{edge_count_outcomes.pdf}
-\caption{Qwen3-4B thinking on edge count: shares of \emph{all} responses. Conditions from top: none, component count, degree, all three node features. The bundle reduces truncation but raises wrong responses.} % [edgecount]
+\caption{Qwen3-4B thinking on edge count: correct, wrong, and truncated shares of \emph{all} responses. Conditions from top: none, component count, degree, all three node features. A lower truncated share need not imply a higher correct share.} % [edgecount]
 \label{fig:outcomes}
 \end{figure}
 
-\subsection{Model capacity and relational consistency}
-The model arms differ in headroom. On unflagged cells, median no-primer correct shares are $66.0\%$ for plain 1.7B and $97.5\%$ for thinking 4B; % [arms]
-the latter changes by at most $2.5$ points % [null4bt]
-under any primer on degree, edge existence, or neighbor-set queries. Near-ceiling cells leave little room for gains, while edge count remains difficult under output limits. Plain 1.7B repeatedly outputs the maximum possible degree even when the primer states another value; thinking 1.7B retains an enumeration-based check and improves most where its baseline is weak. Averaging across arms would conceal this reversal.
-
-The tasks permit a stricter check: a node's degree must equal the size of its returned neighbor set. For plain 4B, the share on which \emph{both} answers are correct falls from $85.75\%$ without a primer to $76.50\%$ with degree ($-9.2$ points, $q=.00032$), % [joint]
-even though degree raises edge-count accuracy. The primer thus improves a graph-level sum while reducing cross-task correctness on the queried node. Conversely, the component-count diagnostic raises joint correctness to $95.00\%$ % [joint]
-for the same arm, despite conveying no queried neighbor list. Joint accuracy is not a causal process test, but tests relational consistency more strictly than each task score alone.
-
 \section{Discussion}
-The strongest positive results establish that the model can sometimes use a statistic that directly contains the answer; they do not establish improved relational inference. This is inference-time answer disclosure, not evidence of training-set contamination: in the saved prompts, the degree sentence exactly states the queried degree in all $700/700$ checked cases, and half the listed degree sum equals the edge count in all $400/400$ checked cases. % [leak]
-The handshaking identity makes degree's edge-count gain especially easy to misinterpret. The modest answer-free clustering effect in plain 1.7B replicates on fresh graphs despite selection from a broad screen; its early-node concentration and fewer missed neighbors suggest a change in graph-text reading. Response labels do not identify an internal attention mechanism.
+The central pattern is selective usefulness, rather than a common benefit of making graph structure explicit. Graph models can learn from numerical structural encodings, but a language model must locate and use verbalized values amid the incident list and its own generated text. Directly answer-bearing degree statements are useful evidence that the model sometimes accesses the preamble; they are \emph{inference-time answer disclosure}, not training-set leakage or proof of graph traversal. Even that shortcut can fail when the baseline already counts accurately. The replicated clustering effect is smaller and cannot be explained by a primer-only solver, yet the filler and node-position patterns leave open a prompt-layout explanation. Output traces suggest changes in counting or retrieval strategies but cannot establish an internal mechanism.
 
-The same score change carries different evidence across tasks. Degree gains on degree and edge count can be produced from the primer alone; clustering does not directly state the queried degree. Yet the clustering--filler comparison does not fully match wording or node location, and the effect is concentrated on early-listed nodes. Likewise, component count raises neighbor-set F1 even where its value is nearly constant. These controls narrow the explanations for each gain, but replication of a score difference does not verify the proposed reading procedure.
+Several axes interact. Density increases graph-text complexity while changing edge prevalence; capacity sets baseline headroom; thinking changes the risk of exhausting the generation budget. Rounded RWSE has limited node-level resolution in denser graphs, % [rwse]
+while bundling multiple statistics increases text and can disrupt a useful single-feature effect. None of these observations justifies a universal ranking of primers. A fair comparison must report the task's primary metric, the class-conditional decision pattern where relevant, and the correct/wrong/truncated shares over all assigned prompts. Paired graph comparisons reduce instance-level noise, but stochastic generation, preamble length and position, graph family, and unequal budgets across density extensions remain limitations. The fixed node count and uniformly positive cycle labels especially restrict what those tasks can demonstrate.
 
-Two properties may help explain the selective results. First, printed RWSE values lose resolution in dense graphs: at $p=.50$ their two-decimal $(r^{(2)},r^{(3)})$ pairs form on average only $3.30$ distinct classes per graph, versus $12.50$ distinct stated degree values; % [rwse]
-they are poorly suited to identifying a queried node's exact degree. Second, adding facts can displace a successful procedure: when plain 4B stops enumerating and instead retrieves a line of degree text, copying errors may exceed its baseline counting errors. Neither interpretation requires assuming the model has learned a graph invariant from text.
+The findings also suggest a hierarchy of evidence for structural use. If the answer appears in the primer, increased correctness shows access to a useful textual fact. If only related facts appear, a paired gain is more interesting, but still admits explanations based on repeated node names, position, and altered generation length. Stronger evidence would require success on a query whose answer is absent from the preamble, together with checks that answers to related queries satisfy the same graph's invariants. The joint degree-and-neighbor result points in this direction: a gain on a graph-level quantity can coexist with fewer pairs of mutually correct local answers. This distinction matters when transferring ideas from GraphGPS: providing a structural encoding does not guarantee that a frozen text model uses it as a graph model does.
 
-Pairing controls graph difficulty, but not constant-answer tasks, stochastic generation, node position or unequal dense-extension budgets. The study covers one model family, synthetic graphs, one encoding, rounded features and one phrasing. Description-order effects \citep{ge2025graph} reinforce the positional caveat; response labels do not identify an internal mechanism.
+The edge and truncation diagnostics illustrate a second general point about evaluation. At high edge prevalence, saying yes frequently can raise raw accuracy while leaving little ability to recognize a nonedge; balanced accuracy and yes-rate expose that pattern. On token-intensive counting tasks, finished generations can be accurate while most assigned prompts still fail. A primer can therefore change \emph{what} is answered, \emph{whether} an answer is finished, or both. Reporting each channel is necessary before interpreting an apparent gain as more reliable graph computation.
 
-\paragraph{Future work.} Randomize node labels and primer position, match lengths and budgets, and test graph families with both cycle labels. Joint queries could test $d_v=|N(v)|$ and $2|E|=\sum_vd_v$.
+\section{Future Work}
+\label{sec:future}
+\paragraph{Controlled follow-ups.} First, test whether a primer still helps when it cannot directly disclose the answer: omit queried-node values while preserving equivalent statistics for other nodes, and ask multi-step queries that require the incident edges. Second, randomize node labels and preamble order, and compare truly token-matched neutral text under equal generation budgets; these interventions would separate positional and length effects from graph information. Third, use variable-size and deliberately cyclic/acyclic corpora with balanced edge queries, then repeat the paired design on graph families beyond Erd\H{o}s--R\'enyi. Finally, measure whether answers jointly respect $d_v=|N(v)|$ and $2|E|=\sum_v d_v$ across queries, not merely whether each answer matches in isolation. Record intermediate claims only as observable output, and test their consistency against the underlying graph; stated reasoning alone does not establish the procedure that produced a response.
+
+Beyond these tests, our results suggest that a primer helps by doing computation the model cannot do reliably itself: stating the queried node's degree raises thinking 1.7B by $+8.8$ points on node degree and lowers plain 4B, % [main]
+which already counts correctly, by $-6.5$. % [main]
+This points to six broader directions.
+
+\paragraph{Who should compute.} Compare four ways of giving a model the same structure: statistics computed in advance and placed in the prompt, graph tools the model can call, code it writes and runs, and the incident encoding alone. Varying model scale, graph size and task would show when structure should be computed for the model and when the model can work it out, a choice every system that pairs an LLM with graph data has to make.
+
+\paragraph{Predicting primer benefit.} Our effects track two measurable quantities: how much the primer reveals about the answer, which the graph-blind solver measures, and how poorly the model does without it. A model of the effect as the primer's information gain times the model's shortfall, minus a reading cost, could be fitted across many model families and tested on held-out models. The reading cost is substantial: in the dedicated degree follow-ups, filler costs thinking 1.7B $11.4$ points at $p\ge .65$. % [ddthink]
+Such a model also needs repeated sampling per query, because most primer effects sit on top of churn: in $89$ of $120$ (arm, task, primer) cells, a primer changes as many outcomes as filler does. % [churn]
+
+\paragraph{Graphs that do not fit.} Beyond $40$ nodes the encoding itself becomes the bottleneck. Under a fixed token budget, which summary keeps the most queries answerable: statistics, sampled subgraphs, or the queried node's neighborhood?
+
+\paragraph{Searching the primer space.} We chose four features and one wording by hand, and both matter. The plain-1.7B clustering gain is $5.01$ points on queried nodes in the first third of the node list and $-0.11$ on the last third, % [rqhetero]
+and under RWSE, whose sentences state a return probability ``after 2 steps'', $42.5\%$ of thinking 4B's correct cycle-check answers rest on a walk that is not a cycle (a two-node ``cycle'' or a retraced path), against $0.0\%$ without a primer. % [ccanswer]
+An automated search over feature, wording, placement and scope, scored against length-matched and shuffled-value controls on held-out graphs, would bound what any primer can achieve.
+
+\paragraph{Trust in stated statistics.} Every primer we tested was correct. Among finished degree-primed node-degree responses that report a conflict between the stated degree and the model's own count, thinking 4B ends on the stated value in $93\%$, thinking 1.7B in $66\%$ and plain 4B in $56\%$. % [pdsource]
+Primers corrupted at controlled rates would show whether models verify stated structure or copy it, which matters wherever LLMs rely on metadata that may be stale or wrong.
+
+\paragraph{Mechanism.} With open weights, activation patching could show whether a model uses a primer's content or responds only to a longer, differently formatted prompt.
+
+\paragraph{A controlled benchmark.} The controls this study needed could be released as a benchmark, so that future claims that structure helps LLMs face the confounds we met: a graph-blind solver that exposes answer disclosure, truncation as its own outcome, length-matched content-free text, churn-aware paired comparisons, degree-preserving rewiring that changes clustering while fixing the degree sequence, gold answers and prompt length, and checks that correct answers rest on true claims. Without a primer, $43.5\%$ of plain 1.7B's correct cycle-check answers rest on an invented cycle. % [ccanswer]
 
 \section{Conclusion}
-Structural statistics can raise correct share; degree often supplies the answer outright, while other features have smaller, variable effects. Thinking can help yet increase truncation. Primer-only shortcuts, task-specific metrics, and all-response scoring are necessary to interpret graph reasoning gains.
+Explicit graph statistics sometimes help a language model answer textual graph queries, but their effects depend on the task, model arm, density, and whether generation finishes. The clearest degree gains can be obtained directly from the primer; answer-free and adjacency-related gains are narrower and sensitive to prompt content. Truncation and decision bias can reverse the impression left by a single accuracy figure. Consequently, verbalizing a feature that benefits trained graph architectures is a testable prompting strategy rather than a general recipe for better graph reasoning. Paired comparisons, primer-only checks, primary task metrics, and complete outcome reporting establish what improved; controlled counterfactual prompts and consistency tests are needed to establish why.
 
 \clearpage
 \bibliography{custom}
@@ -222,6 +169,7 @@ Structural statistics can raise correct share; degree often supplies the answer 
 \appendix
 \makeatletter
 \setlength{\@fptop}{0pt}
+\setlength{\@dblfptop}{0pt}
 \makeatother
 \section{Evaluation Grid and Audit Trail}
 \label{app:audit}
@@ -295,9 +243,10 @@ $p$ & Primer & Raw acc. & Bal. acc. & Yes-rate\\
 
 Tagged results come from GraphTalk's \texttt{results-sot}, commit \texttt{292046f} \citep{graphtalkresults2026}: \path{docs/results/n40-sweep.md} and \path{csv2/raw-trends/primer_findings.txt}. \path{scripts/build_raw_frame.py} verifies saved gold labels; \path{scripts/primer_findings.py} rebuilds the tagged contrasts. Figure~\ref{fig:outcomes} uses \texttt{[edgecount]}; the bundled \path{metric_audit.py} and \path{primary_metric_tables.py} regenerate the primary-metric appendix from recorded responses.
 
-\input{main_matrix.tex}
 \input{primary_metric_tables.tex}
-\clearpage
+\input{main_truncation.tex}
+\input{dense_extension.tex}
+\FloatBarrier
 \raggedbottom
 \section{Screening and Focused Robustness Checks}
 \label{app:pilot}
