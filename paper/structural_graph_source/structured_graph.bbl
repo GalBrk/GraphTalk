@@ -1,4 +1,4 @@
-\begin{thebibliography}{25}
+\begin{thebibliography}{14}
 \providecommand{\natexlab}[1]{#1}
 
 \bibitem[{Benjamini and Hochberg(1995)}]{benjaminihochberg1995controlling}
@@ -9,30 +9,6 @@ Yoav Benjamini and Yosef Hochberg. 1995.
 \newblock \emph{Journal of the Royal Statistical Society: Series B
   (Methodological)}, 57(1):289--300.
 
-\bibitem[{Brodersen et~al.(2010)Brodersen, Ong, Stephan, and
-  Buhmann}]{brodersen2010balanced}
-Kay~Henning Brodersen, Cheng~Soon Ong, Klaas~Enno Stephan, and Joachim~M.
-  Buhmann. 2010.
-\newblock \href {https://doi.org/10.1109/ICPR.2010.764} {The balanced accuracy
-  and its posterior distribution}.
-\newblock In \emph{Proceedings of the 20th International Conference on Pattern
-  Recognition}, pages 3121--3124.
-
-\bibitem[{Chen et~al.(2024)Chen, Li, Tang, and Li}]{chen2024graphwiz}
-Nuo Chen, Yuhan Li, Jianheng Tang, and Jia Li. 2024.
-\newblock \href {https://doi.org/10.1145/3637528.3672010} {{GraphWiz}: An
-  instruction-following language model for graph computational problems}.
-\newblock In \emph{Proceedings of the 30th ACM SIGKDD Conference on Knowledge
-  Discovery and Data Mining}, pages 353--364.
-
-\bibitem[{Das et~al.(2024)Das, Gupta, Srivastava, and Kang}]{das2024modality}
-Debarati Das, Ishaan Gupta, Jaideep Srivastava, and Dongyeop Kang. 2024.
-\newblock \href {https://doi.org/10.18653/v1/2024.findings-naacl.34} {Which
-  modality should {I} use -- text, motif, or image? : Understanding graphs with
-  large language models}.
-\newblock In \emph{Findings of the Association for Computational Linguistics:
-  NAACL 2024}, pages 503--519.
-
 \bibitem[{Dwivedi et~al.(2022)Dwivedi, Luu, Laurent, Bengio, and
   Bresson}]{dwivedi2022graph}
 Vijay~Prakash Dwivedi, Anh~Tuan Luu, Thomas Laurent, Yoshua Bengio, and Xavier
@@ -40,19 +16,6 @@ Vijay~Prakash Dwivedi, Anh~Tuan Luu, Thomas Laurent, Yoshua Bengio, and Xavier
 \newblock \href {https://openreview.net/forum?id=wTTjnvGphYj} {Graph neural
   networks with learnable structural and positional representations}.
 \newblock In \emph{International Conference on Learning Representations}.
-
-\bibitem[{Dziri et~al.(2023)Dziri, Lu, Sclar, Li, Jiang, Lin, Welleck, West,
-  Bhagavatula, Le~Bras, Hwang, Sanyal, Ren, Ettinger, Harchaoui, and
-  Choi}]{dziri2023faithandfate}
-Nouha Dziri, Ximing Lu, Melanie Sclar, Xiang~Lorraine Li, Liwei Jiang,
-  Bill~Yuchen Lin, Sean Welleck, Peter West, Chandra Bhagavatula, Ronan
-  Le~Bras, Jena~D. Hwang, Soumya Sanyal, Xiang Ren, Allyson Ettinger, Zaid
-  Harchaoui, and Yejin Choi. 2023.
-\newblock \href
-  {https://proceedings.neurips.cc/paper_files/paper/2023/hash/deb3c28192f979302c157cb653c15e90-Abstract-Conference.html}
-  {Faith and fate: Limits of transformers on compositionality}.
-\newblock In \emph{Advances in Neural Information Processing Systems},
-  volume~36, pages 70293--70332.
 
 \bibitem[{Fatemi et~al.(2024)Fatemi, Halcrow, and
   Perozzi}]{fatemi2023talklikeagraph}
@@ -95,14 +58,6 @@ Jin Huang, Xingjian Zhang, Qiaozhu Mei, and Jiaqi Ma. 2024.
   effectively leverage graph structural information through prompts, and why?}
 \newblock \emph{Transactions on Machine Learning Research}.
 
-\bibitem[{Jin et~al.(2024)Jin, Liu, Han, Jiang, Ji, and
-  Han}]{jin2024largelanguagemodelsongraphs}
-Bowen Jin, Gang Liu, Chi Han, Meng Jiang, Heng Ji, and Jiawei Han. 2024.
-\newblock \href {https://doi.org/10.1109/TKDE.2024.3469578} {Large language
-  models on graphs: A comprehensive survey}.
-\newblock \emph{IEEE Transactions on Knowledge and Data Engineering},
-  36(12):8622--8642.
-
 \bibitem[{Levy et~al.(2024)Levy, Jacoby, and Goldberg}]{levy2024sametask}
 Mosh Levy, Alon Jacoby, and Yoav Goldberg. 2024.
 \newblock \href {https://doi.org/10.18653/v1/2024.acl-long.818} {Same task,
@@ -111,28 +66,11 @@ Mosh Levy, Alon Jacoby, and Yoav Goldberg. 2024.
 \newblock In \emph{Proceedings of the 62nd Annual Meeting of the Association
   for Computational Linguistics (Volume 1: Long Papers)}, pages 15339--15353.
 
-\bibitem[{Liu et~al.(2024)Liu, Lin, Hewitt, Paranjape, Bevilacqua, Petroni, and
-  Liang}]{liu2024lostinthemiddle}
-Nelson~F. Liu, Kevin Lin, John Hewitt, Ashwin Paranjape, Michele Bevilacqua,
-  Fabio Petroni, and Percy Liang. 2024.
-\newblock \href {https://doi.org/10.1162/tacl_a_00638} {Lost in the middle: How
-  language models use long contexts}.
-\newblock \emph{Transactions of the Association for Computational Linguistics},
-  12:157--173.
-
 \bibitem[{McNemar(1947)}]{mcnemar1947note}
 Quinn McNemar. 1947.
 \newblock \href {https://doi.org/10.1007/BF02295996} {Note on the sampling
   error of the difference between correlated proportions or percentages}.
 \newblock \emph{Psychometrika}, 12(2):153--157.
-
-\bibitem[{Perozzi et~al.(2024)Perozzi, Fatemi, Zelle, Tsitsulin, Kazemi,
-  Al-Rfou, and Halcrow}]{perozzi2024letyourgraph}
-Bryan Perozzi, Bahare Fatemi, Dustin Zelle, Anton Tsitsulin, Mehran Kazemi,
-  Rami Al-Rfou, and Jonathan Halcrow. 2024.
-\newblock \href {https://arxiv.org/abs/2402.05862} {Let your graph do the
-  talking: Encoding structured data for {LLMs}}.
-\newblock \emph{arXiv preprint arXiv:2402.05862}.
 
 \bibitem[{{Qwen Team}(2025)}]{qwen2025qwen3}
 {Qwen Team}. 2025.
@@ -149,25 +87,6 @@ Ladislav Ramp{\'a}{\v{s}}ek, Michael Galkin, Vijay~Prakash Dwivedi, Anh~Tuan
 \newblock In \emph{Advances in Neural Information Processing Systems},
   volume~35, pages 14501--14515.
 
-\bibitem[{Sanford et~al.(2024)Sanford, Fatemi, Hall, Tsitsulin, Kazemi,
-  Halcrow, Perozzi, and Mirrokni}]{sanford2024understanding}
-Clayton Sanford, Bahare Fatemi, Ethan Hall, Anton Tsitsulin, Mehran Kazemi,
-  Jonathan Halcrow, Bryan Perozzi, and Vahab Mirrokni. 2024.
-\newblock \href
-  {https://proceedings.neurips.cc/paper_files/paper/2024/hash/8f395480c04ac6dfb2c2326a639df88e-Abstract-Conference.html}
-  {Understanding transformer reasoning capabilities via graph algorithms}.
-\newblock In \emph{Advances in Neural Information Processing Systems},
-  volume~37, pages 78320--78370.
-
-\bibitem[{Sclar et~al.(2024)Sclar, Choi, Tsvetkov, and
-  Suhr}]{sclar2024quantifying}
-Melanie Sclar, Yejin Choi, Yulia Tsvetkov, and Alane Suhr. 2024.
-\newblock \href {https://openreview.net/forum?id=RIu5lyNXjT} {Quantifying
-  language models' sensitivity to spurious features in prompt design or: How
-  {I} learned to start worrying about prompt formatting}.
-\newblock In \emph{The Twelfth International Conference on Learning
-  Representations}.
-
 \bibitem[{Shi et~al.(2023)Shi, Chen, Misra, Scales, Dohan, Chi, Sch{\"a}rli,
   and Zhou}]{shi2023distracted}
 Freda Shi, Xinyun Chen, Kanishka Misra, Nathan Scales, David Dohan, Ed~H. Chi,
@@ -177,25 +96,6 @@ Freda Shi, Xinyun Chen, Kanishka Misra, Nathan Scales, David Dohan, Ed~H. Chi,
 \newblock In \emph{Proceedings of the 40th International Conference on Machine
   Learning}, volume 202 of \emph{Proceedings of Machine Learning Research},
   pages 31210--31227.
-
-\bibitem[{Tang et~al.(2025)Tang, Zhang, Li, Chen, and Li}]{tang2025grapharena}
-Jianheng Tang, Qifan Zhang, Yuhan Li, Nuo Chen, and Jia Li. 2025.
-\newblock \href
-  {https://proceedings.iclr.cc/paper_files/paper/2025/hash/77fa8253adfc8b33209639f3e9985741-Abstract-Conference.html}
-  {{GraphArena}: Evaluating and exploring large language models on graph
-  computation}.
-\newblock In \emph{International Conference on Learning Representations}, pages
-  48118--48145.
-
-\bibitem[{Turpin et~al.(2023)Turpin, Michael, Perez, and
-  Bowman}]{turpin2023unfaithful}
-Miles Turpin, Julian Michael, Ethan Perez, and Samuel Bowman. 2023.
-\newblock \href
-  {https://proceedings.neurips.cc/paper_files/paper/2023/hash/ed3fea9033a80fea1376299fa7863f4a-Abstract-Conference.html}
-  {Language models don't always say what they think: Unfaithful explanations in
-  chain-of-thought prompting}.
-\newblock In \emph{Advances in Neural Information Processing Systems},
-  volume~36, pages 74952--74965.
 
 \bibitem[{Wang et~al.(2023)Wang, Feng, He, Tan, Han, and
   Tsvetkov}]{wang2023nlgraph}
