@@ -1,4 +1,4 @@
-\begin{thebibliography}{12}
+\begin{thebibliography}{17}
 \providecommand{\natexlab}[1]{#1}
 
 \bibitem[{Benjamini and Hochberg(1995)}]{benjaminihochberg1995controlling}
@@ -8,6 +8,23 @@ Yoav Benjamini and Yosef Hochberg. 1995.
   multiple testing}.
 \newblock \emph{Journal of the Royal Statistical Society: Series B
   (Methodological)}, 57(1):289--300.
+
+\bibitem[{Brodersen et~al.(2010)Brodersen, Ong, Stephan, and
+  Buhmann}]{brodersen2010balanced}
+Kay~Henning Brodersen, Cheng~Soon Ong, Klaas~Enno Stephan, and Joachim~M.
+  Buhmann. 2010.
+\newblock \href {https://doi.org/10.1109/ICPR.2010.764} {The balanced accuracy
+  and its posterior distribution}.
+\newblock In \emph{Proceedings of the 20th International Conference on Pattern
+  Recognition}, pages 3121--3124.
+
+\bibitem[{Das et~al.(2024)Das, Gupta, Srivastava, and Kang}]{das2024modality}
+Debarati Das, Ishaan Gupta, Jaideep Srivastava, and Dongyeop Kang. 2024.
+\newblock \href {https://doi.org/10.18653/v1/2024.findings-naacl.34} {Which
+  modality should {I} use -- text, motif, or image? : Understanding graphs with
+  large language models}.
+\newblock In \emph{Findings of the Association for Computational Linguistics:
+  NAACL 2024}, pages 503--519.
 
 \bibitem[{Dwivedi et~al.(2022)Dwivedi, Luu, Laurent, Bengio, and
   Bresson}]{dwivedi2022graph}
@@ -58,6 +75,23 @@ Jin Huang, Xingjian Zhang, Qiaozhu Mei, and Jiaqi Ma. 2024.
   effectively leverage graph structural information through prompts, and why?}
 \newblock \emph{Transactions on Machine Learning Research}.
 
+\bibitem[{Levy et~al.(2024)Levy, Jacoby, and Goldberg}]{levy2024sametask}
+Mosh Levy, Alon Jacoby, and Yoav Goldberg. 2024.
+\newblock \href {https://doi.org/10.18653/v1/2024.acl-long.818} {Same task,
+  more tokens: the impact of input length on the reasoning performance of large
+  language models}.
+\newblock In \emph{Proceedings of the 62nd Annual Meeting of the Association
+  for Computational Linguistics (Volume 1: Long Papers)}, pages 15339--15353.
+
+\bibitem[{Liu et~al.(2024)Liu, Lin, Hewitt, Paranjape, Bevilacqua, Petroni, and
+  Liang}]{liu2024lostinthemiddle}
+Nelson~F. Liu, Kevin Lin, John Hewitt, Ashwin Paranjape, Michele Bevilacqua,
+  Fabio Petroni, and Percy Liang. 2024.
+\newblock \href {https://doi.org/10.1162/tacl_a_00638} {Lost in the middle: How
+  language models use long contexts}.
+\newblock \emph{Transactions of the Association for Computational Linguistics},
+  12:157--173.
+
 \bibitem[{McNemar(1947)}]{mcnemar1947note}
 Quinn McNemar. 1947.
 \newblock \href {https://doi.org/10.1007/BF02295996} {Note on the sampling
@@ -78,6 +112,16 @@ Ladislav Ramp{\'a}{\v{s}}ek, Michael Galkin, Vijay~Prakash Dwivedi, Anh~Tuan
   {Recipe for a general, powerful, scalable graph transformer}.
 \newblock In \emph{Advances in Neural Information Processing Systems},
   volume~35, pages 14501--14515.
+
+\bibitem[{Shi et~al.(2023)Shi, Chen, Misra, Scales, Dohan, Chi, Sch{\"a}rli,
+  and Zhou}]{shi2023distracted}
+Freda Shi, Xinyun Chen, Kanishka Misra, Nathan Scales, David Dohan, Ed~H. Chi,
+  Nathanael Sch{\"a}rli, and Denny Zhou. 2023.
+\newblock \href {https://proceedings.mlr.press/v202/shi23a.html} {Large
+  language models can be easily distracted by irrelevant context}.
+\newblock In \emph{Proceedings of the 40th International Conference on Machine
+  Learning}, volume 202 of \emph{Proceedings of Machine Learning Research},
+  pages 31210--31227.
 
 \bibitem[{Wang et~al.(2023)Wang, Feng, He, Tan, Han, and
   Tsvetkov}]{wang2023nlgraph}

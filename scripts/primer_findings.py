@@ -31,6 +31,7 @@ import sys
 
 import numpy as np
 import pandas as pd
+from scipy.stats import binomtest
 
 from graphtalk import outcomes, scoring
 
@@ -316,15 +317,19 @@ def four_b_think_null(f):
 
 
 def sign_flip(f):
-  print("[flip] qwen3-4b node_degree, degree and all vs none, by density")
+  print("[flip] qwen3-4b node_degree, degree and all vs none, by density "
+        "(BH q over the 14 tests)")
+  rows = []
   for c in ["degree", "all"]:
     for dens in DENS4 + DENSHI:
       j = pairs(f, "qwen3-4b", "node_degree", "none", c, [dens])
       m = scoring.mcnemar(j.correct_a.astype(bool).to_numpy(),
                           j.correct_b.astype(bool).to_numpy())
-      print(f"  {c:6s} p={dens:.2f} base {100 * j.correct_a.mean():5.1f} "
-            f"delta {100 * (j.correct_b.mean() - j.correct_a.mean()):+5.1f} "
-            f"broke {m['b']} fixed {m['c']} p={m['p_value']:.2g}")
+      rows.append((c, dens, j, m))
+  for (c, dens, j, m), q in zip(rows, bh([m["p_value"] for *_, m in rows])):
+    print(f"  {c:6s} p={dens:.2f} base {100 * j.correct_a.mean():5.1f} "
+          f"delta {100 * (j.correct_b.mean() - j.correct_a.mean()):+5.1f} "
+          f"broke {m['b']} fixed {m['c']} p={m['p_value']:.2g} q={q:.2g}")
   d = f[(f.arm == "qwen3-4b") & (f.task == "node_degree") & (f.density_class == 0.5)
         & (f.hit_cap == 0)]
   print("  median new tokens at p=.50: "
@@ -480,6 +485,56 @@ def collapse_rows(f):
   return pd.DataFrame(rows)
 
 
+def ba_test(j, per_density=False):
+  """Paired change in balanced accuracy (points; truncated is not correct) and its
+  permutation p: each graph's two responses swap conditions at random, B draws.
+  per_density averages the per-density changes, as [collapse]'s dba does."""
+  a, b = j.correct_a.to_numpy(float), j.correct_b.to_numpy(float)
+  pos = (j.gold_is_yes_a == 1).to_numpy()
+  groups = boot_positions(j) if per_density else [np.arange(len(j))]
+
+  def stat(x, y):
+    ba = lambda z, g: 0.5 * (z[..., g[pos[g]]].mean(-1) + z[..., g[~pos[g]]].mean(-1))
+    return 100 * np.mean([ba(y, g) - ba(x, g) for g in groups], axis=0)
+  s = np.random.default_rng(SEED).random((B, len(a))) < 0.5
+  obs = stat(a, b)
+  null = stat(np.where(s, b, a), np.where(s, a, b))
+  return obs, (np.sum(np.abs(null) >= abs(obs) - 1e-9) + 1) / (B + 1)
+
+
+def ba_test_stat(s):
+  """ba_test's pooled change, on a DataFrame (for boot)."""
+  p = (s.gold_is_yes_a == 1).to_numpy()
+  return 50 * ((s.correct_b[p].mean() - s.correct_a[p].mean())
+               + (s.correct_b[~p].mean() - s.correct_a[~p].mean()))
+
+
+def edge_existence_main(f):
+  """Main-sweep edge_existence per arm and condition, with balanced accuracy tested
+  against none (the answer prevalence varies with density, so raw accuracy alone
+  rewards saying yes)."""
+  print("[eemain] edge_existence, main sweep (p<=.50): raw accuracy and balanced "
+        "accuracy of all responses (truncated not correct, %), yes-rate of finished, "
+        "truncated share; balanced accuracy vs none: change [95% CI], paired "
+        "permutation p, BH q over the six conditions within arm")
+  for arm in ARMS:
+    d = f[(f.arm == arm) & (f.task == "edge_existence") & f.density_class.isin(DENS4)]
+    rows = []
+    for c in ["filler"] + PRIMERS:
+      j = pairs(f, arm, "edge_existence", "none", c, DENS4)
+      obs, p = ba_test(j)
+      lo, hi = boot(j, ba_test_stat)
+      rows.append((c, obs, lo, hi, p))
+    for c in ["none", "filler"] + PRIMERS:
+      x = d[d.condition == c]
+      fin = x[x.hit_cap == 0]
+      ba = 50 * (x[x.gold_is_yes == 1].correct.mean() + x[x.gold_is_yes == 0].correct.mean())
+      print(f"  {arm:17s} {c:10s} raw {100 * x.correct.mean():.2f} BA {ba:.2f} yes "
+            f"{(fin.pred == 'Yes').mean():.3f} truncated {x.truncated.mean():.3f}")
+    for (c, obs, lo, hi, p), q in zip(rows, bh([r[4] for r in rows])):
+      print(f"    BA {c:10s} vs none {f1(obs)} [{f1(lo)}, {f1(hi)}] p={p:.2g} q={q:.2g}")
+
+
 def edge_existence(f):
   d = f[(f.task == "edge_existence") & (f.hit_cap == 0)].copy()
   d["yes"] = (d.pred == "Yes").astype(int)
@@ -525,16 +580,67 @@ def edge_existence(f):
                  - 0.5 * (p.correct_a.mean() + n.correct_a.mean()))
       return 100 * np.mean(v)
     lo, hi = boot(j, dba)
-    print(f"  balanced accuracy, qwen3-1.7b, p>=.65, {c} vs none: {f1(dba(j))} [{f1(lo)}, {f1(hi)}]")
+    print(f"  balanced accuracy, qwen3-1.7b, p>=.65, {c} vs none: {f1(dba(j))} [{f1(lo)}, {f1(hi)}]"
+          f" permutation p={ba_test(j, per_density=True)[1]:.2g}")
 
 
 def clustering_high(f):
-  print("[clusthi] qwen3-4b node_degree vs none, p>=.65 pooled")
-  for c in ["clustering", "rwse", "filler", "degree", "all", "components"]:
-    print(f"  {c:10s} " + fmt(effect(pairs(f, "qwen3-4b", "node_degree", "none", c, DENSHI))))
+  print("[clusthi] qwen3-4b node_degree vs none, p>=.65 pooled (BH q over the six conditions)")
+  conds = ["clustering", "rwse", "filler", "degree", "all", "components"]
+  es = [effect(pairs(f, "qwen3-4b", "node_degree", "none", c, DENSHI)) for c in conds]
+  for c, e, q in zip(conds, es, bh([e[5] for e in es])):
+    print(f"  {c:10s} " + fmt(e) + f" q={q:.2g}")
   for band, dens in (("p<=.50", DENS4), ("p>=.65", DENSHI)):
     print(f"  qwen3-1.7b clustering vs none, {band}: "
           + fmt(effect(pairs(f, "qwen3-1.7b", "node_degree", "none", "clustering", dens))))
+
+
+def clustering_arms(f):
+  """The clustering primer on node_degree for every arm, on the same graphs: main sweep and
+  high-density extension pooled (Figure 2's top half)."""
+  print("[clustarms] node_degree, clustering vs none, every arm, main sweep (p<=.50) and "
+        "high-density extension (p>=.65) pooled; BH q over the eight")
+  rows = [(arm, band, effect(pairs(f, arm, "node_degree", "none", "clustering", dens)))
+          for arm in ARMS for band, dens in (("p<=.50", DENS4), ("p>=.65", DENSHI))]
+  for (arm, band, e), q in zip(rows, bh([e[5] for *_, e in rows])):
+    print(f"  {arm:17s} {band} " + fmt(e) + f" q={q:.2g}")
+
+
+def density_prior(f):
+  """Could a primer act as a density hint? At p>=.65 an ER node's expected degree is
+  39p, and printed clustering values sit near p. A hint pulls answers toward 39p,
+  wrong ones included; better reading of the node's line need not."""
+  d = f[(f.arm == "qwen3-4b") & (f.task == "node_degree") & f.density_class.isin(DENSHI)
+        & (f.hit_cap == 0)].copy()
+  d["ans"] = pd.to_numeric(d.pred, errors="coerce")
+  print("[prior] qwen3-4b node_degree p>=.65, finished responses: mean signed error / "
+        "answers 39 (%) / mean |answer - 39p| / correct (%)")
+  for c in ["none", "filler", "components", "clustering", "rwse", "degree", "all"]:
+    x = d[d.condition == c]
+    print(f"  {c:10s} {x.signed_error.mean():+.2f} / {100 * (x.ans == 39).mean():.1f} / "
+          f"{(x.ans - 39 * x.density_class).abs().mean():.2f} / {100 * x.exact.mean():.1f}")
+  g = d[d.condition == "none"]
+  gold = pd.to_numeric(g.gold, errors="coerce")
+  print(f"  gold: mean |gold - 39p| {(gold - 39 * g.density_class).abs().mean():.2f}; "
+        f"answering round(39p) is correct on "
+        f"{100 * (gold == (39 * g.density_class).round()).mean():.1f}%")
+  print("  paired with none, both finished: pairs wrong under both, % whose answer moves "
+        "closer to / farther from 39p and the mean change in |answer - 39p|; fixes, % "
+        "whose no-primer answer over-counted / was 39")
+  for c in ["filler", "components", "clustering", "rwse", "degree"]:
+    j = finished(pairs(f, "qwen3-4b", "node_degree", "none", c, DENSHI))
+    e = 39 * j.index.get_level_values(0).to_numpy()
+    pa, pb = pd.to_numeric(j.pred_a, errors="coerce"), pd.to_numeric(j.pred_b, errors="coerce")
+    da, db = (pa - e).abs(), (pb - e).abs()
+    w = (j.correct_a == 0) & (j.correct_b == 0)
+    fx = (j.correct_a == 0) & (j.correct_b == 1)
+    closer, farther = int((db[w] < da[w]).sum()), int((db[w] > da[w]).sum())
+    sign_p = binomtest(closer, closer + farther).pvalue if closer + farther else float("nan")
+    print(f"  {c:10s} wrong both n={int(w.sum())}: closer {100 * (db[w] < da[w]).mean():.0f} / "
+          f"farther {100 * (db[w] > da[w]).mean():.0f} (sign test p={sign_p:.2g}), "
+          f"change {(db[w] - da[w]).mean():+.2f}; "
+          f"fixes n={int(fx.sum())}: over-counted {100 * (j.signed_error_a[fx] > 0).mean():.0f}% / "
+          f"39 {100 * (pa[fx] == 39).mean():.0f}%")
 
 
 def replication():
@@ -1147,8 +1253,11 @@ def main():
   recovery(f)
   edge_count(f)
   edge_existence(f)
+  edge_existence_main(f)
   joint(f)
   clustering_high(f)
+  clustering_arms(f)
+  density_prior(f)
   replication()
   components(f)
   bundle(f)

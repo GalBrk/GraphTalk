@@ -1,0 +1,8 @@
+% Additions to Appendix A (Evaluation Grid and Audit Trail), moved out of the Method.
+
+\paragraph{Why these features.} Degree and RWSE are the structural encodings graph Transformers use \citep{rampasek2022recipe}; local clustering adds how a node's neighbors connect; the component count is a single global fact that, with the node and edge counts, decides whether a cycle exists. Laplacian encodings are left out because their sign and basis are arbitrary and cannot be stated as facts \citep{dwivedi2022graph}.
+
+\paragraph{Detectable effects.} In one cell of $100$ graphs the median smallest detectable paired effect is $7.4$ points; % [power]
+among contrasts without a significant effect ($400$ paired graphs each), the median detectable gain is $5.7$ points for the 1.7B models and $3.2$ for the 4B models. % [lmde]
+
+\paragraph{Response-level measures.} Rule-based readers extract what each response states: whether it enumerates the queried node's neighbors or retrieves a stated value, whether it reports a conflict with the primer, and which cycles and edges it asserts, each checked edge by edge against the prompt's graph.

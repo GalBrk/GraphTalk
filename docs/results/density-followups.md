@@ -78,7 +78,7 @@ under in the source, so `+3.8 [ddplain]` is found in the `[ddplain]` block;
 ## 2. `clustering` on `node_degree`, plain Qwen3-1.7B
 
 - **At p ≤ .50:** +3.8 [ddplain] (+1.6 [ddplain] to +6.1 [ddplain]),
-  p = 0.0017 [ddplain], 215 [ddplain] graphs fixed and 154 [ddplain] broken of
+  p = 0.0017 [ddplain], q = 0.0035 [ddplain], 215 [ddplain] graphs fixed and 154 [ddplain] broken of
   1600 [ddplain]. On a fresh seed at the same densities: +4.2 [ddrep]
   (p = 0.00055 [ddrep], 1600 [ddrep] pairs). `primer_findings.py`'s `[replic]`
   block, cited in [n40-sweep.md §7](n40-sweep.md#7-side-information-is-small-and-non-specific),
@@ -90,7 +90,7 @@ under in the source, so `+3.8 [ddplain]` is found in the `[ddplain]` block;
 - **At p ≥ .65 it is absent:** −0.7 [ddplain] (p = 0.57 [ddplain]). Over all
   seven densities it is +1.9 [ddplain] (p = 0.022 [ddplain]).
 - **Against the roughly length-matched `filler`:** +3.2 [ddplainfill] at p ≤ .50
-  (p = 0.007 [ddplainfill]).
+  (p = 0.007 [ddplainfill], q = 0.014 [ddplainfill]).
 - **No trend within p ≤ .50:** slope +0.113 [ddplain] in the correct share
   per unit of density (p = 0.15 [ddplain]); across all seven levels the effect
   shows no significant correlation with the no-primer accuracy
@@ -108,7 +108,10 @@ The `degree` primer states every node's degree, so it states the answer.
 
 - **Plain:** +10.2 [ddplain] at p ≤ .50, largest at p = .35
   (+21.8 [ddplain]) and +6.8 [ddplain] at .50, and +1.2 [ddplain] at p ≥ .65
-  (p = 0.33 [ddplain]).
+  (p = 0.33 [ddplain]). Per level: +3.0 [ddplain] at p = .10
+  (q = 0.16 [ddplain]), +9.2 [ddplain] at .20 (q = 6e-05 [ddplain]),
+  +21.8 [ddplain] at .35 (q = 1.6e-11 [ddplain]) and +6.8 [ddplain] at .50
+  (q = 0.072 [ddplain]).
 - **Why plain fails at high density:** without a primer the plain model
   answers 39, the degree of a node joined to every other node, on
   24.0% [ddplain], 46.2% [ddplain] and 61.0% [ddplain] of finished responses at
@@ -184,9 +187,12 @@ condition.
   +8.2 [fixdeg17] at 16. The largest gain is at n = 20, p = .842
   (+16.5 [fixdeg17], p = 3.5e-08 [fixdeg17]), then n = 80, p = .101
   (+10.5 [fixdeg17]); the one significant cost is at n = 20, p = .421
-  (−4.8 [fixdeg17], p = 0.0054 [fixdeg17]), where accuracy is highest, and
+  (−4.8 [fixdeg17], p = 0.0054 [fixdeg17], q = 0.011 [fixdeg17]), where accuracy is highest, and
   n = 160, p = .101 shows nothing (−1.0 [fixdeg17], p = 0.75 [fixdeg17]).
-- **`clustering`, Qwen3-8B:** −1.0 [fixdeg8] pooled (p = 0.05 [fixdeg8]).
+- **`clustering`, Qwen3-8B:** −1.0 [fixdeg8] pooled (p = 0.05 [fixdeg8],
+  q = 0.05 [fixdeg8]); in the three cells below 90% without a primer it is
+  −1.8 [fixdeg8] (n = 80, mean degree 16), −2.8 [fixdeg8] and −4.0 [fixdeg8]
+  (n = 160, mean degree 8 and 16), none significant (q ≥ 0.77 [fixdeg8]).
   Without a primer Qwen3-8B is near ceiling at n ≤ 40 and at n = 80 with mean
   degree 8 (96.5 [fixdeg8] to 99.8 [fixdeg8]); it scores 89.5 [fixdeg8] at
   n = 80 with mean degree 16, and 89.8 [fixdeg8] and 80.2 [fixdeg8] at
@@ -229,7 +235,16 @@ From the plain runs at the default seed, with the fresh seed held out.
   per 10 list positions (coefficient −1.74 [rqhetero],
   p = 0.018 [rqhetero]). Without
   a primer accuracy does not depend on position (38.0 [rqhetero],
-  37.3 [rqhetero], 38.6 [rqhetero]).
+  37.3 [rqhetero], 38.6 [rqhetero]). Over all seven densities, `filler` and
+  `components` show no such gradient: −1.49 [rqhetero], −3.76 [rqhetero],
+  −1.93 [rqhetero] and −0.64 [rqhetero], −0.64 [rqhetero], 0.11 [rqhetero].
+- **The queried node's own values.** Over all seven densities the effect does
+  not depend on the node's printed clustering coefficient (OLS coefficient
+  0.65 [rqhetero], p = 0.5 [rqhetero]). At p = .35 and .50 it rises across that
+  coefficient's terciles, 1.87 [rqhetero], 6.77 [rqhetero] and
+  9.02 [rqhetero] points (p = 0.0097 [rqhetero] for the top tercile; OLS
+  coefficient 5.14 [rqhetero], p = 0.22 [rqhetero]). It rises with the node's
+  degree (OLS coefficient 2.04 [rqhetero], p = 0.012 [rqhetero]).
 - **What goes wrong without it** (finished responses, p = .35 and .50): the
   model mostly under-counts (in per cent of finished responses,
   51.0 [rqerrors] under and 14.6 [rqerrors] over; 42.5 [rqerrors] and
@@ -238,7 +253,10 @@ From the plain runs at the default seed, with the fresh seed held out.
   it (10.8 [rqbehaviour]); of the wrong answers, 65.1 [rqbehaviour] per cent
   list too few neighbours. With `clustering`, a response
   misses 0.86 [rqbehaviour] neighbours on average, against 1.49 [rqbehaviour]
-  without.
+  without; `components` and `filler` also lower it, to 0.94 [rqbehaviour] and
+  1.05 [rqbehaviour]. Of the wrong answers, 6.5 [rqbehaviour] per cent add a
+  neighbour without a primer and 14.2 [rqbehaviour] per cent with
+  `clustering`.
 - **Fixed and broken** (all seven densities): of the responses `clustering` corrects, the
   no-primer error was a copying error in 224 [rqbehaviour] and a miscount in
   61 [rqbehaviour]; of those it breaks, 176 [rqbehaviour] and
