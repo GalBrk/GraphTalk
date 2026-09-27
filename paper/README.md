@@ -31,7 +31,8 @@ part of the paper (see "Earlier stages" in the results index).
 
 1. **Every number comes from a tagged citation**, copied as printed, in
    `docs/results/*.md` or in a doc written after them (`primer-directions.md`,
-   `primer-robustness.md`, `investigate_connections_and_cycles.md`). The
+   `primer-robustness.md`, `investigate_connections_and_cycles.md`,
+   `density-interaction.md`). The
    `docs/results/` validation checked the older data for staleness; newer docs
    are current and just as citable. Put the tag in a LaTeX comment on the same
    line, e.g. `+3.8~points % [ddplain]`, so each number can be traced to its
