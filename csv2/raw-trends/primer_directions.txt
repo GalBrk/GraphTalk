@@ -1,0 +1,308 @@
+[pdsource] A1, degree and all: share of responses reporting a conflict (response_patterns.reports_conflict, validated 19/20; under none, where no degree is stated, for scale); truncated share with vs without a conflict; finished answers of responses with a conflict: the primer's value / a value the response computed itself / other
+  node_degree 1.7B   degree conflict  0.0% (none 0.0%) | truncated   - with vs   0% without | finished with a conflict n=0: - / - / -
+  node_degree 1.7B   all    conflict  0.3% (none 0.0%) | truncated   0% with vs   0% without | finished with a conflict n=2: 50% / 50% / 0%
+  node_degree 1.7B-T degree conflict 38.4% (none 2.1%) | truncated  19% with vs   0% without | finished with a conflict n=218: 66% / 30% / 4%
+  node_degree 1.7B-T all    conflict 21.1% (none 2.1%) | truncated   3% with vs   0% without | finished with a conflict n=144: 72% / 23% / 6%
+  node_degree 4B     degree conflict 10.0% (none 0.0%) | truncated   0% with vs   0% without | finished with a conflict n=70: 56% / 41% / 3%
+  node_degree 4B     all    conflict  0.3% (none 0.0%) | truncated   0% with vs   0% without | finished with a conflict n=2: 50% / 0% / 50%
+  node_degree 4B-T   degree conflict 19.1% (none 1.9%) | truncated   1% with vs   0% without | finished with a conflict n=132: 93% / 6% / 1%
+  node_degree 4B-T   all    conflict 10.9% (none 1.9%) | truncated   5% with vs   1% without | finished with a conflict n=72: 90% / 8% / 1%
+  edge_count  1.7B   degree conflict  0.2% (none 0.0%) | truncated   0% with vs  10% without | finished with a conflict n=1: 0% / 100% / 0%
+  edge_count  1.7B   all    conflict  0.8% (none 0.0%) | truncated   0% with vs  28% without | finished with a conflict n=3: 33% / 67% / 0%
+  edge_count  1.7B-T degree conflict 69.8% (none 11.8%) | truncated  93% with vs  54% without | finished with a conflict n=20: 40% / 60% / 0%
+  edge_count  1.7B-T all    conflict 53.8% (none 11.8%) | truncated  89% with vs  47% without | finished with a conflict n=24: 54% / 46% / 0%
+  edge_count  4B     degree conflict  4.8% (none 2.2%) | truncated   5% with vs   2% without | finished with a conflict n=18: 0% / 33% / 67%
+  edge_count  4B     all    conflict  0.8% (none 2.2%) | truncated   0% with vs   1% without | finished with a conflict n=3: 0% / 33% / 67%
+  edge_count  4B-T   degree conflict 64.5% (none 33.0%) | truncated  83% with vs  15% without | finished with a conflict n=45: 64% / 36% / 0%
+  edge_count  4B-T   all    conflict 62.5% (none 33.0%) | truncated  80% with vs  16% without | finished with a conflict n=51: 41% / 59% / 0%
+[pdmisread] A2, all tasks and densities: responses quoting a node's clustering coefficient or return probability in the primer's phrasing, each distinct (node, value) counted once per response; under none (no primer: how often such quotes arise anyway) and under the primers that print the feature: distinct quotes right / the neighbouring line's value, observed vs expected by chance (responses with one) / other
+  clustering 1.7B   none       0 of 3000 responses quote a value
+  clustering 1.7B   all        8 responses, 8 quotes: right 100.0% | near 0 vs 0.0 by chance (0 responses) | other 0
+  clustering 1.7B-T none       0 of 3000 responses quote a value
+  clustering 1.7B-T clustering 143 responses, 1957 quotes: right 97.6% | near 21 vs 17.4 by chance (12 responses) | other 25
+  clustering 1.7B-T all        855 responses, 6778 quotes: right 98.0% | near 33 vs 30.2 by chance (33 responses) | other 105
+  clustering 4B     none       0 of 3000 responses quote a value
+  clustering 4B     clustering 1 responses, 1 quotes: right 0.0% | near 1 vs 0.1 by chance (1 responses) | other 0
+  clustering 4B     all        3 responses, 3 quotes: right 100.0% | near 0 vs 0.0 by chance (0 responses) | other 0
+  clustering 4B-T   none       0 of 3000 responses quote a value
+  clustering 4B-T   clustering 98 responses, 305 quotes: right 97.7% | near 4 vs 2.6 by chance (4 responses) | other 3
+  clustering 4B-T   all        659 responses, 1699 quotes: right 94.9% | near 38 vs 21.6 by chance (37 responses) | other 49
+  rwse       1.7B   none       0 of 3000 responses quote a value
+  rwse       1.7B   rwse       3 responses, 3 quotes: right 100.0% | near 0 vs 0.0 by chance (0 responses) | other 0
+  rwse       1.7B   all        9 responses, 9 quotes: right 88.9% | near 0 vs 0.0 by chance (0 responses) | other 1
+  rwse       1.7B-T none       0 of 3000 responses quote a value
+  rwse       1.7B-T rwse       644 responses, 4478 quotes: right 97.7% | near 43 vs 32.1 by chance (37 responses) | other 61
+  rwse       1.7B-T all        948 responses, 6807 quotes: right 98.6% | near 38 vs 29.6 by chance (35 responses) | other 58
+  rwse       4B     none       0 of 3000 responses quote a value
+  rwse       4B     rwse       2 responses, 2 quotes: right 100.0% | near 0 vs 0.0 by chance (0 responses) | other 0
+  rwse       4B     all        3 responses, 3 quotes: right 100.0% | near 0 vs 0.0 by chance (0 responses) | other 0
+  rwse       4B-T   none       0 of 3000 responses quote a value
+  rwse       4B-T   rwse       156 responses, 318 quotes: right 98.7% | near 4 vs 2.6 by chance (2 responses) | other 0
+  rwse       4B-T   all        652 responses, 1690 quotes: right 96.9% | near 30 vs 15.9 by chance (28 responses) | other 22
+[pdcommit] A3, thinking arms, main sweep: finished responses -- share with a candidate answer in the trace, median position of the first one (% of the trace), share whose first candidate is the final answer, mean distinct candidates; revision words per 1,000 characters, finished | truncated
+  1.7B-T node_degree none       finished n=397: candidate 98%, first at 44%, first=final 99%, distinct 1.0 | revisions/1k 4.13 | truncated n=3: distinct 0.0, revisions/1k 12.80
+  1.7B-T node_degree filler     finished n=399: candidate 92%, first at 50%, first=final 99%, distinct 0.9 | revisions/1k 4.09 | truncated n=1: distinct 0.0, revisions/1k 4.28
+  1.7B-T node_degree components finished n=398: candidate 96%, first at 43%, first=final 99%, distinct 1.0 | revisions/1k 4.19 | truncated n=2: distinct 0.0, revisions/1k 19.83
+  1.7B-T node_degree clustering finished n=399: candidate 95%, first at 45%, first=final 99%, distinct 1.0 | revisions/1k 3.66 | truncated n=1: distinct 0.0, revisions/1k 9.55
+  1.7B-T node_degree rwse       finished n=397: candidate 98%, first at 44%, first=final 99%, distinct 1.0 | revisions/1k 3.58 | truncated n=3: distinct 0.7, revisions/1k 5.18
+  1.7B-T node_degree degree     finished n=379: candidate 99%, first at 27%, first=final 93%, distinct 1.2 | revisions/1k 2.98 | truncated n=21: distinct 2.0, revisions/1k 3.11
+  1.7B-T node_degree all        finished n=399: candidate 97%, first at 39%, first=final 92%, distinct 1.1 | revisions/1k 3.28 | truncated n=1: distinct 2.0, revisions/1k 6.72
+  1.7B-T edge_count  none       finished n=73: candidate 100%, first at 54%, first=final 88%, distinct 1.6 | revisions/1k 1.01 | truncated n=327: distinct 0.7, revisions/1k 1.11
+  1.7B-T edge_count  filler     finished n=68: candidate 100%, first at 53%, first=final 82%, distinct 1.7 | revisions/1k 1.14 | truncated n=332: distinct 0.9, revisions/1k 1.22
+  1.7B-T edge_count  components finished n=71: candidate 100%, first at 52%, first=final 76%, distinct 1.8 | revisions/1k 1.26 | truncated n=329: distinct 0.7, revisions/1k 1.35
+  1.7B-T edge_count  clustering finished n=70: candidate 100%, first at 52%, first=final 74%, distinct 1.9 | revisions/1k 1.19 | truncated n=330: distinct 1.0, revisions/1k 1.35
+  1.7B-T edge_count  rwse       finished n=53: candidate 100%, first at 56%, first=final 83%, distinct 1.9 | revisions/1k 1.11 | truncated n=347: distinct 0.7, revisions/1k 1.19
+  1.7B-T edge_count  degree     finished n=76: candidate 100%, first at 37%, first=final 84%, distinct 1.7 | revisions/1k 2.19 | truncated n=324: distinct 1.1, revisions/1k 3.46
+  1.7B-T edge_count  all        finished n=122: candidate 100%, first at 41%, first=final 92%, distinct 1.6 | revisions/1k 2.07 | truncated n=278: distinct 1.1, revisions/1k 3.04
+  4B-T   node_degree none       finished n=389: candidate 90%, first at 48%, first=final 100%, distinct 0.9 | revisions/1k 3.74 | truncated n=11: distinct 0.2, revisions/1k 10.37
+  4B-T   node_degree filler     finished n=396: candidate 84%, first at 58%, first=final 100%, distinct 0.8 | revisions/1k 3.46 | truncated n=4: distinct 0.2, revisions/1k 10.21
+  4B-T   node_degree components finished n=391: candidate 90%, first at 45%, first=final 100%, distinct 0.9 | revisions/1k 3.59 | truncated n=9: distinct 0.0, revisions/1k 10.88
+  4B-T   node_degree clustering finished n=397: candidate 87%, first at 57%, first=final 100%, distinct 0.9 | revisions/1k 2.94 | truncated n=3: distinct 0.0, revisions/1k 14.87
+  4B-T   node_degree rwse       finished n=391: candidate 97%, first at 61%, first=final 99%, distinct 1.0 | revisions/1k 2.95 | truncated n=9: distinct 0.0, revisions/1k 8.91
+  4B-T   node_degree degree     finished n=399: candidate 100%, first at 30%, first=final 98%, distinct 1.0 | revisions/1k 2.86 | truncated n=1: distinct 0.0, revisions/1k 15.58
+  4B-T   node_degree all        finished n=393: candidate 96%, first at 46%, first=final 97%, distinct 1.0 | revisions/1k 2.39 | truncated n=7: distinct 0.4, revisions/1k 8.96
+  4B-T   edge_count  none       finished n=82: candidate 100%, first at 58%, first=final 76%, distinct 1.8 | revisions/1k 1.43 | truncated n=318: distinct 1.0, revisions/1k 1.65
+  4B-T   edge_count  filler     finished n=134: candidate 100%, first at 61%, first=final 81%, distinct 1.9 | revisions/1k 1.38 | truncated n=266: distinct 1.0, revisions/1k 1.50
+  4B-T   edge_count  components finished n=182: candidate 100%, first at 55%, first=final 84%, distinct 1.8 | revisions/1k 1.28 | truncated n=218: distinct 1.1, revisions/1k 1.56
+  4B-T   edge_count  clustering finished n=186: candidate 100%, first at 62%, first=final 80%, distinct 1.7 | revisions/1k 1.34 | truncated n=214: distinct 1.2, revisions/1k 1.80
+  4B-T   edge_count  rwse       finished n=131: candidate 100%, first at 66%, first=final 58%, distinct 1.9 | revisions/1k 1.23 | truncated n=269: distinct 1.2, revisions/1k 1.16
+  4B-T   edge_count  degree     finished n=165: candidate 100%, first at 39%, first=final 78%, distinct 1.8 | revisions/1k 2.19 | truncated n=235: distinct 1.3, revisions/1k 3.30
+  4B-T   edge_count  all        finished n=177: candidate 100%, first at 53%, first=final 69%, distinct 1.9 | revisions/1k 1.97 | truncated n=223: distinct 1.2, revisions/1k 2.94
+[pdposition] A4, node_degree, all seven densities, R1 correct share: accuracy by the queried node's quarter of the lines (ids 0-9 / 10-19 / 20-29 / 30-39) under none -> the primer; then the primer's effect on the first quarter minus its effect on the last, 95% interval over graphs within density
+  1.7B   degree     40->49 / 38->40 / 32->41 / 45->42 | first minus last quarter +13.1 [+3.2, +22.9]
+  1.7B   all        40->54 / 38->45 / 32->41 / 45->42 | first minus last quarter +18.2 [+7.9, +28.6]
+  1.7B   clustering 40->44 / 38->36 / 32->35 / 45->41 | first minus last quarter +8.0 [-1.6, +17.4]
+  1.7B   rwse       40->50 / 38->37 / 32->32 / 45->34 | first minus last quarter +21.5 [+12.1, +30.8]
+  1.7B   filler     40->42 / 38->33 / 32->29 / 45->40 | first minus last quarter +7.7 [-0.7, +16.2]
+  1.7B-T degree     69->88 / 65->80 / 56->79 / 63->70 | first minus last quarter +13.0 [+1.8, +23.9]
+  1.7B-T all        69->91 / 65->79 / 56->79 / 63->70 | first minus last quarter +16.1 [+5.0, +26.2]
+  1.7B-T clustering 69->69 / 65->55 / 56->53 / 63->63 | first minus last quarter +0.5 [-9.7, +10.5]
+  1.7B-T rwse       69->74 / 65->55 / 56->53 / 63->69 | first minus last quarter -0.4 [-10.3, +9.3]
+  1.7B-T filler     69->64 / 65->57 / 56->52 / 63->52 | first minus last quarter +6.5 [-4.0, +16.3]
+  4B     degree     82->87 / 80->78 / 76->80 / 82->77 | first minus last quarter +9.1 [-1.4, +19.7]
+  4B     all        82->76 / 80->60 / 76->64 / 82->65 | first minus last quarter +10.7 [+1.8, +19.9]
+  4B     clustering 82->83 / 80->85 / 76->84 / 82->88 | first minus last quarter -5.1 [-11.6, +0.9]
+  4B     rwse       82->83 / 80->83 / 76->79 / 82->84 | first minus last quarter -1.3 [-8.0, +4.6]
+  4B     filler     82->80 / 80->81 / 76->78 / 82->85 | first minus last quarter -5.7 [-12.0, +0.3]
+  4B-T   degree     99->100 / 97->99 / 98->96 / 94->98 | first minus last quarter -3.2 [-7.6, +1.1]
+  4B-T   all        99->99 / 97->98 / 98->97 / 94->96 | first minus last quarter -2.4 [-7.2, +2.1]
+  4B-T   clustering 99->99 / 97->98 / 98->97 / 94->98 | first minus last quarter -3.7 [-8.6, +0.8]
+  4B-T   rwse       99->99 / 97->98 / 98->96 / 94->91 | first minus last quarter +2.0 [-3.6, +7.6]
+  4B-T   filler     99->99 / 97->98 / 98->98 / 94->98 | first minus last quarter -3.7 [-7.6, -0.3]
+[pdconsist] B5, main sweep, graphs where connected_nodes and edge_existence both finished: consistent (the yes/no answer for (t, b) agrees with b being in the model's own list for t) / both correct / consistent but not both correct; then the change in consistency against none on the graphs both conditions share, exact McNemar p
+  1.7B   none       n=400: consistent 70.0% | both correct 52.2% | consistent, not both 17.8%
+  1.7B   filler     n=400: consistent 55.2% | both correct 40.5% | consistent, not both 14.8% | vs none -14.8 (n=400, p=2.7e-10)
+  1.7B   components n=400: consistent 62.0% | both correct 48.0% | consistent, not both 14.0% | vs none -8.0 (n=400, p=2.1e-05)
+  1.7B   clustering n=400: consistent 73.0% | both correct 54.2% | consistent, not both 18.8% | vs none +3.0 (n=400, p=0.24)
+  1.7B   rwse       n=399: consistent 75.4% | both correct 55.9% | consistent, not both 19.5% | vs none +5.5 (n=399, p=0.03)
+  1.7B   degree     n=400: consistent 74.2% | both correct 56.2% | consistent, not both 18.0% | vs none +4.2 (n=400, p=0.082)
+  1.7B   all        n=399: consistent 81.5% | both correct 62.2% | consistent, not both 19.3% | vs none +11.5 (n=399, p=9.1e-06)
+  1.7B-T none       n=394: consistent 99.0% | both correct 78.9% | consistent, not both 20.1%
+  1.7B-T filler     n=398: consistent 98.0% | both correct 80.7% | consistent, not both 17.3% | vs none -1.0 (n=393, p=0.39)
+  1.7B-T components n=395: consistent 97.7% | both correct 80.8% | consistent, not both 17.0% | vs none -1.3 (n=390, p=0.27)
+  1.7B-T clustering n=398: consistent 97.2% | both correct 79.4% | consistent, not both 17.8% | vs none -1.8 (n=392, p=0.092)
+  1.7B-T rwse       n=397: consistent 96.2% | both correct 78.1% | consistent, not both 18.1% | vs none -2.8 (n=391, p=0.013)
+  1.7B-T degree     n=392: consistent 95.7% | both correct 83.4% | consistent, not both 12.2% | vs none -3.1 (n=388, p=0.0075)
+  1.7B-T all        n=397: consistent 96.2% | both correct 83.1% | consistent, not both 13.1% | vs none -2.8 (n=391, p=0.013)
+  4B     none       n=400: consistent 90.0% | both correct 77.2% | consistent, not both 12.8%
+  4B     filler     n=400: consistent 83.2% | both correct 61.8% | consistent, not both 21.5% | vs none -6.8 (n=400, p=0.00058)
+  4B     components n=400: consistent 87.5% | both correct 84.0% | consistent, not both 3.5% | vs none -2.5 (n=400, p=0.17)
+  4B     clustering n=400: consistent 94.5% | both correct 82.2% | consistent, not both 12.2% | vs none +4.5 (n=400, p=0.0064)
+  4B     rwse       n=400: consistent 80.5% | both correct 70.0% | consistent, not both 10.5% | vs none -9.5 (n=400, p=2.8e-06)
+  4B     degree     n=398: consistent 85.4% | both correct 73.4% | consistent, not both 12.1% | vs none -4.5 (n=398, p=0.015)
+  4B     all        n=399: consistent 80.5% | both correct 66.9% | consistent, not both 13.5% | vs none -9.5 (n=399, p=8.1e-06)
+  4B-T   none       n=386: consistent 100.0% | both correct 99.0% | consistent, not both 1.0%
+  4B-T   filler     n=389: consistent 100.0% | both correct 99.5% | consistent, not both 0.5% | vs none +0.0 (n=379, p=1)
+  4B-T   components n=383: consistent 100.0% | both correct 99.5% | consistent, not both 0.5% | vs none +0.0 (n=373, p=1)
+  4B-T   clustering n=380: consistent 100.0% | both correct 99.2% | consistent, not both 0.8% | vs none +0.0 (n=371, p=1)
+  4B-T   rwse       n=383: consistent 100.0% | both correct 99.0% | consistent, not both 1.0% | vs none +0.0 (n=374, p=1)
+  4B-T   degree     n=388: consistent 99.7% | both correct 99.0% | consistent, not both 0.8% | vs none -0.3 (n=376, p=1)
+  4B-T   all        n=380: consistent 100.0% | both correct 98.4% | consistent, not both 1.6% | vs none +0.0 (n=371, p=1)
+[pdheur] B6, edge_existence, main sweep, pairs where both responses finished: false-alarm rate (yes on a non-edge) and miss rate (no on an edge) for pairs whose endpoints print a high vs low value (above/below the density's median), none -> primer; then the primer's change in the false-alarm (miss) rate on high pairs minus on low pairs, 95% interval
+  degree     1.7B   degree     false alarm high 51->47, low 34->28, high minus low +3.0 [-9.9, +15.9] | miss high 0->0, low 0->2, high minus low -2.1 [-7.3, +0.0]
+  degree     1.7B   all        false alarm high 51->35, low 34->19, high minus low -1.0 [-15.2, +13.1] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+  degree     1.7B   filler     false alarm high 51->71, low 34->57, high minus low -2.0 [-12.9, +9.2] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+  degree     1.7B-T degree     false alarm high 1->3, low 1->5, high minus low -2.3 [-7.0, +2.7] | miss high 0->0, low 2->0, high minus low +2.1 [+0.0, +7.1]
+  degree     1.7B-T all        false alarm high 1->5, low 1->3, high minus low +1.2 [-3.7, +6.8] | miss high 0->0, low 2->0, high minus low +2.1 [+0.0, +7.1]
+  degree     1.7B-T filler     false alarm high 1->4, low 1->1, high minus low +2.9 [-1.5, +7.7] | miss high 0->2, low 2->0, high minus low +3.8 [+0.0, +9.5]
+  degree     4B     degree     false alarm high 17->27, low 11->14, high minus low +7.1 [-3.6, +17.5] | miss high 0->0, low 2->0, high minus low +2.1 [+0.0, +7.0]
+  degree     4B     all        false alarm high 17->36, low 11->21, high minus low +8.8 [-3.1, +20.8] | miss high 0->0, low 2->0, high minus low +2.1 [+0.0, +7.0]
+  degree     4B     filler     false alarm high 16->34, low 11->16, high minus low +11.5 [+0.8, +22.2] | miss high 0->0, low 2->0, high minus low +2.1 [+0.0, +7.0]
+  degree     4B-T   degree     false alarm high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+  degree     4B-T   all        false alarm high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+  degree     4B-T   filler     false alarm high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+  clustering 1.7B   clustering false alarm high 38->31, low 43->39, high minus low -2.8 [-15.3, +8.3] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+  clustering 1.7B   all        false alarm high 38->21, low 43->28, high minus low -2.3 [-16.0, +10.2] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+  clustering 1.7B   filler     false alarm high 38->63, low 43->61, high minus low +7.9 [-3.8, +18.9] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+  clustering 1.7B-T clustering false alarm high 1->1, low 1->3, high minus low -1.8 [-5.6, +1.6] | miss high 0->0, low 2->0, high minus low +1.7 [+0.0, +5.6]
+  clustering 1.7B-T all        false alarm high 1->2, low 1->5, high minus low -3.0 [-7.4, +1.3] | miss high 0->0, low 2->0, high minus low +1.7 [+0.0, +5.6]
+  clustering 1.7B-T filler     false alarm high 1->1, low 1->2, high minus low -0.5 [-4.2, +2.9] | miss high 0->2, low 2->0, high minus low +3.8 [+0.0, +9.5]
+  clustering 4B     clustering false alarm high 11->7, low 14->8, high minus low +1.3 [-7.4, +9.2] | miss high 2->0, low 0->0, high minus low -2.0 [-7.0, +0.0]
+  clustering 4B     all        false alarm high 11->25, low 14->27, high minus low +0.7 [-9.7, +10.8] | miss high 2->0, low 0->0, high minus low -2.0 [-7.0, +0.0]
+  clustering 4B     filler     false alarm high 11->15, low 14->29, high minus low -11.6 [-20.9, -2.1] | miss high 2->0, low 0->0, high minus low -2.0 [-7.0, +0.0]
+  clustering 4B-T   clustering false alarm high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+  clustering 4B-T   all        false alarm high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+  clustering 4B-T   filler     false alarm high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+  rwse       1.7B   rwse       false alarm high 38->24, low 42->38, high minus low -10.7 [-22.8, +1.8] | miss high 0->6, low 0->0, high minus low +6.5 [+0.0, +16.7]
+  rwse       1.7B   all        false alarm high 38->23, low 42->25, high minus low +1.2 [-12.0, +14.2] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+  rwse       1.7B   filler     false alarm high 38->54, low 42->67, high minus low -9.6 [-20.9, +1.6] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+  rwse       1.7B-T rwse       false alarm high 2->1, low 0->3, high minus low -4.3 [-8.3, -0.6] | miss high 3->3, low 0->0, high minus low +0.0 [-9.4, +9.1]
+  rwse       1.7B-T all        false alarm high 2->4, low 0->3, high minus low -0.9 [-5.4, +3.4] | miss high 3->0, low 0->0, high minus low -3.2 [-10.3, +0.0]
+  rwse       1.7B-T filler     false alarm high 2->3, low 0->1, high minus low -0.3 [-4.5, +3.8] | miss high 3->0, low 0->1, high minus low -4.5 [-12.3, +0.0]
+  rwse       4B     rwse       false alarm high 10->17, low 14->34, high minus low -12.4 [-21.8, -2.4] | miss high 3->0, low 0->0, high minus low -3.2 [-11.1, +0.0]
+  rwse       4B     all        false alarm high 10->19, low 15->31, high minus low -7.7 [-18.0, +3.0] | miss high 3->0, low 0->0, high minus low -3.2 [-11.1, +0.0]
+  rwse       4B     filler     false alarm high 10->16, low 14->27, high minus low -6.9 [-16.3, +2.5] | miss high 3->0, low 0->0, high minus low -3.2 [-11.1, +0.0]
+  rwse       4B-T   rwse       false alarm high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+  rwse       4B-T   all        false alarm high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+  rwse       4B-T   filler     false alarm high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0] | miss high 0->0, low 0->0, high minus low +0.0 [+0.0, +0.0]
+[pddensity] B7, node_degree: how far the printed feature pins a node's degree (share of nodes whose degree is the most common one among nodes printing the same value; then its gain over guessing the graph's most common degree, 0 = adds nothing, 1 = pins every degree), then each primer's effect per density (points, R1), p = .10 .20 .35 .50 .65 .75 .85; Spearman rho over the seven densities between the gain and the effect
+  informativeness rwse       0.85 0.60 0.39 0.32 0.31 0.36 0.41
+  gain            rwse       0.79 0.49 0.24 0.16 0.15 0.19 0.22
+  informativeness clustering 0.59 0.71 0.53 0.45 0.38 0.35 0.34
+  gain            clustering 0.45 0.63 0.42 0.32 0.24 0.18 0.13
+  1.7B   rwse          +3    +4    +6    +3    -1   -11    -4 | rho +0.39 (p=0.38)
+  1.7B   clustering    +2    +2    +6    +2    -1    -5    -4 | rho +0.68 (p=0.09)
+  1.7B   degree        +3   +10   +18    -1    +0    -1    +2
+  1.7B   filler        +5    -7    +0    +0    -1   -13    -2
+  1.7B-T rwse          +6    -4    +5    +3    -9    -6    +2 | rho +0.64 (p=0.12)
+  1.7B-T clustering    +4    +2    +1    -1   -13    -7    -7 | rho +0.85 (p=0.016)
+  1.7B-T degree        +8    -3   +17   +13   +15   +22   +40
+  1.7B-T filler        +7   -10    -4    -5   -17    -9   -10
+  4B     rwse          +0    -2    -3    -4    +0   +13   +10 | rho -0.04 (p=0.94)
+  4B     clustering    +0    +1    +0    -3    +7    +9   +18 | rho -0.67 (p=0.1)
+  4B     degree        -6    -1    -7   -12    -6    +7   +27
+  4B     filler        +0    +0    +0    -2    +4    -1    +3
+  4B-T   rwse          -3    +1    +3    -6    -3    -1    +2 | rho +0.50 (p=0.25)
+  4B-T   clustering    +1    +4    +3    -1    -2    +1    -1 | rho +0.67 (p=0.098)
+  4B-T   degree        +3    +4    +3    +0    -4    +2    +0
+  4B-T   filler        +1    +5    +3    -1    +0    +1    -1
+[pdnode] B8, the queried node's degree tercile within its graph (low / mid / high): each primer's effect on R1 correct share per tercile, then high minus low, 95% interval; node_degree and edge_existence over all seven densities, connected_nodes over the main sweep
+  node_degree     1.7B   filler     -0.5 / -3.8 / -3.1 | high minus low -2.6 [-8.9, +3.7]
+  node_degree     1.7B   components +1.4 / +3.0 / -1.3 | high minus low -2.7 [-9.2, +3.8]
+  node_degree     1.7B   clustering -1.4 / +1.5 / +0.4 | high minus low +1.9 [-6.1, +9.8]
+  node_degree     1.7B   rwse       -1.9 / -0.4 / +2.2 | high minus low +4.1 [-3.3, +11.9]
+  node_degree     1.7B   degree     +2.4 / +4.9 / +5.8 | high minus low +3.4 [-4.4, +11.5]
+  node_degree     1.7B   all        +6.2 / +8.4 / +6.2 | high minus low +0.0 [-8.6, +9.1]
+  node_degree     1.7B-T filler     -7.6 / -7.2 / -5.8 | high minus low +1.8 [-7.0, +10.7]
+  node_degree     1.7B-T components -2.8 / -1.5 / +0.4 | high minus low +3.3 [-4.3, +11.0]
+  node_degree     1.7B-T clustering -7.1 / -2.3 / +0.0 | high minus low +7.1 [-1.8, +16.5]
+  node_degree     1.7B-T rwse       -0.5 / -2.3 / +1.8 | high minus low +2.2 [-6.6, +11.1]
+  node_degree     1.7B-T degree     +14.7 / +16.0 / +17.3 | high minus low +2.6 [-7.3, +12.5]
+  node_degree     1.7B-T all        +15.2 / +18.3 / +16.4 | high minus low +1.2 [-8.8, +11.2]
+  node_degree     4B     filler     -3.3 / +1.1 / +3.5 | high minus low +6.9 [+1.2, +12.4]
+  node_degree     4B     components -3.3 / -0.8 / +3.1 | high minus low +6.4 [+2.0, +10.6]
+  node_degree     4B     clustering -0.9 / +3.8 / +10.6 | high minus low +11.6 [+5.8, +16.9]
+  node_degree     4B     rwse       -1.4 / +0.8 / +6.6 | high minus low +8.1 [+1.8, +14.1]
+  node_degree     4B     degree     -11.8 / +1.1 / +10.6 | high minus low +22.5 [+14.0, +30.7]
+  node_degree     4B     all        -19.4 / -12.5 / -9.7 | high minus low +9.7 [+0.6, +18.8]
+  node_degree     4B-T   filler     +0.5 / +1.9 / +0.9 | high minus low +0.4 [-2.6, +3.7]
+  node_degree     4B-T   components -0.5 / -0.8 / -0.9 | high minus low -0.4 [-4.6, +3.6]
+  node_degree     4B-T   clustering +1.4 / +1.1 / -0.4 | high minus low -1.9 [-5.6, +1.8]
+  node_degree     4B-T   rwse       +0.0 / -3.4 / +0.9 | high minus low +0.9 [-3.0, +4.8]
+  node_degree     4B-T   degree     +2.4 / +1.1 / +0.0 | high minus low -2.4 [-5.9, +1.2]
+  node_degree     4B-T   all        +0.5 / +0.4 / +0.4 | high minus low -0.0 [-3.8, +3.9]
+  connected_nodes 1.7B   filler     -2.7 / -6.8 / -8.7 | high minus low -6.1 [-16.3, +4.0]
+  connected_nodes 1.7B   components +0.9 / +0.0 / +1.6 | high minus low +0.7 [-8.3, +10.0]
+  connected_nodes 1.7B   clustering +2.7 / +2.5 / -1.6 | high minus low -4.2 [-15.1, +7.2]
+  connected_nodes 1.7B   rwse       +5.3 / +0.0 / -1.6 | high minus low -6.9 [-17.8, +4.3]
+  connected_nodes 1.7B   degree     +2.7 / +4.3 / +3.2 | high minus low +0.5 [-8.8, +10.8]
+  connected_nodes 1.7B   all        +0.9 / +0.0 / +5.6 | high minus low +4.7 [-6.7, +16.8]
+  connected_nodes 1.7B-T filler     -1.8 / +7.5 / +0.0 | high minus low +1.8 [-7.5, +10.2]
+  connected_nodes 1.7B-T components +0.9 / +5.0 / +0.8 | high minus low -0.1 [-8.1, +7.5]
+  connected_nodes 1.7B-T clustering -0.9 / +5.0 / +0.8 | high minus low +1.7 [-8.4, +11.6]
+  connected_nodes 1.7B-T rwse       -0.9 / +0.6 / +0.8 | high minus low +1.7 [-8.4, +11.0]
+  connected_nodes 1.7B-T degree     +2.7 / +9.3 / +5.6 | high minus low +2.9 [-5.9, +11.4]
+  connected_nodes 1.7B-T all        +2.7 / +5.6 / +10.3 | high minus low +7.7 [-2.1, +16.9]
+  connected_nodes 4B     filler     -7.1 / -13.7 / -15.9 | high minus low -8.8 [-21.1, +3.2]
+  connected_nodes 4B     components +12.4 / +6.2 / +10.3 | high minus low -2.1 [-11.1, +7.3]
+  connected_nodes 4B     clustering +1.8 / -1.2 / +3.2 | high minus low +1.4 [-9.3, +11.3]
+  connected_nodes 4B     rwse       +0.0 / -0.6 / +0.8 | high minus low +0.8 [-10.2, +11.9]
+  connected_nodes 4B     degree     -4.4 / -4.3 / +0.0 | high minus low +4.4 [-5.8, +14.6]
+  connected_nodes 4B     all        -4.4 / -5.0 / +1.6 | high minus low +6.0 [-5.4, +17.6]
+  connected_nodes 4B-T   filler     +2.7 / +1.2 / +0.0 | high minus low -2.7 [-8.6, +3.5]
+  connected_nodes 4B-T   components +0.9 / +1.9 / -1.6 | high minus low -2.5 [-8.4, +3.7]
+  connected_nodes 4B-T   clustering +0.0 / -0.6 / -1.6 | high minus low -1.6 [-7.9, +4.6]
+  connected_nodes 4B-T   rwse       +1.8 / +0.6 / -0.8 | high minus low -2.6 [-8.5, +3.4]
+  connected_nodes 4B-T   degree     +3.5 / -0.6 / -0.8 | high minus low -4.3 [-11.5, +2.6]
+  connected_nodes 4B-T   all        +0.0 / +0.0 / -4.0 | high minus low -4.0 [-10.1, +2.6]
+  edge_existence  1.7B   filler     -13.3 / -8.7 / -7.1 | high minus low +6.2 [-0.1, +12.7]
+  edge_existence  1.7B   components -10.0 / -3.0 / -3.1 | high minus low +6.9 [+1.3, +12.4]
+  edge_existence  1.7B   clustering +0.9 / +4.2 / +2.7 | high minus low +1.7 [-5.3, +8.4]
+  edge_existence  1.7B   rwse       -0.5 / +5.7 / +4.0 | high minus low +4.5 [-2.3, +11.1]
+  edge_existence  1.7B   degree     -1.9 / +5.3 / +5.3 | high minus low +7.2 [-0.0, +14.0]
+  edge_existence  1.7B   all        +6.2 / +11.0 / +10.6 | high minus low +4.5 [-3.7, +12.5]
+  edge_existence  1.7B-T filler     -0.9 / +0.4 / -1.3 | high minus low -0.4 [-3.3, +2.7]
+  edge_existence  1.7B-T components -0.9 / +0.0 / -0.4 | high minus low +0.5 [-2.3, +3.2]
+  edge_existence  1.7B-T clustering -0.5 / +0.4 / -2.2 | high minus low -1.7 [-5.0, +1.3]
+  edge_existence  1.7B-T rwse       -0.5 / +0.4 / -1.8 | high minus low -1.3 [-4.6, +1.9]
+  edge_existence  1.7B-T degree     -1.4 / -1.1 / -2.7 | high minus low -1.2 [-4.9, +2.0]
+  edge_existence  1.7B-T all        -1.4 / +0.0 / -2.7 | high minus low -1.2 [-4.6, +2.0]
+  edge_existence  4B     filler     -8.1 / -5.3 / -7.1 | high minus low +1.0 [-5.4, +7.3]
+  edge_existence  4B     components -6.6 / -2.7 / +0.0 | high minus low +6.6 [+1.2, +12.4]
+  edge_existence  4B     clustering +4.7 / +5.3 / +3.5 | high minus low -1.2 [-7.9, +5.0]
+  edge_existence  4B     rwse       -6.2 / -4.9 / -7.1 | high minus low -0.9 [-8.4, +6.5]
+  edge_existence  4B     degree     -5.2 / -2.7 / -4.9 | high minus low +0.3 [-5.9, +6.5]
+  edge_existence  4B     all        -5.2 / -6.8 / -8.0 | high minus low -2.8 [-9.9, +4.5]
+  edge_existence  4B-T   filler     +0.5 / +0.0 / +0.4 | high minus low -0.0 [-1.4, +1.3]
+  edge_existence  4B-T   components +0.9 / -1.1 / +0.4 | high minus low -0.5 [-2.1, +1.0]
+  edge_existence  4B-T   clustering -0.5 / +0.0 / +0.0 | high minus low +0.5 [-1.4, +2.7]
+  edge_existence  4B-T   rwse       -0.9 / -0.8 / +0.0 | high minus low +0.9 [-1.4, +3.7]
+  edge_existence  4B-T   degree     +0.9 / -0.4 / +0.4 | high minus low -0.5 [-2.1, +1.0]
+  edge_existence  4B-T   all        +0.0 / -0.8 / -0.4 | high minus low -0.4 [-2.8, +2.0]
+[pderror] B9, finished responses with a numeric answer: n, share exact / under / over, median signed error of the wrong ones, median relative error of the wrong ones; node_degree over all seven densities, edge_count over the main sweep
+  node_degree 1.7B   none       n=699: exact 39% | under 24% | over 37% | median wrong error +2 | median relative 12%
+  node_degree 1.7B   filler     n=700: exact 36% | under 16% | over 47% | median wrong error +5 | median relative 17%
+  node_degree 1.7B   components n=700: exact 40% | under 22% | over 38% | median wrong error +2 | median relative 13%
+  node_degree 1.7B   clustering n=700: exact 39% | under 22% | over 39% | median wrong error +2 | median relative 11%
+  node_degree 1.7B   rwse       n=699: exact 39% | under 17% | over 44% | median wrong error +3 | median relative 15%
+  node_degree 1.7B   degree     n=700: exact 43% | under 21% | over 36% | median wrong error +2 | median relative 12%
+  node_degree 1.7B   all        n=700: exact 46% | under 14% | over 40% | median wrong error +3 | median relative 13%
+  node_degree 1.7B-T none       n=692: exact 64% | under 24% | over 12% | median wrong error -1 | median relative 6%
+  node_degree 1.7B-T filler     n=697: exact 57% | under 26% | over 17% | median wrong error -1 | median relative 6%
+  node_degree 1.7B-T components n=692: exact 63% | under 20% | over 17% | median wrong error -1 | median relative 7%
+  node_degree 1.7B-T clustering n=698: exact 61% | under 20% | over 19% | median wrong error -1 | median relative 6%
+  node_degree 1.7B-T rwse       n=696: exact 63% | under 15% | over 22% | median wrong error +1 | median relative 7%
+  node_degree 1.7B-T degree     n=647: exact 86% | under 12% | over 2% | median wrong error -1 | median relative 7%
+  node_degree 1.7B-T all        n=694: exact 81% | under 12% | over 7% | median wrong error -1 | median relative 5%
+  node_degree 4B     none       n=700: exact 80% | under 2% | over 17% | median wrong error +2 | median relative 8%
+  node_degree 4B     filler     n=700: exact 81% | under 2% | over 17% | median wrong error +3 | median relative 9%
+  node_degree 4B     components n=700: exact 80% | under 2% | over 18% | median wrong error +2 | median relative 8%
+  node_degree 4B     clustering n=700: exact 85% | under 4% | over 11% | median wrong error +2 | median relative 6%
+  node_degree 4B     rwse       n=700: exact 82% | under 4% | over 14% | median wrong error +2 | median relative 8%
+  node_degree 4B     degree     n=700: exact 81% | under 3% | over 16% | median wrong error +2 | median relative 9%
+  node_degree 4B     all        n=700: exact 67% | under 4% | over 30% | median wrong error +3 | median relative 12%
+  node_degree 4B-T   none       n=688: exact 99% | under 1% | over 0% | median wrong error -1 | median relative 4%
+  node_degree 4B-T   filler     n=696: exact 99% | under 1% | over 1% | median wrong error +0 | median relative 3%
+  node_degree 4B-T   components n=689: exact 98% | under 1% | over 1% | median wrong error -1 | median relative 3%
+  node_degree 4B-T   clustering n=696: exact 98% | under 1% | over 1% | median wrong error -1 | median relative 4%
+  node_degree 4B-T   rwse       n=688: exact 98% | under 1% | over 1% | median wrong error -1 | median relative 10%
+  node_degree 4B-T   degree     n=697: exact 99% | under 1% | over 0% | median wrong error -1 | median relative 4%
+  node_degree 4B-T   all        n=690: exact 99% | under 1% | over 0% | median wrong error -1 | median relative 4%
+  edge_count  1.7B   none       n=281: exact 2% | under 22% | over 76% | median wrong error +48 | median relative 31%
+  edge_count  1.7B   filler     n=295: exact 1% | under 31% | over 68% | median wrong error +36 | median relative 34%
+  edge_count  1.7B   components n=291: exact 0% | under 28% | over 71% | median wrong error +44 | median relative 26%
+  edge_count  1.7B   clustering n=328: exact 1% | under 20% | over 80% | median wrong error +34 | median relative 33%
+  edge_count  1.7B   rwse       n=328: exact 1% | under 28% | over 71% | median wrong error +37 | median relative 32%
+  edge_count  1.7B   degree     n=362: exact 5% | under 53% | over 43% | median wrong error -4 | median relative 15%
+  edge_count  1.7B   all        n=288: exact 3% | under 23% | over 74% | median wrong error +46 | median relative 34%
+  edge_count  1.7B-T none       n=73: exact 86% | under 7% | over 7% | median wrong error +0 | median relative 1%
+  edge_count  1.7B-T filler     n=68: exact 84% | under 4% | over 12% | median wrong error +1 | median relative 1%
+  edge_count  1.7B-T components n=71: exact 85% | under 7% | over 8% | median wrong error +1 | median relative 1%
+  edge_count  1.7B-T clustering n=70: exact 83% | under 4% | over 13% | median wrong error +1 | median relative 1%
+  edge_count  1.7B-T rwse       n=53: exact 94% | under 2% | over 4% | median wrong error +1 | median relative 1%
+  edge_count  1.7B-T degree     n=76: exact 66% | under 22% | over 12% | median wrong error -2 | median relative 2%
+  edge_count  1.7B-T all        n=122: exact 68% | under 25% | over 7% | median wrong error -2 | median relative 1%
+  edge_count  4B     none       n=400: exact 2% | under 80% | over 18% | median wrong error -14 | median relative 11%
+  edge_count  4B     filler     n=400: exact 3% | under 82% | over 15% | median wrong error -16 | median relative 10%
+  edge_count  4B     components n=397: exact 1% | under 72% | over 27% | median wrong error -11 | median relative 13%
+  edge_count  4B     clustering n=399: exact 1% | under 91% | over 8% | median wrong error -32 | median relative 19%
+  edge_count  4B     rwse       n=398: exact 1% | under 67% | over 33% | median wrong error -13 | median relative 21%
+  edge_count  4B     degree     n=393: exact 30% | under 32% | over 38% | median wrong error +2 | median relative 14%
+  edge_count  4B     all        n=397: exact 6% | under 73% | over 21% | median wrong error -9 | median relative 9%
+  edge_count  4B-T   none       n=82: exact 98% | under 2% | over 0% | median wrong error -8 | median relative 4%
+  edge_count  4B-T   filler     n=134: exact 96% | under 3% | over 1% | median wrong error -4 | median relative 7%
+  edge_count  4B-T   components n=182: exact 98% | under 2% | over 0% | median wrong error -2 | median relative 2%
+  edge_count  4B-T   clustering n=186: exact 96% | under 2% | over 2% | median wrong error +1 | median relative 1%
+  edge_count  4B-T   rwse       n=131: exact 92% | under 5% | over 2% | median wrong error -2 | median relative 5%
+  edge_count  4B-T   degree     n=165: exact 69% | under 17% | over 14% | median wrong error -1 | median relative 1%
+  edge_count  4B-T   all        n=177: exact 49% | under 27% | over 24% | median wrong error -1 | median relative 1%

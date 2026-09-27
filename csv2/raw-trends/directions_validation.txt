@@ -1,0 +1,19 @@
+[dvsummary] 226 of 226 items labelled; a check passes when the detector agrees with the labels on 90% or more
+[dvc1] C1: detector agrees with 39 of 40 labels = 98% [87, 100]; PASS
+  other        14 of 15
+  own          25 of 25
+[dvc2] C2 what the edge_count conflicts compare (a prompt value vs own count / b own results / c other / d no conflict), by primer:
+  degree  labelled 20 of 20: a 6 / b 14 / c 0 / d 0
+  none    labelled 20 of 20: a 0 / b 20 / c 0 / d 0
+[dvc3] C3: detector agrees with 37 of 40 labels = 92% [80, 98]; PASS
+  degree       19 of 20
+  none         18 of 20
+[dvc4] C4: detector agrees with 27 of 30 labels = 90% [73, 98]; PASS
+  degree       13 of 15
+  none         14 of 15
+[dvc5] C5: detector agrees with 45 of 45 labels = 100% [92, 100]; PASS
+  near         30 of 30
+  other        15 of 15
+[dvc6] C6: detector agrees with 31 of 31 labels = 100% [89, 100]; PASS
+  edge_count   20 of 20
+  node_degree  11 of 11
