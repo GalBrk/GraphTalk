@@ -19,6 +19,7 @@ before any analysis uses it.
 import argparse
 import glob
 import json
+import os
 import random
 import re
 import sys
@@ -28,14 +29,14 @@ import networkx as nx
 from graphtalk import graphqa, outcomes, prompts, scoring
 from graphtalk import diverse_corpus
 
-sys.path.insert(0, "scripts")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import analyze_baseline_law as abl  # noqa: E402
 import build_size_sweep as bss  # noqa: E402
 import score_density_sweep as sds  # noqa: E402  (summary: one effect computation)
 
 ARM, TASK, N = "qwen3-1.7b", "node_degree", 40
 REP_SEED = 20760906
-GLOBS = [f"runs/{ARM}.{c}.shard*of5.jsonl"
+GLOBS = [f"data/runs/{ARM}.{c}.shard*of5.jsonl"
          for c in ("degdens40", "degdens40hi", "degdensfill", "degdensrep")]
 CONDS = ("none", "clustering", "filler", "components")
 
@@ -131,7 +132,7 @@ def test_selection(rows, graphs):
   """Screen size, graph overlap with the screen, and the unscreened effect."""
   # Candidate cells in the main-sweep screen: every (arm, non-degenerate
   # task, non-answer condition) the n=40 bars do not mark as a route.
-  bars = json.load(open("shortcuts_n40_flat.json"))
+  bars = json.load(open("data/shortcuts_n40_flat.json"))
   cand = [(arm, t, c) for arm in abl.DENSFULL_ARMS
           for t in ("edge_count", "node_degree", "connected_nodes", "edge_existence")
           for c in ("components", "clustering", "rwse")
@@ -139,7 +140,7 @@ def test_selection(rows, graphs):
   # Does the dedicated sweep reuse main-sweep graphs? Same builder, same
   # seed and density keys -> index i < 100 is the same graph iff prompts match.
   main = {}
-  for f in ("prompts.densfull40.jsonl", "prompts.densfull40hi.jsonl"):
+  for f in ("data/prompts/prompts.densfull40.jsonl", "data/prompts/prompts.densfull40hi.jsonl"):
     for line in open(f, encoding="utf-8"):
       r = json.loads(line)
       if r["task"] == TASK and r["condition"] == "none":

@@ -1,5 +1,5 @@
 """Nine further questions about what the primers do to the 40-node sweep's
-responses (runs/qwen3-{1.7b,4b}[-think].densfull40*), past accuracy and the
+responses (data/runs/qwen3-{1.7b,4b}[-think].densfull40*), past accuracy and the
 reasoning patterns of scripts/response_patterns.py. Exploratory: the text
 measures written here (stated values, quotes, candidate answers, revision words)
 are not hand-validated; the validated response_patterns markers they build on
@@ -33,7 +33,7 @@ value is read from the primer text itself, exactly as the model saw it.
   [pdnode]      B8 effects by the queried node's degree rank within its graph
   [pderror]     B9 direction of wrong node_degree / edge_count answers
 
-  PYTHONPATH=. python scripts/primer_directions.py > csv2/raw-trends/primer_directions.txt
+  PYTHONPATH=. python scripts/primer_directions.py > outputs/n40-sweep/primer_directions.txt
 """
 import collections
 import functools

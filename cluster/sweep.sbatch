@@ -90,7 +90,7 @@ LIMIT="${2:-}"
 # half of the main one, so the two arms are comparable row for row. Also how a
 # GoT-named run points at prompts_got.jsonl instead -- see
 # cluster/submit_sweep.sh, which builds it before ever setting this.
-PROMPTS="${GRAPHTALK_PROMPTS:-prompts.jsonl}"
+PROMPTS="${GRAPHTALK_PROMPTS:-data/prompts/prompts.densfull40.jsonl}"
 if [[ ! -f "$PROMPTS" ]]; then
   # Fails already without this -- the REMAINING check below opens the file --
   # but with a bare Python traceback instead of a message that says what to
@@ -102,7 +102,7 @@ if [[ ! -f "$PROMPTS" ]]; then
 fi
 
 # Absolute path for runs directory to ensure correct permissions and storage location
-RUNS_DIR="/home/dcor/avivyossef/inbal/GraphTalk/runs"
+RUNS_DIR="/home/dcor/avivyossef/inbal/GraphTalk/data/runs"
 
 TASK_DIR="${GRAPHTALK_TASK_DIR:-}"
 if [[ -n "$TASK_DIR" ]]; then

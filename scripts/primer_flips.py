@@ -14,11 +14,11 @@ numbers them, so filtering `rank <= 3` gives a random three from every group.
                 else the response; its last END characters either way
 
 Whitespace is collapsed so every row is one line in a spreadsheet. The full text
-is in runs/<arm>.densfull40*.jsonl under (instance_id, condition).
+is in data/runs/<arm>.densfull40*.jsonl under (instance_id, condition).
 
   PYTHONPATH=. python scripts/primer_flips.py
 
-Writes csv2/raw-trends/primer_flips.csv.
+Writes outputs/n40-sweep/primer_flips.csv.
 """
 import argparse
 import os
@@ -60,7 +60,7 @@ def end(text):
 
 def main():
   ap = argparse.ArgumentParser(description=__doc__)
-  ap.add_argument("--out", default="csv2/raw-trends/primer_flips.csv")
+  ap.add_argument("--out", default="outputs/n40-sweep/primer_flips.csv")
   args = ap.parse_args()
 
   f = pd.read_csv(pf.FRAME, dtype={"pred": str, "gold": str})
@@ -76,7 +76,7 @@ def main():
        .sort_values(groups, kind="stable").reset_index(drop=True))
   d["rank"] = d.groupby(groups, observed=True).cumcount() + 1
 
-  runs = {a: pf.load_runs(f"runs/{a}.densfull40*.shard*.jsonl") for a in pf.ARMS}
+  runs = {a: pf.load_runs(f"data/runs/{a}.densfull40*.shard*.jsonl") for a in pf.ARMS}
   corpus, primer_text = brf.Corpus(), {}
   cols = {k: [] for k in ("primer_says", "start_none", "start_primer",
                           "end_none", "end_primer")}

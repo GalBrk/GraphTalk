@@ -800,4 +800,4 @@
   node_degree 168 points, r=-0.248 (p=0.0012), slope -9.0
   edge_count  30 points, r=-0.142 (p=0.45), slope -80.6
   pooled      198 points, r=-0.275 (p=8.7e-05), slope -8.5
-wrote primer_cells.csv, edge_existence_collapse.csv and node_degree_routes.csv to csv2/raw-trends
+wrote primer_cells.csv, edge_existence_collapse.csv and node_degree_routes.csv to outputs/n40-sweep

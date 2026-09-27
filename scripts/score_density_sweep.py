@@ -26,7 +26,7 @@ Output is plain text under a `[tag]` line (`--tag`), so a results doc can cite
 it; scripts/density_followups.py runs the density follow-up family through it.
 
   PYTHONPATH=. python scripts/score_density_sweep.py \\
-      --responses "runs/qwen3-1.7b.degdens40.shard*of5.jsonl" --tag dd40
+      --responses "data/runs/qwen3-1.7b.degdens40.shard*of5.jsonl" --tag dd40
 """
 import argparse
 import collections

@@ -10,7 +10,7 @@ scripts/build_size_sweep.py, assert that every rebuilt gold equals the run's,
 and print edges and prompt characters per level. Run sets are loaded one at a
 time.
 
-  PYTHONPATH=. python scripts/density_followups.py > csv2/density-followups/density_followups.txt
+  PYTHONPATH=. python scripts/density_followups.py > outputs/density-followups/density_followups.txt
 """
 import json
 import os
@@ -30,7 +30,7 @@ D40 = [0.05, 0.1, 0.2, 0.35, 0.5, 0.75]  # tasks are pooled apart, never togethe
 
 
 def runs(*names):
-  return [f"runs/{name}.shard*.jsonl" for name in names]
+  return [f"data/runs/{name}.shard*.jsonl" for name in names]
 
 
 PLAIN = runs("qwen3-1.7b.degdens40", "qwen3-1.7b.degceil", "qwen3-1.7b.degdens40hi",
@@ -76,11 +76,11 @@ def setup():
               ("none", "clustering")),
       "cell", "fixsetup", "prompt design at fixed mean degree, 400 graphs per cell "
       "(rebuilt golds equal the 1.7B and 8B runs' golds)")
-  with open("prompts.density40.jsonl", encoding="utf-8") as fh:
+  with open("data/prompts/prompts.density40.jsonl", encoding="utf-8") as fh:
     d40 = [json.loads(line) for line in fh if line.strip()]
   check_golds(d40, runs("qwen3-1.7b.density40"))
   sds.report_prompts(d40, "task", "d40setup", "prompt design of the density40 pilot "
-                     "(prompts.density40.jsonl; its golds equal the runs' golds)")
+                     "(data/prompts/prompts.density40.jsonl; its golds equal the runs' golds)")
 
 
 def main():

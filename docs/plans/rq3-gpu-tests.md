@@ -5,7 +5,7 @@ the design so it is reachable outside any one conversation. The CPU-only
 findings that motivate this plan are in `docs/results/density-followups.md`
 (§2 for the effect, §8 for its selection check and the position mechanism);
 read that first. The earlier notes, with the numbered leads this plan
-implements, are in `superseded/docs/rq3-leads.md`.
+implements, are in `superseded/docs/rq3-leads.md` in tag `pre-cleanup`.
 
 ## Why 1.7B, plain arm only
 
@@ -24,7 +24,7 @@ Yes, this is still worth running even restricted to one arm:
   tells you the mechanism in one model, not whether it holds elsewhere.
   The paper already limits the claim to "one model, one task."
 - A later check on 4B's existing dense-graph rows (position split) needs
-  no new GPU time — see "CPU follow-ups" in `superseded/docs/rq3-leads.md`.
+  no new GPU time — see "CPU follow-ups" in the leads document.
 
 ## Design
 
@@ -37,7 +37,7 @@ verify zero `instance_id` collisions before running, as
 **Conditions:** `none` and `clustering` as anchors, plus the new primers
 below. `filler` is dropped — it already equals `none` at these densities
 (−0.5, `mid_pooled.filler_none` under `[rqselection]` in
-`csv2/density-followups/density_followups.txt`).
+`outputs/density-followups/density_followups.txt`).
 
 **Why rerun the anchors instead of pairing with existing rows:**
 `graphtalk/hf_backend.py` hardcodes `dtype=torch.bfloat16`. Older GPUs
@@ -46,7 +46,7 @@ old-GPU run would use fp16 or fp32 and produce different greedy outputs —
 the existing bf16 rows can't be paired with them. Since the anchors have
 to be regenerated anyway, running them on the fresh seed above gives a
 third out-of-sample check of the pooled effect, with the hypotheses fixed
-before the run (satisfying lead #5 in `superseded/docs/rq3-leads.md`, the
+before the run (satisfying lead #5 in the leads document, the
 pre-registered confirmation).
 
 ### New primer conditions
@@ -125,7 +125,7 @@ pre-registered confirmation).
   sweep.
 - Build and spot-check the new prompts before submitting the pilot.
 
-## Relationship to `superseded/docs/rq3-leads.md`
+## Relationship to the leads document
 
 This plan implements leads 1–4 of that document's "Leads" section; lead 5
 (pre-registered confirmation) is folded into this design via the fixed

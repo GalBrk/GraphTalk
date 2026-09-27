@@ -6,8 +6,8 @@ present on restart. That is not tidiness -- the cluster's default partition is
 point and Slurm requeues it. A run that only wrote its results at the end would
 lose hours of generation every time that happened.
 
-  python scripts/run_sweep.py --model gemma4-12b \\
-      --prompts prompts.jsonl --out runs/gemma4-12b.jsonl
+  python scripts/run_sweep.py --model qwen3-4b \\
+      --prompts data/prompts/prompts.densfull40.jsonl --out data/runs/qwen3-4b.densfull40.jsonl
 """
 
 import argparse
@@ -69,7 +69,7 @@ def _chunk(items: list, size: int) -> list[list]:
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--model", required=True, choices=sorted(models.MODELS))
-  parser.add_argument("--prompts", default="prompts.jsonl")
+  parser.add_argument("--prompts", default="data/prompts/prompts.densfull40.jsonl")
   parser.add_argument("--out", required=True)
   parser.add_argument("--limit", type=int, default=None,
                       help="stop after this many generations, for smoke tests")

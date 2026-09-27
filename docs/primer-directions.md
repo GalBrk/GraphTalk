@@ -12,13 +12,13 @@ and need no labels. Intervals are unadjusted across the many comparisons below. 
 `tests/test_results_docs.py`; the verified results are in
 [`results/n40-sweep.md`](results/n40-sweep.md).
 
-Source: `csv2/raw-trends/directions_validation.txt`
-Source: `csv2/raw-trends/primer_directions.txt`, printed by
+Source: `outputs/n40-sweep/directions_validation.txt`
+Source: `outputs/n40-sweep/primer_directions.txt`, printed by
 `scripts/primer_directions.py`, which reuses `scripts/response_patterns.py`
 (loading, `reports_conflict`, the degree tables) and `scripts/primer_findings.py`
 (pairing on graphs). Reproduce:
 
-    PYTHONPATH=. python scripts/primer_directions.py > csv2/raw-trends/primer_directions.txt
+    PYTHONPATH=. python scripts/primer_directions.py > outputs/n40-sweep/primer_directions.txt
 
 Data: the main experiment's runs, Qwen3-1.7B and Qwen3-4B with and without
 thinking (*1.7B*, *1.7B-T*, *4B*, *4B-T*), every primer against `none` on the

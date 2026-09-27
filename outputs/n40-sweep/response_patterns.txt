@@ -35,7 +35,7 @@
   cycle_check / rwse: 77 phrases; 'return' +0.53 +0.72 -0.04 +0.80 | 'given' +0.46 +0.53 -0.55 +0.64 | 'edges or nodes' -0.43 -0.17 -0.56 -0.67 | 'to the' +0.46 +0.42 -0.04 +0.52 | 'directed' +0.37 +0.34 -0.04 +0.76 | 'existence of a' +0.33 +0.43 -0.01 +0.35 | 'or nodes except' -0.42 -0.19 -0.33 -0.73 | 'ending node' -0.64 -0.17 -0.32 -0.66
   cycle_check / degree: 157 phrases; 'degrees' +0.83 +0.82 +0.89 +0.47 | 'degree' +0.91 +0.59 +0.77 +0.82 | 'sum' +0.68 +0.78 +0.62 +0.48 | 'sum of' +0.62 +0.78 +0.66 +0.47 | 'of degrees' +0.53 +0.67 +0.57 +0.34 | 'sum of degrees' +0.53 +0.71 +0.57 +0.34 | '<num> + <num>' +0.64 +0.62 +0.51 +0.30 | 'the sum of' +0.54 +0.78 +0.51 +0.46
   cycle_check / all: 43 phrases; 'return' +0.65 +0.85 -0.03 +0.67 | 'degree' +0.59 +0.59 -0.04 +0.63 | 'ending node' -0.61 -0.43 -0.52 +0.12 | 'provided' +0.42 +0.74 +0.86 +0.11 | 'whether there' +0.81 +0.44 -0.50 +0.38 | 'to find a' -0.47 -0.41 -0.03 -0.33 | 'try to find' -0.33 -0.45 -0.01 -0.31 | 'for cycles' +0.31 +0.39 -0.12 +0.34
-[rpvalid] text patterns: labelled precision on csv2/raw-trends/response_pattern_validation.csv (seeded, 5 per arm first); kept at 0.9 or more
+[rpvalid] text patterns: labelled precision on outputs/n40-sweep/response_pattern_validation.csv (seeded, 5 per arm first); kept at 0.9 or more
   dismisses          not labelled -- left out (says the primer's clustering, return-probability or component information is irrelevant or not needed)
   names_clustering   not labelled -- left out (mentions clustering coefficients)
   names_rwse         not labelled -- left out (mentions return probabilities, random walks or Markov chains)

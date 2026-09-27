@@ -1,7 +1,7 @@
 """Does edge density change how a primer affects accuracy in the 40-node sweep,
 and does it do so beyond how hard the task already is without a primer?
 
-Read from csv2/raw-trends/frame.csv (scripts/build_raw_frame.py). Accuracy
+Read from outputs/n40-sweep/frame.csv (scripts/build_raw_frame.py). Accuracy
 follows rule R1 (graphtalk/outcomes.py): a truncated response is never correct.
 The four tasks whose answer varies; every primer against none on the same graphs.
 
@@ -24,7 +24,7 @@ The four tasks whose answer varies; every primer against none on the same graphs
              among cells of the same band. Answer-carrying and side-information
              primers apart, and per task
 
-  PYTHONPATH=. python scripts/density_interaction.py > csv2/raw-trends/density_interaction.txt
+  PYTHONPATH=. python scripts/density_interaction.py > outputs/n40-sweep/density_interaction.txt
 """
 import json
 import os

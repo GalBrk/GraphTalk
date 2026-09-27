@@ -4,13 +4,9 @@
 A cell is one (arm, task, density, primer): its paired effect against `none`
 and its baseline (the `none` correct share). Cells are split by whether the
 primer text alone determines the answer: a graph-blind solver reading only the
-primer (`shortcuts_n40_flat.json`) scores near-perfectly on it. Pairs follow
+primer (`data/shortcuts_n40_flat.json`) scores near-perfectly on it. Pairs follow
 rule R1 (graphtalk/outcomes.py): a truncated response counts as not correct and
 is never dropped; cells whose truncated share reaches 15% are flagged.
-
-The command-line report this module used to print is in
-superseded/scripts/analyze_primer_window.py; every number it gave is printed by
-primer_findings.py now.
 """
 import numpy as np
 import pandas as pd

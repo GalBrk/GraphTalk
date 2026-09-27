@@ -2,7 +2,7 @@
 
 cycle_check first. At n=40 its gold is "yes" on every graph, so accuracy only
 says a model answered yes. For every correct, finished response of the main
-sweep (runs/qwen3-{1.7b,4b}[-think].densfull40*) this checks each cycle the final
+sweep (data/runs/qwen3-{1.7b,4b}[-think].densfull40*) this checks each cycle the final
 answer names -- for the thinking arms, the text after </think> -- against the
 edges of its own prompt. It extends [rpcycle] in scripts/response_patterns.py,
 which reads arrow chains only and counts a response as real when any chain it
@@ -49,7 +49,7 @@ once, as in pf.load_runs.
                    (30 or more lines holding one id each), the path that ends
                    by reporting the last id, 39
 
-The high-density extension (runs/qwen3-*.densfull40hi*, p = .65-.85) has
+The high-density extension (data/runs/qwen3-*.densfull40hi*, p = .65-.85) has
 edge_existence and node_degree only; it is read the same way and reported in
 its own blocks, so every other block stays p <= .50.
 
@@ -123,8 +123,8 @@ the primers within each arm, as in primer_findings.
   [ncsample]   node_count answers of 39
   [eesample]   edge_existence membership claims and misses
 
-  PYTHONPATH=. python scripts/check_cycle_claims.py --csv-dir csv2/raw-trends \\
-      > csv2/raw-trends/check_cycle_claims.txt
+  PYTHONPATH=. python scripts/check_cycle_claims.py --csv-dir outputs/n40-sweep \\
+      > outputs/n40-sweep/check_cycle_claims.txt
 """
 import argparse
 import collections
@@ -145,8 +145,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import primer_findings as pf  # noqa: E402  (FRAME, ARMS, PRIMERS, SEED, with_outcomes, bh, neighbour_set)
 import response_patterns as rp  # noqa: E402  (edge_chain: the [rpchain] reading of edge_count)
 
-PROMPTS = "prompts.densfull40.jsonl"
-PROMPTS_HI = "prompts.densfull40hi.jsonl"
+PROMPTS = "data/prompts/prompts.densfull40.jsonl"
+PROMPTS_HI = "data/prompts/prompts.densfull40hi.jsonl"
 THINK = [a for a in pf.ARMS if a.endswith("-think")]
 SHORT = {"qwen3-1.7b": "1.7B", "qwen3-1.7b-think": "1.7B-T", "qwen3-4b": "4B",
          "qwen3-4b-think": "4B-T"}
@@ -560,7 +560,7 @@ def main():
 
   for arm in pf.ARMS:
     seen = set()   # a response repeated across shards counts once, the first, as in pf.load_runs
-    for path in sorted(glob.glob(f"runs/{arm}.densfull40*.shard*.jsonl")):
+    for path in sorted(glob.glob(f"data/runs/{arm}.densfull40*.shard*.jsonl")):
       for line in open(path, encoding="utf-8"):
         r = json.loads(line)
         iid, cond, task = r.get("instance_id"), r.get("condition"), r.get("task")

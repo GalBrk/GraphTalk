@@ -2,13 +2,13 @@
 
 Every number in docs/results/n40-sweep.md is printed here, under a tag
 ("[flip]", "[main]", ...); tests/test_results_docs.py checks the doc against the
-saved output, csv2/raw-trends/primer_findings.txt. --csv-dir also writes
+saved output, outputs/n40-sweep/primer_findings.txt. --csv-dir also writes
 primer_cells.csv, edge_existence_collapse.csv and node_degree_routes.csv.
 
-Sources: csv2/raw-trends/frame.csv (the 84,000-row frame that
-scripts/build_raw_frame.py rebuilds from runs/ and checks gold-for-gold), the
-raw responses in runs/ for the two text measures (route and discrepancy), and
-runs/qwen3-1.7b.{degdens40,degdens40hi,degdensrep,degfixdeg}.* for the replication.
+Sources: outputs/n40-sweep/frame.csv (the 84,000-row frame that
+scripts/build_raw_frame.py rebuilds from data/runs/ and checks gold-for-gold), the
+raw responses in data/runs/ for the two text measures (route and discrepancy), and
+data/runs/qwen3-1.7b.{degdens40,degdens40hi,degdensrep,degfixdeg}.* for the replication.
 
 Conventions: rule R1 (graphtalk/outcomes.py). Two conditions are paired on the
 shared graph within (arm, task, density) and every pair is kept; a response
@@ -19,7 +19,7 @@ responses only. Exact McNemar; 95% intervals from a bootstrap over graphs,
 stratified by density.
 
   PYTHONPATH=. python scripts/primer_findings.py
-  PYTHONPATH=. python scripts/primer_findings.py --csv-dir csv2/raw-trends
+  PYTHONPATH=. python scripts/primer_findings.py --csv-dir outputs/n40-sweep
 """
 import argparse
 import glob
@@ -39,8 +39,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import analyze_primer_window as apw  # noqa: E402  (cells(): the window table's rule)
 import score_density_sweep as sds  # noqa: E402  ([replic]: one effect computation)
 
-FRAME = "csv2/raw-trends/frame.csv"
-BARS = "shortcuts_n40_flat.json"
+FRAME = "outputs/n40-sweep/frame.csv"
+BARS = "data/shortcuts_n40_flat.json"
 ARMS = ["qwen3-1.7b", "qwen3-1.7b-think", "qwen3-4b", "qwen3-4b-think"]
 PRIMERS = ["components", "clustering", "rwse", "degree", "all"]
 TASKS4 = ["edge_existence", "node_degree", "connected_nodes", "edge_count"]
@@ -344,7 +344,7 @@ def sign_flip(f):
 def procedure(f):
   runs = {}
   for arm in ["qwen3-4b", "qwen3-1.7b-think"]:
-    runs[arm] = load_runs(f"runs/{arm}.densfull40*.shard*.jsonl",
+    runs[arm] = load_runs(f"data/runs/{arm}.densfull40*.shard*.jsonl",
                           tasks={"node_degree"}, conds={"none", "degree"})
   nd = f[(f.task == "node_degree") & f.condition.isin(["none", "degree"])
          & f.arm.isin(runs)].copy()
@@ -671,18 +671,18 @@ def replication():
           f"broke {e['broke']} p={e['p']:.2g} n={e['n']} truncated {f1(e['dt'])}"
           + sds._left_out(flagged))
 
-  main = sds.load(["runs/qwen3-1.7b.degdens40.shard*.jsonl"])
+  main = sds.load(["data/runs/qwen3-1.7b.degdens40.shard*.jsonl"])
   contrast(main, "400 graphs per density, p<=.50")
   # Indices 0-99 at each density are the main sweep's own graphs; the other 300
   # are new, so they are the part of this run that replicates independently.
   contrast([r for r in main if int(r["instance_id"].rsplit("/", 1)[1]) >= 100],
            "the 300 new graphs per density")
-  contrast(sds.load(["runs/qwen3-1.7b.degdensrep.shard*.jsonl"]), "fresh seeds, 1,600 graphs")
-  grid = sds.load(["runs/qwen3-1.7b.degfixdeg.shard*.jsonl"])
+  contrast(sds.load(["data/runs/qwen3-1.7b.degdensrep.shard*.jsonl"]), "fresh seeds, 1,600 graphs")
+  grid = sds.load(["data/runs/qwen3-1.7b.degfixdeg.shard*.jsonl"])
   contrast(grid, "fixed mean degree, n in {20..160}")
   sizes = sorted({int(re.search(r"/size(\d+)/", r["instance_id"]).group(1)) for r in grid})
   print(f"  grid sizes {sizes}")
-  contrast(sds.load(["runs/qwen3-1.7b.degdens40hi.shard*.jsonl"]),
+  contrast(sds.load(["data/runs/qwen3-1.7b.degdens40hi.shard*.jsonl"]),
            "400 graphs per density, p>=.65")
 
 
@@ -774,7 +774,7 @@ def clustering_spread():
   """Within-graph spread of the clustering values the primer prints, by density."""
   pat = re.compile(r"Node \d+ has clustering coefficient (\d+\.\d+)")
   sd = {}
-  for path in ("prompts.densfull40.jsonl", "prompts.densfull40hi.jsonl"):
+  for path in ("data/prompts/prompts.densfull40.jsonl", "data/prompts/prompts.densfull40hi.jsonl"):
     for line in open(path, encoding="utf-8"):
       r = json.loads(line)
       if r["task"] != "node_degree" or r["condition"] != "clustering":
@@ -792,7 +792,7 @@ def node_count(f):
       f"{c} {100 * (d[d.condition == c].pred.astype(str) == '39').mean():.1f}%"
       for c in ["none", "rwse", "degree", "components", "filler", "all", "clustering"]))
   listed = {}
-  for line in open("prompts.densfull40.jsonl", encoding="utf-8"):
+  for line in open("data/prompts/prompts.densfull40.jsonl", encoding="utf-8"):
     r = json.loads(line)
     if r["task"] == "node_count" and r["condition"] == "none":
       dens = float(re.search(r"/p([\d.]+)/", r["instance_id"]).group(1))
@@ -875,7 +875,7 @@ def copy_test(f):
   the answer, from the rate at which the other nodes' stated degrees equal it."""
   deg = re.compile(r"Node (\d+) has degree (\d+)")
   stated = {}
-  for path in ("prompts.densfull40.jsonl", "prompts.densfull40hi.jsonl"):
+  for path in ("data/prompts/prompts.densfull40.jsonl", "data/prompts/prompts.densfull40hi.jsonl"):
     for line in open(path, encoding="utf-8"):
       r = json.loads(line)
       if r["task"] == "node_degree" and r["condition"] == "degree":
@@ -975,7 +975,7 @@ def crossfit(f, bars):
 def position(f):
   """qwen3-4b retrieval accuracy by where the queried node's line sits in the primer
   (lines are in node order): nodes 0-9 against 10-39, within density."""
-  runs = load_runs("runs/qwen3-4b.densfull40*.shard*.jsonl", tasks={"node_degree"},
+  runs = load_runs("data/runs/qwen3-4b.densfull40*.shard*.jsonl", tasks={"node_degree"},
                    conds={"degree", "all"})
   d = f[(f.arm == "qwen3-4b") & (f.task == "node_degree") & (f.hit_cap == 0)
         & f.condition.isin(["degree", "all"])].copy()
@@ -1015,7 +1015,7 @@ def leakage(f):
   other nodes' stated degrees equal the wrong answer."""
   deg = re.compile(r"Node (\d+) has degree (\d+)")
   stated, hits = {}, {}
-  for path in ["prompts.densfull40.jsonl", "prompts.densfull40hi.jsonl"]:
+  for path in ["data/prompts/prompts.densfull40.jsonl", "data/prompts/prompts.densfull40hi.jsonl"]:
     for line in open(path, encoding="utf-8"):
       r = json.loads(line)
       if r["condition"] not in ("degree", "all") or r["task"] not in ("node_degree", "edge_count"):
@@ -1029,7 +1029,7 @@ def leakage(f):
   print("[leak] gold read off the saved prompts (the queried node's degree sentence; half "
         "the sum of all 40): " + ", ".join(f"{t}/{c} {h}/{n}" for (t, c), (h, n) in sorted(hits.items())))
 
-  runs = load_runs("runs/qwen3-4b.densfull40*.shard*.jsonl", tasks={"node_degree"},
+  runs = load_runs("data/runs/qwen3-4b.densfull40*.shard*.jsonl", tasks={"node_degree"},
                    conds={"degree", "all"})
   d = f[(f.arm == "qwen3-4b") & (f.task == "node_degree") & (f.hit_cap == 0)
         & f.condition.isin(["degree", "all"]) & (f.exact == 0) & f.pred.notna()].copy()
@@ -1129,7 +1129,7 @@ def rwse_resolution():
   degrees, from the saved prompts (the text the model saw), by density."""
   deg = re.compile(r"Node (\d+) has degree (\d+)")
   seen = {}
-  for path in ("prompts.densfull40.jsonl", "prompts.densfull40hi.jsonl"):
+  for path in ("data/prompts/prompts.densfull40.jsonl", "data/prompts/prompts.densfull40hi.jsonl"):
     for line in open(path, encoding="utf-8"):
       r = json.loads(line)
       if r["task"] != "node_degree" or r["condition"] not in ("rwse", "degree"):
@@ -1233,7 +1233,7 @@ def rwse_fit():
 
 
 def solver_bars(bars):
-  """The graph-blind solver's accuracy per (task, primer), from shortcuts_n40_flat.json."""
+  """The graph-blind solver's accuracy per (task, primer), from data/shortcuts_n40_flat.json."""
   from graphtalk import shortcuts
   print(f"[bars] graph-blind solver ({len(shortcuts.THEOREMS)} exact rules, "
         f"{len(shortcuts.HEURISTICS)} heuristic, {len(shortcuts.FITTED)} fitted on "
@@ -1251,8 +1251,8 @@ def solver_bars(bars):
 
 def rerun():
   """Identical prompts generated twice: degdens40 re-ran the main sweep's graphs."""
-  main = load_runs("runs/qwen3-1.7b.densfull40.shard*.jsonl", tasks={"node_degree"})
-  again = load_runs("runs/qwen3-1.7b.degdens40.shard*.jsonl")
+  main = load_runs("data/runs/qwen3-1.7b.densfull40.shard*.jsonl", tasks={"node_degree"})
+  again = load_runs("data/runs/qwen3-1.7b.degdens40.shard*.jsonl")
   n = same = changed = 0
   for key, r in again.items():
     b = main.get(key)
@@ -1268,7 +1268,7 @@ def rerun():
 
 def other_procedures(f):
   """Two procedure checks outside the stated-answer account."""
-  runs = load_runs("runs/qwen3-4b.densfull40.shard*.jsonl", tasks={"connected_nodes"},
+  runs = load_runs("data/runs/qwen3-4b.densfull40.shard*.jsonl", tasks={"connected_nodes"},
                    conds={"none", "components", "filler"})
   d = f[(f.arm == "qwen3-4b") & (f.task == "connected_nodes") & (f.hit_cap == 0)
         & f.condition.isin(["none", "components", "filler"])].copy()
@@ -1280,7 +1280,7 @@ def other_procedures(f):
             f"{c} {100 * d[d.condition == c].restates.mean():.1f}% "
             f"({100 * d[(d.condition == c) & d.restates].exact.mean():.0f}%)"
             for c in ["none", "components", "filler"]))
-  runs = load_runs("runs/qwen3-4b.densfull40hi.shard*.jsonl", tasks={"node_degree"},
+  runs = load_runs("data/runs/qwen3-4b.densfull40hi.shard*.jsonl", tasks={"node_degree"},
                    conds={"none", "clustering"})
   d = f[(f.arm == "qwen3-4b") & (f.task == "node_degree") & (f.hit_cap == 0)
         & f.condition.isin(["none", "clustering"]) & f.density_class.isin(DENSHI)].copy()
@@ -1290,7 +1290,7 @@ def other_procedures(f):
       f"{c} retrieve/assert/enumerate "
       + "/".join(f"{100 * (g.route == r).mean():.0f}" for r in ["retrieve", "assert", "enumerate"])
       + f"%, median {g.n_new_tokens.median():.0f} tokens" for c, g in d.groupby("condition")))
-  runs = load_runs("runs/qwen3-1.7b.densfull40.shard*.jsonl", tasks={"node_degree"},
+  runs = load_runs("data/runs/qwen3-1.7b.densfull40.shard*.jsonl", tasks={"node_degree"},
                    conds={"degree"})
   j = pairs(f, "qwen3-1.7b", "node_degree", "none", "degree", [0.20, 0.35])
   fixed = j[(j.correct_a == 0) & (j.correct_b == 1)]
@@ -1321,7 +1321,7 @@ def route_data(f):
   rows = []
   for arm in ["qwen3-4b", "qwen3-1.7b-think", "qwen3-1.7b"]:
     conds = ["none", "degree", "all", "clustering", "rwse"]
-    runs = load_runs(f"runs/{arm}.densfull40*.shard*.jsonl", tasks={"node_degree"},
+    runs = load_runs(f"data/runs/{arm}.densfull40*.shard*.jsonl", tasks={"node_degree"},
                      conds=set(conds))
     d = f[(f.arm == arm) & (f.task == "node_degree") & (f.hit_cap == 0)
           & f.condition.isin(conds)].copy()

@@ -1,6 +1,6 @@
 """What the primers change in how the models answer, and whether accuracy moves
 with what a primer says about the task. Read from the raw responses of the
-40-node sweep (runs/qwen3-{1.7b,4b}[-think].densfull40*), all 84,000 of them.
+40-node sweep (data/runs/qwen3-{1.7b,4b}[-think].densfull40*), all 84,000 of them.
 
 Truncated responses are kept everywhere: a response the budget cut off still
 shows whether the model was counting or copying. Each pattern shift is printed
@@ -31,12 +31,12 @@ follows R1: a truncated response is never correct.
   [rprelation]  per arm, the accuracy effect of each primer (primer_findings'
                 effect(), so its intervals match primer_cells.csv) against how
                 much the primer tells the graph-blind solver about the task
-                (bar(primer) - bar(none), shortcuts_n40_flat.json), and the
+                (bar(primer) - bar(none), data/shortcuts_n40_flat.json), and the
                 patterns that moved in the cells whose accuracy moved
 
   PYTHONPATH=. python scripts/response_patterns.py --sample
-  PYTHONPATH=. python scripts/response_patterns.py --csv-dir csv2/raw-trends \\
-      > csv2/raw-trends/response_patterns.txt
+  PYTHONPATH=. python scripts/response_patterns.py --csv-dir outputs/n40-sweep \\
+      > outputs/n40-sweep/response_patterns.txt
 """
 import argparse
 import collections
@@ -62,7 +62,7 @@ TASKS = ["node_count", "node_degree", "connected_nodes", "edge_count",
          "edge_existence", "cycle_check"]
 CONSTANT = ("node_count", "cycle_check")   # gold is 40 / "yes" on every graph
 HI_TASKS = ("node_degree", "edge_existence")
-VALIDATION = "csv2/raw-trends/response_pattern_validation.csv"
+VALIDATION = "outputs/n40-sweep/response_pattern_validation.csv"
 MIN_PRECISION = 0.9
 PER_ARM, N_SAMPLE = 5, 20
 CAP = 12000                                # characters read by the discovery pass
@@ -366,7 +366,7 @@ def contrast(d, out_rows):
 def load():
   """The frame with outcomes, text, targets and every pattern column."""
   f = pf.with_outcomes(pd.read_csv(pf.FRAME, dtype={"pred": str, "gold": str}))
-  runs = {a: pf.load_runs(f"runs/{a}.densfull40*.shard*.jsonl") for a in ARMS}
+  runs = {a: pf.load_runs(f"data/runs/{a}.densfull40*.shard*.jsonl") for a in ARMS}
   corpus, graphs = brf.Corpus(), {}
   rows = []
   for r in f.itertuples():

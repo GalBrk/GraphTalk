@@ -1,13 +1,13 @@
 # The 40-node sweep
 
-Source: `csv2/raw-trends/primer_findings.txt`
+Source: `outputs/n40-sweep/primer_findings.txt`
 
 The main experiment. Runs:
-`runs/{qwen3-1.7b,qwen3-1.7b-think,qwen3-4b,qwen3-4b-think}.{densfull40,densfull40hi}.shard*.jsonl`,
-with prompts in `prompts.densfull40.jsonl` and `prompts.densfull40hi.jsonl`. Reproduce:
+`data/runs/{qwen3-1.7b,qwen3-1.7b-think,qwen3-4b,qwen3-4b-think}.{densfull40,densfull40hi}.shard*.jsonl`,
+with prompts in `data/prompts/prompts.densfull40.jsonl` and `data/prompts/prompts.densfull40hi.jsonl`. Reproduce:
 
     PYTHONPATH=. python scripts/build_raw_frame.py
-    PYTHONPATH=. python scripts/primer_findings.py --csv-dir csv2/raw-trends > csv2/raw-trends/primer_findings.txt
+    PYTHONPATH=. python scripts/primer_findings.py --csv-dir outputs/n40-sweep > outputs/n40-sweep/primer_findings.txt
 
 `build_raw_frame.py` regenerates every graph from its instance id and stops if
 any regenerated gold answer differs from the recorded one.

@@ -8,7 +8,7 @@ out of budget, whether `cycle_check` answers agree with the same model's
 whether the scorer reads the boxed answer, and whether fixes come with longer or
 shorter responses.
 
-Runs: the 40-node sweep at p ≤ .50 (`runs/qwen3-{1.7b,4b}[-think].densfull40*`).
+Runs: the 40-node sweep at p ≤ .50 (`data/runs/qwen3-{1.7b,4b}[-think].densfull40*`).
 These are Erdős–Rényi graphs with 40 nodes, 100 per density at p = .10, .20, .35
 and .50, with six tasks and seven conditions. The models are Qwen3-1.7B and
 Qwen3-4B, each with thinking off (1.7B, 4B) and on (1.7B-T, 4B-T).
@@ -18,9 +18,9 @@ check it. Every number names its source:
 
 | Tag | Source |
 |---|---|
-| **R** `[tag]` | `csv2/raw-trends/primer_robustness.txt` (`scripts/primer_robustness.py`); per-response rows in `csv2/raw-trends/robustness_responses.csv` |
-| **C** `[tag]` | `csv2/raw-trends/check_cycle_claims.txt` (`scripts/check_cycle_claims.py`) |
-| **P** `[tag]` | `csv2/raw-trends/primer_findings.txt` (`scripts/primer_findings.py`) |
+| **R** `[tag]` | `outputs/n40-sweep/primer_robustness.txt` (`scripts/primer_robustness.py`); per-response rows in `outputs/n40-sweep/robustness_responses.csv` |
+| **C** `[tag]` | `outputs/n40-sweep/check_cycle_claims.txt` (`scripts/check_cycle_claims.py`) |
+| **P** `[tag]` | `outputs/n40-sweep/primer_findings.txt` (`scripts/primer_findings.py`) |
 
 Conventions:
 - **Correctness.** Rule R1: a response that hits the token budget is
@@ -579,11 +579,11 @@ by permutation within strata:
 ## 12. Reproduce
 
 ```bash
-PYTHONPATH=. python scripts/primer_robustness.py --csv-dir csv2/raw-trends     > csv2/raw-trends/primer_robustness.txt
+PYTHONPATH=. python scripts/primer_robustness.py --csv-dir outputs/n40-sweep     > outputs/n40-sweep/primer_robustness.txt
 ```
 
-It reads `csv2/raw-trends/frame.csv` (`scripts/build_raw_frame.py`), the
-40-node responses in `runs/`, and the prompts file for the graphs. It reuses:
+It reads `outputs/n40-sweep/frame.csv` (`scripts/build_raw_frame.py`), the
+40-node responses in `data/runs/`, and the prompts file for the graphs. It reuses:
 - `check_cycle_claims.py`: graph parsing, the permutation test, splitting a
   response into trace and answer.
 - `analyze_primer_window.cells`: the cells of `[bands]`.
