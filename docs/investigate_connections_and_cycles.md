@@ -27,6 +27,175 @@ responses hit the token budget. Task abbreviations: ND `node_degree`,
 CN `connected_nodes`, EC `edge_count`, EE `edge_existence`, NC `node_count`,
 CC `cycle_check`.
 
+## Conclusions
+
+This section is written for the paper. Each conclusion is stated in plain
+words, followed by the numbers behind it, each with its source tag. Unless a
+line says otherwise:
+- **Data.** The main sweep, p ≤ .50, with 400 paired graphs per (model, task,
+  primer).
+- **Effect.** The change in % correct of *all* responses against no primer. A
+  truncated response counts as not correct, and the truncated change is given
+  beside the effect when it is 2 points or more.
+- **Intervals and tests.** Brackets are 95% bootstrap intervals. q is
+  Benjamini–Hochberg over the six conditions within each (model, task)
+  (P `[main]`).
+- **Finished shares.** A share marked *finished* counts finished responses
+  only.
+
+How much of an effect any change to the prompt makes, and where the models
+agree, are the conclusions of `primer-robustness.md`.
+
+### C1. A primer helps when it states an answer the model cannot compute; other statistics add little
+
+On `node_degree`, `degree` and `all` print the queried node's degree, so a
+solver that reads only the primer scores 100% (P `[bars]`). Effects
+(P `[main]`):
+
+| Model | % correct, none | `degree` | `all` |
+|---|---|---|---|
+| 1.7B | 60.50 | +7.5 [+3.0, +11.8], q = 0.0042 | +10.2 [+5.2, +15.2], q = 0.00086 |
+| 1.7B-T | 76.25 | +8.8 [+4.2, +13.2], q = 0.0008 (truncated +4.5) | +12.2 [+8.0, +16.5], q = 3.4e-07 |
+| 4B | 99.25 | −6.5 [−9.2, −4.0], q = 7.7e-06 | −8.0 [−11.0, −5.2], q = 1.2e-07 |
+| 4B-T | 97.00 | +2.5 [+0.8, +4.2], q = 0.078 (direction only) | +0.5 [−1.5, +2.8], q = 0.98 |
+
+- **The gain is where there is room.** In cells whose accuracy without a
+  primer is 0.25–0.75, answer-stating primers gain:
+  - +16.1 (10 cells) and +12.9 (8 cells), against +2.6 (20) and +3.9 (47) for
+    the other primers (P `[bands]`).
+  - +13.9 and +16.2 when the cells are sorted on half the graphs and measured
+    on the other half, so this is not regression to the mean
+    (P `[splithalf]`).
+  - All 18 such cells are `node_degree`. 1.7B-T's 10 average +21.5
+    (P `[window]`), and at p ≥ .65 `degree` gives 1.7B-T +24.8
+    (D `[ddthink]`).
+- **A model that already counts loses.** Plain 4B has 57 wrong answers under
+  `degree` that take the degree without restating the node's list. 17 of them
+  equal the degree printed for node k−1 or k+1, against 10.4 expected by chance
+  (p = .017, P `[copyerr]`).
+- **Statistics that do not state the answer add little, but it is not
+  nothing.**
+  - `components`, `clustering` and `rwse` average +1.6 over the 51 middle-band
+    cells (P `[bands]`).
+  - `filler`, 1,829 characters naming every node with no structure, averages
+    −6.9 on the same 17 (model, task, density) (R `[fillerband]`). So their
+    own effect lies between +1.6 (against none) and about +8.5 (against
+    `filler`).
+  - Outside `node_count`, five significant gains are not truncation-driven:
+    `components` on 4B CN +9.2 [+6.0, +12.8]; `clustering` on 4B EE +4.0
+    [+1.0, +7.0]; `degree` and `all` on 1.7B-T CN +6.2 [+2.8, +10.0] and
+    [+2.5, +10.0]; `all` on 1.7B EE +11.5 [+6.2, +16.5] (C `[pvn]`,
+    P `[main]`).
+- **The largest gains are on `node_count`, and they are not counting.** They
+  change which number the model writes (C3).
+
+### C2. Correct answers often rest on false claims, and no primer fixes that
+
+At 40 nodes every graph has a cycle, so `cycle_check`'s answer is always yes.
+% of correct finished answers resting on a real or an invented cycle, no
+primer (C `[ccanswer]`):
+
+| Model | Correct answers | Real cycle | Invented cycle |
+|---|---|---|---|
+| 1.7B | 363 | 36.9 | 43.5 |
+| 1.7B-T | 388 | 79.9 | 17.8 |
+| 4B | 396 | 34.1 | 23.0 |
+| 4B-T | 397 | 96.5 | 3.3 |
+
+- **Thinking makes the reasoning real:** 36.9% → 79.9% (1.7B) and 34.1% →
+  96.5% (4B).
+- **Thinking traces still invent, and withdraw part of it.** 53.4% of
+  1.7B-T's traces and 25.4% of 4B-T's assert an invented cycle, and part is
+  withdrawn before the answer (C `[ccthink]`).
+- **No primer fixes it.**
+  - `degree` lowers invented cycles for the plain models (−25.1, −19.5) by
+    replacing cycle-finding with an edge-count argument, and real cycles fall
+    by about as much (−22.1, −20.6) (C `[ccinvent]`, `[cctest]`).
+  - `clustering` and `all` *raise* invented cycles significantly for three
+    models each, for example 1.7B-T `clustering` +13.0 and 4B `all` +11.3
+    (C `[ccinvent]`).
+- **The invented edge is usually the one that closes the walk:** 56.6% of
+  1.7B's invented steps (C `[ccwhere]`).
+- **The same happens on `edge_existence`.** A stated fake edge backs 33.9% of
+  plain 1.7B's false alarms without a primer (finished, C `[eeclaims]`).
+
+### C3. Why answers are wrong
+
+- **`node_degree`: omission.** 24.6% of plain 1.7B's stated lists miss a
+  neighbour and 3.3% invent one (C `[ndlist]`). 73.4% of its wrong answers are
+  too low (finished, C `[ndsign]`).
+- **`connected_nodes`: position.** The missed neighbour is the last on the
+  line in 39.1% (1.7B) and 21.0% (1.7B-T) of misses, and the first in 61.3%
+  for plain 4B (C `[cnsource]`).
+- **`edge_existence` false yes: shared neighbours, long lines, and false "is
+  listed" claims.**
+  - % of non-edges answered yes (finished, all primers pooled) rises with
+    shared neighbours: 1.7B from 1.7% (none shared) to 65.9% (4 or more), 4B
+    from 0.2% to 38.8% (C `[eeshared]`).
+  - Without a primer the link holds within density: p = .0005 (1.7B), .014
+    (4B) (C `[eeshared]`).
+  - With the pair's degree sum held fixed, it holds for 1.7B (p = .0035). For
+    4B it does not (p = .081, 37 false alarms). The degree sum predicts false
+    alarms on its own too (1.7B p = .011) (R `[eedegree]`).
+  - Plain 4B's false alarms mostly claim the other node "is listed" in a list
+    that does not contain it: 41.7% of 384 at p ≤ .50, 74.5% of 200 at
+    p ≥ .65 (C `[eewhy]`).
+- **`edge_existence` false no: rare, and a misread list.** There are 75
+  misses in all, 68 at p ≥ .65. The thinking models read one list wrong and
+  then rule that both lists must agree: 71% of 1.7B-T's 21 misses
+  (C `[eemiss]`).
+- **`node_count`: the last id, not a count.** Plain 1.7B answers 39 on 68.5%
+  of finished answers (C `[ncanswer]`).
+  - It lists the ids one per line in 59.5% of answers, and those are right
+    0.8% of the time (238 answers); the others are right 76.5% of the time
+    (162).
+  - `clustering` removes the listing path (2.8%) and the error (1.2% answer
+    39), for +67.2 [+64.5, +70.0] (P `[main]`).
+  - Plain 4B's 9.8% disappears under every primer, `filler` included (+8.0 to
+    +9.8, P `[main]`).
+- **`cycle_check` "no": the same model counts a dense graph.** 88 of the 89
+  "no" answers with an edge count go with that model's own count of 40 or
+  more edges on the same graph, from a separate prompt (R `[cyclecons]`).
+
+### C4. A statistic shown alone can change how the model reads the task
+
+- **Plain 1.7B on `cycle_check`: each primer brings its own wrong reason.**
+  - Its "no" answers rise from 0.3% to 7.8% under `rwse`, and from 0.0% to
+    12.3% under `degree` (paired, finished; both q < .05) (C `[ccno]`).
+  - 67.7% of the 31 `rwse` "no" answers call the graph directed. 97.3% of the
+    37 `degree` "no" answers cite an odd degree sum or the handshaking lemma.
+  - `all` prints both statistics, yet has 5 "no" answers and neither reason
+    (0% and 0%) (C `[ccno]`).
+  - Under `degree` it costs 1.7B −17.5 [−23.0, −12.2] of accuracy (truncated
+    +8.2) (P `[main]`).
+- **"Cycles of length 2" come with `rwse`, not with its words.** Correct
+  answers resting on a walk to a neighbour and back rise under `rwse` to
+  42.5% (4B-T, from 0.0) and 38.7% (4B, from 6.8). Under `all`, which prints
+  the same "return probability … after 2 steps", they are 0.0% and 6.6%
+  (C `[ccanswer]`). Under `rwse`, 4B-T's answers resting on a real cycle fall
+  by 41.0 (C `[cctest]`).
+- **`filler`, which names every node and states nothing, also changes the
+  reading.**
+  - Invented cycles +12.4 (1.7B, C `[ccinvent]`), stated fake edges +9.6
+    (1.7B, C `[eeclaims]`), invented neighbours +14.8 (4B, C `[cnset]`).
+  - 1.7B's `edge_existence` false-alarm rate goes from 0.51 to 0.69, with
+    hits at 0.98–1.00 (finished, P `[fa]`).
+  - Accuracy changes: 1.7B EE −15.8 [−20.0, −11.8], 4B CN −12.5
+    [−17.2, −7.8] (P `[main]`).
+  - Why is not tested. It adds 40 lines that open "Node X"; its "is simply
+    present" matches the "is listed / present" claims above; and it moves the
+    graph away from the question.
+
+### C5. What is still open
+
+These are open (§8):
+- Why `clustering` fixes the `node_count` error and `rwse` does not.
+- Whether `rwse`'s effects come from being the only statistic shown or from
+  its wording.
+- Acyclic 40-node graphs, without which a false "yes" on `cycle_check`
+  cannot be measured.
+- Missed edges, too rare to test.
+
 ## 1. The main question: statistics that state the answer, and statistics that do not
 
 A primer *states the answer* when a solver that reads only the primer text
@@ -282,7 +451,7 @@ Only the first explains both errors at once.
 ### 5.1 What the correct answers rest on
 
 Each cycle a correct, finished answer names (for the thinking arms, in the text
-after `</think>`) is checked step by step against the edges of its prompt (§8).
+after `</think>`) is checked step by step against the edges of its prompt (§7).
 An answer rests on a **real** cycle if it names one and does not reject it,
 wherever it appears; if it rejects a real cycle and rests on an invented one,
 it rests on the **invented** one. % of correct answers (C `[ccanswer]`):
@@ -412,7 +581,7 @@ one / withdrawing an invented one:
 ## 6. Fabricated edges in the other tasks
 
 A statement "Node x is connected to (nodes) a, b, c" (or "node x's neighbours
-are …") claims those edges (§8).
+are …") claims those edges (§7).
 
 ### 6.1 `edge_existence`
 
@@ -648,7 +817,7 @@ order):
 ### 6.4 `edge_count`
 
 The per-node degree table a response lists, read by
-`response_patterns.edge_chain` (`[rpchain]`; §8 on how the table is read). % of
+`response_patterns.edge_chain` (`[rpchain]`; §7 on how the table is read). % of
 all responses whose table has a wrong value, and the paired change
 (C `[ecchain]`):
 
@@ -672,76 +841,7 @@ list one, % with a wrong value, not tested (C `[ectable]`):
 Under `degree` and `all`, 4B-T miscopies degrees out of the primer: one response
 lists "Node 27: degree 6" where the true degree, which the primer states, is 9.
 
-## 7. Findings
-
-1. **Explicit statistics help where they state the answer and the model cannot
-   compute it.**
-   - Degree statistics raise `node_degree` accuracy for the 1.7B models
-     (1.7B-T +21.5 over its middle-band cells), and cost plain 4B, which
-     already counts.
-   - Statistics that do not state the answer add about +1.6 points where
-     there is room. An equally long text without statistics (`filler`) loses
-     6.9 in the same cells, so their own effect is between +1.6 and about +8.5.
-2. **Correct answers often rest on claims that are false.** A made-up cycle
-   backs 43.5% of plain 1.7B's correct `cycle_check` answers without a primer,
-   and 3.3% of 4B-T's. Thinking separates the two: the traces still invent, and
-   the models withdraw part of it before answering.
-3. **No primer reduces fabrication while keeping real reasoning.** `degree`
-   lowers invented cycles only by replacing cycle-finding with an edge-count
-   argument; `clustering` and `all` raise invented cycles.
-4. **`filler` increases fabrication for the plain models across tasks.**
-   - Invented cycles +12.4 (1.7B), stated fake edges +9.6 (1.7B), invented
-     neighbours +14.8 (4B).
-   - It is not a neutral length control.
-   - Why is not tested. Three explanations fit:
-     - It adds 40 lines that open "Node X", which can be mistaken for the
-       queried node's line.
-     - Its sentence "Node X is simply present" matches the "is
-       present / listed" claims behind false alarms (§6.1).
-     - It moves the graph further from the question.
-5. **`rwse` shown alone draws the thinking models to invented claims.**
-   - Length-2 "cycles" (4B-T real cycles −41.0).
-   - Invented edges and neighbours for 1.7B-T on `edge_existence` (+7.0),
-     `node_degree` (+4.8) and `connected_nodes` (+4.8).
-   - `all`, which prints the same return probabilities, hardly produces the
-     length-2 claims. So it is not the wording alone.
-6. **Misreading is mostly omission.** Missed neighbours outnumber invented ones
-   about 7 to 1 in plain 1.7B's `node_degree` lists; invented cycle edges are
-   mostly the closing step.
-7. **`node_count` gains measure which number the model writes, not counting.**
-   No model counts; plain 1.7B's error is reporting the last id (39), and only
-   `clustering` fixes its direct path completely. Plain 4B's smaller error
-   (9.8%) disappears under every primer.
-8. **A false yes on `edge_existence` comes from shared neighbours, long lines
-   and false membership claims.**
-   - The plain models' false-alarm rate rises from about 0 with no shared
-     neighbour to 66% (1.7B) and 39% (4B) with 4 or more.
-   - The link holds within density, and for 1.7B also with the pair's degree
-     sum held fixed. The degree sum predicts false alarms on its own too.
-   - Plain 4B mostly claims the other node is "listed among" a list that does
-     not contain it. `clustering` is the only primer that cuts that claim
-     significantly.
-   - On pairs sharing 4 or more neighbours, `filler` and `components` raise
-     false alarms for both plain models. `rwse`, `degree` and `all` lower them
-     for 1.7B but raise them for 4B.
-9. **A false no comes from misreading one list and trusting it.** Misses are
-   rare (75 in all, 68 at p ≥ .65); the thinking models see the edge in one
-   list, miss it in the other, and rule that both lists must agree.
-10. **At high density the same splits hold.** Primers stop plain 1.7B stating
-    the fake edge (−42 to −52) but not answering yes; every primer raises
-    1.7B-T's invented neighbours on `node_degree` (+5.5 to +23.1, significant
-    for all but `all`).
-11. **Copying errors are positional.** The 1.7B models drop the last neighbour
-    on a line, plain 4B the first (and adds the queried node itself, more so
-    under `filler`); invented neighbours come from the line of the next or
-    previous node somewhat more often than chance.
-12. **A statistic shown alone can change how plain 1.7B reads the task.** Its
-    `cycle_check` "no" answers rise from 0.3% to 7.8% under `rwse` (68% of them
-    call the graph directed) and to 12.3% under `degree` (a misapplied
-    handshaking lemma). Under `all`, which prints both statistics, it answers
-    no to 1.3% of graphs and gives neither reason.
-
-## 8. Method
+## 7. Method
 
 `scripts/check_cycle_claims.py` reads the responses and checks every claim
 against the graph parsed from the response's own prompt (edge counts match the
@@ -827,7 +927,7 @@ uses, has its own output (pattern shifts per primer; not cited here):
     PYTHONPATH=. python scripts/response_patterns.py --csv-dir csv2/raw-trends \
         > csv2/raw-trends/response_patterns.txt
 
-## 9. Open questions
+## 8. Open questions
 
 - **Why `clustering` fixes plain 1.7B's `node_count` and `rwse` does not.** The
   choice between writing 40 and 39 on the direct path is a single token. A GPU

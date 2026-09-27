@@ -33,6 +33,101 @@ Conventions:
 - **Abbreviations.** ND `node_degree`, CN `connected_nodes`, EC `edge_count`,
   EE `edge_existence`, NC `node_count`, CC `cycle_check`.
 
+## Conclusions
+
+This section is written for the paper. Each conclusion is stated in plain
+words, followed by the numbers behind it with their source tags. Unless a line
+says otherwise, the data are the main sweep (p ≤ .50), with 400 questions per
+(model, task), and a flip is a change between right and wrong against no
+primer, a truncated response counting as wrong. What the primers do to
+accuracy, and why answers are wrong, are the conclusions of
+`investigate_connections_and_cycles.md`.
+
+### R1. Much of a primer-against-none effect is what any change to the prompt does
+
+- **Filler flips as many answers as the primers.** Filler, with no graph
+  content, flips 18.6% (1.7B), 10.4% (1.7B-T), 9.0% (4B) and 6.2% (4B-T) of
+  questions; the primers flip 6.6–23.6% (R `[churn]`). In 89 of the 120
+  (model, task, primer) cells, a primer flips no more or fewer questions than
+  filler (exact McNemar on the flips, BH over the five primers per pairing).
+- **They flip the same questions.** A primer flips 38–69% of the questions
+  filler flips, and 3–15% of the rest. The difference is +32 to +62 points
+  within (task, density), and all 20 permutation tests are at p = .0005, the
+  floor for 2000 draws (R `[overlap]`).
+- **What the flips are depends on the model.**
+  - **Thinking models: the token budget.** 83–95% (4B-T) and 44–65% (1.7B-T)
+    of the flips have one response that ran out of tokens (R `[churnwhy]`).
+  - **Plain models: finished answers that change,** 78–93% (1.7B) and 94–98%
+    (4B). Chance, a common effect of adding text, and difficulty within
+    density all fit. Pure chance is measured only for 1.7B `node_degree`,
+    where regenerating identical prompts changes correctness on 5.3% of
+    questions (P `[rerun]`).
+- **For the paper.** McNemar stays valid: flips in both directions cost it
+  power, not bias. But the number of pairs that disagree is not evidence of
+  content, and an effect against none includes what any added text does. The
+  comparison against filler bounds the content from the other side, and
+  filler is not neutral: the side statistics gain +1.6 against none where
+  filler loses 6.9 (R `[fillerband]`).
+
+### R2. Models agree on a question only where they make the same kind of mistake
+
+- **Almost no agreement across model sizes.** Cohen's kappa of correct
+  without a primer, chance taken within density, is −0.07 to 0.16 in five of
+  the six pairs of models (R `[crossarm]`). 1.7B with 1.7B-T reaches 0.56 on
+  `connected_nodes` and 0.24 on `node_degree`. 4B with 4B-T is at chance.
+- **Agreement follows a shared error.**
+  - On `connected_nodes`, both 1.7B arms drop the last neighbour of a line
+    (39.1% and 21.0% of their misses) and plain 4B the first (61.3%)
+    (C `[cnsource]`). Kappa is 0.56 for the 1.7B pair and 0.05 for 1.7B with
+    4B.
+  - On `edge_existence`, both plain models call pairs with shared neighbours
+    edges (C `[eeshared]`), and 1.7B with 4B has the highest cross-size kappa,
+    0.16.
+- **Fixes are shared beyond chance only within a model.** Among questions both
+  arms get wrong without a primer:
+  - 1.7B with 1.7B-T, under filler, components, clustering and rwse (for
+    example rwse 36 against 25.0 expected).
+  - 4B with 4B-T under degree (37 against 24.4).
+  - No other pair (R `[crossarm]`).
+
+### R3. Plain models run out of tokens by looping, thinking models by working
+
+- **The split.** Loops as a share of truncated responses: 1.7B 83.9% (800),
+  4B 89.6% (48), 1.7B-T 6.8% (2,582), 4B-T 11.6% (1,960) (R `[loop]`). The
+  loop score splits cleanly: 1,118 of 5,390 score 0.98 or more, 12 fall
+  between 0.90 and 0.98, and 3,371 score below 0.3.
+- **The thinking models' `edge_count` truncations are work.** Without a
+  primer they run out while still counting on 80.0% (1.7B-T) and 78.2% (4B-T)
+  of questions. For 4B-T, primers cut this to 51.2–65.0%, and filler to 65.0%
+  (R `[loop]`).
+- **The degree primer makes 1.7B run long on `cycle_check`.** Loops go from
+  9.0% to 16.8% (1.7B), and truncations while working from 2.0% to 21.5%
+  (1.7B-T) (R `[loop]`).
+
+### R4. The measurements hold
+
+- **Final answers follow the thinking traces.** In 23,578 finished thinking
+  responses there are 3 real departures, all under the degree primer. Reading
+  all 32 flagged cases by hand, 28 were the extractor misreading a trace and
+  1 was the scorer (R `[faithful]`, `[faithsample]`).
+- **The scorer.** Of 10,448 finished answers with a boxed integer, 8 are
+  scored wrong although the boxed value is right, at most 3 in any
+  (model, task): at most 0.75 points in any cell (R `[boxed]`).
+
+### R5. Response length says more about the model than about the primer
+
+- **On the same question, 4B's longer response is the right one:** in 87.5%
+  of 128 mixed questions on `edge_existence`, 79.8% on `connected_nodes`,
+  79.3% on `edge_count` and 73.2% on `node_degree` (R `[samequestion]`).
+  Fixes therefore look longer and breaks shorter under any edit, filler
+  included (R `[lenmed]`).
+- **What primers do to length.** 4B-T's `edge_count` responses shrink by a
+  median 3,133 tokens under all and 2,308 under degree (finished pairs,
+  R `[lenmed]`). With every degree stated, the model stops counting.
+- **Plain 1.7B's `node_count` goes the other way.** Its long answers are the
+  wrong ones (the right one is longer on 1.1% of 369 questions): the id list
+  that ends in 39.
+
 ## 1. Any change to the prompt flips many questions
 
 P `[main]` gives each primer's fixed and broken counts against none. The table
@@ -463,43 +558,7 @@ by permutation within strata:
 - **The one exception is 4B without a primer,** where 37 false alarms are too
   few to separate the two.
 
-## 11. What this adds
-
-1. **Filler flips as many questions as most primers, and the same ones.**
-   89 of 120 (arm, task, primer) cells flip no more or fewer questions than
-   filler. A question filler flips is flipped by a primer 38–69% of the time,
-   any other 3–15%.
-2. **What the flips are depends on the arm.**
-   - In the thinking arms, most are at the token budget (4B-T 83–95%, 1.7B-T
-     44–65%).
-   - In the plain arms, most are finished answers that change. The data
-     cannot say whether they are chance, a common effect of adding text, or
-     difficulty within density.
-   - The paired tests are valid, but a primer-against-none effect includes
-     what any added text does.
-3. **The side statistics do beat an equally long text.** In the middle band,
-   components, clustering and rwse gain +1.6 against none while filler loses
-   6.9 on the same cells.
-4. **Arms agree where their error mechanisms agree.** Kappa is near 0 across
-   model sizes. It reaches 0.56 where both 1.7B arms drop the last neighbour
-   of a line (CN), and 0.16 where both plain models are misled by shared
-   neighbours (EE).
-5. **Truncation has two causes.**
-   - Plain models loop (84–90% of their truncations).
-   - Thinking models run out mid-work (7–12% loops); on EC that is nearly all
-     of it.
-   - Primers that cut 4B-T's EC truncation cut the work, and filler does too.
-6. **"No cycle" answers come from models that count the graph as dense.** 88
-   of 89 such answers go with the same model's count of 40 or more edges on
-   that graph, from a separate prompt.
-7. **Final answers follow the traces.** There are 3 real departures in 23,578,
-   all under the degree primer.
-8. **The scorer undercounts 8 of 10,448 boxed answers.**
-9. **On the same question, 4B's longer response is usually the right one.**
-   Fixes therefore look longer and breaks shorter under any edit. This is a
-   property of the model, not of a primer.
-
-## 12. Limits
+## 11. Limits
 
 - **Kappa.** It is uninformative where an arm is near 0 or 100% correct
   (4B ND is 99%).
@@ -517,7 +576,7 @@ by permutation within strata:
 - **Response length.** `[lenmed]` conditions on both responses finishing, so
   fixes and breaks that come from truncation (§5) are outside it.
 
-## 13. Reproduce
+## 12. Reproduce
 
 ```bash
 PYTHONPATH=. python scripts/primer_robustness.py --csv-dir csv2/raw-trends     > csv2/raw-trends/primer_robustness.txt
