@@ -1,0 +1,205 @@
+[dxhet] main sweep, four tasks, 400 paired graphs per test: the effect (points, R1) at p = 0.10 0.20 0.35 0.50; its largest minus smallest; the between-density test (p, and q with BH over all 96 tests); the slope per +0.1 of density (permutation p); ~ = a density with 15%+ truncated on either side
+  edge_existence  1.7B   filler      -5.0 -20.0 -32.0  -6.0 | spread 27.0 | p=0.0005 q=0.0069 | slope -0.6 (p=0.67)
+  edge_existence  1.7B   components  -3.0 -11.0 -16.0  -3.0 | spread 13.0 | p=0.0235 q=0.1 | slope -0.1 (p=0.92)
+  edge_existence  1.7B   clustering  -5.0  +1.0  +6.0 +13.0 | spread 18.0 | p=0.0365 q=0.12 | slope +4.3 (p=0.0035)
+  edge_existence  1.7B   rwse        +2.0  -5.0 +10.0 +13.0 | spread 18.0 | p=0.035 q=0.12 | slope +3.8 (p=0.019)
+  edge_existence  1.7B   degree      -6.0  -3.0  +1.0 +24.0 | spread 30.0 | p=0.0005 q=0.0069 | slope +7.1 (p=0.0005)
+  edge_existence  1.7B   all         +0.0  +8.0 +12.0 +26.0 | spread 26.0 | p=0.0025 q=0.018 | slope +6.1 (p=0.001)
+  edge_existence  1.7B-T filler      -2.0  -2.0  +3.0  -1.0 | spread  5.0 | p=0.122 q=0.29 | slope +0.6 (p=0.31)
+  edge_existence  1.7B-T components  -1.0  -3.0  +1.0  +0.0 | spread  4.0 | p=0.439 q=0.6 | slope +0.6 (p=0.31)
+  edge_existence  1.7B-T clustering  -2.0  -2.0  +2.0  -2.0 | spread  4.0 | p=0.217 q=0.43 | slope +0.3 (p=0.64)
+  edge_existence  1.7B-T rwse        +1.0  -5.0  +0.0  -1.0 | spread  6.0 | p=0.1 q=0.25 | slope +0.0 (p=0.97)
+  edge_existence  1.7B-T degree      -3.0  -5.0  +0.0  -2.0 | spread  5.0 | p=0.364 q=0.57 | slope +0.6 (p=0.36)
+  edge_existence  1.7B-T all         -3.0  -4.0  +0.0  +0.0 | spread  4.0 | p=0.33 q=0.56 | slope +1.0 (p=0.11)
+  edge_existence  4B     filler      +0.0  -9.0  -8.0 -11.0 | spread 11.0 | p=0.162 q=0.35 | slope -2.2 (p=0.077)
+  edge_existence  4B     components  +3.0  +1.0  -8.0  -7.0 | spread 11.0 | p=0.037 q=0.12 | slope -2.9 (p=0.0065)
+  edge_existence  4B     clustering  +1.0  +5.0  +6.0  +4.0 | spread  5.0 | p=0.75 q=0.87 | slope +0.7 (p=0.55)
+  edge_existence  4B     rwse        +0.0  -4.0 -13.0 -23.0 | spread 23.0 | p=0.0005 q=0.0069 | slope -5.8 (p=0.0005)
+  edge_existence  4B     degree      +3.0  -2.0  -4.0 -16.0 | spread 19.0 | p=0.001 q=0.011 | slope -4.4 (p=0.0005)
+  edge_existence  4B     all         -1.0  -9.0 -13.0 -17.0 | spread 16.0 | p=0.032 q=0.12 | slope -3.8 (p=0.006)
+  edge_existence  4B-T   filler      +0.0  +0.0  +0.0  +0.0 | spread  0.0 | p=1 q=1 | slope +0.0 (p=1)
+  edge_existence  4B-T   components  +0.0  -1.0  +0.0  -1.0 | spread  1.0 | p=1 q=1 | slope -0.1 (p=0.8)
+  edge_existence  4B-T   clustering  -2.0  -1.0  +0.0  +0.0 | spread  2.0 | p=0.601 q=0.74 | slope +0.5 (p=0.13)
+  edge_existence  4B-T   rwse        -3.0  -2.0  +0.0  +0.0 | spread  3.0 | p=0.373 q=0.57 | slope +0.8 (p=0.078)
+  edge_existence  4B-T   degree      +0.0  +0.0  +0.0  +0.0 | spread  0.0 | p=1 q=1 | slope +0.0 (p=1)
+  edge_existence  4B-T   all         -3.0  -1.0  +0.0  +0.0 | spread  3.0 | p=0.43 q=0.6 | slope +0.7 (p=0.1)
+  node_degree     1.7B   filler      +5.0  -7.0  +0.0  +0.0 | spread 12.0 | p=0.232 q=0.45 | slope -0.4 (p=0.81)
+  node_degree     1.7B   components  +1.0  +2.0  +3.0  +1.0 | spread  2.0 | p=0.989 q=1 | slope +0.0 (p=0.98)
+  node_degree     1.7B   clustering  +2.0  +2.0  +6.0  +2.0 | spread  4.0 | p=0.929 q=1 | slope +0.3 (p=0.87)
+  node_degree     1.7B   rwse        +3.0  +4.0  +6.0  +3.0 | spread  3.0 | p=0.98 q=1 | slope +0.1 (p=0.97)
+  node_degree     1.7B   degree      +3.0 +10.0 +18.0  -1.0 | spread 19.0 | p=0.0175 q=0.088 | slope -0.6 (p=0.73)
+  node_degree     1.7B   all         +6.0 +10.0 +17.0  +8.0 | spread 11.0 | p=0.479 q=0.65 | slope +0.8 (p=0.64)
+  node_degree     1.7B-T filler      +7.0 -10.0  -4.0  -5.0 | spread 17.0 | p=0.026 q=0.11 | slope -1.9 (p=0.16)
+  node_degree     1.7B-T components  +2.0  -6.0  +2.0  -2.0 | spread  8.0 | p=0.308 q=0.55 | slope -0.2 (p=0.9)
+  node_degree     1.7B-T clustering  +4.0  +2.0  +1.0  -1.0 | spread  5.0 | p=0.856 q=0.97 | slope -1.2 (p=0.38)
+  node_degree     1.7B-T rwse        +6.0  -4.0  +5.0  +3.0 | spread 10.0 | p=0.392 q=0.58 | slope +0.2 (p=0.91)
+  node_degree     1.7B-T degree      +8.0  -3.0 +17.0 +13.0 | spread 20.0 | p=0.02 q=0.096 | slope +2.8 (p=0.072)
+  node_degree     1.7B-T all         +8.0  +1.0 +22.0 +18.0 | spread 21.0 | p=0.003 q=0.019 | slope +3.9 (p=0.01)
+  node_degree     4B     filler      +0.0  +0.0  +0.0  -2.0 | spread  2.0 | p=0.813 q=0.93 | slope -0.5 (p=0.37)
+  node_degree     4B     components  +0.0  +0.0  +0.0  +1.0 | spread  1.0 | p=1 q=1 | slope +0.2 (p=0.25)
+  node_degree     4B     clustering  +0.0  +1.0  +0.0  -3.0 | spread  4.0 | p=0.324 q=0.56 | slope -0.8 (p=0.099)
+  node_degree     4B     rwse        +0.0  -2.0  -3.0  -4.0 | spread  4.0 | p=0.502 q=0.67 | slope -0.9 (p=0.12)
+  node_degree     4B     degree      -6.0  -1.0  -7.0 -12.0 | spread 11.0 | p=0.0475 q=0.15 | slope -1.9 (p=0.031)
+  node_degree     4B     all         -7.0  -3.0  -7.0 -15.0 | spread 12.0 | p=0.0315 q=0.12 | slope -2.2 (p=0.025)
+  node_degree     4B-T   filler      +1.0  +5.0  +3.0  -1.0 | spread  6.0 | p=0.085 q=0.22 | slope -0.7 (p=0.24)
+  node_degree     4B-T   components  -2.0  +3.0  +1.0  -1.0 | spread  5.0 | p=0.428 q=0.6 | slope -0.0 (p=0.96)
+  node_degree     4B-T   clustering  +1.0  +4.0  +3.0  -1.0 | spread  5.0 | p=0.369 q=0.57 | slope -0.6 (p=0.38)
+  node_degree     4B-T   rwse        -3.0  +1.0  +3.0  -6.0 | spread  9.0 | p=0.0515 q=0.15 | slope -0.7 (p=0.44)
+  node_degree     4B-T   degree      +3.0  +4.0  +3.0  +0.0 | spread  4.0 | p=0.588 q=0.74 | slope -0.8 (p=0.22)
+  node_degree     4B-T   all         -1.0  +3.0  +1.0  -1.0 | spread  4.0 | p=0.522 q=0.69 | slope -0.2 (p=0.74)
+  connected_nodes 1.7B   filler      +0.0  -5.0 -10.0 -10.0 | spread 10.0 | p=0.295 q=0.54 | slope -2.5 (p=0.072)
+  connected_nodes 1.7B   components  +0.0  -1.0  +5.0  -1.0 | spread  6.0 | p=0.641 q=0.78 | slope +0.2 (p=0.88)
+  connected_nodes 1.7B   clustering  -2.0  -1.0  +4.0  +4.0 | spread  6.0 | p=0.689 q=0.82 | slope +1.7 (p=0.25)
+  connected_nodes 1.7B   rwse        +6.0  -5.0  +2.0  +1.0 | spread 11.0 | p=0.396 q=0.58 | slope -0.4 (p=0.82)
+  connected_nodes 1.7B   degree      +5.0  +1.0  +5.0  +3.0 | spread  4.0 | p=0.913 q=1 | slope -0.1 (p=0.96)
+  connected_nodes 1.7B   all         -2.0  -7.0 +15.0  +2.0 | spread 22.0 | p=0.0075 q=0.045 | slope +2.6 (p=0.11)
+  connected_nodes 1.7B-T filler      +3.0  +1.0  +4.0  +2.0 | spread  3.0 | p=0.974 q=1 | slope +0.0 (p=1)
+  connected_nodes 1.7B-T components  +1.0  -2.0  +3.0  +8.0 | spread 10.0 | p=0.217 q=0.43 | slope +2.0 (p=0.076)
+  connected_nodes 1.7B-T clustering  +2.0  +0.0  -2.0  +8.0 | spread 10.0 | p=0.379 q=0.57 | slope +1.3 (p=0.38)
+  connected_nodes 1.7B-T rwse        +6.0  -8.0  +4.0  -1.0 | spread 14.0 | p=0.0705 q=0.19 | slope -0.4 (p=0.77)
+  connected_nodes 1.7B-T degree      +0.0  -4.0 +13.0 +16.0 | spread 20.0 | p=0.0015 q=0.014 | slope +5.0 (p=0.001)
+  connected_nodes 1.7B-T all         +8.0  -2.0 +10.0  +9.0 | spread 12.0 | p=0.122 q=0.29 | slope +1.3 (p=0.31)
+  connected_nodes 4B     filler     -21.0 -14.0  -6.0  -9.0 | spread 15.0 | p=0.107 q=0.26 | slope +3.1 (p=0.044)
+  connected_nodes 4B     components  +7.0 +11.0 +10.0  +9.0 | spread  4.0 | p=0.888 q=0.99 | slope +0.3 (p=0.81)
+  connected_nodes 4B     clustering  -8.0  +9.0  +5.0  -2.0 | spread 17.0 | p=0.011 q=0.059 | slope +0.7 (p=0.65)
+  connected_nodes 4B     rwse       -10.0  -5.0  +5.0 +10.0 | spread 20.0 | p=0.0025 q=0.018 | slope +5.2 (p=0.001)
+  connected_nodes 4B     degree      -7.0  +2.0  -4.0  -3.0 | spread  9.0 | p=0.539 q=0.7 | slope +0.3 (p=0.87)
+  connected_nodes 4B     all        -11.0  +0.0  +3.0  -3.0 | spread 14.0 | p=0.131 q=0.3 | slope +1.8 (p=0.23)
+  connected_nodes 4B-T   filler      +3.0  -1.0  +2.0  +1.0 | spread  4.0 | p=0.694 q=0.82 | slope -0.1 (p=0.88)
+  connected_nodes 4B-T   components  -2.0  +0.0  +2.0  +2.0 | spread  4.0 | p=0.59 q=0.74 | slope +1.0 (p=0.21)
+  connected_nodes 4B-T   clustering  -5.0  -2.0  +2.0  +2.0 | spread  7.0 | p=0.147 q=0.33 | slope +1.8 (p=0.03)
+  connected_nodes 4B-T   rwse        +1.0  -2.0  +0.0  +3.0 | spread  5.0 | p=0.563 q=0.72 | slope +0.7 (p=0.43)
+  connected_nodes 4B-T   degree      -1.0  +1.0  +1.0  +1.0 | spread  2.0 | p=0.971 q=1 | slope +0.4 (p=0.68)
+  connected_nodes 4B-T   all         -6.0  -3.0  +2.0  +2.0 | spread  8.0 | p=0.0765 q=0.2 | slope +2.1 (p=0.017)
+  edge_count      1.7B   filler      -3.0  +1.0  +0.0  +0.0 | spread  4.0 | p=0.192 q=0.41 | slope +0.5 (p=0.22) ~
+  edge_count      1.7B   components  -3.0  -1.0  +0.0  +0.0 | spread  3.0 | p=0.416 q=0.6 | slope +0.7 (p=0.1) ~
+  edge_count      1.7B   clustering  -3.0  +1.0  +0.0  +0.0 | spread  4.0 | p=0.31 q=0.55 | slope +0.5 (p=0.28) ~
+  edge_count      1.7B   rwse        -3.0  +0.0  +0.0  +0.0 | spread  3.0 | p=0.375 q=0.57 | slope +0.6 (p=0.18) ~
+  edge_count      1.7B   degree      +3.0  +1.0  +1.0  +7.0 | spread  6.0 | p=0.25 q=0.47 | slope +1.0 (p=0.22) ~
+  edge_count      1.7B   all         -3.0  -1.0  +4.0  +3.0 | spread  7.0 | p=0.022 q=0.1 | slope +1.7 (p=0.007) ~
+  edge_count      1.7B-T filler      -9.0  +1.0  +2.0  +0.0 | spread 11.0 | p=0.236 q=0.45 | slope +1.9 (p=0.18) ~
+  edge_count      1.7B-T components  -5.0  +2.0  +0.0  +0.0 | spread  7.0 | p=0.73 q=0.85 | slope +0.8 (p=0.58) ~
+  edge_count      1.7B-T clustering -17.0 +10.0  +2.0  +0.0 | spread 27.0 | p=0.001 q=0.011 | slope +2.7 (p=0.085) ~
+  edge_count      1.7B-T rwse        -9.0  -4.0  +0.0  +0.0 | spread  9.0 | p=0.355 q=0.57 | slope +2.2 (p=0.11) ~
+  edge_count      1.7B-T degree     -37.0  +1.0 +13.0 +10.0 | spread 50.0 | p=0.0005 q=0.0069 | slope +10.7 (p=0.0005) ~
+  edge_count      1.7B-T all        -24.0  +0.0 +22.0 +22.0 | spread 46.0 | p=0.0005 q=0.0069 | slope +11.5 (p=0.0005) ~
+  edge_count      4B     filler      +5.0  +0.0  +0.0  +0.0 | spread  5.0 | p=0.21 q=0.43 | slope -1.0 (p=0.11)
+  edge_count      4B     components  -5.0  -1.0  +1.0  +0.0 | spread  6.0 | p=0.0335 q=0.12 | slope +1.2 (p=0.019)
+  edge_count      4B     clustering  -5.0  -1.0  +1.0  +0.0 | spread  6.0 | p=0.065 q=0.19 | slope +1.2 (p=0.03)
+  edge_count      4B     rwse        -4.0  -1.0  -1.0  +0.0 | spread  4.0 | p=0.337 q=0.56 | slope +0.8 (p=0.079)
+  edge_count      4B     degree     +22.0 +30.0 +24.0 +33.0 | spread 11.0 | p=0.341 q=0.56 | slope +1.9 (p=0.23)
+  edge_count      4B     all         -2.0  +1.0  +7.0  +9.0 | spread 11.0 | p=0.011 q=0.059 | slope +2.9 (p=0.0005)
+  edge_count      4B-T   filler     +21.0 +12.0 +15.0  +1.0 | spread 20.0 | p=0.0455 q=0.15 | slope -4.2 (p=0.012) ~
+  edge_count      4B-T   components +33.0 +30.0 +28.0  +8.0 | spread 25.0 | p=0.003 q=0.019 | slope -5.8 (p=0.001) ~
+  edge_count      4B-T   clustering +39.0 +18.0 +38.0  +4.0 | spread 35.0 | p=0.0005 q=0.0069 | slope -6.2 (p=0.001) ~
+  edge_count      4B-T   rwse       +24.0 +14.0  +2.0  +1.0 | spread 23.0 | p=0.002 q=0.017 | slope -5.9 (p=0.001) ~
+  edge_count      4B-T   degree     -11.0  +2.0 +19.0 +24.0 | spread 35.0 | p=0.0005 q=0.0069 | slope +8.9 (p=0.0005) ~
+  edge_count      4B-T   all         -5.0  -6.0  +7.0 +11.0 | spread 17.0 | p=0.068 q=0.19 | slope +4.6 (p=0.012) ~
+[dxvary] effects that vary with density at q < .05: 16 of 96 tests, 9 of them under the truncation flag, 7 flagged
+  connected_nodes 1.7B all: -2, -7, +15, +2 (slope +2.6 per +0.1; q=0.045)
+  connected_nodes 1.7B-T degree: +0, -4, +13, +16 (slope +5.0 per +0.1; q=0.014)
+  connected_nodes 4B rwse: -10, -5, +5, +10 (slope +5.2 per +0.1; q=0.018)
+  edge_count 1.7B-T all: -24, +0, +22, +22 (slope +11.5 per +0.1; q=0.0069) ~
+  edge_count 1.7B-T clustering: -17, +10, +2, +0 (slope +2.7 per +0.1; q=0.011) ~
+  edge_count 1.7B-T degree: -37, +1, +13, +10 (slope +10.7 per +0.1; q=0.0069) ~
+  edge_count 4B-T clustering: +39, +18, +38, +4 (slope -6.2 per +0.1; q=0.0069) ~
+  edge_count 4B-T components: +33, +30, +28, +8 (slope -5.8 per +0.1; q=0.019) ~
+  edge_count 4B-T degree: -11, +2, +19, +24 (slope +8.9 per +0.1; q=0.0069) ~
+  edge_count 4B-T rwse: +24, +14, +2, +1 (slope -5.9 per +0.1; q=0.017) ~
+  edge_existence 1.7B all: +0, +8, +12, +26 (slope +6.1 per +0.1; q=0.018)
+  edge_existence 1.7B degree: -6, -3, +1, +24 (slope +7.1 per +0.1; q=0.0069)
+  edge_existence 1.7B filler: -5, -20, -32, -6 (slope -0.6 per +0.1; q=0.0069)
+  edge_existence 4B degree: +3, -2, -4, -16 (slope -4.4 per +0.1; q=0.011)
+  edge_existence 4B rwse: +0, -4, -13, -23 (slope -5.8 per +0.1; q=0.0069)
+  node_degree 1.7B-T all: +8, +1, +22, +18 (slope +3.9 per +0.1; q=0.019)
+[dxhethi] node_degree and edge_existence over all seven densities (plain arms at 2048 tokens from p = .65): the effect (points, R1) at p = 0.10 0.20 0.35 0.50 0.65 0.75 0.85; its largest minus smallest; the between-density test (p, and q with BH over all 48 tests); the slope per +0.1 of density (permutation p); ~ = a density with 15%+ truncated on either side
+  edge_existence  1.7B   filler      -5.0 -20.0 -32.0  -6.0  -2.0  -1.0  -1.0 | spread 31.0 | p=0.0005 q=0.0027 | slope +2.3 (p=0.0005)
+  edge_existence  1.7B   components  -3.0 -11.0 -16.0  -3.0  -2.0  +0.0  -1.0 | spread 16.0 | p=0.0005 q=0.0027 | slope +1.2 (p=0.0055)
+  edge_existence  1.7B   clustering  -5.0  +1.0  +6.0 +13.0  -1.0  +5.0  +0.0 | spread 18.0 | p=0.0235 q=0.066 | slope +0.5 (p=0.41)
+  edge_existence  1.7B   rwse        +2.0  -5.0 +10.0 +13.0  +2.0  +0.0  +1.0 | spread 18.0 | p=0.017 q=0.051 | slope +0.0 (p=0.95)
+  edge_existence  1.7B   degree      -6.0  -3.0  +1.0 +24.0  +3.0  +1.0  +2.0 | spread 30.0 | p=0.0005 q=0.0027 | slope +1.0 (p=0.07)
+  edge_existence  1.7B   all         +0.0  +8.0 +12.0 +26.0  +8.0  +9.0  +3.0 | spread 26.0 | p=0.001 q=0.0048 | slope +0.3 (p=0.68)
+  edge_existence  1.7B-T filler      -2.0  -2.0  +3.0  -1.0  +0.0  +1.0  -3.0 | spread  6.0 | p=0.107 q=0.2 | slope +0.0 (p=0.94)
+  edge_existence  1.7B-T components  -1.0  -3.0  +1.0  +0.0  +0.0  +0.0  +0.0 | spread  4.0 | p=0.705 q=0.72 | slope +0.2 (p=0.28)
+  edge_existence  1.7B-T clustering  -2.0  -2.0  +2.0  -2.0  +0.0  +2.0  -3.0 | spread  5.0 | p=0.123 q=0.2 | slope +0.1 (p=0.63)
+  edge_existence  1.7B-T rwse        +1.0  -5.0  +0.0  -1.0  +1.0  +1.0  -1.0 | spread  6.0 | p=0.111 q=0.2 | slope +0.2 (p=0.34)
+  edge_existence  1.7B-T degree      -3.0  -5.0  +0.0  -2.0  +1.0  +0.0  -3.0 | spread  6.0 | p=0.252 q=0.35 | slope +0.3 (p=0.2)
+  edge_existence  1.7B-T all         -3.0  -4.0  +0.0  +0.0  -2.0  +1.0  -1.0 | spread  5.0 | p=0.412 q=0.48 | slope +0.4 (p=0.13)
+  edge_existence  4B     filler      +0.0  -9.0  -8.0 -11.0 -12.0  -2.0  -5.0 | spread 12.0 | p=0.087 q=0.17 | slope -0.2 (p=0.73)
+  edge_existence  4B     components  +3.0  +1.0  -8.0  -7.0  -8.0  +1.0  -3.0 | spread 11.0 | p=0.036 q=0.086 | slope -0.5 (p=0.25)
+  edge_existence  4B     clustering  +1.0  +5.0  +6.0  +4.0  +8.0  +9.0  -1.0 | spread 10.0 | p=0.319 q=0.41 | slope +0.2 (p=0.76)
+  edge_existence  4B     rwse        +0.0  -4.0 -13.0 -23.0  +3.0  +1.0  -6.0 | spread 26.0 | p=0.0005 q=0.0027 | slope +0.2 (p=0.67)
+  edge_existence  4B     degree      +3.0  -2.0  -4.0 -16.0  -6.0  +0.0  -4.0 | spread 19.0 | p=0.0035 q=0.013 | slope -0.6 (p=0.23)
+  edge_existence  4B     all         -1.0  -9.0 -13.0 -17.0  +1.0  -2.0  -6.0 | spread 18.0 | p=0.0055 q=0.019 | slope +0.4 (p=0.45)
+  edge_existence  4B-T   filler      +0.0  +0.0  +0.0  +0.0  +0.0  +0.0  +2.0 | spread  2.0 | p=0.138 q=0.21 | slope +0.2 (p=0.04)
+  edge_existence  4B-T   components  +0.0  -1.0  +0.0  -1.0  +0.0  +0.0  +2.0 | spread  3.0 | p=0.427 q=0.49 | slope +0.2 (p=0.12)
+  edge_existence  4B-T   clustering  -2.0  -1.0  +0.0  +0.0  +0.0  +0.0  +2.0 | spread  4.0 | p=0.0465 q=0.1 | slope +0.4 (p=0.0005)
+  edge_existence  4B-T   rwse        -3.0  -2.0  +0.0  +0.0  +0.0  +0.0  +1.0 | spread  4.0 | p=0.263 q=0.35 | slope +0.4 (p=0.01)
+  edge_existence  4B-T   degree      +0.0  +0.0  +0.0  +0.0  +0.0  +0.0  +2.0 | spread  2.0 | p=0.695 q=0.72 | slope +0.2 (p=0.18)
+  edge_existence  4B-T   all         -3.0  -1.0  +0.0  +0.0  +0.0  +0.0  +1.0 | spread  4.0 | p=0.359 q=0.44 | slope +0.4 (p=0.019)
+  node_degree     1.7B   filler      +5.0  -7.0  +0.0  +0.0  -1.0 -13.0  -2.0 | spread 18.0 | p=0.0255 q=0.068 | slope -0.9 (p=0.11)
+  node_degree     1.7B   components  +1.0  +2.0  +3.0  +1.0  +6.0  -4.0  -1.0 | spread 10.0 | p=0.644 q=0.69 | slope -0.4 (p=0.49)
+  node_degree     1.7B   clustering  +2.0  +2.0  +6.0  +2.0  -1.0  -5.0  -4.0 | spread 11.0 | p=0.588 q=0.66 | slope -1.1 (p=0.094)
+  node_degree     1.7B   rwse        +3.0  +4.0  +6.0  +3.0  -1.0 -11.0  -4.0 | spread 17.0 | p=0.0515 q=0.11 | slope -1.6 (p=0.007)
+  node_degree     1.7B   degree      +3.0 +10.0 +18.0  -1.0  +0.0  -1.0  +2.0 | spread 19.0 | p=0.015 q=0.048 | slope -1.3 (p=0.047)
+  node_degree     1.7B   all         +6.0 +10.0 +17.0  +8.0  +7.0  +1.0  +0.0 | spread 17.0 | p=0.213 q=0.31 | slope -1.2 (p=0.08)
+  node_degree     1.7B-T filler      +7.0 -10.0  -4.0  -5.0 -17.0  -9.0 -10.0 | spread 24.0 | p=0.034 q=0.086 | slope -1.7 (p=0.02)
+  node_degree     1.7B-T components  +2.0  -6.0  +2.0  -2.0  -7.0  -7.0  +9.0 | spread 16.0 | p=0.0395 q=0.09 | slope +0.2 (p=0.75)
+  node_degree     1.7B-T clustering  +4.0  +2.0  +1.0  -1.0 -13.0  -7.0  -7.0 | spread 17.0 | p=0.169 q=0.25 | slope -1.8 (p=0.013)
+  node_degree     1.7B-T rwse        +6.0  -4.0  +5.0  +3.0  -9.0  -6.0  +2.0 | spread 15.0 | p=0.256 q=0.35 | slope -0.9 (p=0.25)
+  node_degree     1.7B-T degree      +8.0  -3.0 +17.0 +13.0 +15.0 +22.0 +40.0 | spread 43.0 | p=0.0005 q=0.0027 | slope +3.9 (p=0.0005)
+  node_degree     1.7B-T all         +8.0  +1.0 +22.0 +18.0 +30.0 +22.0 +16.0 | spread 29.0 | p=0.0035 q=0.013 | slope +2.2 (p=0.006)
+  node_degree     4B     filler      +0.0  +0.0  +0.0  -2.0  +4.0  -1.0  +3.0 | spread  6.0 | p=0.803 q=0.8 | slope +0.3 (p=0.48)
+  node_degree     4B     components  +0.0  +0.0  +0.0  +1.0  -8.0  -4.0  +9.0 | spread 17.0 | p=0.0015 q=0.0065 | slope +0.2 (p=0.62)
+  node_degree     4B     clustering  +0.0  +1.0  +0.0  -3.0  +7.0  +9.0 +18.0 | spread 21.0 | p=0.0005 q=0.0027 | slope +2.0 (p=0.0005)
+  node_degree     4B     rwse        +0.0  -2.0  -3.0  -4.0  +0.0 +13.0 +10.0 | spread 17.0 | p=0.0005 q=0.0027 | slope +1.7 (p=0.0005)
+  node_degree     4B     degree      -6.0  -1.0  -7.0 -12.0  -6.0  +7.0 +27.0 | spread 39.0 | p=0.0005 q=0.0027 | slope +2.9 (p=0.0005)
+  node_degree     4B     all         -7.0  -3.0  -7.0 -15.0 -37.0 -19.0  -8.0 | spread 34.0 | p=0.0005 q=0.0027 | slope -2.0 (p=0.0035)
+  node_degree     4B-T   filler      +1.0  +5.0  +3.0  -1.0  +0.0  +1.0  -1.0 | spread  6.0 | p=0.135 q=0.21 | slope -0.5 (p=0.045)
+  node_degree     4B-T   components  -2.0  +3.0  +1.0  -1.0  -2.0  +0.0  -4.0 | spread  7.0 | p=0.339 q=0.43 | slope -0.4 (p=0.16)
+  node_degree     4B-T   clustering  +1.0  +4.0  +3.0  -1.0  -2.0  +1.0  -1.0 | spread  6.0 | p=0.375 q=0.45 | slope -0.5 (p=0.099)
+  node_degree     4B-T   rwse        -3.0  +1.0  +3.0  -6.0  -3.0  -1.0  +2.0 | spread  9.0 | p=0.122 q=0.2 | slope +0.1 (p=0.84)
+  node_degree     4B-T   degree      +3.0  +4.0  +3.0  +0.0  -4.0  +2.0  +0.0 | spread  8.0 | p=0.0925 q=0.18 | slope -0.6 (p=0.036)
+  node_degree     4B-T   all         -1.0  +3.0  +1.0  -1.0  -2.0  +1.0  +2.0 | spread  5.0 | p=0.642 q=0.69 | slope +0.0 (p=0.99)
+[dxvaryhi] effects that vary with density at q < .05: 15 of 48 tests, 15 of them under the truncation flag, 0 flagged
+  edge_existence 1.7B all: +0, +8, +12, +26, +8, +9, +3 (slope +0.3 per +0.1; q=0.0048)
+  edge_existence 1.7B components: -3, -11, -16, -3, -2, +0, -1 (slope +1.2 per +0.1; q=0.0027)
+  edge_existence 1.7B degree: -6, -3, +1, +24, +3, +1, +2 (slope +1.0 per +0.1; q=0.0027)
+  edge_existence 1.7B filler: -5, -20, -32, -6, -2, -1, -1 (slope +2.3 per +0.1; q=0.0027)
+  edge_existence 4B all: -1, -9, -13, -17, +1, -2, -6 (slope +0.4 per +0.1; q=0.019)
+  edge_existence 4B degree: +3, -2, -4, -16, -6, +0, -4 (slope -0.6 per +0.1; q=0.013)
+  edge_existence 4B rwse: +0, -4, -13, -23, +3, +1, -6 (slope +0.2 per +0.1; q=0.0027)
+  node_degree 1.7B degree: +3, +10, +18, -1, +0, -1, +2 (slope -1.3 per +0.1; q=0.048)
+  node_degree 1.7B-T all: +8, +1, +22, +18, +30, +22, +16 (slope +2.2 per +0.1; q=0.013)
+  node_degree 1.7B-T degree: +8, -3, +17, +13, +15, +22, +40 (slope +3.9 per +0.1; q=0.0027)
+  node_degree 4B all: -7, -3, -7, -15, -37, -19, -8 (slope -2.0 per +0.1; q=0.0027)
+  node_degree 4B clustering: +0, +1, +0, -3, +7, +9, +18 (slope +2.0 per +0.1; q=0.0027)
+  node_degree 4B components: +0, +0, +0, +1, -8, -4, +9 (slope +0.2 per +0.1; q=0.0065)
+  node_degree 4B degree: -6, -1, -7, -12, -6, +7, +27 (slope +2.9 per +0.1; q=0.0027)
+  node_degree 4B rwse: +0, -2, -3, -4, +0, +13, +10 (slope +1.7 per +0.1; q=0.0027)
+[dxbase] main sweep: density coefficient at a fixed no-primer band (points of effect per +0.1 of density), permutation p with density shuffled within bands; cells under the truncation flag, band from half the graphs and effect from the other half
+  answer-carrying                   42 cells: -1.18 per +0.1 (p=0.28)
+  side information                 275 cells: +0.05 per +0.1 (p=0.85)
+  side information, edge_existence  96 cells: +0.18 per +0.1 (p=0.74)
+  side information, node_degree     64 cells: -0.93 per +0.1 (p=0.006)
+  side information, connected_nodes  96 cells: +0.49 per +0.1 (p=0.43)
+  side information, edge_count      19 cells: +0.60 per +0.1 (p=0.26)
+  mean effect by band (rows) and density (columns), side information (answer-carrying): cells
+    0.00-0.25: p0.10  -4.0(4) [+8(2)] | p0.20  +0.9(7) [+8(4)] | p0.35  +0.0(4) [+18(2)] | p0.50  -0.4(5) [+11(3)]
+    0.25-0.50: p0.10     -    | p0.20     -    | p0.35  +7.3(3) [+17(2)] | p0.50  -4.0(6) [+0(1)]
+    0.50-0.75: p0.10     -    | p0.20  -7.7(6) | p0.35  +3.0(23) [+23(2)] | p0.50  +5.5(20) [+13(2)]
+    0.75-0.90: p0.10  -0.8(8) [+4(2)] | p0.20  +1.3(6) [+7(2)] | p0.35  -3.1(11) | p0.50  -1.4(7)
+    0.90-1.00: p0.10  -0.4(56) [+1(6)] | p0.20  -0.8(52) [+0(6)] | p0.35  +1.6(27) [-2(4)] | p0.50  -2.5(30) [-8(4)]
+[dxbase] main sweep plus p >= .65 for node_degree and edge_existence (plain arms' budget changes there): density coefficient at a fixed no-primer band (points of effect per +0.1 of density), permutation p with density shuffled within bands; cells under the truncation flag, band from half the graphs and effect from the other half
+  answer-carrying                   66 cells: -1.30 per +0.1 (p=0.059)
+  side information                 395 cells: +0.04 per +0.1 (p=0.77)
+  side information, edge_existence 168 cells: +0.43 per +0.1 (p=0.018)
+  side information, node_degree    112 cells: -0.13 per +0.1 (p=0.58)
+  side information, connected_nodes  96 cells: +0.14 per +0.1 (p=0.78)
+  side information, edge_count      19 cells: +0.72 per +0.1 (p=0.23)
+  mean effect by band (rows) and density (columns), side information (answer-carrying): cells
+    0.00-0.25: p0.10  -4.0(4) [+9(2)] | p0.20  +0.0(7) [+6(4)] | p0.35  +0.0(4) [+19(2)] | p0.50  -2.0(6) [+24(2)] | p0.65  +1.5(4) [+3(2)] | p0.75 -10.5(4) [-4(2)] | p0.85  -1.0(4) [+3(2)]
+    0.25-0.50: p0.10     -    | p0.20     -    | p0.35  +8.8(5) [+23(2)] | p0.50  -4.7(6) [+10(2)] | p0.65     -    [+20(1)] | p0.75  -1.0(2) [+14(3)] | p0.85  +9.3(6) [+20(4)]
+    0.50-0.75: p0.10     -    | p0.20  -9.2(5) [+6(1)] | p0.35  +3.3(21) [+11(2)] | p0.50  +6.1(21) [+15(2)] | p0.65  -1.8(10) [+0(2)] | p0.75  +0.9(9) [-16(1)] | p0.85  +8.0(2)
+    0.75-0.90: p0.10  -0.2(9) [+8(1)] | p0.20  -1.3(12) [+4(1)] | p0.35  -2.7(12) | p0.50 -12.7(6) | p0.65  +0.0(8) [-38(1)] | p0.75  +1.0(8) | p0.85  +0.0(5)
+    0.90-1.00: p0.10  -0.8(55) [+3(7)] | p0.20  -1.0(47) [+1(6)] | p0.35  +0.5(26) [-2(4)] | p0.50  -1.5(29) [-6(4)] | p0.65  -0.7(18) [-3(2)] | p0.75  -0.1(17) [+2(2)] | p0.85  -1.3(23) [+1(2)]
