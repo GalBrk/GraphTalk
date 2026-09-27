@@ -740,6 +740,42 @@ def main():
       print(f"    {SHORT[plain]:6s} " + " | ".join(
           f"{c} {a:.1f}->{b:.1f} ({b - a:+.1f}{'*' if q < .05 else ''}, n={n})" for c, a, b, n, q in rows))
 
+  # A correct answer rests on a valid argument when it names a real cycle or argues from the
+  # number of edges (m >= n implies a cycle). Over all prompts, a wrong or truncated answer
+  # counts as not valid, so a primer's accuracy cost is included.
+  cyc["valid"] = (cyc.rests == "real") | cyc.edgearg.astype(bool)
+  fr = pf.with_outcomes(pd.read_csv(pf.FRAME, usecols=["arm", "task", "condition", "instance_id",
+                                                       "density_class", "exact", "hit_cap"]))
+  fr = fr[(fr.task == "cycle_check") & (fr.density_class <= .5)]
+  fr = fr.merge(cyc[["arm", "condition", "instance_id", "valid"]], how="left",
+                on=["arm", "condition", "instance_id"])
+  fr["valid_all"] = fr.valid.eq(True) & fr.correct.astype(bool)
+  print("[ccvalid] cycle_check: correct answers resting on a valid argument (a real cycle, or the "
+        "edge-count argument): % of correct finished answers (as [ccanswer]) and % of all prompts "
+        "(wrong and truncated count as not valid); exact McNemar over all prompts on the same "
+        "graphs, BH q over the conditions")
+  for plain in ("qwen3-1.7b", "qwen3-4b"):
+    think = plain + "-think"
+    shares = lambda arm, c: (100 * cell(cyc, arm, c).valid.mean(),
+                             100 * fr[(fr.arm == arm) & (fr.condition == c)].valid_all.mean())
+    print(f"  {SHORT[plain]} plain | thinking without a primer: % of correct {shares(think, 'none')[0]:.1f}, "
+          f"% of all prompts {shares(think, 'none')[1]:.1f}")
+    for label, other in (("against the plain arm without a primer", (plain, "none")),
+                         ("against the thinking arm without a primer", (think, "none"))):
+      rows = []
+      for c in CONDS:
+        a = fr[(fr.arm == plain) & (fr.condition == c)].set_index("instance_id").valid_all
+        b = fr[(fr.arm == other[0]) & (fr.condition == other[1])].set_index("instance_id").valid_all
+        j = pd.concat([a, b], axis=1, join="inner")
+        p = scoring.mcnemar(j.iloc[:, 1].to_numpy(), j.iloc[:, 0].to_numpy())["p_value"]
+        rows.append([c, *shares(plain, c), 100 * j.iloc[:, 1].mean(), len(j), p])
+      qs = pf.bh([r[5] for r in rows])
+      print(f"    {label}: condition % of correct / % of all prompts (reference % of all prompts, "
+            f"* BH q < .05), pairs")
+      print("      " + " | ".join(
+          f"{c} {sc:.1f} / {sa:.1f} (ref {ref:.1f}{'*' if q < .05 else ''}, n={n})"
+          for (c, sc, sa, ref, n, _), q in zip(rows, qs)))
+
   w = pd.DataFrame(where)
   print("[ccwhere] asserted invented cycles, all primers: invented steps; % of closing steps invented / "
         "% of inner steps invented; fake neighbour in the line of node a-1 or a+1, % (chance %); "
