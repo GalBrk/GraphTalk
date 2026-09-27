@@ -11,6 +11,12 @@ import pandas as pd
 from matrix_audit import ARMS, ARM_LABELS, CONDITIONS
 
 
+def signed(x):
+    """One decimal with a sign; a change that rounds to zero prints as +0.0."""
+    s = f"{x:+.1f}"
+    return "+0.0" if s == "-0.0" else s
+
+
 def dense_rows(frame, task, arm):
     f = frame[(frame.task == task) & (frame.arm == arm)
               & (frame.density_class >= .65)]
@@ -34,7 +40,7 @@ def panel(frame, measure, title):
         for arm in ARMS:
             matched = dense_rows(frame, task, arm)
             values = {condition: 100 * measure(rows) for condition, rows in matched.items()}
-            changes = " & ".join(f"${values[c] - values['none']:+.1f}$" for c in CONDITIONS)
+            changes = " & ".join(f"${signed(values[c] - values['none'])}$" for c in CONDITIONS)
             lines.append(f"{title if arm == ARMS[0] else ''} & {ARM_LABELS[arm]} & "
                          f"{values['none']:.2f} & {changes}" + r"\\ % [dense-frame]")
         if task == "node_degree":
@@ -43,22 +49,37 @@ def panel(frame, measure, title):
     return lines
 
 
-def edge_decisions(frame, arms):
-    lines = [r"\begin{tabular}{llrrr}", r"\toprule",
-             r"Arm & Primer & Raw & Bal. & Yes\\", r"\midrule"]
-    for arm in arms:
-        matched = dense_rows(frame, "edge_existence", arm)
-        for condition, rows in matched.items():
-            good = rows.hit_cap.eq(0) & rows.exact.eq(1)
-            gold_yes = rows.gold_is_yes.astype(bool)
-            balanced = (good[gold_yes].mean() + good[~gold_yes].mean()) / 2
-            finished = rows[rows.hit_cap.eq(0)]
-            yes = finished.pred.astype(str).str.strip().str.lower().eq("yes").mean()
-            assert len(finished) > 0
-            lines.append(f"{ARM_LABELS[arm]} & {condition} & {good.mean():.3f} & "
-                         f"{balanced:.3f} & {yes:.3f}" + r"\\ % [dense-frame]")
-        if arm != arms[-1]:
-            lines.append(r"\addlinespace[2pt]")
+def balanced(rows):
+    """Balanced accuracy; a truncated response is not correct."""
+    good = rows.hit_cap.eq(0) & rows.exact.eq(1)
+    gold_yes = rows.gold_is_yes.astype(bool)
+    return (good[gold_yes].mean() + good[~gold_yes].mean()) / 2
+
+
+def yes_rate(rows):
+    """Share of finished answers that say yes."""
+    finished = rows[rows.hit_cap.eq(0)]
+    assert len(finished) > 0
+    return finished.pred.astype(str).str.strip().str.lower().eq("yes").mean()
+
+
+def edge_panel(frame):
+    """Edge existence in the layout of (a) and (b): each measure is averaged over
+    the three levels, as [collapse] averages its per-level changes."""
+    lines = [r"\textbf{(c) Edge-existence decisions}\par\smallskip",
+             r"\begin{tabular}{llrrrrrrr}", r"\toprule",
+             r"Measure & Arm & None & Degree & Cluster. & RWSE & All & Comp. & Filler\\",
+             r"\midrule"]
+    for measure, title in ((balanced, "Balanced acc."), (yes_rate, "Yes-rate")):
+        for arm in ARMS:
+            matched = dense_rows(frame, "edge_existence", arm)
+            values = {c: 100 * sum(measure(g) for _, g in rows.groupby("density_class")) / 3
+                      for c, rows in matched.items()}
+            changes = " & ".join(f"${signed(values[c] - values['none'])}$" for c in CONDITIONS)
+            lines.append(f"{title if arm == ARMS[0] else ''} & {ARM_LABELS[arm]} & "
+                         f"{values['none']:.2f} & {changes}" + r"\\ % [dense-frame]")
+        if measure is balanced:
+            lines.append(r"\addlinespace[3pt]")
     lines += [r"\bottomrule", r"\end{tabular}"]
     return lines
 
@@ -70,13 +91,9 @@ def latex(frame):
                    "(a) Correct share")
     lines += [r"\par\medskip"]
     lines += panel(frame, lambda r: r.hit_cap.mean(), "(b) Truncated share")
-    lines += [r"\par\medskip", r"\textbf{(c) Edge-existence decisions}\par\smallskip",
-              r"\begin{minipage}[t]{.48\textwidth}", r"\centering"]
-    lines += edge_decisions(frame, ARMS[:2])
-    lines += [r"\end{minipage}\hfill\begin{minipage}[t]{.48\textwidth}", r"\centering"]
-    lines += edge_decisions(frame, ARMS[2:])
-    lines += [r"\end{minipage}",
-              r"\caption{Complete dense-extension comparison at $p\in\{.65,.75,.85\}$ for degree and edge existence. (a,b) No-primer correct/truncated share (percent of all $300$ prompts), followed by paired primer changes (points); wrong share is the remainder. (c) Edge raw accuracy (Raw) and balanced accuracy (Bal.) include truncations as noncorrect; yes-rate (Yes) uses finished answers. Values pool the three levels; the contrasts cited in the text are tested, and the other cells are descriptive. The plain models' budget here is $2{,}048$ tokens. P/T: plain/thinking.} % [dense-frame]",
+    lines += [r"\par\medskip"]
+    lines += edge_panel(frame)
+    lines += [r"\caption{Complete dense-extension comparison at $p\in\{.65,.75,.85\}$ for degree and edge existence: no-primer value (\%) and paired change (points). (a,b) Correct and truncated share of all $300$ prompts; the wrong share is the remainder. (c) Balanced accuracy (a truncated response is not correct) and yes-rate of finished answers, each averaged over the three levels. The contrasts cited in the text are tested; the other cells are descriptive. The plain models' budget here is $2{,}048$ tokens. P/T: plain/thinking.} % [dense-frame]",
               r"\label{tab:densematrix}", r"\end{table*}"]
     return "\n".join(lines) + "\n"
 
