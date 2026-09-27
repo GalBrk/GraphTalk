@@ -1,7 +1,6 @@
 # The 40-node sweep
 
 Source: `csv2/raw-trends/primer_findings.txt`
-Source: `csv2/raw-trends/legacy_claims.txt`
 
 The main experiment. Runs:
 `runs/{qwen3-1.7b,qwen3-1.7b-think,qwen3-4b,qwen3-4b-think}.{densfull40,densfull40hi}.shard*.jsonl`,
@@ -9,12 +8,9 @@ with prompts in `prompts.densfull40.jsonl` and `prompts.densfull40hi.jsonl`. Rep
 
     PYTHONPATH=. python scripts/build_raw_frame.py
     PYTHONPATH=. python scripts/primer_findings.py --csv-dir csv2/raw-trends > csv2/raw-trends/primer_findings.txt
-    PYTHONPATH=. python scripts/legacy_claims.py > csv2/raw-trends/legacy_claims.txt
 
 `build_raw_frame.py` regenerates every graph from its instance id and stops if
-any regenerated gold answer differs from the recorded one. `legacy_claims.py`
-computes quantities that other analyses of these runs used, under the same
-rules; this document cites them only in §4 and §10.
+any regenerated gold answer differs from the recorded one.
 
 **Scoring.** Every response is correct, wrong or truncated (it used the whole
 token budget); a truncated response is never counted as wrong and never

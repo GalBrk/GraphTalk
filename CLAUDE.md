@@ -138,7 +138,6 @@ Reproduce every number in the main experiment's results document,
 ```bash
 PYTHONPATH=. python scripts/build_raw_frame.py
 PYTHONPATH=. python scripts/primer_findings.py --csv-dir csv2/raw-trends > csv2/raw-trends/primer_findings.txt
-PYTHONPATH=. python scripts/legacy_claims.py > csv2/raw-trends/legacy_claims.txt
 ```
 
 `tests/test_results_docs.py` checks every number a doc in `docs/results/` cites
