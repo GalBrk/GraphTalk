@@ -772,6 +772,34 @@
     rwse       98.75 -> 99.25: +0.5 [-1.0, +2.0] p=0.73 q=1 n=400 | closes -100% | truncated 1.2 / 0.8
     degree     96.75 -> 99.25: +2.5 [+0.5, +4.5] p=0.021 q=0.079 n=400 | closes -900% | truncated 1.5 / 0.8
     all        98.75 -> 99.25: +0.5 [-1.0, +2.0] p=0.73 q=1 n=400 | closes -100% | truncated 0.5 / 0.8
+[vsequiv] main sweep (p<=.50), the pairs of [vsthink]: thinking without a primer minus the plain arm under each condition, 90% bootstrap interval, and 'equivalent' when the interval lies inside +-3 points (two one-sided tests at .05)
+  qwen3-1.7b node_degree: none +15.8 [+11.8, +19.8] not | filler +16.2 [+12.2, +20.2] not | components +14.0 [+9.8, +18.2] not | clustering +12.8 [+8.8, +16.8] not | rwse +11.8 [+7.2, +15.8] not | degree +8.2 [+4.2, +12.0] not | all +5.5 [+1.2, +9.5] not
+  qwen3-1.7b connected_nodes: none +6.2 [+3.2, +9.2] not | filler +12.5 [+8.8, +16.2] not | components +5.5 [+2.0, +9.0] not | clustering +5.0 [+1.5, +8.5] not | rwse +5.2 [+1.8, +9.2] not | degree +2.8 [-0.5, +6.2] not | all +4.2 [+0.5, +8.2] not
+  qwen3-1.7b edge_count: none +14.5 [+11.8, +17.2] not | filler +15.0 [+12.2, +17.8] not | components +15.5 [+12.8, +18.0] not | clustering +15.0 [+12.5, +17.5] not | rwse +15.2 [+12.8, +18.0] not | degree +11.5 [+8.5, +14.5] not | all +13.8 [+11.0, +16.5] not
+  qwen3-1.7b edge_existence: none +28.5 [+24.8, +32.2] not | filler +44.2 [+40.5, +48.2] not | components +36.8 [+32.8, +40.8] not | clustering +24.8 [+21.0, +28.5] not | rwse +23.5 [+20.0, +27.0] not | degree +24.5 [+21.0, +28.2] not | all +17.0 [+13.8, +20.5] not
+  qwen3-4b node_degree: none -2.2 [-4.0, -0.8] not | filler -1.8 [-3.5, +0.0] not | components -2.5 [-4.0, -1.0] not | clustering -1.8 [-3.2, +0.0] not | rwse +0.0 [-2.0, +2.0] equivalent | degree +4.2 [+1.8, +6.8] not | all +5.8 [+3.2, +8.5] not
+  qwen3-4b connected_nodes: none +9.5 [+6.2, +13.2] not | filler +22.0 [+18.0, +26.2] not | components +0.2 [-2.0, +2.5] equivalent | clustering +8.5 [+5.2, +11.5] not | rwse +9.5 [+6.2, +12.8] not | degree +12.5 [+9.2, +16.0] not | all +12.2 [+9.0, +15.5] not
+  qwen3-4b edge_count: none +18.0 [+14.8, +21.2] not | filler +16.8 [+13.5, +20.2] not | components +19.2 [+16.2, +22.2] not | clustering +19.2 [+16.2, +22.0] not | rwse +19.5 [+16.5, +22.5] not | degree -9.2 [-13.8, -4.8] not | all +14.2 [+10.8, +17.8] not
+  qwen3-4b edge_existence: none +9.2 [+7.0, +11.8] not | filler +16.2 [+13.2, +19.2] not | components +12.0 [+9.5, +14.8] not | clustering +5.2 [+3.2, +7.2] not | rwse +19.2 [+16.0, +22.5] not | degree +14.0 [+11.2, +17.0] not | all +19.2 [+16.2, +22.8] not
+[vscross] main sweep (p<=.50): the plain arm's best of the five primers chosen on the even-index graphs / the odd-index graphs and each scored on the other half, against the same model thinking without a primer on the same held-out graphs: primers chosen, plain -> thinking, difference (thinking minus plain) [95% CI], exact McNemar p, n; 90% interval, equivalent within +-3 points
+  qwen3-1.7b node_degree: chosen all / all; 70.75 -> 76.25: +5.5 [+0.8, +10.2] p=0.043 n=400; 90% [+1.2, +9.5] not
+  qwen3-1.7b connected_nodes: chosen degree / degree; 76.00 -> 78.75: +2.8 [-1.5, +7.0] p=0.24 n=400; 90% [-0.8, +6.2] not
+  qwen3-1.7b edge_count: chosen degree / degree; 4.25 -> 15.75: +11.5 [+8.0, +15.0] p=6.2e-08 n=400; 90% [+8.5, +14.5] not
+  qwen3-1.7b edge_existence: chosen all / all; 82.00 -> 99.00: +17.0 [+13.0, +21.0] p=3.6e-17 n=400; 90% [+13.8, +20.2] not
+  qwen3-4b node_degree: chosen components / components; 99.50 -> 97.00: -2.5 [-4.2, -0.8] p=0.013 n=400; 90% [-4.0, -1.0] not
+  qwen3-4b connected_nodes: chosen components / components; 95.25 -> 95.50: +0.2 [-2.5, +3.0] p=1 n=400; 90% [-2.2, +2.5] equivalent
+  qwen3-4b edge_count: chosen degree / degree; 29.25 -> 20.00: -9.2 [-14.8, -3.5] p=0.002 n=400; 90% [-13.8, -4.5] not
+  qwen3-4b edge_existence: chosen clustering / clustering; 94.50 -> 99.75: +5.2 [+3.0, +7.8] p=5.7e-06 n=400; 90% [+3.5, +7.2] not
+[globalbh] [main]'s 264 exact McNemar tests (p<=.50): significant at q<.05 within the (arm, task, control) families [main] uses, and under one BH over all 264 tests
+  against none, six tasks: 144 tests; within families 52; over all 264 52; over the 144 against none 52
+  against none, the four tasks whose answer varies: 96 tests; within families 27; over all 264 28; over the 144 against none 28
+  against filler, six tasks: 120 tests; within families 50; over all 264 47; over the 144 against none -
+  significant within families but not over all 264: 5
+    qwen3-1.7b-think node_degree clustering vs filler: p=0.036 q=0.044 -> 0.088
+    qwen3-1.7b-think cycle_check rwse vs none: p=0.022 q=0.034 -> 0.057
+    qwen3-4b node_degree rwse vs none: p=0.022 q=0.045 -> 0.057
+    qwen3-4b edge_count components vs filler: p=0.021 q=0.027 -> 0.055
+    qwen3-4b edge_count clustering vs filler: p=0.021 q=0.027 -> 0.055
 [joint] degree and neighbours of the same node, p<=.50: J both correct, C consistent, C-J consistent but not both correct (J is inside C), % of items; then J against none, with BH q over the six primers
   qwen3-1.7b        none J 54.00 C 62.25 C-J 8.25, filler J 52.00 C 62.50 C-J 10.50, components J 54.50 C 63.25 C-J 8.75, clustering J 58.00 C 67.00 C-J 9.00, rwse J 58.25 C 63.25 C-J 5.00, degree J 62.50 C 73.00 C-J 10.50, all J 61.75 C 68.00 C-J 6.25
     J filler     -2.0 [-5.5, +1.8] broke 34 fixed 26 p=0.37 n=400 q=0.44

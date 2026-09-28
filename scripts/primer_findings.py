@@ -49,6 +49,7 @@ TASKS6 = ["node_count", "node_degree", "connected_nodes", "edge_count",
 DENS4 = [0.10, 0.20, 0.35, 0.50]
 DENSHI = [0.65, 0.75, 0.85]
 BAND = (0.25, 0.75)          # where both kinds of primer gain (Table 2's bins)
+EQUIV = 3.0                  # equivalence margin, points: about the 4B arms' median detectable gain ([lmde])
 Z80 = 1.959964 + 0.841621    # two-sided .05, 80% power
 ROUTE_GAIN = 0.05            # a route cell: the solver bar beats `none`'s by more than this
 # Every bootstrap restarts from SEED, so an interval does not depend on which
@@ -130,17 +131,17 @@ def boot_positions(j):
   return [np.flatnonzero(level == d) for d in sorted(level.unique())]
 
 
-def boot(j, stat):
-  """95% interval of stat(j) over graphs resampled within each density. One
-  iloc per resample over the same random draws, in the same order, as a
-  per-group pd.concat (tests pin the two to identical intervals)."""
+def boot(j, stat, q=(2.5, 97.5)):
+  """95% interval (or the percentiles q) of stat(j) over graphs resampled within
+  each density. One iloc per resample over the same random draws, in the same
+  order, as a per-group pd.concat (tests pin the two to identical intervals)."""
   groups = boot_positions(j)
   rng = np.random.default_rng(SEED)
   vals = []
   for _ in range(B):
     idx = np.concatenate([g[rng.integers(0, len(g), len(g))] for g in groups])
     vals.append(stat(j.iloc[idx]))
-  return np.percentile(vals, [2.5, 97.5])
+  return np.percentile(vals, list(q))
 
 
 def effect(j, col="correct"):
@@ -1391,6 +1392,93 @@ def vs_think(f):
               f"truncated {100 * j.truncated_a.mean():.1f} / {100 * j.truncated_b.mean():.1f}")
 
 
+def think_diff(j):
+  """Thinking minus plain in points, and its 90% interval: the interval two one-sided
+  tests at .05 read against the margin EQUIV."""
+  stat = lambda s: 100 * (s.correct_b.mean() - s.correct_a.mean())
+  lo, hi = boot(j, stat, (5, 95))
+  return stat(j), lo, hi, "equivalent" if -EQUIV < lo and hi < EQUIV else "not"
+
+
+def vs_think_equiv(f):
+  """[vsthink]'s comparisons as equivalence tests: is the plain arm under a condition
+  within EQUIV points of the thinking arm without a primer?"""
+  print(f"[vsequiv] main sweep (p<=.50), the pairs of [vsthink]: thinking without a primer minus the plain "
+        f"arm under each condition, 90% bootstrap interval, and 'equivalent' when the interval lies inside "
+        f"+-{EQUIV:.0f} points (two one-sided tests at .05)")
+  key = ["density_class", "graph_id"]
+  for plain in ("qwen3-1.7b", "qwen3-4b"):
+    for task in ["node_degree", "connected_nodes", "edge_count", "edge_existence"]:
+      d = f[(f.task == task) & f.density_class.isin(DENS4)]
+      think = d[(d.arm == plain + "-think") & (d.condition == "none")].set_index(key)
+      out = []
+      for c in ["none", "filler"] + PRIMERS:
+        x = d[(d.arm == plain) & (d.condition == c)].set_index(key)
+        dd, lo, hi, v = think_diff(x.join(think, lsuffix="_a", rsuffix="_b", how="inner"))
+        out.append(f"{c} {f1(dd)} [{f1(lo)}, {f1(hi)}] {v}")
+      print(f"  {plain} {task}: " + " | ".join(out))
+
+
+def vs_think_crossfit(f):
+  """The plain arm's best primer against thinking without the winner's curse: the
+  primer is chosen on half the graphs (even or odd index) and scored on the other
+  half, so every graph is scored under a primer chosen without it."""
+  print(f"[vscross] main sweep (p<=.50): the plain arm's best of the five primers chosen on the even-index "
+        f"graphs / the odd-index graphs and each scored on the other half, against the same model thinking "
+        f"without a primer on the same held-out graphs: primers chosen, plain -> thinking, difference (thinking "
+        f"minus plain) [95% CI], exact McNemar p, n; 90% interval, equivalent within +-{EQUIV:.0f} points")
+  key = ["density_class", "graph_id"]
+  for plain in ("qwen3-1.7b", "qwen3-4b"):
+    for task in ["node_degree", "connected_nodes", "edge_count", "edge_existence"]:
+      d = f[(f.task == task) & f.density_class.isin(DENS4) & (f.arm == plain)]
+      think = f[(f.task == task) & f.density_class.isin(DENS4) & (f.arm == plain + "-think")
+                & (f.condition == "none")].set_index(key)
+      picks, held = [], []
+      for half in (0, 1):
+        fit = d[d["index"] % 2 == half]
+        best = max(PRIMERS, key=lambda c: fit[fit.condition == c].correct.mean())
+        picks.append(best)
+        held.append(d[(d.condition == best) & (d["index"] % 2 != half)].set_index(key))
+      j = pd.concat(held).join(think, lsuffix="_a", rsuffix="_b", how="inner")
+      dd, lo, hi, _, _, p, n, _ = effect(j)
+      _, lo90, hi90, v = think_diff(j)
+      print(f"  {plain} {task}: chosen {picks[0]} / {picks[1]}; {100 * j.correct_a.mean():.2f} -> "
+            f"{100 * j.correct_b.mean():.2f}: {f1(dd)} [{f1(lo)}, {f1(hi)}] p={p:.2g} n={n}; "
+            f"90% [{f1(lo90)}, {f1(hi90)}] {v}")
+
+
+def global_bh(f):
+  """[main]'s McNemar tests under one Benjamini-Hochberg correction over all of them,
+  beside the (arm, task, control) families [main] corrects within."""
+  rows = []
+  for arm in ARMS:
+    for task in TASKS6:
+      for control, conds in (("none", ["filler"] + PRIMERS), ("filler", PRIMERS)):
+        ps = []
+        for c in conds:
+          j = pairs(f, arm, task, control, c, DENS4)
+          ps.append(scoring.mcnemar(j.correct_a.astype(bool).to_numpy(),
+                                    j.correct_b.astype(bool).to_numpy())["p_value"])
+        rows += [(arm, task, control, c, p, q) for c, p, q in zip(conds, ps, bh(ps))]
+  t = pd.DataFrame(rows, columns=["arm", "task", "control", "condition", "p", "q_family"])
+  t["q_all"] = bh(t.p)
+  t["q_none"] = np.nan
+  t.loc[t.control == "none", "q_none"] = bh(t[t.control == "none"].p)
+  print(f"[globalbh] [main]'s {len(t)} exact McNemar tests (p<=.50): significant at q<.05 within the (arm, task, "
+        f"control) families [main] uses, and under one BH over all {len(t)} tests")
+  for label, s in (("against none, six tasks", t.control == "none"),
+                   ("against none, the four tasks whose answer varies", (t.control == "none") & t.task.isin(TASKS4)),
+                   ("against filler, six tasks", t.control == "filler")):
+    x = t[s]
+    print(f"  {label}: {len(x)} tests; within families {(x.q_family < .05).sum()}; over all {len(t)} "
+          f"{(x.q_all < .05).sum()}; over the {int((t.control == 'none').sum())} against none "
+          f"{(x.q_none < .05).sum() if label.startswith('against none') else '-'}")
+  lost = t[(t.q_family < .05) & (t.q_all >= .05)]
+  print(f"  significant within families but not over all {len(t)}: {len(lost)}")
+  for r in lost.itertuples():
+    print(f"    {r.arm} {r.task} {r.condition} vs {r.control}: p={r.p:.2g} q={r.q_family:.2g} -> {r.q_all:.2g}")
+
+
 def main():
   ap = argparse.ArgumentParser(description=__doc__)
   ap.add_argument("--frame", default=FRAME)
@@ -1418,6 +1506,9 @@ def main():
   edge_existence(f)
   edge_existence_main(f)
   vs_think(f)
+  vs_think_equiv(f)
+  vs_think_crossfit(f)
+  global_bh(f)
   joint(f)
   clustering_high(f)
   clustering_arms(f)

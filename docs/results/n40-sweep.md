@@ -40,7 +40,8 @@ under in one of the two sources, so `+27.2 [edgecount]` is found in the
   `all` (degree, clustering and RWSE together).
 - **Token budget.** 8192 [setup] tokens for every arm in the main sweep; in the
   high-density extension, 2048 [setup] for the two plain arms and 8192 [setup]
-  for the thinking arms.
+  for the thinking arms. No arm truncates more than 2.5% [extract] of its
+  high-density responses.
 - **Truncation.** `edge_count` truncates on 22.4% [setup] of plain Qwen3-1.7B
   responses and on 81.0% [setup] and 62.2% [setup] of the two thinking arms'
   responses; every other (arm, task) truncates on at most 6.5% [setup].
@@ -164,6 +165,33 @@ and against `filler`. The rows below answer the proposal's two questions.
 - On 1.7B-thinking `connected_nodes`, `degree` is +3.8 [main] against `filler`
   (q = 0.18 [main]).
 
+### Against the thinking mode
+
+`[vsthink]` sets the plain arm under each condition against the same model
+thinking without a primer, on the same graphs; `[vsequiv]` reads each
+difference (thinking minus plain) against ±3 points with a 90% interval;
+`[vscross]` chooses the plain arm's best primer on half the graphs and scores
+it on the other half.
+
+- Where thinking leads, one primer brings the plain arm within ±3 points of it:
+  `components` on 4B `connected_nodes`, 95.25 [vsthink] against
+  95.50 [vsthink], a difference of +0.2 [vsthink] with a 90% interval from
+  −2.0 [vsequiv] to +2.5 [vsequiv].
+- `degree` on 1.7B `connected_nodes` is not significantly below thinking
+  (+2.8 [vsthink], q = 0.24 [vsthink]) and not equivalent to it either: the
+  90% interval reaches +6.2 [vsequiv].
+- With `all`, 1.7B `node_degree` ends +5.5 [vsthink] below thinking
+  (q = 0.043 [vsthink]), from a gap of +15.8 [vsthink] without a primer.
+- `degree` lifts 4B `edge_count` above thinking (−9.2 [vsthink],
+  q = 0.002 [vsthink]), where thinking truncates on 79.5 [vsthink] per cent of
+  prompts.
+- `clustering` and `rwse` leave the plain arm significantly below thinking
+  wherever thinking leads: q is at most 0.041 [vsthink].
+- Choosing the primer on held-out graphs picks the same primer on both halves
+  in every row, so the differences do not move: +0.2 [vscross] on 4B
+  `connected_nodes` (90% from −2.2 [vscross] to +2.5 [vscross]) and
+  +5.5 [vscross] on 1.7B `node_degree`.
+
 ## 4. A primer that states the answer changes the procedure
 
 **Plain Qwen3-4B, `node_degree`.** Under `degree`, the effect by density is
@@ -269,7 +297,10 @@ equals the size of the stated neighbour set. Every item in J is in C.
 
 - Plain 4B: `degree` lowers J from 85.75 [joint] to 76.50 [joint]
   (−9.2 [joint]; 28 [joint] fixed, 65 [joint] broken; q = 0.00032 [joint]),
-  while `components` raises it to 95.00 [joint] (+9.2 [joint]).
+  while `components` raises it to 95.00 [joint] (+9.2 [joint]) and `filler`
+  lowers it by −13.2 [joint].
+- `clustering` and `rwse` change J for no arm: every q is at least
+  0.16 [joint].
 - Plain 1.7B: `degree` raises J from 54.00 [joint] to 62.50 [joint] and C to
   73.00 [joint]; the answers that agree with each other without both being
   correct (C − J) rise from 8.25 [joint] to 10.50 [joint].
@@ -326,6 +357,11 @@ equals the size of the stated neighbour set. Every item in J is in C.
   with `rwse`, 14 [prior] and 12 [prior] (p = 0.84 [prior]). The answers
   these primers fix were over-counts, as under `filler`: 91% [prior]
   (`clustering`) and 90% [prior] (`rwse`, `filler`).
+- **`clustering` on `node_degree`, every arm** (main sweep, then the
+  high-density extension; BH over the eight): plain 1.7B +3.0 [clustarms] and
+  −3.3 [clustarms]; 1.7B-thinking +1.5 [clustarms] and −9.0 [clustarms]
+  (q = 0.05 [clustarms]); plain 4B −0.5 [clustarms] and +11.3 [clustarms];
+  4B-thinking +1.8 [clustarms] and −0.7 [clustarms].
 - **`clustering`, plain 1.7B, `node_degree`:** +3.0 [clusthi] in the main sweep
   (p = 0.26 [clusthi]). Dedicated runs replicate a gain: at p ≤ .50,
   +4.0 [replic] on 300 new graphs per density (p = 0.0047 [replic]) and
@@ -383,6 +419,14 @@ depends on density:
   1.7B and 18/28 [lmde] for 4B-thinking, because the no-primer accuracy is at
   floor or ceiling; where a gain can be detected, its median detectable size
   is 5.7 [lmde] points for the 1.7B arms and 3.2 [lmde] for the 4B arms.
+- q-values are Benjamini–Hochberg within (arm, task, control). Under one
+  correction over all 264 [globalbh] of `[main]`'s tests, the contrasts
+  against `none` significant at q < .05 stay at 52 [globalbh] of
+  144 [globalbh], and those against `filler` go from 50 [globalbh] to
+  47 [globalbh]. Among the four tasks whose answer varies, 27 [globalbh]
+  contrasts against `none` are significant within families and 28 [globalbh]
+  over all; the one that loses significance is plain 4B `rwse` on
+  `node_degree` (q = 0.045 [globalbh] → 0.057 [globalbh]).
 - The answer extractor parses 99.84% [extract] of responses.
 - For `connected_nodes`, set-F1 moves in the same direction as exact match in
   only 3 [f1] of 5 [f1] large contrasts, and by 0.11 [f1] to 0.17 [f1] as much;
