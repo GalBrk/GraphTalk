@@ -6,8 +6,8 @@ Stating the Answer**: [`paper.pdf`](paper.pdf).
 
 `tests/test_paper_numbers.py` checks every tagged number in `paper.tex` against
 `outputs/`. `python paper/build_tables.py --check` (from the repo root) also
-checks Table 1 against the saved responses in `frame.csv`, and that Tables 7 and
-8 match their sources.
+checks Table 1 against the saved responses in `frame.csv`, and that Tables 6 and
+7 match their sources.
 
 ## Build
 
@@ -39,10 +39,10 @@ python paper/build_tables.py
 | `fig_effects.pdf` (Figure 2) | `fig_effects.py` | `[main]` in `primer_findings.txt` |
 | `fig_headroom.pdf`, `fig_addstats.pdf` (Figures 3 and 4) | `fig_headroom.py` | `primer_cells.csv` |
 | `edge_count_outcomes.pdf` (Figure 5) | `plot_outcomes.py` | `[edgecount]` in `primer_findings.txt` |
-| rows of `table_cycles.tex` (Table 7) | `build_tables.py` | `[ccanswer]` and `[cctest]` in `check_cycle_claims.txt` |
-| rows of `main_truncation.tex` (Table 8) | `build_tables.py` | `frame.csv` (main sweep, truncated responses) |
+| rows of `table_cycles.tex` (Table 6) | `build_tables.py` | `[ccanswer]` and `[cctest]` in `check_cycle_claims.txt` |
+| rows of `main_truncation.tex` (Table 7) | `build_tables.py` | `frame.csv` (main sweep, truncated responses) |
 
-The other tables, and the captions of Tables 7 and 8, are written by hand.
+The other tables, and the captions of Tables 6 and 7, are written by hand.
 
 The paper's numbers are the tagged blocks of `outputs/`.
 
