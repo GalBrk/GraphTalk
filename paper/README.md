@@ -26,7 +26,7 @@ Run these from the repo root once the pipeline in
 [`scripts/README.md`](../scripts/README.md) has written `outputs/`:
 
 ```sh
-PYTHONPATH=. python scripts/readme_figures.py && cp docs/img/primer_usage.pdf paper/fig_primer_usage.pdf
+PYTHONPATH=. python scripts/readme_figures.py && cp docs/img/primer_usage.pdf paper/fig_primer_usage.pdf && cp docs/img/primer_effect.pdf paper/fig_primer_effect.pdf
 python paper/fig_effects.py
 python paper/fig_headroom.py
 python paper/plot_outcomes.py
@@ -37,8 +37,9 @@ python paper/build_tables.py
 |---|---|---|
 | `fig_primer_usage.pdf` (Figure 1) | `scripts/readme_figures.py`, as `docs/img/primer_usage.pdf` | a five-node example graph |
 | `fig_effects.pdf` (Figure 2) | `fig_effects.py` | `[main]` in `primer_findings.txt` |
-| `fig_headroom.pdf`, `fig_addstats.pdf` (Figures 3 and 4) | `fig_headroom.py` | `primer_cells.csv` |
-| `edge_count_outcomes.pdf` (Figure 5) | `plot_outcomes.py` | `[edgecount]` in `primer_findings.txt` |
+| `fig_primer_effect.pdf` (Figure 3) | `scripts/readme_figures.py`, as `docs/img/primer_effect.pdf` | `[main]` in `primer_findings.txt` |
+| `fig_headroom.pdf`, `fig_addstats.pdf` (Figures 4 and 5) | `fig_headroom.py` | `primer_cells.csv` |
+| `edge_count_outcomes.pdf` (Figure 6) | `plot_outcomes.py` | `[edgecount]` in `primer_findings.txt` |
 | rows of `table_cycles.tex` (Table 6) | `build_tables.py` | `[ccanswer]` and `[cctest]` in `check_cycle_claims.txt` |
 | rows of `main_truncation.tex` (Table 7) | `build_tables.py` | `frame.csv` (main sweep, truncated responses) |
 
