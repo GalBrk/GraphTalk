@@ -1,8 +1,8 @@
-<h1 align="center">Talk Like a Structured Graph</h1>
+<h1 align="center">Talk Like a Structured Graph?</h1>
 
 <p align="center">
-  <em>Does telling an LLM each node's degree, clustering or random-walk statistics<br>
-  help it answer questions about a graph written as text?</em>
+  <em>When a black-box language model reads a textual graph,<br>
+  do explicit structural statistics improve execution of graph queries?</em>
 </p>
 
 <p align="center">
@@ -16,26 +16,37 @@ A course project for *Machine Learning with Graphs* (Tel Aviv University) that
 extends [Talk like a Graph](https://arxiv.org/abs/2310.04560) (Fatemi et al.).
 We prepend a **primer** (short factual sentences about each node's local structure)
 to GraphQA's text encoding of a graph, and compare the same graphs with and without
-it in paired tests.
+it in paired tests. The paper: **Talk Like a Structured Graph? Structural Statistics
+Help Small LLMs Mainly by Stating the Answer** ([PDF](paper/paper.pdf)).
 
 ## The experiment
 
-<p align="center"><img src="docs/img/primer_usage.png" width="900" alt="The seven primer conditions, each in its own colour with its sentence about node 2, and the prompt the model reads: one primer, the incident encoding and the question"></p>
+<p align="center">
+  <img src="docs/img/primer_usage.png" width="900" alt="The seven primer conditions, each in its own colour with its sentence about node 2, and the prompt the model reads: one primer, the incident encoding and the question">
+  <br>
+  <sub>How a primer is used. Left: the seven conditions, each with its sentence about node 2 of a
+  five-node example (the study's graphs have 40 nodes); ★ marks the two that state a node-degree
+  answer. Right: the prompt the model reads, one primer followed by GraphQA's incident encoding and
+  the question. Paper Figure 1.</sub>
+</p>
 
-Each prompt is a primer, then GraphQA's incident encoding of the graph, then the
-question. The seven conditions go through one renderer (`graphtalk/primers.py`), so
-they differ in content only, and every model sees the same graphs under all seven.
+Before the encoding, we place either no primer; one sentence per node stating its
+degree, local clustering coefficient, or two- and three-step random-walk return
+probabilities (a truncated RWSE); or a sentence combining all three statistics.
+Controls give the component count or name each node without stating a statistic
+(filler). The graph, encoding, and question remain fixed across primer conditions.
 
-We use 40-node Erdős–Rényi graphs at seven edge densities (p = .10 to .85),
-6 GraphQA tasks, 7 primer conditions, and Qwen3-1.7B and Qwen3-4B with and without
-thinking: 84,000 paired responses. A graph-blind solver that reads only the primer
-text shows which primers give the answer away.
+We evaluate Qwen3-1.7B and Qwen3-4B, each with thinking off (P) and on (T), on
+40-node independent-edge graphs G(n,p) at p ∈ {.10, .20, .35, .50}, extending
+node-degree and edge-existence tests to p ∈ {.65, .75, .85}. Every condition and arm
+receives the same 100 graphs per task and density, allowing paired comparisons. A
+rule-based graph-blind solver tests what can be answered from primer text alone.
 
 ## Key findings
 
 <p align="center">
-  <b>A structural hint helps only when it hands over an answer the model can't compute itself,<br>
-  and it hurts a model that already can. Hints that don't state the answer barely move accuracy.</b>
+  <b>Explicit statistics can help by supplying answers or changing how a model uses the prompt,<br>
+  but do not consistently improve graph-query execution.</b>
 </p>
 
 <p align="center">
@@ -46,33 +57,42 @@ text shows which primers give the answer away.
   Details: <a href="docs/results/n40-sweep.md#3-every-primer-against-no-primer">n40-sweep §3</a>.</sub>
 </p>
 
-- **Stating the answer helps a model that computes it unreliably, and hurts one
-  that computes it reliably.** On node degree, the `degree` primer adds +7.5 points
-  for Qwen3-1.7B and +8.8 with thinking, but costs Qwen3-4B −6.5 (99.25% → 92.75%).
+- **Stated degrees improve node-degree accuracy when unaided counting is unreliable,
+  but reduce it for a model that already counts accurately.** The degree primer raises
+  node-degree accuracy by 7.5 points for plain 1.7B and 8.8 for thinking 1.7B, but
+  lowers it by 6.5 for plain 4B, whose unaided accuracy is 99.25%.
   [n40-sweep §3](docs/results/n40-sweep.md#3-every-primer-against-no-primer)
-- **Statistics that don't state the answer have smaller effects**, and their sign
-  depends on the statistic and the model. Where structure-free `filler` text lowers
-  accuracy, clustering and RWSE mostly do not.
+- **This benefit does not establish improved graph reading:** degrees directly supply
+  the queried value, and responses often use a lookup rather than the incident edges.
+  At p = .50, 62% of plain 4B's responses have the direct-answer pattern rather than
+  an explicit neighbor list.
+  [n40-sweep §4](docs/results/n40-sweep.md#4-a-primer-that-states-the-answer-changes-the-procedure)
+- **Clustering and return probabilities, which do not directly state the answer, yield
+  smaller effects that vary by model and task**, with no significant gain in the joint
+  accuracy of degree and neighbor-set queries.
   [n40-sweep §7](docs/results/n40-sweep.md#7-side-information-is-small-and-non-specific)
-- **Correct is not the same as right.** On cycle detection, only about a third of
-  the correct answers given without thinking or a primer rest on a real cycle,
-  against 80.9–96.4% with thinking.
+- **A component-count control also changes how a model reads the graph** despite
+  conveying little new information on these graphs: responses restate the queried
+  node's incident line much more often with it than with no primer or filler (98.5%,
+  63.0%, and 21.8%).
+  [n40-sweep §7](docs/results/n40-sweep.md#7-side-information-is-small-and-non-specific)
+- **Even a correct cycle label can cite a nonexistent edge.** Among plain 1.7B's
+  correct, finished responses, 43.5% cite an invented cycle containing a nonexistent
+  edge.
   [cycles §5](docs/investigate_connections_and_cycles.md#5-cycle_check-do-correct-answers-rest-on-real-cycles)
 
 <p align="center">
   <img src="docs/img/headroom.png" width="560" alt="Scatter plot of the degree primer's effect on node degree against the no-primer correct share, one point per model and edge density. Gains are largest where a model is right about half the time and turn into losses where it is right most of the time.">
   <br>
-  <sub>The <code>degree</code> primer's effect on node degree against the correct share without a primer,
-  one point per model and edge density (P/T: thinking off/on). The gain is largest where a model is
-  right about half the time and becomes a loss where it is right most of the time. Hollow: plain model
-  at p ≥ .65 (smaller token budget). Paper Figure 3; details:
+  <sub>The degree primer's effect on node degree against the no-primer correct share, per arm and
+  density. Hollow: plain arm at p ≥ .65 (smaller budget). Paper Figure 3; details:
   <a href="docs/results/n40-sweep.md#4-a-primer-that-states-the-answer-changes-the-procedure">n40-sweep §4</a>.</sub>
 </p>
 
 <details>
 <summary><b>Every primer against no primer</b> (paper Table 1)</summary>
 
-| Task | Model | none | degree | clustering | RWSE | all | components | filler |
+| Task | Arm | none | degree | clustering | RWSE | all | components | filler |
 |---|---|--:|--:|--:|--:|--:|--:|--:|
 | Degree ★ | 1.7P | 60.50 | **+7.5**<sup>f</sup> | +3.0 | +4.0 | **+10.2**<sup>f</sup> | +1.8 | −0.5 |
 | | 1.7T | 76.25 | **+8.8**<sup>f</sup> | +1.5<sup>f</sup> | +2.5<sup>f</sup> | **+12.2**<sup>f</sup> | −1.0 | −3.0 |
@@ -91,11 +111,12 @@ text shows which primers give the answer away.
 | | 4P | 90.50 | **−4.8** | **+4.0**<sup>f</sup> | **−10.0** | **−10.0** | −2.8<sup>f</sup> | **−7.0** |
 | | 4T | 99.75 | +0.0 | −0.8 | −1.2 | −1.0 | −0.5 | +0.0 |
 
-Correct share without a primer (% of all prompts) and the paired change under each
-primer (points), on the same 400 graphs per row (p ≤ .50). ★: on this task, `degree`
-and `all` state the answer. Bold: q < .05 against no primer (Benjamini–Hochberg within
-model, task and control); <sup>f</sup>: q < .05 against `filler`; †: at least 15%
-truncation on either side. P/T: thinking off/on. Intervals:
+Primary result: correct share without a primer (% of all prompts) and paired change
+under each primer (points), on the same 400 graphs per row (p ≤ .50). ★: `degree` and
+`all` supply the degree answer or every term needed to compute edge count. Bold:
+q < .05 against no primer (BH within arm, task and control); <sup>f</sup>: q < .05
+against filler; †: at least 15% truncation on either side, and no significance marks.
+P/T: plain/thinking. Intervals:
 [n40-sweep §3](docs/results/n40-sweep.md#3-every-primer-against-no-primer).
 
 </details>
