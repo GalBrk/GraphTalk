@@ -54,7 +54,7 @@ rule-based graph-blind solver tests what can be answered from primer text alone.
   <br>
   <sub>Node degree on 40-node graphs, 400 paired graphs per model. Blue and red changes are significant
   (Benjamini–Hochberg q &lt; .05); gray ones are not.
-  Details: <a href="docs/results/n40-sweep.md#3-every-primer-against-no-primer">n40-sweep §3</a>.</sub>
+  Paper Figure 3; details: <a href="docs/results/n40-sweep.md#3-every-primer-against-no-primer">n40-sweep §3</a>.</sub>
 </p>
 
 - **Stated degrees improve node-degree accuracy when unaided counting is unreliable,
@@ -85,7 +85,7 @@ rule-based graph-blind solver tests what can be answered from primer text alone.
   <img src="docs/img/headroom.png" width="560" alt="Scatter plot of the degree primer's effect on node degree against the no-primer correct share, one point per model and edge density. Gains are largest where a model is right about half the time and turn into losses where it is right most of the time.">
   <br>
   <sub>The degree primer's effect on node degree against the no-primer correct share, per arm and
-  density. Hollow: plain arm at p ≥ .65 (smaller budget). Paper Figure 3; details:
+  density. Hollow: plain arm at p ≥ .65 (smaller budget). Paper Figure 4; details:
   <a href="docs/results/n40-sweep.md#4-a-primer-that-states-the-answer-changes-the-procedure">n40-sweep §4</a>.</sub>
 </p>
 
