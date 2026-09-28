@@ -2,7 +2,7 @@
 (primer_findings.py --csv-dir writes it).
 
 fig_headroom.pdf (Figure 2): the degree primer's effect on node degree against the no-primer
-correct share, per arm and density.
+correct share, per arm and density; also docs/img/headroom.png for the front README.
 fig_addstats.pdf (Figure 3): what adding clustering and RWSE to the same degrees changes
 (all three statistics minus the degree primer), per arm and density.
 
@@ -57,6 +57,7 @@ a.set_ylabel("Effect (points)", fontsize=7.5, color=INK)
 a.legend(fontsize=7, frameon=False, loc="upper right", ncol=2, handletextpad=0.2, columnspacing=0.8)
 fig.tight_layout()
 fig.savefig(HERE / "fig_headroom.pdf", bbox_inches="tight", pad_inches=0.02)
+fig.savefig(HERE.parent / "docs" / "img" / "headroom.png", dpi=300, bbox_inches="tight", pad_inches=0.04, facecolor="white")
 
 fig, b = axes(1.7)  # taller: its y-label is longer than a 1.35-inch axis
 for arm in ARMS:
