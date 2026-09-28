@@ -12,6 +12,27 @@
   <img alt="Models: Qwen3" src="https://img.shields.io/badge/models-Qwen3%201.7B%20%7C%204B-6f42c1?style=flat-square">
 </p>
 
+A course project for *Machine Learning with Graphs* (Tel Aviv University) that
+extends [Talk like a Graph](https://arxiv.org/abs/2310.04560) (Fatemi et al.).
+We prepend a **primer** (short factual sentences about each node's local structure)
+to GraphQA's text encoding of a graph, and compare the same graphs with and without
+it in paired tests.
+
+## The experiment
+
+<p align="center"><img src="docs/img/primer_usage.png" width="900" alt="The seven primer conditions, each in its own colour with its sentence about node 2, and the prompt the model reads: one primer, the incident encoding and the question"></p>
+
+Each prompt is a primer, then GraphQA's incident encoding of the graph, then the
+question. The seven conditions go through one renderer (`graphtalk/primers.py`), so
+they differ in content only, and every model sees the same graphs under all seven.
+
+We use 40-node Erdős–Rényi graphs at seven edge densities (p = .10 to .85),
+6 GraphQA tasks, 7 primer conditions, and Qwen3-1.7B and Qwen3-4B with and without
+thinking: 84,000 paired responses. A graph-blind solver that reads only the primer
+text shows which primers give the answer away.
+
+## Key findings
+
 <p align="center">
   <b>A structural hint helps only when it hands over an answer the model can't compute itself,<br>
   and it hurts a model that already can. Hints that don't state the answer barely move accuracy.</b>
@@ -25,22 +46,6 @@
   Details: <a href="docs/results/n40-sweep.md#3-every-primer-against-no-primer">n40-sweep §3</a>.</sub>
 </p>
 
-A course project for *Machine Learning with Graphs* (Tel Aviv University) that
-extends [Talk like a Graph](https://arxiv.org/abs/2310.04560) (Fatemi et al.).
-We prepend a **primer** (short factual sentences about each node's local structure)
-to GraphQA's text encoding of a graph, and compare the same graphs with and without
-it in paired tests.
-
-## How a primer is used
-
-<p align="center"><img src="docs/img/primer_usage.png" width="900" alt="The seven primer conditions, each in its own colour with its sentence about node 2, and the prompt the model reads: one primer, the incident encoding and the question"></p>
-
-Each prompt is a primer, then GraphQA's incident encoding of the graph, then the
-question. The seven conditions go through one renderer (`graphtalk/primers.py`), so
-they differ in content only, and every model sees the same graphs under all seven.
-
-## Key findings
-
 - **Stating the answer helps a model that computes it unreliably, and hurts one
   that computes it reliably.** On node degree, the `degree` primer adds +7.5 points
   for Qwen3-1.7B and +8.8 with thinking, but costs Qwen3-4B −6.5 (99.25% → 92.75%).
@@ -53,11 +58,47 @@ they differ in content only, and every model sees the same graphs under all seve
   the correct answers given without thinking or a primer rest on a real cycle,
   against 80.9–96.4% with thinking.
   [cycles §5](docs/investigate_connections_and_cycles.md#5-cycle_check-do-correct-answers-rest-on-real-cycles)
-- **The setup:** 40-node Erdős–Rényi graphs at seven edge densities (p = .10 to .85),
-  6 GraphQA tasks, 7 primer conditions, and Qwen3-1.7B and Qwen3-4B with and without
-  thinking: 84,000 paired responses.
-  A graph-blind solver that reads only the primer text shows which primers give the
-  answer away.
+
+<p align="center">
+  <img src="docs/img/headroom.png" width="560" alt="Scatter plot of the degree primer's effect on node degree against the no-primer correct share, one point per model and edge density. Gains are largest where a model is right about half the time and turn into losses where it is right most of the time.">
+  <br>
+  <sub>The <code>degree</code> primer's effect on node degree against the correct share without a primer,
+  one point per model and edge density (P/T: thinking off/on). The gain is largest where a model is
+  right about half the time and becomes a loss where it is right most of the time. Hollow: plain model
+  at p ≥ .65 (smaller token budget). Paper Figure 2; details:
+  <a href="docs/results/n40-sweep.md#4-a-primer-that-states-the-answer-changes-the-procedure">n40-sweep §4</a>.</sub>
+</p>
+
+<details>
+<summary><b>Every primer against no primer</b> (paper Table 1)</summary>
+
+| Task | Model | none | degree | clustering | RWSE | all | components | filler |
+|---|---|--:|--:|--:|--:|--:|--:|--:|
+| Degree ★ | 1.7P | 60.50 | **+7.5**<sup>f</sup> | +3.0 | +4.0 | **+10.2**<sup>f</sup> | +1.8 | −0.5 |
+| | 1.7T | 76.25 | **+8.8**<sup>f</sup> | +1.5<sup>f</sup> | +2.5<sup>f</sup> | **+12.2**<sup>f</sup> | −1.0 | −3.0 |
+| | 4P | 99.25 | **−6.5**<sup>f</sup> | −0.5 | **−2.2** | **−8.0**<sup>f</sup> | +0.2 | −0.5 |
+| | 4T | 97.00 | +2.5 | +1.8 | −1.2<sup>f</sup> | +0.5 | +0.2 | +2.0 |
+| Neighbors | 1.7P | 72.50 | +3.5<sup>f</sup> | +1.2<sup>f</sup> | +1.0<sup>f</sup> | +2.0<sup>f</sup> | +0.8<sup>f</sup> | **−6.2** |
+| | 1.7T | 78.75 | **+6.2** | +2.0 | +0.2 | **+6.2** | +2.5 | +2.5 |
+| | 4P | 86.00 | −3.0<sup>f</sup> | +1.0<sup>f</sup> | +0.0<sup>f</sup> | −2.8<sup>f</sup> | **+9.2**<sup>f</sup> | **−12.5** |
+| | 4T | 95.50 | +0.5 | −0.8 | +0.5 | −1.2 | +0.5 | +1.2 |
+| Edge count ★ | 1.7P | 1.25 | +3.0† | −0.5† | −0.8† | +0.8† | −1.0† | −0.5† |
+| | 1.7T | 15.75 | −3.2† | −1.2† | −3.2† | +5.0† | −0.8† | −1.5† |
+| | 4P | 2.00 | **+27.2**<sup>f</sup> | −1.2<sup>f</sup> | −1.5<sup>f</sup> | **+3.8** | −1.2<sup>f</sup> | +1.2 |
+| | 4T | 20.00 | +8.5† | +24.8† | +10.2† | +1.8† | +24.8† | +12.2† |
+| Edge exists | 1.7P | 70.50 | +4.0<sup>f</sup> | +3.8<sup>f</sup> | +5.0<sup>f</sup> | **+11.5**<sup>f</sup> | **−8.2**<sup>f</sup> | **−15.8** |
+| | 1.7T | 99.00 | −2.5 | −1.0 | −1.2 | −1.8 | −0.8 | −0.5 |
+| | 4P | 90.50 | **−4.8** | **+4.0**<sup>f</sup> | **−10.0** | **−10.0** | −2.8<sup>f</sup> | **−7.0** |
+| | 4T | 99.75 | +0.0 | −0.8 | −1.2 | −1.0 | −0.5 | +0.0 |
+
+Correct share without a primer (% of all prompts) and the paired change under each
+primer (points), on the same 400 graphs per row (p ≤ .50). ★: on this task, `degree`
+and `all` state the answer. Bold: q < .05 against no primer (Benjamini–Hochberg within
+model, task and control); <sup>f</sup>: q < .05 against `filler`; †: at least 15%
+truncation on either side. P/T: thinking off/on. Intervals:
+[n40-sweep §3](docs/results/n40-sweep.md#3-every-primer-against-no-primer).
+
+</details>
 
 ## Repository map
 
@@ -139,8 +180,8 @@ analyses are kept in git tag `pre-cleanup` (`git checkout pre-cleanup`).
 
 ## Credits
 
-Inbal Moryles ([@iinbal](https://github.com/iinbal)), Gal Barak
-([@GalBrk](https://github.com/GalBrk)) and Nitzan Zacharia
-([@NitzanZacharia](https://github.com/NitzanZacharia)). The graph generators and
+Gal Barak ([@GalBrk](https://github.com/GalBrk)), Nitzan Zacharia
+([@NitzanZacharia](https://github.com/NitzanZacharia)) and Inbal Moryles
+([@iinbal](https://github.com/iinbal)). The graph generators and
 text encoders in `talk_like_a_graph/` are Google Research's (Apache-2.0); see
 [UPSTREAM.md](talk_like_a_graph/UPSTREAM.md) for the commit and the local changes.
