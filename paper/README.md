@@ -5,7 +5,9 @@ Stating the Answer**: [`paper.pdf`](paper.pdf).
 [← back to the repo](../README.md)
 
 `tests/test_paper_numbers.py` checks every tagged number in `paper.tex` against
-`outputs/`.
+`outputs/`. `python paper/build_tables.py --check` (from the repo root) also
+checks Table 1 against the saved responses in `frame.csv`, and that Tables 7 and
+8 match their sources.
 
 ## Build
 
@@ -18,29 +20,31 @@ pdflatex paper.tex
 pdflatex paper.tex
 ```
 
-## Regenerate the figures
+## Regenerate the figures and tables
 
 Run these from the repo root once the pipeline in
 [`scripts/README.md`](../scripts/README.md) has written `outputs/`:
 
 ```sh
 PYTHONPATH=. python scripts/readme_figures.py && cp docs/img/primer_usage.pdf paper/fig_primer_usage.pdf
+python paper/fig_effects.py
 python paper/fig_headroom.py
-cd paper
-python plot_outcomes.py
+python paper/plot_outcomes.py
+python paper/build_tables.py
 ```
 
 | File | Written by | Reads |
 |---|---|---|
 | `fig_primer_usage.pdf` (Figure 1) | `scripts/readme_figures.py`, as `docs/img/primer_usage.pdf` | a five-node example graph |
-| `fig_headroom.pdf`, `fig_addstats.pdf` (Figures 2 and 3) | `fig_headroom.py` | `primer_cells.csv` |
-| `edge_count_outcomes.pdf` (Figure 4) | `plot_outcomes.py` | values copied from `[edgecount]` |
-| `table_cycles.tex` (Table 7), `main_truncation.tex` (Table 8) | edited by hand | `[ccanswer]` in `check_cycle_claims.txt`; the truncated shares of `[main]` |
+| `fig_effects.pdf` (Figure 2) | `fig_effects.py` | `[main]` in `primer_findings.txt` |
+| `fig_headroom.pdf`, `fig_addstats.pdf` (Figures 3 and 4) | `fig_headroom.py` | `primer_cells.csv` |
+| `edge_count_outcomes.pdf` (Figure 5) | `plot_outcomes.py` | `[edgecount]` in `primer_findings.txt` |
+| rows of `table_cycles.tex` (Table 7) | `build_tables.py` | `[ccanswer]` and `[cctest]` in `check_cycle_claims.txt` |
+| rows of `main_truncation.tex` (Table 8) | `build_tables.py` | `frame.csv` (main sweep, truncated responses) |
 
-The other tables are written in `paper.tex`.
+The other tables, and the captions of Tables 7 and 8, are written by hand.
 
-The paper cites the results at `results-sot` commit `3cf63ec`
-(`graphtalkresults2026`). The outputs are in `outputs/`.
+The paper's numbers are the tagged blocks of `outputs/`.
 
 ## Where each part of the paper comes from
 

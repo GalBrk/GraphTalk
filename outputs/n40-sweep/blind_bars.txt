@@ -1,0 +1,18 @@
+[blindcheck] 2800 saved clustering/rwse primers (node_degree, edge_existence) re-rendered from their graphs: 0 differ. Fit seed 555555 (1000 graphs per density), test seed 777777 (300), sweep seed 20260906 (100)
+[blindbar] graph-blind accuracy (%) on the sweep's saved prompts, by density: rule bar (data/shortcuts_n40.json) / learned lookup / majority answer; `majority` marks a density whose lookup did not beat the majority answer on held-out graphs and falls back to it
+  node_degree x clustering: p=0.10 20.0/51.0/17.0, p=0.20 16.0/54.0/16.0, p=0.35 10.3/16.0/14.0, p=0.50 12.7/16.0/18.0, p=0.65 12.0/11.0/11.0 majority, p=0.75 11.7/14.0/15.0, p=0.85 18.3/17.0/20.0
+    mean over densities: rule 14.4, learned 25.6, majority 15.9
+  edge_existence x clustering: p=0.10 90.3/90.0/90.0 majority, p=0.20 78.7/82.0/82.0 majority, p=0.35 62.0/69.0/69.0 majority, p=0.50 55.7/49.0/48.0, p=0.65 62.3/66.0/66.0 majority, p=0.75 71.7/76.0/76.0 majority, p=0.85 88.0/85.0/85.0 majority
+    mean over densities: rule 72.7, learned 73.9, majority 73.7
+  node_degree x rwse: p=0.10 21.0/41.0/17.0, p=0.20 21.7/22.0/16.0, p=0.35 23.7/24.0/14.0, p=0.50 19.7/21.0/18.0, p=0.65 19.3/22.0/11.0, p=0.75 19.3/19.0/15.0, p=0.85 22.7/33.0/20.0
+    mean over densities: rule 21.0, learned 26.0, majority 15.9
+  edge_existence x rwse: p=0.10 90.0/90.0/90.0 majority, p=0.20 79.3/82.0/82.0 majority, p=0.35 65.3/68.0/69.0, p=0.50 55.0/58.0/48.0, p=0.65 38.0/66.0/66.0, p=0.75 48.0/76.0/76.0 majority, p=0.85 12.0/85.0/85.0 majority
+    mean over densities: rule 55.4, learned 75.0, majority 73.7
+[blindunique] share of nodes (%) whose printed value is unique within its graph, held-out graphs, p = .10 to .85
+  clustering: 10, 22, 18, 11, 6, 4, 2
+  rwse: 55, 23, 5, 2, 0, 0, 0
+[blindmodels] per arm, correct (%) under the primer on the prompts the learned lookup answers correctly, against the same graphs without a primer (n)
+  node_degree x clustering: qwen3-1.7b 64.8 (58.7) n=179; qwen3-1.7b-think 77.1 (77.1) n=179; qwen3-4b 92.7 (89.4) n=179; qwen3-4b-think 97.8 (96.6) n=179
+  node_degree x rwse: qwen3-1.7b 46.2 (42.9) n=182; qwen3-1.7b-think 66.5 (63.2) n=182; qwen3-4b 81.9 (78.6) n=182; qwen3-4b-think 94.0 (96.7) n=182
+  edge_existence x clustering: qwen3-1.7b 84.7 (83.6) n=517; qwen3-1.7b-think 98.3 (98.8) n=517; qwen3-4b 95.7 (92.8) n=517; qwen3-4b-think 99.2 (99.4) n=517
+  edge_existence x rwse: qwen3-1.7b 84.8 (82.9) n=525; qwen3-1.7b-think 98.5 (98.9) n=525; qwen3-4b 87.0 (92.6) n=525; qwen3-4b-think 98.9 (99.4) n=525

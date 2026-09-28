@@ -973,6 +973,138 @@ def crossfit(f, bars):
     print(f"  {label:11s} {len(s)} points, r={r:+.3f} (p={p:.2g}), slope {f1(slope)}")
 
 
+def band_logodds(f, bars):
+  """[bands] on a scale that does not compress near 0 or 1. For one item, a
+  constant log-odds shift d gives P(fixed)/P(broken) = e^d whatever its baseline,
+  so log(fixed/broken), pooled over a band's cells (+0.5 each), is flat across
+  bands under a pure scale effect. Cells as in [splithalf]. Intervals: one draw
+  of graphs per density, shared by every cell, since cells share graphs."""
+  graphs = {d: np.sort(f[f.density_class == d].graph_id.unique())
+            for d in sorted(f.density_class.unique())}
+  cells = []
+  for arm in ARMS:
+    for task in TASKS4:
+      for dens in graphs:
+        for c in PRIMERS + ["filler"]:
+          j = pairs(f, arm, task, "none", c, [dens])
+          if j.empty or max(j.truncated_a.mean(), j.truncated_b.mean()) >= outcomes.FLAG:
+            continue
+          j = j.droplevel(0).reindex(graphs[dens])  # a missing graph is NaN: never counted
+          x, y = j.correct_a.to_numpy(float), j.correct_b.to_numpy(float)
+          kind = ("filler" if c == "filler" else
+                  "carrying" if bars.get(f"{task}/{c}", 0) >= apw.CARRIES else "side")
+          cells.append((kind, arm, dens, x, y, np.nanmean(x)))
+
+  def band(b):
+    return next(k for k, (lo, hi) in enumerate(apw.BANDS) if lo <= b < hi)
+
+  def fixed_broken(x, y):
+    return int(((x == 0) & (y == 1)).sum()), int(((x == 1) & (y == 0)).sum())
+
+  def lor(fx, br):
+    return np.log((fx + 0.5) / (br + 0.5))
+
+  rng = np.random.default_rng(SEED)
+  draws = [{d: rng.integers(0, len(g), len(g)) for d, g in graphs.items()} for _ in range(B)]
+
+  def pooled(sel):
+    fx, br = map(sum, zip(*(fixed_broken(x, y) for _, _, _, x, y, _ in sel)))
+    vals = []
+    for dr in draws:
+      s = [fixed_broken(x[dr[d]], y[dr[d]]) for _, _, d, x, y, _ in sel]
+      vals.append(lor(sum(a for a, _ in s), sum(b for _, b in s)))
+    lo, hi = np.percentile(vals, [2.5, 97.5])
+    return f"{len(sel)} cells, fixed {fx} broken {br}, {lor(fx, br):+.2f} [{lo:+.2f}, {hi:+.2f}]"
+
+  print("[bandlor] log(fixed/broken) by baseline band, cells under the truncation flag "
+        "(a constant log-odds effect is flat across bands)")
+  rng = np.random.default_rng(7)
+  res = {}
+  for _ in range(400):
+    acc = {}
+    for kind, _, _, x, y, _ in cells:
+      ok = ~np.isnan(x) & ~np.isnan(y)
+      x, y = x[ok], y[ok]
+      p = rng.permutation(len(x))
+      h1, h2 = p[: len(x) // 2], p[len(x) // 2:]
+      s = acc.setdefault((kind, band(x[h1].mean())), [0, 0])
+      fx, br = fixed_broken(x[h2], y[h2])
+      s[0], s[1] = s[0] + fx, s[1] + br
+    for key, (fx, br) in acc.items():
+      res.setdefault(key, []).append(lor(fx, br))
+  print("  split half (band on half the graphs, ratio on the other; mean over 400 splits):")
+  for kind in ("carrying", "side", "filler"):
+    print(f"    {kind}: " + ", ".join(
+        f"{lo:.2f}-{min(hi, 1):.2f} {np.mean(res[(kind, k)]):+.2f}"
+        for k, (lo, hi) in enumerate(apw.BANDS) if (kind, k) in res))
+  top = [c for c in cells if c[0] == "carrying" and c[5] >= 0.75]
+  print("  answer-carrying cells with a no-primer correct share of 0.75 or more, by arm:")
+  for arm in ARMS:
+    print(f"    {arm}: {pooled([c for c in top if c[1] == arm])}")
+  print(f"    the other three arms: {pooled([c for c in top if c[1] != 'qwen3-4b'])}")
+  print("  the same cells by finer band, so arms are compared at a matched baseline:")
+  for lo, hi in ((0.75, 0.90), (0.90, 0.97), (0.97, 1.01)):
+    sub = [c for c in top if lo <= c[5] < hi]
+    for arm in ARMS:
+      if any(c[1] == arm for c in sub):
+        print(f"    {lo:.2f}-{min(hi, 1):.2f} {arm}: {pooled([c for c in sub if c[1] == arm])}")
+  print("  by band on the full cell, side information | filler:")
+  for k, (lo, hi) in enumerate(apw.BANDS):
+    s = [c for c in cells if c[0] == "side" and band(c[5]) == k]
+    fl = [c for c in cells if c[0] == "filler" and band(c[5]) == k]
+    print(f"    {lo:.2f}-{min(hi, 1):.2f}: {pooled(s)} | {pooled(fl)}")
+
+
+SPLIT_ROUTES = ["retrieve", "assert", "enumerate", "truncated"]
+
+
+def split(ra, rb, ca, cb):
+  """A paired node_degree effect in points, split two ways that each sum to it:
+  by the primer response's route, share_r(primer) x (acc_r(primer) - acc(none)),
+  and by whether a pair's route changed (switch) or not (stay)."""
+  d = cb.astype(float) - ca
+  out = {"total": 100 * d.mean(), "switch": 100 * d[ra != rb].sum() / len(d),
+         "stay": 100 * d[ra == rb].sum() / len(d)}
+  for r in SPLIT_ROUTES:
+    on = rb == r
+    out[r] = 100 * on.mean() * (cb[on].mean() - ca.mean()) if on.any() else 0.0
+  return out
+
+
+def route_split(f):
+  """Does a primer that states the degree act by changing the procedure? Routes as
+  in [route]; a truncated response is its own route (R1). Intervals for the two
+  arms §4 describes."""
+  nd = f[(f.task == "node_degree") & f.condition.isin(["none", "degree", "all"])].copy()
+  text = {}
+  for arm in ARMS:
+    for (i, c), r in load_runs(f"data/runs/{arm}.densfull40*.shard*.jsonl",
+                               tasks={"node_degree"}, conds={"none", "degree", "all"}).items():
+      text[(arm, i, c)] = r["response"]
+  nd["route"] = ["truncated" if hc else route(text[(a, i, c)], int(t)) for a, i, c, t, hc in
+                 zip(nd.arm, nd.instance_id, nd.condition, nd.target_id, nd.hit_cap)]
+  print("[routesplit] node_degree, primer against none on the same graphs (points): the "
+        "change over pairs whose route changed (switch) or not (stay), and each primer "
+        "route's share x (its accuracy - accuracy without a primer)")
+  for arm in ARMS:
+    for c in ["degree", "all"]:
+      for label, dens in (("p<=.50", DENS4), ("all seven", DENS4 + DENSHI)):
+        j = pairs(nd, arm, "node_degree", "none", c, dens)
+        cols = (j.route_a.to_numpy(), j.route_b.to_numpy(),
+                j.correct_a.to_numpy(), j.correct_b.to_numpy())
+        s = split(*cols)
+        ci = {}
+        if c == "degree" and arm in ("qwen3-4b", "qwen3-1.7b-think"):
+          groups, rng, vals = boot_positions(j), np.random.default_rng(SEED), []
+          for _ in range(B):
+            idx = np.concatenate([g[rng.integers(0, len(g), len(g))] for g in groups])
+            vals.append(list(split(*(x[idx] for x in cols)).values()))
+          lo, hi = np.percentile(vals, [2.5, 97.5], axis=0)
+          ci = {k: f" [{f1(lo[n])}, {f1(hi[n])}]" for n, k in enumerate(s)}
+        print(f"  {arm} {c} {label}: " + ", ".join(
+            f"{k} {f1(v)}{ci.get(k, '')}" for k, v in s.items()))
+
+
 def position(f):
   """qwen3-4b retrieval accuracy by where the queried node's line sits in the primer
   (lines are in node order): nodes 0-9 against 10-39, within density."""
@@ -1397,7 +1529,8 @@ def think_diff(j):
   tests at .05 read against the margin EQUIV."""
   stat = lambda s: 100 * (s.correct_b.mean() - s.correct_a.mean())
   lo, hi = boot(j, stat, (5, 95))
-  return stat(j), lo, hi, "equivalent" if -EQUIV < lo and hi < EQUIV else "not"
+  # round-to-6 first, as primers._fmt does: an edge of exactly 3 points can be stored as 2.9999...
+  return stat(j), lo, hi, "equivalent" if -EQUIV < round(lo, 6) and round(hi, 6) < EQUIV else "not"
 
 
 def vs_think_equiv(f):
@@ -1530,6 +1663,8 @@ def main():
   copy_test(f)
   detectability(f)
   crossfit(f, bars)
+  band_logodds(f, bars)
+  route_split(f)
   if args.csv_dir:
     figure_data(f, bars, args.csv_dir)
 

@@ -233,7 +233,8 @@ test-split rows.
 - `c` → Yes/No lookup for `cycle_check`
 - `max degree + 1 = n` for `node_count`
 - density estimators from mean clustering or mean RWSE, for `edge_existence`
-- stationary inversion `d_i ≈ 2m · RWSE_k` for `node_degree`
+- a least-squares fit of `d_i` on `2m · RWSE_2` and `2m · RWSE_3` for `node_degree`
+  (`RWSE_2` is the mean of `1/d_j` over the neighbours, so only `RWSE_3` tracks `d_i`)
 
 Why the split is not pedantry, measured on the `cycle_check` lookup:
 

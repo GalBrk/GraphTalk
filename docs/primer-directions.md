@@ -13,6 +13,7 @@ here is checked against the two outputs below by `tests/test_results_docs.py`;
 the main results are in [`results/n40-sweep.md`](results/n40-sweep.md).
 
 Source: `outputs/n40-sweep/directions_validation.txt`
+Source: `outputs/n40-sweep/blind_bars.txt`
 Source: `outputs/n40-sweep/primer_directions.txt`, printed by
 `scripts/primer_directions.py`, which reuses `scripts/response_patterns.py`
 (loading, `reports_conflict`, the degree tables) and `scripts/primer_findings.py`
@@ -224,21 +225,31 @@ than for low ones, under a primer that shows the value, against `none`?
 How far do the printed rwse or clustering values pin a node's degree, and does
 the primer's `node_degree` effect follow that across the seven densities? The
 measure is the gain over guessing the graph's most common degree: 0 = adds
-nothing, 1 = pins every degree.
+nothing, 1 = pins every degree. It works within one graph: each node gets the
+most common degree among the nodes that print the same value in that graph, so
+a value printed by one node only counts as pinned. It measures how finely the
+values separate a graph's nodes, not what a reader without the graph recovers.
 
-- rwse pins degree well only in sparse graphs: gain 0.79 [pddensity] at p = .10,
+- rwse separates nodes well only in sparse graphs: gain 0.79 [pddensity] at p = .10,
   0.16 [pddensity] at p = .50. Clustering: 0.63 [pddensity] at p = .20,
-  0.13 [pddensity] at p = .85.
-- The rwse effect does not follow it. At p = .10, where rwse nearly determines the
-  degree, the effect is +3, +6, +0 and −3 points [pddensity] in the four arms, and
+  0.13 [pddensity] at p = .85. At p = .10, 55 [blindunique] per cent of nodes print
+  an rwse pair no other node in their graph prints.
+- Read without the graph, by a lookup from printed value to degree fit on 1,000
+  other graphs per density (`scripts/blind_bars.py`), rwse gives the queried
+  node's degree on 41.0 [blindbar] per cent of prompts at p = .10 and clustering
+  on 54.0 [blindbar] at p = .20, against 17.0 [blindbar] and 16.0 [blindbar] from
+  the majority answer.
+- The rwse effect does not follow the gain. At p = .10, where rwse separates
+  nodes best, the effect is +3, +6, +0 and −3 points [pddensity] in the four arms, and
   no arm's rank correlation over the seven densities is significant (1.7B-T
   rho +0.64 [pddensity], p = 0.12 [pddensity]).
 - Clustering: 1.7B-T's effect does follow the gain (rho +0.85 [pddensity],
   p = 0.016 [pddensity]): small gains at low density, losses at p ≥ .65. Plain
   4B's goes the other way, growing with density to +18 [pddensity] at p = .85
   while the gain falls.
-- **What it tells us.** The models do not turn rwse into a degree even where it
-  would give it; plain 4B's high-density clustering gain (n40-sweep §7) is not
+- **What it tells us.** The models do not turn rwse into a degree even in sparse
+  graphs, where the printed values give a reader without the graph part of the
+  answer; plain 4B's high-density clustering gain (n40-sweep §7) is not
   explained by what the feature reveals.
 
 ## B8. Which nodes a primer helps — `[pdnode]`
