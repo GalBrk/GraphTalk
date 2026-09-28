@@ -1,6 +1,7 @@
 # The 40-node sweep
 
 Source: `outputs/n40-sweep/primer_findings.txt`
+Source: `outputs/n40-sweep/blind_bars.txt` (`scripts/blind_bars.py`)
 
 The main experiment. Runs:
 `data/runs/{qwen3-1.7b,qwen3-1.7b-think,qwen3-4b,qwen3-4b-think}.{densfull40,densfull40hi}.shard*.jsonl`,
@@ -75,6 +76,18 @@ scored.
   and .85, even when scored on the graphs it was fitted on: 38.0 [rwsefit]
   against 62.3 [rwsefit] at p = .65, and 12.0 [rwsefit] against 88.0 [rwsefit]
   at p = .85.
+- A stronger graph-blind reader leaves `clustering` and `rwse` as side
+  information. A lookup from the printed values to the answer, fit on 1,000
+  generated graphs per density and kept where it beats the majority answer on
+  300 held-out ones, reads the same 2800 [blindcheck] saved primers (all
+  re-rendered byte for byte). Averaged over the seven densities it scores
+  25.6 [blindbar] (`clustering`) and 26.0 [blindbar] (`rwse`) on `node_degree`,
+  against 15.9 [blindbar] from the majority answer, and 73.9 [blindbar] and
+  75.0 [blindbar] on `edge_existence`, against 73.7 [blindbar]. Only sparse
+  graphs give part of the degree away: `clustering` at p = .10 and .20,
+  51.0 [blindbar] and 54.0 [blindbar] against 17.0 [blindbar] and
+  16.0 [blindbar]; `rwse` at p = .10, 41.0 [blindbar]. There the models already
+  count well without a primer.
 - The saved prompts confirm the leakage: reading the queried node's degree
   sentence gives the gold `node_degree` answer on 700/700 [leak] prompts, and
   half the sum of the stated degrees gives the gold `edge_count` on
@@ -218,6 +231,13 @@ is −7.0 [flip], −3.0 [flip], −7.0 [flip], −15.0 [flip], −37.0 [flip],
 - Enumeration is counted when five or more neighbours are listed one per line;
   none of the 245 [route] responses at p ≤ .20 classed as asserting lists every
   neighbour, one per line, of a node with fewer than five.
+- **Where the loss comes from.** Pairing each graph's response under `degree`
+  with its response without a primer, over p ≤ .50, the −6.5 [routesplit]
+  points split into −6.0 [routesplit] (95% from −8.8 [routesplit] to
+  −3.5 [routesplit]) on pairs whose route changed and −0.5 [routesplit] on pairs
+  whose route did not. By the route taken under `degree`, retrieving costs
+  −4.1 [routesplit] and restating the neighbour line −2.3 [routesplit]: the loss
+  is the change of procedure, not worse enumeration.
 - Some wrong retrievals are copy errors: of 57 [copyerr], 42% [copyerr] are
   within 1 of the gold and 68% [copyerr] within 3, and 17 [copyerr] equal the
   degree stated in the sentence just before or after the queried node's in the
@@ -244,7 +264,11 @@ and 69% [verify] of them. Over all seven densities the effect is
 +16.0 [verify] (truncated +6.4 [verify]); at p ≥ .65, +25.7 [verify]
 (truncated +9.0 [verify]). `degree` raises its truncation from 8/700 [trunc]
 to 53/700 [trunc] responses, 96% [trunc] of which report a conflict before
-the budget runs out.
+the budget runs out. Its gain comes without a change of route: at p ≤ .50,
++8.8 [routesplit] splits into +8.5 [routesplit] (95% from +5.2 [routesplit] to
++12.0 [routesplit]) on pairs that kept their route and +0.2 [routesplit] on
+pairs that changed it, net of −4.0 [routesplit] from responses that run out of
+budget; over all seven densities, +15.0 [routesplit] of +16.0 [routesplit].
 
 **Plain Qwen3-1.7B.** `degree` helps at p = .20, +10 [plain17] from a no-primer
 correct share of 80 [plain17], and at p = .35, +18 [plain17] from 41 [plain17];
@@ -273,6 +297,26 @@ correct share:
   0.05 (`rwse`, `degree`, `all`), gives r = −0.248 [lcross] between baseline
   and effect over 168 [lcross] points (p = 0.0012 [lcross]; the points come two
   per cell and cells share their baselines, so they are not independent).
+- **On a scale that does not compress near 0 or 1.** A constant log-odds effect
+  gives the same log ratio of fixed to broken answers at every baseline. Binned
+  on half the graphs and measured on the other half, answer-carrying primers
+  give +1.05 [bandlor], +0.69 [bandlor] and +0.89 [bandlor] in the three lower
+  bands, so the peak in points between 0.25 and 0.75 comes from the scale. The
+  loss above it is plain Qwen3-4B's alone: over answer-carrying cells with a
+  no-primer correct share of 0.75 or more, it fixes 24 [bandlor] answers and
+  breaks 125 [bandlor], a log ratio of −1.63 [bandlor] (95% from
+  −2.22 [bandlor] to −1.18 [bandlor]), against +0.77 [bandlor] (from
+  +0.37 [bandlor] to +1.17 [bandlor]) for the other three arms; 4B-thinking
+  alone gives +0.37 [bandlor] (from −0.27 [bandlor] to +1.02 [bandlor]).
+  Stating the answer hurts plain Qwen3-4B where it is already reliable and helps
+  the other arms, and not only because plain 4B sits nearer the ceiling: at a
+  matched correct share of 0.75–0.90, plain 4B gives −1.16 [bandlor] (from
+  −1.84 [bandlor] to −0.63 [bandlor]) where plain 1.7B gives +1.21 [bandlor]
+  (from +0.38 [bandlor] to +2.29 [bandlor]), two cells each. Only the 4B arms
+  have cells at 0.97 or more, where plain 4B gives −2.45 [bandlor] and
+  4B-thinking −0.38 [bandlor] (from −2.94 [bandlor] to +0.65 [bandlor]).
+  Side information at a correct share of 0.90 or more loses as `filler` does:
+  −0.37 [bandlor] and −0.36 [bandlor].
 - The result does not depend on the flag: keeping cells below 10% truncation
   gives +15.4 [bandsens] and +12.5 [bandsens]; below 50%, +16.1 [bandsens] and
   +12.9 [bandsens]. Only adding the cells where half or more of the responses

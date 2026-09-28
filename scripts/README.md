@@ -56,6 +56,7 @@ gold answer against the runs, so only `density40`'s prompt file is committed.
 |---|---|---|
 | `build_raw_frame.py` | `frame.csv`: one row per response, 84,000 rows | every analysis below |
 | `primer_findings.py` | `primer_findings.txt`, `primer_cells.csv`, `edge_existence_collapse.csv`, `node_degree_routes.csv` | [n40-sweep.md](../docs/results/n40-sweep.md), the paper |
+| `blind_bars.py` | `blind_bars.txt`: a learned graph-blind bar for `clustering` and `rwse` | [n40-sweep.md](../docs/results/n40-sweep.md) §2, [primer-directions.md](../docs/primer-directions.md) B7 |
 | `density_followups.py` | `outputs/density-followups/density_followups.txt` | [density-followups.md](../docs/results/density-followups.md), the paper |
 | `check_cycle_claims.py` | `check_cycle_claims.txt`, `cycle_claims.csv`, `response_claims.csv` | [investigate_connections_and_cycles.md](../docs/investigate_connections_and_cycles.md), the paper |
 | `primer_robustness.py` | `primer_robustness.txt`, `robustness_responses.csv` | [primer-robustness.md](../docs/primer-robustness.md), the paper |
@@ -86,6 +87,7 @@ diff` should then show no change except lines that print a path.
 export PYTHONPATH=. PYTHONUTF8=1
 python scripts/build_raw_frame.py
 python scripts/primer_findings.py --csv-dir outputs/n40-sweep > outputs/n40-sweep/primer_findings.txt
+python scripts/blind_bars.py > outputs/n40-sweep/blind_bars.txt
 python scripts/response_patterns.py --csv-dir outputs/n40-sweep > outputs/n40-sweep/response_patterns.txt
 python scripts/check_cycle_claims.py --csv-dir outputs/n40-sweep > outputs/n40-sweep/check_cycle_claims.txt
 python scripts/primer_directions.py > outputs/n40-sweep/primer_directions.txt

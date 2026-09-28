@@ -26,35 +26,37 @@
 \raggedbottom
 \maketitle
 \begin{abstract}
-Graph models gain from structural encodings such as node degree and random-walk return probabilities. We ask whether a frozen language model reading a graph as text gains when the same statistics are written as sentences in a \emph{primer} before GraphQA's incident encoding. In paired tests at several edge densities, for two model sizes with thinking off and on, we compare each primer with no primer, a structure-free filler and the model's thinking mode. Mostly, statistics do not improve how the model computes; they help by stating the answer. Stated degrees raise node-degree accuracy by $7.5$ to $12.2$ points where a model counts unreliably, and cost the one model that already counts correctly $6.5$ to $8.0$. Other statistics have mostly small, model-dependent effects and often change the same answers as the filler. They narrow the gap to thinking without closing it, except one sentence that makes the model restate the queried node's line, matching thinking on one task. With thinking on, models check stated values against their own count, and much of a primer's effect is on finishing within the budget. Accuracy can also mislead: without thinking, stated degrees can lower cycle-detection accuracy yet raise the share of validly argued answers. % [main] [overlap] [vsthink] [churnwhy] [ccvalid]
+Do structural encodings that help graph neural networks help a language model read a graph as text? We state degree, clustering and random-walk returns as a primer before GraphQA's incident encoding, and test Qwen3-1.7B and Qwen3-4B, thinking off and on, on paired graphs. Stated degrees give the clearest effects, in both directions: node-degree accuracy rises by $7.5$--$12.2$ points where the model's own count is unreliable and falls by $6.5$--$8.0$ where it is reliable. Clustering and RWSE state no answer; their effects are mostly small, change sign with task and model, and never significantly improve reading the queried node's edges. A near-constant component-count sentence does for plain Qwen3-4B, which then restates that node's line far more often. Checked against the graph, correct cycle answers can rest on nonexistent edges. Structural statistics help small models mainly by stating the answer, not by improving how they compute it.\footnote{\url{https://github.com/GalBrk/GraphTalk}} % [main] [joint] [comp] [compproc] [ccanswer]
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
-Structural encodings, such as node degree and random-walk return probabilities, are a standard ingredient of graph neural networks and graph Transformers \citep{dwivedi2022graph,rampasek2022recipe}. A language model that reads a graph as text must instead recover such quantities itself, and its accuracy depends on how the graph is written \citep{fatemi2023talklikeagraph,wang2023nlgraph}. Statistics are cheap to precompute, so an obvious aid is to state them in the prompt. We ask: \emph{when a frozen language model reads a textual graph, do explicit structural statistics improve execution of graph queries?} By \emph{execution} we mean computing the answer from the graph's edges, not copying it from elsewhere in the prompt.
+Degree and random-walk encodings help graph models \citep{dwivedi2022graph,rampasek2022recipe}. A language model reading a textual graph must instead recover such quantities itself, with accuracy sensitive to the encoding \citep{fatemi2023talklikeagraph,wang2023nlgraph}. We ask: \emph{when a frozen language model reads a textual graph, do explicit structural statistics improve execution of graph queries?} Here execution means deriving an answer from edges rather than copying it from a primer (\S\ref{sec:method}).
 
-A primer can raise accuracy by stating the answer, by adding information that narrows it, or by changing how the model reads the graph; only the last is better execution. In an Erd\H{o}s-R\'enyi graph every edge is independent of the others, so beyond a node's degree, clustering and return probabilities carry almost no information about GraphQA's answers (\S\ref{sec:states}). A gain from them therefore reflects how the model reads the prompt, not new information. We measure each primer's effect in both modes against three references: no primer; a structure-free \emph{filler}, for what added text does on its own; and, for the plain mode, the same model thinking without a primer. The last asks whether a preamble can stand in for reasoning that costs $6.2$-$17.1$ times the output tokens on node degree. The degree primer, which states the answer to node-degree and edge-count queries, is a positive control. % [ddgap]
+A primer can supply an answer, offer a clue, or alter how graph text is used. In an independent-edge graph every edge is independent of the others, so clustering and return probabilities carry little information about GraphQA's answers beyond what they reveal of degrees and density (\S\ref{sec:states}); a gain from them mostly reflects how the model reads the prompt. We compare it with a graph-blind solver, a structure-free \emph{filler}, and the same model's thinking mode, which for Qwen3-1.7B uses $6.2$--$17.1$ times as many output tokens on node degree. Degree, which supplies the queried value and the terms for edge count, is the positive control. % [ddgap]
 
-Specifically: does a primer that states the answer help, and where? Do statistics that do not state it help beyond what any added text does? Can a primer bring a model's plain mode level with its thinking mode? And do the responses show the primer being used? In short, explicit statistics mostly do not improve execution.
-
-\paragraph{Contributions.} (i) A stated answer substitutes for execution: it helps where the model's own count is unreliable and hurts where it is reliable (\S\ref{sec:readoff}). (ii) Measured against a graph-blind solver and a structure-free filler, other statistics have mostly small effects whose sign depends on the model (\S\ref{sec:side}). (iii) One sentence that changes the procedure matches thinking, on one task (\S\ref{sec:vsthink}). (iv) Responses show stated values being used but not other statistics, and correct answers can rest on cycles the graph lacks (\S\ref{sec:reston}).
+\paragraph{Contributions.} (i) A stated answer substitutes for execution: it helps where the model's own count is unreliable and hurts plain Qwen3-4B where its count is reliable, while still helping the other arms at matched accuracy (\S\ref{sec:readoff}). (ii) Other statistics have mostly small effects whose sign depends on the model (\S\ref{sec:side}). (iii) A near-constant sentence that changes plain Qwen3-4B's procedure matches thinking on one task, and filler moves the same procedure the other way (\S\ref{sec:side}, \S\ref{sec:vsthink}). (iv) Responses show stated values being used but not other statistics (\S\ref{sec:reston}).
 
 \section{Related Work}
 \label{sec:related}
-\paragraph{Graphs as text.} GraphQA \citep{fatemi2023talklikeagraph} and NLGraph \citep{wang2023nlgraph} show that LLM accuracy on graph queries depends on encoding, task and graph structure, and NLGraph's build-a-graph and algorithmic prompts change the procedure by instruction. We keep GraphQA's tasks and encoding and change only a preamble.
+\paragraph{Graphs as text.} GraphQA \citep{fatemi2023talklikeagraph} and NLGraph \citep{wang2023nlgraph} show that accuracy depends on encoding, task and graph structure; NLGraph's build-a-graph prompts also change the procedure by instruction. Learned structural tokens raise GraphQA accuracy \citep{perozzi2024letyourgraph}, and prompts have carried motif descriptions \citep{das2024modality}, but structure written into a prompt tends to be read as context rather than as topology \citep{huang2024can}. We keep GraphQA's encoding and tasks and add only a preamble of graph-learning statistics.
 
-\paragraph{Structure for LLMs.} Structure can be passed as learned soft tokens \citep{perozzi2024letyourgraph} or as motif descriptions, which help on some tasks \citep{das2024modality}. Structural descriptions in a prompt, however, need not be read as topology \citep{huang2024can}. We state the encodings of graph learning as sentences to a frozen model and control for what they state.
-
-\paragraph{Controls and faithfulness.} Added or irrelevant text changes LLM answers \citep{shi2023distracted,levy2024sametask}, as does formatting \citep{sclar2024quantifying}. Partial-input baselines expose answers a dataset gives away \citep{feng2019misleading}, as our graph-blind solver does for primers. A right answer can rest on a wrong route \citep{geirhos2020shortcut}, and a model's stated reasoning need not reflect the computation behind it \citep{turpin2023unfaithful}, so we treat responses as claims to check.
+\paragraph{Controls and responses.} Irrelevant text, input length and formatting change answers \citep{shi2023distracted,levy2024sametask,sclar2024quantifying}, so we compare against a structure-free filler. Explanations need not reflect the computation behind them \citep{turpin2023unfaithful}, so we check every graph claim a response makes against the graph.
 
 \section{Method}
 \label{sec:method}
+\paragraph{Models and graphs.} Qwen3-1.7B and Qwen3-4B \citep{qwen2025qwen3}, each with thinking off and on, make four \emph{arms} (1.7P, 1.7T, 4P, 4T in tables). Decoding is zero-shot and greedy, one response per prompt (budgets in Appendix~\ref{app:audit}). A pilot on the published GraphQA graphs with Gemma~4 \citep{gemma4} and Qwen3-8B/14B left most arms near ceiling (Appendix~\ref{app:pilot}), and even at $40$ nodes Qwen3-8B answers nearly every node-degree query correctly ($96.5$--$99.8\%$). We therefore use harder graphs and smaller models, so that accuracy without a primer leaves room to measure a change in either direction. Our independent-edge $G(n,p)$ graphs \citep{gilbert1959random} have $n=40$ at four edge densities up to $p=.50$ (the \emph{main sweep}) and, for node degree and edge existence, three more up to $p=.85$. Every condition and arm sees the same $100$ graphs per task and density, so every comparison is paired. % [setup] [fixdeg8]
+
 \begin{figure}[!t]
 \centering
 \includegraphics[width=0.82\columnwidth]{fig_primer_usage.pdf}
 \caption{How a primer is used. Top: the seven conditions, each with its sentence about node~2 of a five-node example (the study's graphs have $40$ nodes); $\bigstar$ marks the two that state a node-degree answer. Bottom: the prompt the model reads, one primer followed by GraphQA's incident encoding and the question.}
 \label{fig:prompt}
 \end{figure}
+
+\paragraph{Tasks.} GraphQA's six tasks in its incident encoding (Figure~\ref{fig:prompt}). Four have answers that vary: node degree, connected nodes (the queried node's neighbors, exact set match), edge count and edge existence. Node count (always $40$) and cycle check (always yes) have constant answers here (Appendix~\ref{app:more}); cycle check serves only to ask what correct answers rest on. % [setup]
+
+\paragraph{Primers and controls.} Before the encoding we place no primer, one sentence per node giving its degree, local clustering coefficient or return probabilities after 2 and 3 steps (a truncated RWSE; \citealp{dwivedi2022graph}), or \emph{all} three (Appendix~\ref{app:audit}). Two diagnostics are a short sentence giving the number of connected components, and a filler that names every node but gives no graph statistic. The filler is about as long as clustering, longer than degree and shorter than RWSE and all three (Appendix Table~\ref{tab:primerlength}). The graph-blind solver answers from primer text alone.
 
 \begin{table*}[t]
 \centering\scriptsize
@@ -84,117 +86,116 @@ Edge exists & 1.7P & 70.50 & $+4.0^{\mathrm{f}}$ & $+3.8^{\mathrm{f}}$ & $+5.0^{
  & 4T & 99.75 & $+0.0$ & $-0.8$ & $-1.2$ & $-1.0$ & $-0.5$ & $+0.0$\\ % [main] [bars]
 \bottomrule
 \end{tabular}
-\caption{Primary result: correct share without a primer (\% of all prompts) and the paired change under each primer (points), on the same $400$ graphs per row ($p\leq.50$). Shaded: the primer states the answer. Bold: $q<.05$ against no primer (BH within arm, task and control); $^{\mathrm{f}}$: $q<.05$ against filler; $\dagger$: at least $15\%$ truncation on either side (unmarked). Intervals and the constant tasks: Table~\ref{tab:full}; truncation: Table~\ref{tab:truncmatrix}; balanced accuracy: Table~\ref{tab:ee}. P/T: plain/thinking.} % [setup] [main] [bars]
+\caption{Primary result: correct share without a primer (\% of all prompts) and paired change under each primer (points), on the same $400$ graphs per row ($p\leq.50$). Shaded: the primer supplies the degree answer or every term needed to compute edge count. Bold: $q<.05$ against no primer (BH within arm, task and control); $^{\mathrm{f}}$: $q<.05$ against filler; $\dagger$: at least $15\%$ truncation on either side, and no significance marks. Intervals and constant-answer tasks: Table~\ref{tab:full}; truncation: Table~\ref{tab:truncmatrix}; balanced accuracy: Table~\ref{tab:ee}. P/T: plain/thinking.} % [setup] [main] [bars]
 \label{tab:matrix}
 \end{table*}
 
-\paragraph{Models and graphs.} Qwen3-1.7B and Qwen3-4B \citep{qwen2025qwen3}, each with thinking off (plain, P) and on (T), make four \emph{arms}; decoding is zero-shot and greedy, one response per prompt (budgets in Appendix~\ref{app:audit}). A pilot on the published GraphQA graphs with Gemma~4 \citep{gemma4} and Qwen3-8B/14B left most arms near ceiling (Appendix~\ref{app:pilot}), and even at $40$ nodes Qwen3-8B answers $96.5$-$99.8\%$ of node-degree queries correctly. We therefore use harder graphs and smaller models, so that accuracy without a primer leaves room to measure a change in either direction. Our graphs are Erd\H{o}s-R\'enyi $G(n,p)$ \citep{erdosrenyi1959random} with $n=40$ at four edge densities up to $p=.50$ (the \emph{main sweep}) and, for node degree and edge existence, three more up to $p=.85$. Every condition and arm sees the same $100$ graphs per task and density, so every comparison is paired. % [setup] [fixdeg8]
+\paragraph{Outcomes and statistics.} Each response is \emph{correct}, \emph{wrong} or \emph{truncated} (it used its whole budget); shares use all responses, and an effect is the paired change in the correct share, in points. Cells with at least $15\%$ truncation on either side are flagged ($\dagger$) and left out of pooled summaries. Edge existence is also scored by balanced accuracy, because the share of queried pairs that are edges tracks the edge density ($10\%$ to $85\%$). % [goldshare]
+The primary analysis is Table~\ref{tab:matrix}: each primer against no primer and against filler on the same $400$ main-sweep graphs. It uses exact McNemar tests \citep{mcnemar1947note}, bootstrap intervals over graphs and Benjamini--Hochberg correction \citep{benjaminihochberg1995controlling} within each (arm, task, control) family; $q<.05$ is significant. Plain arms against thinking (Table~\ref{tab:vsthink}) use the same tests on the same graphs, and we call them equivalent when the $90\%$ interval of their difference lies within $\pm3$ points, about the 4B arms' median detectable gain. Analyses of mechanism are secondary and name their own test. With a median detectable gain of $3.2$ to $5.7$ points, a non-significant effect is unresolved, not zero (Appendix~\ref{app:audit}). % [lmde]
 
-\paragraph{Tasks.} GraphQA's six tasks in its incident encoding (Figure~\ref{fig:prompt}). Four have answers that vary: node degree, connected nodes (the queried node's neighbors, exact set match), edge count and edge existence. Two cannot measure reading at $40$ nodes: the encoding's first line lists all $40$ ids and every graph has a cycle, so node count is always $40$ and cycle check always yes (Appendix~\ref{app:more}). Cycle check serves only to ask what correct answers rest on. % [setup]
+\paragraph{Execution.} Node-degree and neighbor-set queries ask about the same node. Our measure of execution is the \emph{joint} share of nodes whose two answers are both correct: a stated degree can fix the first answer but not the second, while reading the node's line correctly gives both.
 
-\paragraph{Primers and controls.} Before the encoding we place no primer, one sentence per node giving its degree, local clustering coefficient or return probabilities after 2 and 3 steps (RWSE; \citealp{dwivedi2022graph}), or \emph{all} three (Appendix~\ref{app:audit}). Two diagnostics follow the same format: a sentence giving the number of connected components, and the filler, which names every node and states no structure. The filler is about as long as the clustering primer, longer than degree and shorter than RWSE and all three (Appendix Table~\ref{tab:primerlength}). The graph-blind solver answers from the primer text alone.
+\paragraph{Response readers.} Rule-based readers record whether a response reads a stated value off (a \emph{look-up}) or lists the neighbors, whether it reports a conflict with the primer, and which cycles and edges it asserts, checked against the graph. The conflict readers agree closely with blind hand labels ($90$--$100\%$ of $226$ items); the others were spot-checked by an LLM under human supervision (Appendix~\ref{app:audit}). % [dvsummary] [dvc1] [dvc3] [dvc4] [dvc5] [dvc6]
 
-\paragraph{Outcomes and statistics.} Each response is \emph{correct}, \emph{wrong} or \emph{truncated} (it used its whole budget); shares use all responses, and an effect is the paired change in the correct share, in points. Cells with at least $15\%$ truncation on either side are flagged ($\dagger$) and left out of pooled summaries. Edge existence is also scored by balanced accuracy, because the share of queried pairs that are edges rises from $10\%$ to $85\%$ with density. % [goldshare]
-The primary analysis is Table~\ref{tab:matrix}: each primer against no primer and against filler on the same $400$ main-sweep graphs. It uses exact McNemar tests \citep{mcnemar1947note}, bootstrap intervals over graphs and Benjamini-Hochberg correction \citep{benjaminihochberg1995controlling} within each (arm, task, control) family; $q<.05$ is significant. Plain arms against thinking (Table~\ref{tab:vsthink}) use the same tests on the same graphs, and we call them equivalent when the $90\%$ interval of their difference lies within $\pm3$ points, about the 4B arms' median detectable gain. Analyses of mechanism are secondary and name their own test. Two limits of these tests matter for reading the results. \emph{Power:} over $400$ pairs the median detectable gain is $3.2$ to $5.7$ points, so a non-significant effect is unresolved, not zero (Appendix~\ref{app:audit}). % [lmde]
-\emph{Noise:} generating the same prompts twice changes the outcome of $5.3\%$, so we compare net paired changes, never counts of changed answers. % [rerun]
-
-\paragraph{Response readers.} Rule-based readers record whether a response reads a stated value off (a \emph{look-up}) or lists the neighbors, whether it reports a conflict with the primer, and which cycles and edges it asserts, checked against the graph. The conflict readers agree with blind hand labels on $90$-$100\%$ of $226$ items; the others were spot-checked by an LLM under human supervision (Appendix~\ref{app:audit}). % [dvsummary] [dvc1] [dvc3] [dvc4] [dvc5] [dvc6]
-
-\paragraph{Follow-ups.} Qwen3-1.7B node degree, plain and thinking, $400$ graphs per density at all seven densities, a fresh seed, and a $20$-$160$-node grid at mean degree $8$ and $16$ (also Qwen3-8B). % [ddplain] [ddrep] [fixdeg17]
+\paragraph{Follow-ups.} Qwen3-1.7B node degree, plain and thinking, $400$ graphs per density at all seven densities, a fresh seed, and a $20$--$160$-node grid at mean degree $8$ and $16$ (also Qwen3-8B). % [ddplain] [ddrep] [fixdeg17]
 
 \section{Results}
 \label{sec:results}
 \subsection{What each primer states}
 \label{sec:states}
-The graph-blind solver answers node degree and edge count perfectly from the degree primer or all three statistics, by reading the queried degree or halving the sum of the stated degrees. Every other primer barely informs it: at most $21.0\%$ on node degree, $10.4\%$ on edge count and $74.6\%$ on edge existence, against $14.4\%$, $3.0\%$ and $73.5\%$ with no primer (Appendix Table~\ref{tab:solver}). The shaded cells of Table~\ref{tab:matrix} are these answer-stating primers; we call every other cell a \emph{side} effect. % [bars]
+The graph-blind solver recovers node degree and edge count perfectly from stated degrees, directly or by halving their sum. Otherwise it gains little over no primer: at most $21.0\%$ on degree and $10.4\%$ on edge count, against $14.4\%$ and $3.0\%$ (Appendix Table~\ref{tab:solver}). These scores measure its rules, not every possible use of the text \citep{feng2019misleading}: in sparse graphs the rounded values partly reveal a node's degree, and a lookup from printed value to degree, fit on other graphs, gets $54.0\%$ from clustering at $p=.20$ and $41.0\%$ from RWSE at $p=.10$, against $16.0\%$ and $17.0\%$ for the majority answer. Averaged over densities the lookup is far weaker, so neither statistic states the degree. Unshaded cells in Table~\ref{tab:matrix} are \emph{side} effects. % [bars] [blindbar]
+Stated answers give the largest gains; other statistics and the controls move cells in both directions by similar amounts (Figure~\ref{fig:effects}). % [main]
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_effects.pdf}
+\caption{Every unflagged cell of Table~\ref{tab:matrix}, one dot per arm, task and primer, grouped by what the primer states. \emph{States the answer}: degree and all three statistics on node degree and edge count; \emph{Controls}: components and filler. Filled: $q<.05$ against no primer.} % [main]
+\label{fig:effects}
+\end{figure}
 
 \subsection{Stated answers are read off}
 \label{sec:readoff}
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{fig_headroom.pdf}
-\caption{The degree primer's effect on node degree against the no-primer correct share, per arm and density. Hollow: plain arm at $p\geq.65$ (smaller budget).} % [flip] [bands]
-\label{fig:headroom}
-\end{figure}
+The degree primer raises node-degree accuracy for plain and thinking 1.7B by $7.5$ and $8.8$ points and lowers it by $6.5$ for plain 4B, which already counts correctly. % [main]
+Its gains are largest at intermediate unaided accuracy; at high unaided accuracy it can be a loss (Appendix Figure~\ref{fig:headroom}). % [bands]
+On a log-odds scale, which does not compress near ceiling, the loss is plain 4B's alone: at matched unaided accuracy, stated answers break more of its answers than they fix and fix more of plain 1.7B's than they break. % [bandlor]
+The same pattern holds within one model. The degree primer hurts plain 4B on the lowest-degree queried nodes in each graph and helps on the highest-degree ones, which have the most neighbors to count ($-11.8$ and $+10.6$ points). % [pdnode]
 
-The degree primer raises node-degree accuracy for plain and thinking Qwen3-1.7B by $7.5$ and $8.8$ points and lowers it by $6.5$ for plain Qwen3-4B, which already counts correctly. % [main]
-The gain is largest where a model is right about half the time and becomes a loss where it is right most of the time (Figure~\ref{fig:headroom}). % [plain17]
-The same pattern holds within one model. The degree primer costs plain Qwen3-4B $11.8$ points on the queried nodes with the lowest degrees in their graph, and gains $10.6$ on those with the highest, which have the most neighbors to count. % [pdnode]
+Reading a value off is itself fallible. Across all seven densities, where the answer is stated, plain 1.7B gets it right less than half the time ($43\%$). Plain 4B stops listing the node's neighbors and reads the value off in most responses at $p=.50$ ($62\%$). A third of its wrong look-ups copy the degree printed one sentence away, more often than chance predicts (Appendix~\ref{app:detail}). % [recover] [route] [copyerr]
+The degree primer's effect runs through this change of procedure: plain 4B's loss comes almost wholly from graphs on which its route changed, and thinking 1.7B's gain from graphs on which it did not (\S\ref{sec:thinkmode}). % [routesplit]
 
-Reading a value off is itself fallible. Across all seven densities, where the answer is stated, plain Qwen3-1.7B gets it right only $43\%$ of the time. Plain Qwen3-4B stops listing the node's neighbors and reads the value off in $62\%$ of responses at $p=.50$. A third of its wrong look-ups copy the degree printed one sentence away, more often than chance predicts (Appendix~\ref{app:detail}). % [recover] [route] [copyerr]
-
-\subsection{Side statistics have mostly small, model-dependent effects}
+\subsection{Side effects include gains and harms}
 \label{sec:side}
-Filler alone changes the outcome of $6.2$-$18.6\%$ of questions per arm, largely the same questions the primers change. Part of this is generation noise, though questions that flip on an identical rerun carry only a minority of each condition's changes (Appendix~\ref{app:detail}). % [churn] [rerunflip]
+Filler alone changes up to a fifth of the outcomes in an arm, often on questions primers also change. Identical-prompt rerun flips account for only a minority of each condition's changes (Appendix~\ref{app:detail}).
 
-Significant side effects differ in sign across statistics and models. On plain Qwen3-4B's edge existence, clustering raises balanced accuracy and RWSE lowers it ($q\leq.018$). All three statistics raise plain Qwen3-1.7B's by $7.8$ points but lower plain Qwen3-4B's by $6.5$ (Appendix Table~\ref{tab:ee}). % [eemain]
-The largest side gain without the truncation flag, $+9.2$ on plain Qwen3-4B's neighbor sets, comes from the component sentence, which is the same for every connected graph. With it the model restates the queried node's line in nearly every response ($98.5\%$, against $63.0\%$): a change of procedure without information. % [main] [compproc]
-Where filler costs accuracy, clustering and RWSE avoid most of that cost, scoring $12.5$ to $20.8$ points above it. At high density, where they barely vary, their gains are best read as presentation effects (Appendix~\ref{app:more}). % [main]
+Side effects differ in sign. On plain 4B edge existence, clustering raises balanced accuracy and RWSE lowers it ($+3.0$ and $-6.5$ points); all three together raise plain 1.7B's but lower plain 4B's (all $q<.05$; Appendix Table~\ref{tab:ee}). % [eemain]
+RWSE and all each cost plain 4B $10.0$ points on edge existence. On its dense degree queries, degree alone gains $9.3$, but all loses $21.3$ on the same graphs (Appendix~\ref{app:detail}). % [main] [clusthi]
+The largest unflagged gain in Table~\ref{tab:matrix} from a primer without degrees, $+9.2$ on plain 4B neighbor sets, comes from the component sentence. All sampled graphs from $p=.20$ are connected, so the sentence is identical across them. With it the model almost always restates the queried node's line, against about two thirds of responses with no primer and a fifth with filler ($98.5\%$, $63.0\%$, $21.8\%$). Filler moves restatement the other way and costs the same cell $12.5$ points. % [main] [comp] [compproc]
 
-The clearest mechanism is on edge existence. Plain Qwen3-1.7B's false alarms climb with shared neighbors, from $1.7\%$ of non-edges that share none to $65.9\%$ of those sharing four or more. In $G(n,p)$ shared neighbors say nothing about whether a pair is joined, so the models appear to read two ids on the same lines as adjacency. % [eeshared]
-A statistic changes the stated reason more than the decision: answers claiming a non-edge is an edge fall from $13.7\%$ to at most $4.4\%$, but false alarms fall only from $40.3\%$ to $35.2\%$ under clustering. % [eeclaims]
+The one side effect that replicates, clustering on plain 1.7B's node degree, is small, specific to that model and to low density, and shows little sign of using the stated values (Appendix~\ref{app:pilot}).
 
 \begin{table}[t]
 \centering\scriptsize
-\setlength{\tabcolsep}{2.2pt}
-\begin{tabular}{llrlrrr}
+\setlength{\tabcolsep}{1.9pt}
+\begin{tabular}{llrrrlrr}
 \toprule
-Task & Model & Plain & Best primer & Think. & Left & Cl./RW.\\
+ & & \multicolumn{2}{c}{\% correct} & \multicolumn{4}{c}{Gap to thinking (points)}\\
+\cmidrule(lr){3-4}\cmidrule(lr){5-8}
+Task & Model & Plain & Think. & None & \multicolumn{2}{c}{Best primer} & Cl./RW.\\
 \midrule
-Degree & 1.7B & 60.50 & all 70.75 & 76.25 & $\mathbf{+5.5}$ & $\mathbf{+11.8}$\\ % [vsthink]
- & 4B & 99.25 & components 99.50 & 97.00 & $\mathbf{-2.5}$ & $-1.8$\\ % [vsthink]
+Degree & 1.7B & 60.50 & 76.25 & $\mathbf{+15.8}$ & all & $\mathbf{+5.5}$ & $\mathbf{+11.8}$\\ % [vsthink]
+ & 4B & 99.25 & 97.00 & $-2.2$ & components & $\mathbf{-2.5}$ & $-1.8$\\ % [vsthink]
 \addlinespace[2pt]
-Neighbors & 1.7B & 72.50 & degree 76.00 & 78.75 & $+2.8$ & $\mathbf{+5.0}$\\ % [vsthink]
- & 4B & 86.00 & components 95.25 & 95.50 & $+0.2$ & $\mathbf{+8.5}$\\ % [vsthink]
+Neighbors & 1.7B & 72.50 & 78.75 & $\mathbf{+6.2}$ & degree & $+2.8$ & $\mathbf{+5.0}$\\ % [vsthink]
+ & 4B & 86.00 & 95.50 & $\mathbf{+9.5}$ & components & $+0.2$ & $\mathbf{+8.5}$\\ % [vsthink]
 \addlinespace[2pt]
-Edge count & 1.7B & 1.25 & degree 4.25 & 15.75$^{\dagger}$ & $\mathbf{+11.5}$ & $\mathbf{+15.0}$\\ % [vsthink]
- & 4B & 2.00 & degree 29.25 & 20.00$^{\dagger}$ & $\mathbf{-9.2}$ & $\mathbf{+19.2}$\\ % [vsthink]
+Edge count & 1.7B & 1.25 & 15.75$^{\dagger}$ & $\mathbf{+14.5}$ & degree & $\mathbf{+11.5}$ & $\mathbf{+15.0}$\\ % [vsthink]
+ & 4B & 2.00 & 20.00$^{\dagger}$ & $\mathbf{+18.0}$ & degree & $\mathbf{-9.2}$ & $\mathbf{+19.2}$\\ % [vsthink]
 \addlinespace[2pt]
-Edge exists & 1.7B & 70.50 & all 82.00 & 99.00 & $\mathbf{+17.0}$ & $\mathbf{+23.5}$\\ % [vsthink]
- & 4B & 90.50 & clustering 94.50 & 99.75 & $\mathbf{+5.2}$ & $\mathbf{+5.2}$\\ % [vsthink]
+Edge exists & 1.7B & 70.50 & 99.00 & $\mathbf{+28.5}$ & all & $\mathbf{+17.0}$ & $\mathbf{+23.5}$\\ % [vsthink]
+ & 4B & 90.50 & 99.75 & $\mathbf{+9.2}$ & clustering & $\mathbf{+5.2}$ & $\mathbf{+5.2}$\\ % [vsthink]
 \bottomrule
 \end{tabular}
-\caption{Plain mode against the same model thinking without a primer (\% correct, $p\leq.50$). \emph{Left}: thinking minus the plain arm's best score; \emph{Cl./RW.}: the same for the better of clustering and RWSE. Bold: $q<.05$. Chosen on held-out graphs, the best primer is the same in every row. $\dagger$: thinking truncates on most prompts (Table~\ref{tab:truncmatrix}).} % [vsthink] [vscross]
+\caption{Can a primer close the plain mode's gap to the same model thinking without a primer? \emph{Plain}, \emph{Think.}: correct share without a primer ($p\leq.50$, same graphs). \emph{Gap}: thinking minus plain, in points, first with no primer (\emph{None}), then under the plain model's best primer and under the better of clustering and RWSE (\emph{Cl./RW.}). A gap near $0$ is closed; a negative gap puts the plain mode ahead. Bold: $q<.05$. Chosen on held-out graphs, the best primer is the same in every row. $\dagger$: thinking truncates on most prompts (Table~\ref{tab:truncmatrix}).} % [vsthink] [vscross]
 \label{tab:vsthink}
 \end{table}
 
 \subsection{Primers against the thinking mode}
 \label{sec:vsthink}
-Where thinking leads (Table~\ref{tab:vsthink}), one primer brings the plain mode level with it: the component sentence on Qwen3-4B's neighbor sets, equivalent to thinking within $\pm3$ points. Elsewhere primers narrow the gap without closing it. All three statistics cut plain Qwen3-1.7B's node-degree gap from $15.8$ points to $5.5$. Under the degree primer its neighbor sets are not significantly below thinking, but not provably level either. % [vsthink] [vsequiv]
-Clustering and RWSE close less, and leave the plain mode significantly below thinking wherever thinking leads. The degree primer lifts plain Qwen3-4B's edge count above thinking. Thinking there is right on $97.6\%$ of the answers it finishes, though, so this compares budgets, not ability, and the stated degrees already give the edge count. % [edgecount]
+Where thinking leads (Table~\ref{tab:vsthink}), the component sentence brings plain 4B's neighbor-set exact match within the $\pm3$-point equivalence margin, on a cell that filler also moves (\S\ref{sec:side}). Elsewhere primers narrow the gap without closing it. All three statistics cut plain 1.7B's node-degree gap to about a third ($15.8$ to $5.5$ points). Under the degree primer its neighbor sets are not significantly below thinking, but the equivalence interval extends beyond the margin. % [vsthink]
+Clustering and RWSE close less, and leave the plain mode significantly below thinking wherever thinking leads. The degree primer lifts plain 4B's edge count above thinking. Thinking there is right on nearly every answer it finishes ($97.6\%$), though, so this compares budgets, not ability, and the stated degrees already give the edge count. % [edgecount]
 
 \subsection{Primers in the thinking mode}
 \label{sec:thinkmode}
-Near ceiling, thinking Qwen3-4B moves by at most $2.5$ points under any primer on node degree, edge existence and neighbor sets. % [null4bt]
-Thinking Qwen3-1.7B gains from stated degrees (Table~\ref{tab:matrix}) but checks them against its own count instead of reading them off. It keeps listing neighbors, and when its count conflicts with the stated value, it ends on the stated value in $66\%$ of cases. Checking costs budget: across all seven densities, its node-degree responses that run out of tokens rise from $1.1\%$ to $7.6\%$ under the degree primer. % [main] [pdsource] [trunc]
-Where the budget binds, much of any primer's effect is on finishing. Most of thinking Qwen3-4B's changed answers involve a response that ran out of tokens, and on its edge count even filler gains by lowering truncation (Table~\ref{tab:truncmatrix}).
+Near ceiling, thinking 4B moves by at most $2.5$ points under any primer on node degree, edge existence and neighbor sets. % [null4bt]
+Thinking 1.7B gains from stated degrees (Table~\ref{tab:matrix}) but checks them against its own count instead of reading them off. It keeps listing neighbors, and when its count conflicts with the stated value, it ends on the stated value in two thirds of cases. Checking costs budget: across all seven densities, its node-degree responses that run out of tokens rise from $1.1\%$ to $7.6\%$ under the degree primer. % [trunc]
+Where the budget binds, much of any primer's effect is on finishing. Most of thinking 4B's changed answers involve a response that ran out of tokens, and on its edge count even filler gains by lowering truncation (Table~\ref{tab:truncmatrix}).
 
-\subsection{What responses rest on}
+\subsection{What correct answers rest on}
 \label{sec:reston}
-Stated values are visibly used (\S\ref{sec:readoff}, \S\ref{sec:thinkmode}); here we ask whether a primer improves reading the graph itself. A model that reads the queried node's line gets both its degree and its neighbor set right. Clustering and RWSE never move this joint share significantly; the degree primer cuts plain Qwen3-4B's from $85.75\%$ to $76.50\%$, while the component sentence lifts it to $95.00\%$ (Appendix~\ref{app:detail}). % [joint]
+Does a primer improve reading the graph itself? By the joint share (\S\ref{sec:method}), clustering and RWSE never do significantly; the degree primer lowers plain 4B's by $9.2$ points and the component sentence raises it by the same amount (Appendix~\ref{app:detail}). % [joint]
 
-Cycle check needs no computation at $40$ nodes, but a response can justify its ``yes'' validly: by a real cycle, or by the edge count. Without a primer, a valid argument backs only $34.2\%$ and $58.5\%$ of the plain models' prompts, against $78.0\%$ and $95.8\%$ with thinking. % [ccvalid]
-Plain Qwen3-1.7B rests $43.5\%$ of its correct answers on an invented cycle, one with a step that is not an edge. % [ccanswer]
-The degree primer raises its valid share from $34.2\%$ to $50.2\%$ yet lowers its accuracy by $17.5$ points. The plain models switch to arguing from the number of edges (Table~\ref{tab:cycles}), a valid route that, like a look-up, need not read the edges. RWSE, all three statistics and filler lower plain Qwen3-4B's valid share. % [ccvalid] [main]
-
-The one side effect that replicates, clustering on plain Qwen3-1.7B's node degree, is small, specific to that model and to low density, and shows little sign of using the stated values (Appendix~\ref{app:pilot}).
+Cycle check has the same ``yes'' answer on every sampled graph, but a response can justify it by a real cycle or by the edge count. Without a primer, valid arguments back $34.2\%$ and $58.5\%$ of all prompts for the plain models, and most prompts with thinking. % [ccvalid]
+Plain 1.7B rests $43.5\%$ of its correct answers on an invented cycle, one with a step that is not an edge (example in Appendix~\ref{app:detail}). % [ccanswer]
+The degree primer raises its valid share to $50.2\%$ yet lowers its accuracy by $17.5$ points. The plain models switch to arguing from the number of edges (Table~\ref{tab:cycles}), a valid route that, like a look-up, need not read the edges. RWSE, all three statistics and filler lower plain 4B's valid share. % [ccvalid] [main]
 
 \section{Discussion}
 \label{sec:discussion}
-As in prior work, stated structure need not be read as topology \citep{huang2024can}, and added text alone moves answers \citep{shi2023distracted,levy2024sametask}; learned structural tokens \citep{perozzi2024letyourgraph} may reach what sentences do not.
+A stated degree is worth what counting it from the incident list costs (\S\ref{sec:readoff}), and a look-up is not free either: it must match the right node to the right sentence, and wrong look-ups show where that fails.
 
-Two lessons follow from these models. First, whether to add a primer depends on how reliably the model computes the quantity unaided: in our data stated values helped only where that computation was unreliable. Second, accuracy misstates execution in both directions. Raw edge-existence accuracy rewards saying yes on dense graphs: from $p=.50$ to $p=.85$, plain Qwen3-1.7B's rises from $54\%$ to $86\%$ while its balanced accuracy stays near chance ($53\%$). And the degree primer lowers cycle-check accuracy while raising the share of valid answers. % [fillerdens] [collapse]
+Some structural encodings help message-passing GNNs by supplying what they cannot compute: return probabilities separate nodes that 1-WL-bounded networks cannot \citep{xu2019powerful,dwivedi2022graph}. A language model has the information instead: every edge is in its context, and thinking 4B answers nearly all degree, neighbor-set and edge-existence queries (Table~\ref{tab:vsthink}). The gap to thinking suggests that the plain models' bottleneck is computation, not information, so a statistic can help by stating the answer or by changing how the text is read. Clustering and RWSE state no answer: their text reveals degrees mainly in sparse graphs (\S\ref{sec:states}) and almost nothing about edge existence (Table~\ref{tab:solver}). Their effects, which vary in sign, mostly reflect how the text is read.
+
+Raw accuracy can also mislead: on dense graphs plain 1.7B's edge-existence accuracy rises steeply while its balanced accuracy stays near chance. % [fillerdens] [collapse]
 
 \section{Future Work}
 \label{sec:future}
-Four tests follow. First, primers that state wrong values, or omit the queried node's own value, would show whether a model reads a statistic off, checks it or ignores it. Second, randomized node labels and preamble order, against token-matched neutral text, would separate presentation effects, such as the component sentence's, from information. Third, graphs where the statistics carry information (triadic closure makes clustering predict edges; acyclic graphs give cycle check two answers), on a second model family with a larger thinking budget, would show how far the findings reach. Fourth, a primer's benefit could be predicted from unaided accuracy (\S\ref{sec:discussion}) and weighed against giving the model a graph tool or code.
+First, corrupt or omit the queried node's stated degree, keeping all else fixed, to separate following a stated value, checking it and counting from edges. Second, shuffle node labels and primer order, and test the component sentence against neutral text of equal length and position; the same controls apply to clustering's low-density degree gain. Third, sample acyclic as well as cyclic graphs, and families that vary triangles at matched size and density, so that cycle check has two answers and clustering carries information. Other model families, larger thinking budgets and a graph-counting tool would show when a primer is the cheapest way to supply a computation.
 
 \section{Conclusion}
 \label{sec:conclusion}
-Explicit structural statistics mostly do not improve execution for two small Qwen3 models: they help mainly by stating the answer, which the plain models read off rather than compute. Since accuracy can misstate execution, evaluations of LLMs on graphs should check what an answer rests on, not only whether it is right.
+We asked three questions. \emph{Does a structural primer help?} Mainly by stating the answer: a stated degree saves an unreliable count and disturbs a reliable one, and adding clustering and RWSE need not preserve its effect. \emph{Does matching the statistic to the task matter?} Yes: clustering and RWSE, which state no answer, have mostly small effects of either sign and never significantly improve execution; plain Qwen3-1.7B's rises by about $4$ points under both, below what we can detect; the component sentence changes plain Qwen3-4B's procedure instead. \emph{Does capacity matter?} Through unaided accuracy: stated degrees help Qwen3-1.7B and hurt plain Qwen3-4B, yet also help plain Qwen3-4B on dense graphs, where its own count fails (Appendix~\ref{app:detail}). Thinking mostly keeps its lead. Beside paired controls, completion rates and graph-checked claims show whether an answer was supplied, the incident line read, or a correct label validly argued. % [joint]
 
 \section*{Limitations}
-\emph{Scope:} two small models from one family (and Qwen3-8B in one follow-up); Erd\H{o}s-R\'enyi graphs with $40$ nodes ($20$-$160$ in one follow-up); one encoding, wording and position per primer; zero-shot; one token budget. \emph{Controls:} the filler matches only the clustering primer's length, in characters. No primer carries shuffled or wrong values, and no instruction-only baseline tests procedural effects. Two tasks have a constant answer, and node ids 0-9 are both listed first and single-digit, so a node's position and its id length are confounded. \emph{Measurement:} generation noise (\S\ref{sec:method}), and readers other than the conflict readers were checked by an LLM, not hand-labelled. Under one BH over all $264$ tests, every bold cell of Table~\ref{tab:matrix} but one stays significant ($q=.057$), and the clustering effect was found by a screen but replicates on new graphs at low density (Table~\ref{tab:clust}). % [rerun] [globalbh]
+\emph{Scope:} two Qwen3 models (and Qwen3-8B in one follow-up); independent-edge graphs of $40$ nodes ($20$--$160$ in one follow-up); one encoding, one wording and position per primer; zero-shot; fixed token budgets. \emph{Controls:} filler matches only clustering's length; component count is structural information; no primer has shuffled or wrong values, and no instruction-only baseline isolates procedural wording. Nodes 0--9, listed first, also have the shortest ids, so position and id length are confounded. \emph{Measurement:} response readers other than conflict detection were spot-checked by an LLM, not blind hand labels.
 
 \clearpage
 \bibliography{custom}
@@ -215,10 +216,12 @@ Explicit structural statistics mostly do not improve execution for two small Qwe
 
 \paragraph{Statistics.} With adjacency matrix $A$ and transition matrix $P=D^{-1}A$, the per-node statistics are $d_v=\sum_u A_{vu}$, $c_v=2t_v/(d_v(d_v-1))$ and $r_v^{(k)}=(P^k)_{vv}$ for $k\in\{2,3\}$, where $t_v$ counts edges among $v$'s neighbors and $c_v=0$ when $d_v<2$. Clustering and return probabilities are printed to two decimals, one sentence per node, in node order (Table~\ref{tab:primerlength}).
 
-\paragraph{Why these features.} Degree and RWSE are the structural encodings graph Transformers use \citep{rampasek2022recipe}. Local clustering adds how a node's neighbors connect. The component count is a single global fact that, with the node and edge counts, decides whether a cycle exists. Laplacian encodings are left out because their sign and basis are arbitrary and cannot be stated as facts \citep{dwivedi2022graph}.
+\paragraph{Why these features.} Degree and RWSE are the structural encodings graph Transformers use \citep{rampasek2022recipe}. Local clustering adds how a node's neighbors connect. The component count is a single global fact that, with the node and edge counts, decides whether a cycle exists. Laplacian encodings are excluded because eigenvector signs and bases need an explicit convention \citep{dwivedi2022graph}. RWSE keeps only $k=2,3$: $r_v^{(1)}=0$ in every simple graph, $k=3$ detects triangles, and within a graph degree and clustering already explain most of the variance of $k=4$ and $k=5$.
 
-\paragraph{Budgets and power.} Each response may use up to $8{,}192$ new tokens, and $2{,}048$ for the plain arms at $p\geq.65$, where no arm truncates more than $2.5\%$ of its responses. The main sweep and its extension hold $84{,}000$ responses on $700$ graphs. % [setup] [extract]
+\paragraph{Models, budgets and power.} Models are the Qwen3 checkpoints on Hugging Face, run with \texttt{transformers}. Each response may use up to $8{,}192$ new tokens, and $2{,}048$ for the plain arms at $p\geq.65$, where no arm truncates more than $2.5\%$ of its responses. The main sweep and its extension hold $84{,}000$ responses on $700$ graphs. % [setup] [extract]
 In one $100$-graph cell the median smallest detectable paired effect is $7.4$ points, and $13.7$ where side information meets intermediate accuracy. % [power]
+Under one BH correction over all $264$ tests, every bold cell of Table~\ref{tab:matrix} but one and all but three $^{\mathrm{f}}$ marks stay significant. % [globalbh]
+Greedy generation is not exactly reproducible: generating the same prompts twice changes the outcome of $5.3\%$, so we compare net paired changes, never counts of changed answers. % [rerun]
 
 \paragraph{Graph-blind solver.} It reads only the primer text, with $16$ exact rules, $1$ heuristic and $8$ rules fitted on graphs disjoint from those scored (Table~\ref{tab:solver}). % [bars] [leak]
 
@@ -238,7 +241,7 @@ components & 14.4 & 0.0 & 3.0 & 73.5\\ % [bars]
 filler & 14.4 & 0.0 & 3.0 & 73.5\\ % [bars]
 \bottomrule
 \end{tabular}
-\caption{Graph-blind solver accuracy (\%) from the primer text alone, 40-node graphs, on the four tasks whose answer varies.} % [bars]
+\caption{Graph-blind solver accuracy (\%) from the primer text alone, 40-node graphs, averaged over all seven densities ($p=.10$--$.85$), on the four tasks whose answer varies. RWSE falls below no primer on edge existence because a fitted density threshold fails at $p\geq.65$ ($38.0$, $48.0$ and $12.0\%$).} % [bars] [blindbar]
 \label{tab:solver}
 \end{table}
 
@@ -262,8 +265,7 @@ filler & 1,829 & Node names, no graph statistic\\ % [length]
 \end{table}
 
 \paragraph{Response readers.} A response is a look-up when it answers without restating the queried node's neighbor list, and lists the neighbors when it gives five or more one per line. The cycle and edge readers check every asserted step against the prompt's graph.
-
-\paragraph{Scoring and provenance.} The answer extractor parses $99.84\%$ of responses. Set-F1 on neighbor sets is secondary because it gives partial credit: it moves in the same direction as exact match in $3$ of $5$ large contrasts, and by $0.11$ to $0.17$ as much. Balanced-accuracy changes use a paired permutation test with Benjamini-Hochberg adjustment over the six conditions within an arm. Tagged results come from GraphTalk's \texttt{results-sot} branch \citep{graphtalkresults2026}: each tag names a block of a script output cited by the results documents in \texttt{docs/}. % [extract] [f1] [eemain]
+\paragraph{Scoring.} The answer extractor parses $99.84\%$ of responses. Set-F1 on neighbor sets is secondary because it gives partial credit: it moves in the same direction as exact match in $3$ of $5$ large contrasts, and by $0.11$ to $0.17$ as much. Balanced-accuracy changes use a paired permutation test with Benjamini--Hochberg adjustment over the six conditions within an arm. % [extract] [f1] [eemain]Under one BH correction over all $264$ tests, the bold cell of Table~\ref{tab:matrix} that loses significance has $q=.057$, and the three $^{\mathrm{f}}$ marks $q=.055$--$.088$. % [globalbh]
 
 \section{Detailed Results}
 \label{app:detail}
@@ -314,12 +316,18 @@ Cycle & 1.7P & $-17.5$$^\dagger$ {\tiny$[-23.0,-12.2]$} & $+8.5$ {\tiny$[+5.8,+1
 \label{tab:full}
 \end{table*}
 
-\paragraph{Stated answers (\S\ref{sec:readoff}).} The gain follows the room the model leaves (Figure~\ref{fig:headroom}). In node-degree cells answered $25$-$50\%$ and $50$-$75\%$ correctly without them, answer-stating primers gain $16.1$ and $12.9$ points; at $75$-$90\%$ they lose $5.8$. These bands hold on held-out halves of the graphs and with the truncation flag at $10\%$ or $50\%$ (at least $+12.5$ in every case). % [bands] [splithalf] [bandsens]
-An effect mostly follows how well the model does unaided. At a fixed accuracy without a primer, density adds little ($p=.28$ for answer-stating primers, $p=.85$ for side statistics), except that side statistics' effect on node degree falls with density ($p=.006$). % [dxbase]
-One model falls on both sides. The degree primer costs plain Qwen3-4B $12.0$ points at $p=.50$, where it answers $99.0\%$ correctly unaided, and gains $27.0$ at $p=.85$, where it answers $33.0\%$ (both $q<.01$). % [flip]
-Stated answers are not always taken: across all seven densities, where the solver scores $100\%$, node-degree accuracy under the degree primer is $43\%$ and $81\%$ for plain Qwen3-1.7B and Qwen3-4B, and $79\%$ and $98\%$ with thinking. At high density, where plain Qwen3-1.7B is weakest, the stated degree barely helps it (at most $2$ points). At $p=.85$ it still answers $39$, the degree of a node joined to all others, on $70.8\%$ of finished responses. % [recover] [plain17] [ddplain]
-Plain Qwen3-4B's wrong look-ups copy a nearby line: $17$ of $57$ equal the degree printed one sentence away, against $10.4$ expected by chance ($p=.017$). Adding clustering and RWSE to the same degrees costs dense plain Qwen3-4B the most (Figure~\ref{fig:addstats}): pooled over $p\geq.65$, degree alone gains $9.3$ points ($q=.03$) and all three statistics lose $21.3$ ($q<.001$). % [copyerr] [clusthi]
+\begin{figure}[!h]
+\centering
+\includegraphics[width=\columnwidth]{fig_headroom.pdf}
+\caption{The degree primer's effect on node degree against the no-primer correct share, per arm and density. Hollow: plain arm at $p\geq.65$ (smaller budget).} % [flip] [bands]
+\label{fig:headroom}
+\end{figure}
 
+\paragraph{Stated answers (\S\ref{sec:readoff}).} The gain follows the room the model leaves (Figure~\ref{fig:headroom}). In node-degree cells answered $25$--$50\%$ and $50$--$75\%$ correctly without them, answer-stating primers gain $16.1$ and $12.9$ points; at $75$--$90\%$ they lose $5.8$. These bands hold on held-out halves of the graphs and with the truncation flag at $10\%$ or $50\%$ (at least $+12.5$ in every case). % [bands] [splithalf] [bandsens]
+An effect mostly follows how well the model does unaided. At a fixed accuracy without a primer, density adds little ($p=.28$ for answer-stating primers, $p=.85$ for side statistics), except that side statistics' effect on node degree falls with density ($p=.006$). % [dxbase]
+One model falls on both sides. The degree primer costs plain 4B $12.0$ points at $p=.50$, where it answers $99.0\%$ correctly unaided, and gains $27.0$ at $p=.85$, where it answers $33.0\%$ (both $q<.01$). % [flip]
+Stated answers are not always taken: across all seven densities, where the solver scores $100\%$, node-degree accuracy under the degree primer is $43\%$ and $81\%$ for plain 1.7B and plain 4B, and $79\%$ and $98\%$ with thinking. At high density, where plain 1.7B is weakest, the stated degree barely helps it (at most $2$ points). At $p=.85$ it still answers $39$, the degree of a node joined to all others, on $70.8\%$ of finished responses. % [recover] [plain17] [ddplain]
+Plain 4B's wrong look-ups copy a nearby line: $17$ of $57$ equal the degree printed one sentence away, against $10.4$ expected by chance ($p=.017$). Adding clustering and RWSE to the same degrees costs dense plain 4B the most (Figure~\ref{fig:addstats}): pooled over $p\geq.65$, degree alone gains $9.3$ points ($q=.03$) and all three statistics lose $21.3$ ($q<.001$). % [copyerr] [clusthi]
 \begin{figure}[!h]
 \centering
 \includegraphics[width=\columnwidth]{fig_addstats.pdf}
@@ -327,9 +335,10 @@ Plain Qwen3-4B's wrong look-ups copy a nearby line: $17$ of $57$ equal the degre
 \label{fig:addstats}
 \end{figure}
 
-\paragraph{Filler and fragile questions (\S\ref{sec:side}).} A primer changes $38.5$-$69.1\%$ of the questions filler changes and $3.1$-$15.2\%$ of the rest. % [overlap]
-Some questions are fragile: on plain Qwen3-1.7B's node degree, $24$ of $400$ change outcome when the same prompt is generated again. Every condition changes them far more often than the rest ($45.8$-$66.7\%$ against $14.4$-$26.1\%$, $q\leq.018$). Yet they carry only $11$ to $16$ of each condition's $65$ to $113$ changes, a lower bound on chance with only two generations per prompt. % [rerunflip]
-Where accuracy without a primer is $25$-$75\%$, components, clustering and RWSE average $+1.6$ points while filler averages $-6.9$ on the same cells. % [fillerband]
+\paragraph{Filler and fragile questions (\S\ref{sec:side}).} Filler changes $6.2$--$18.6\%$ of outcomes per arm. % [churn]
+A primer changes $38.5$--$69.1\%$ of the questions filler changes and $3.1$--$15.2\%$ of the rest. % [overlap]
+Some questions are fragile: on plain 1.7B's node degree, $24$ of $400$ change outcome when the same prompt is generated again. Every condition changes them far more often than the rest ($45.8$--$66.7\%$ against $14.4$--$26.1\%$, $q\leq.018$). Yet they carry only $11$ to $16$ of each condition's $65$ to $113$ changes, a lower bound on chance with only two generations per prompt. % [rerunflip]
+Where accuracy without a primer is $25$--$75\%$, components, clustering and RWSE average $+1.6$ points while filler averages $-6.9$ on the same cells. % [fillerband]
 
 \begin{table}[!t]
 \centering\footnotesize\setlength{\tabcolsep}{4pt}
@@ -378,34 +387,36 @@ Arm & Primer & Raw & Balanced & Yes\\
 
 \input{main_truncation.tex}
 
-\paragraph{Side statistics (\S\ref{sec:side}).} On edge existence, every primer that moves balanced accuracy does so in a plain arm (bold in Table~\ref{tab:ee}). Plain Qwen3-4B's false alarms also climb with shared neighbors, from $0.2\%$ of non-edges with none to $38.8\%$ with four or more. % [eeshared]
-At high density the statistics barely vary within a graph: printed clustering values have SD $0.021$ at $p=.65$, and rounded RWSE takes $3.30$ distinct value pairs per graph at $p=.50$, against $12.50$ distinct degrees. Gains there, such as clustering's $+11.3$ on dense plain Qwen3-4B's node degree with its procedure unchanged, are presentation effects. % [cluster] [rwse] [clusthi] [clustproc]
+\paragraph{Side statistics (\S\ref{sec:side}).} On edge existence, every primer that moves balanced accuracy does so in a plain arm (bold in Table~\ref{tab:ee}); clustering and RWSE on plain 4B have $q\leq.018$, and all raises plain 1.7B's by $7.8$ points and lowers plain 4B's by $6.5$. % [eemain]
+Plain 1.7B's false alarms rise steeply with the number of neighbors a non-edge pair shares, from $1.7\%$ with none to $65.9\%$ with four or more, and plain 4B's from $0.2\%$ to $38.8\%$. In $G(n,p)$ shared neighbors say nothing about whether a pair is joined, so this is consistent with mistaking nearby ids for adjacency. Under clustering, plain 1.7B's responses explicitly claiming a non-edge is an edge fall from $13.7\%$ to $4.4\%$, while its false alarms fall only from $40.3\%$ to $35.2\%$: stated reasons move more than decisions. % [eeshared] [eeclaims]
+The component sentence raises plain 4B's neighbor-set Set-F1 from $0.987$ to $0.998$, and responses that restate the queried node's line are right $95\%$, $92\%$ and $84\%$ of the time with it, with no primer and with filler. % [main] [comp] [compproc]
+At high density the printed statistics vary less within a graph: clustering values have SD $0.021$ at $p=.65$, and rounded RWSE takes $3.30$ distinct value pairs per graph at $p=.50$, against $12.50$ distinct degrees. Clustering still gains $11.3$ on dense plain 4B node degree with similar rates of neighbor enumeration, making presentation a plausible contributor. % [cluster] [rwse] [clusthi] [clustproc]
 
-\paragraph{Against the thinking mode (\S\ref{sec:vsthink}).} Equivalence in Table~\ref{tab:vsthink} rests on $90\%$ intervals. The component sentence's gap on plain Qwen3-4B's neighbor sets lies in $[-2.0,+2.5]$, inside the $\pm3$-point margin. The degree primer's gap on plain Qwen3-1.7B's neighbor sets is not significant ($q=.24$), but its interval reaches $+6.2$, so the two are not shown to be level. % [vsthink] [vsequiv]
-
+\paragraph{Against the thinking mode (\S\ref{sec:vsthink}).} Equivalence in Table~\ref{tab:vsthink} rests on $90\%$ intervals. The component sentence's gap on plain 4B's neighbor sets lies in $[-2.0,+2.5]$, inside the $\pm3$-point margin. The degree primer's gap on plain 1.7B's neighbor sets is not significant ($q=.24$), but its interval reaches $+6.2$, so the two are not shown to be level. % [vsthink] [vsequiv]
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{edge_count_outcomes.pdf}
-\caption{Thinking Qwen3-4B on edge count: correct, wrong and truncated shares of \emph{all} responses. Conditions from top: none, components, degree, all three.}
+\caption{Thinking 4B on edge count: correct, wrong and truncated shares of \emph{all} responses. Conditions from top: none, components, degree, all three.}
 \label{fig:outcomes}
 \end{figure}
 
-\paragraph{Thinking mode (\S\ref{sec:thinkmode}).} Thinking models check stated values against their own count. Under the degree primer, thinking Qwen3-1.7B still lists the neighbors in $90\%$ of responses at $p\geq.35$, and thinking Qwen3-4B ends on the stated value in $93\%$ of its conflicts. % [verify] [pdsource]
-In the follow-ups, clustering gains thinking Qwen3-1.7B $2.5$ points at $p\leq.50$ ($q=.043$) and loses $5.4$ at $p\geq.65$ ($q=.0015$), where filler loses $11.4$. % [ddthink]
-Of the answers a condition changes, $44.4$-$64.5\%$ for thinking Qwen3-1.7B and $83.3$-$95.2\%$ for thinking Qwen3-4B involve a response that ran out of tokens; Figure~\ref{fig:outcomes} shows this for thinking Qwen3-4B's edge count. % [churnwhy]
+\paragraph{Thinking mode (\S\ref{sec:thinkmode}).} Thinking models check stated values against their own count. Under the degree primer, thinking 1.7B still lists the neighbors in $90\%$ of responses at $p\geq.35$; when their count conflicts with the stated value, thinking 1.7B and thinking 4B end on the stated value in $66\%$ and $93\%$ of cases. % [verify] [pdsource]
+In the follow-ups, clustering gains thinking 1.7B $2.5$ points at $p\leq.50$ ($q=.043$) and loses $5.4$ at $p\geq.65$ ($q=.0015$), where filler loses $11.4$. % [ddthink]
+Of the answers a condition changes, $44.4$--$64.5\%$ for thinking 1.7B and $83.3$--$95.2\%$ for thinking 4B involve a response that ran out of tokens; Figure~\ref{fig:outcomes} shows this for thinking 4B's edge count. % [churnwhy]
 
-\paragraph{What responses rest on (\S\ref{sec:reston}).} Clustering and RWSE change the share of queries answered right on both degree and neighbor set with $q\geq.16$ in every arm. The degree primer lowers it for plain Qwen3-4B and raises it for plain Qwen3-1.7B, from $54.00\%$ to $62.50\%$. % [joint]
-Table~\ref{tab:cycles} classifies every correct, finished cycle-check answer by the argument it cites. The degree primer raises plain Qwen3-4B's valid share from $58.5\%$ to $76.5\%$. Truncation accounts for $21.2$ of the $21.8$ points it costs thinking Qwen3-1.7B but only $8.2$ of the $17.5$ it costs plain Qwen3-1.7B (Tables~\ref{tab:full} and~\ref{tab:truncmatrix}). RWSE, all three statistics and filler lower plain Qwen3-4B's valid share to $33.2\%$, $45.2\%$ and $45.8\%$ ($q<.05$). % [ccvalid] [main] [trunc]
+\paragraph{What responses rest on (\S\ref{sec:reston}).} Clustering and RWSE change the joint share with $q\geq.16$ in every arm. Plain 4B's is $85.75\%$ with no primer, $76.50\%$ with degree and $95.00\%$ with the component sentence; the degree primer raises plain 1.7B's from $54.00\%$ to $62.50\%$. % [joint]
+Table~\ref{tab:cycles} classifies every correct, finished cycle-check answer by the argument it cites. For example, on one $p=.20$ graph plain 1.7B without a primer answers with $0\to4\to1\to5\to14\to13\to15\to16\to18\to\cdots\to38\to39\to0$, which climbs the ids almost in order; steps such as $15\to16$, $21\to25$ and $38\to39$ are not edges. % example: cycle_claims.csv, cycle_check/size40/p0.2/95
+With thinking and no primer, valid arguments back $78.0\%$ and $95.8\%$ of all prompts. The degree primer raises plain 4B's valid share from $58.5\%$ to $76.5\%$. Truncation accounts for $21.2$ of the $21.8$ points it costs thinking 1.7B but only $8.2$ of the $17.5$ it costs plain 1.7B (Tables~\ref{tab:full} and~\ref{tab:truncmatrix}). RWSE, all three statistics and filler lower plain 4B's valid share to $33.2\%$, $45.2\%$ and $45.8\%$ ($q<.05$). % [ccvalid] [main] [trunc]
 
-\paragraph{Node count.} The encoding's first line lists the $40$ node ids, so node count measures which number a model writes, not reading. Plain Qwen3-1.7B answers $39$, the last id, on $68.5\%$ of finished responses without a primer and on $1.2\%$ under clustering, hence Table~\ref{tab:full}'s large node-count effects. % [nodecount] [ncanswer]
+\paragraph{Node count.} The encoding's first line lists the $40$ node ids, so node count measures which number a model writes, not reading. Plain 1.7B answers $39$, the last id, on $68.5\%$ of finished responses without a primer and on $1.2\%$ under clustering, hence Table~\ref{tab:full}'s large node-count effects. % [nodecount] [ncanswer]
 
 \section{Pilot and the Clustering Screen}
 \label{app:pilot}
-\paragraph{Pilot.} On the published GraphQA graphs ($5$-$19$ nodes), Gemma~4 E4B/12B and Qwen3-8B/14B, each in plain and thinking mode, were near ceiling without a primer on most tasks; only edge count separated them. This is why the main study uses 40-node graphs and smaller models.
+\paragraph{Pilot.} On the published GraphQA graphs ($5$--$19$ nodes), Gemma~4 E4B/12B and Qwen3-8B/14B, each in plain and thinking mode, were near ceiling without a primer on most tasks; only edge count separated them. This is why the main study uses 40-node graphs and smaller models.
 
-\paragraph{The clustering effect.} Clustering on plain Qwen3-1.7B's node degree emerged from a $40$-cell screen, so Table~\ref{tab:clust} tests it on graphs the screen did not see, on a fresh seed, against filler, on 20-160-node graphs at fixed mean degree, at high density and on Qwen3-8B. It shows little sign of using the stated values. No response mentions clustering, and the gain does not depend on the queried node's printed coefficient ($p=.5$). % [rqbehaviour] [rqhetero]
+\paragraph{The clustering effect.} Clustering on plain 1.7B's node degree emerged from a $40$-cell screen, so Table~\ref{tab:clust} tests it on graphs the screen did not see, on a fresh seed, against filler, on $20$--$160$-node graphs at fixed mean degree, at high density and on Qwen3-8B. The gain holds on unscreened graphs and on the fresh seed at low density, but not at high density or for Qwen3-8B. No response mentions clustering, and the gain does not depend on the queried node's printed coefficient ($p=.5$); it appears in how the response handles the node list. % [rqbehaviour] [rqhetero] [rqselection] [ddrep] [fixdeg8]
 It falls on queried nodes early in the node list: $+5.01$, $+0.75$ and $-0.11$ points over the first, middle and last third at all seven densities, and $1.74$ points less per $10$ positions after adjusting for degree, clustering and density ($p=.018$); filler and components show no such gradient. It fixes $224$ copying errors in the neighbor list and introduces $176$. % [rqhetero] [rqbehaviour]
-Components and filler also cut the neighbors the model misses ($0.94$ and $1.05$ per response at $p=.35$-$.50$, against $0.86$ with clustering and $1.49$ with none). % [rqbehaviour] [rqhetero]
+Components and filler also cut the neighbors the model misses ($0.94$ and $1.05$ per response at $p=.35$--$.50$, against $0.86$ with clustering and $1.49$ with none). % [rqbehaviour] [rqhetero]
 
 \begin{table}[!t]
 \centering\scriptsize
@@ -424,7 +435,7 @@ $p\geq.65$ ($1{,}200$ pairs) & $-0.7$ & $q=.57$\\ % [ddplain] [ddrep] [rqselecti
 Qwen3-8B ($3{,}200$) & $-1.0$ & $q=.05$\\ % [ddplain] [ddrep] [rqselection] [ddplainfill] [fixdeg8]
 \bottomrule
 \end{tabular}
-\caption{The clustering effect on node degree against no primer (against filler where the row says so), in points, for plain Qwen3-1.7B except the last row, which is Qwen3-8B. \emph{Screened}: graphs the screen also used; \emph{fixed mean degree}: the 20-160-node grid. \emph{corr.}: Bonferroni over the screen's cells.}
+\caption{The clustering effect on node degree against no primer (against filler where the row says so), in points, for plain Qwen3-1.7B except the last row, which is Qwen3-8B. \emph{Screened}: graphs the screen also used; \emph{fixed mean degree}: the $20$--$160$-node grid. \emph{corr.}: Bonferroni over the screen's cells.}
 \label{tab:clust}
 \end{table}
 

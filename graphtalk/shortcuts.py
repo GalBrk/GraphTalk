@@ -1196,7 +1196,11 @@ def _threshold_applier(feature, high: str, low: str):
 
 
 def _rwse_features(context, node: int):
-  """2m * RWSE_k, the stationary inversion of d_i = 2m * pi_i."""
+  """2m * RWSE_k for k = 2, 3, the features of a least-squares fit of the degree.
+
+  Not a stationary inversion: RWSE_2 is the mean of 1/d_j over i's neighbours, so
+  d_i itself cancels; RWSE_3 counts triangles through i and is what tracks d_i.
+  """
   table = context.primer.rwse.get(node)
   m = context.known_m
   if not table or m is None:
@@ -1310,7 +1314,7 @@ FITTED = (
     ),
     FittedRule(
         "node_degree_stationary", "node_degree", "fitted",
-        "d_i = 2m * pi_i, inverted from RWSE by least squares",
+        "d_i fitted by least squares on 2m * RWSE_2 and 2m * RWSE_3",
         _fit_stationary, _apply_stationary,
     ),
     FittedRule(
