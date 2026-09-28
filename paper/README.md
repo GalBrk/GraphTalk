@@ -4,6 +4,17 @@
 Statistics**: [`structured_graph.pdf`](structured_graph.pdf).
 [← back to the repo](../README.md)
 
+A second version, **Talk Like a Structured Graph? Structural Statistics Help
+Small LLMs Mainly by Stating the Answer**, is [`paper/paper.pdf`](paper/paper.pdf),
+built the same way from [`paper/`](paper/) with `paper` in place of
+`structured_graph`. Its Figure 1 is `docs/img/primer_usage.pdf` (from
+`scripts/readme_figures.py`) and its Figures 2 and 3 are drawn by `paper/fig_headroom.py`;
+`main_truncation.tex` and `table_cycles.tex` start from this folder's and are edited by
+hand to the paper's primer names and order (the cycle table also has the components and
+filler rows of `[ccanswer]`).
+`tests/test_paper_numbers.py` checks every tagged number in `paper/paper.tex`
+against `outputs/`.
+
 ## Build
 
 ACL 2023 style (`acl2023.sty`, `acl_natbib.bst`, `custom.bib`). From this folder:
@@ -52,8 +63,10 @@ density interactions, and `[bundle-direct]` within six paired high-density
 alternatives. Both count a truncated response as its own outcome. No new model
 inference was run for any of these.
 
-The paper cites the results at `results-sot` commit `641ad66`
-(`graphtalkresults2026`), whose outputs are in `outputs/`.
+`structured_graph` cites the results at `results-sot` commit `641ad66`
+(`graphtalkresults2026`); `paper/paper` cites commit `3cf63ec`, which adds the
+`[vsequiv]`, `[vscross]`, `[globalbh]` and `[rerunflip]` blocks and changes no
+earlier output line. The outputs are in `outputs/`.
 
 ## Where each part of the paper comes from
 
