@@ -29,7 +29,9 @@ they differ in content only, and every model sees the same graphs under all seve
 We use 40-node Erdős–Rényi graphs at seven edge densities (p = .10 to .85),
 6 GraphQA tasks, 7 primer conditions, and Qwen3-1.7B and Qwen3-4B with and without
 thinking: 84,000 paired responses. A graph-blind solver that reads only the primer
-text shows which primers give the answer away.
+text shows which primers give the answer away. It parses the rendered primer text
+and never sees the graph, so its score is what the primer alone gives away: a model
+at or below it need not have read the graph at all.
 
 ## Key findings
 
@@ -117,12 +119,23 @@ truncation on either side. P/T: thinking off/on. Intervals:
 ## Quickstart
 
 Only generation needs a GPU; everything else reruns on a laptop from the committed
-responses.
+responses. Needs Python 3.11 or later.
 
 ```bash
 uv venv --python 3.11 && uv pip install -e ".[dev]"
-uv run --no-sync pytest -q                     # ~830 tests
+uv run --no-sync pytest -q                     # ~830 tests, ~15 min on a laptop
 ```
+
+Without `uv`: `python -m venv .venv`, activate it, `pip install -e ".[dev]"`, and
+drop `uv run --no-sync` from the commands below. With `uv`, keep `--no-sync`: a
+plain `uv run` re-syncs the environment and removes extras such as `[gpu]`.
+
+The solver's score rests on two groups of tests in `tests/test_shortcuts.py`. The
+**round trip** renders every primer, parses it back from its text and requires the
+rounded values exactly; the parser shares no code with the renderer, so this catches
+a format change nobody meant to make. **Theorem precision** requires each exact rule
+to be right every time, on Erdős–Rényi graphs and on trees, forests, cycles and
+complete bipartite graphs, which the ER generator never produces.
 
 Reproduce the main experiment's numbers from the committed responses (no GPU):
 
