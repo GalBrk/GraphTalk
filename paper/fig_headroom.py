@@ -1,9 +1,9 @@
-"""Figures 2 and 3 of the paper, one column each, from outputs/n40-sweep/primer_cells.csv
+"""Figures 3 and 4 of the paper, one column each, from outputs/n40-sweep/primer_cells.csv
 (primer_findings.py --csv-dir writes it).
 
-fig_headroom.pdf (Figure 2): the degree primer's effect on node degree against the no-primer
+fig_headroom.pdf (Figure 3): the degree primer's effect on node degree against the no-primer
 correct share, per arm and density; also docs/img/headroom.png for the front README.
-fig_addstats.pdf (Figure 3): what adding clustering and RWSE to the same degrees changes
+fig_addstats.pdf (Figure 4): what adding clustering and RWSE to the same degrees changes
 (all three statistics minus the degree primer), per arm and density.
 
 Usage: python paper/fig_headroom.py   (writes both next to this file)

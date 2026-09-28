@@ -48,7 +48,7 @@ TASKS6 = ["node_count", "node_degree", "connected_nodes", "edge_count",
           "edge_existence", "cycle_check"]
 DENS4 = [0.10, 0.20, 0.35, 0.50]
 DENSHI = [0.65, 0.75, 0.85]
-BAND = (0.25, 0.75)          # where both kinds of primer gain (Table 2's bins)
+BAND = (0.25, 0.75)          # where both kinds of primer gain (the [bands] block)
 EQUIV = 3.0                  # equivalence margin, points: about the 4B arms' median detectable gain ([lmde])
 Z80 = 1.959964 + 0.841621    # two-sided .05, 80% power
 ROUTE_GAIN = 0.05            # a route cell: the solver bar beats `none`'s by more than this
@@ -611,7 +611,7 @@ def clustering_high(f):
 
 def clustering_arms(f):
   """The clustering primer on node_degree for every arm, on the same graphs: main sweep and
-  high-density extension pooled (Figure 2's top half)."""
+  high-density extension pooled."""
   print("[clustarms] node_degree, clustering vs none, every arm, main sweep (p<=.50) and "
         "high-density extension (p>=.65) pooled; BH q over the eight")
   rows = [(arm, band, effect(pairs(f, arm, "node_degree", "none", "clustering", dens)))
