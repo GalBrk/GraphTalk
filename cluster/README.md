@@ -6,6 +6,8 @@ How every response in [`data/runs/`](../data/README.md) was generated.
 Account `galbarak2`, DCOR lab, partition `killable` / account `gpu-research`.
 The general cluster reference lives in the SlidesGen repo
 (`training/CLUSTER.md`); this file covers only what GraphTalk needs on top of it.
+A teammate who only needs to read the data, the environments or the cached
+models in place: [collaborator-access.md](collaborator-access.md).
 
 ## Only generation needs a GPU
 

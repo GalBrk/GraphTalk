@@ -9,17 +9,12 @@ the models and the environments as well, without re-downloading 111 GB.
 git clone git@github.com:GalBrk/GraphTalk.git
 ```
 
-**[DATA.md](../preliminary/docs/DATA.md) documents every file's schema and how they join.** Everything needed to score and analyse is tracked: `preliminary/data/runs/*.jsonl` (the raw model
-responses), `prompts.jsonl` (the exact prompts they answer), and `preliminary/data/shortcuts.json`
-(the primer-only solver score each cell is read against). See `preliminary/data/runs/README.md` for
-the row schema. **Read [results/README.md](README.md) first** -- the
-index of current results; `preliminary/docs/sweep-findings.md` is the older analysis of the
-5-19 node corpus, kept for its retractions rather than its conclusions. Two
-things decide how every other number should be read: effects are judged against `bar(cond) - bar(none)` from `preliminary/data/shortcuts.json`
-rather than against zero, and against a *length-matched* control rather than
-against `none`, since a structure-free primer of about the same length costs a
-thinking model 11.4 points at p >= .65 on its own
-([results/density-followups.md](results/density-followups.md) §5).
+Everything needed to rerun the analyses is tracked: the main experiment's
+prompts, raw responses and solver bars in `data/`
+([data/README.md](../data/README.md)), and the pilot's in `preliminary/data/`
+([preliminary/data/README.md](../preliminary/data/README.md)).
+[scripts/README.md](../scripts/README.md) reruns every number from them;
+[docs/README.md](../docs/README.md) indexes the results.
 
 ## On the TAU CS cluster: read in place
 
@@ -29,8 +24,8 @@ has to be requested.
 ```bash
 REPO=/home/dcor/galbarak2/GraphTalk
 
-ls $REPO/runs/                       # raw responses, including live shard files
-cat $REPO/shortcuts.json             # the interpretation bar
+ls $REPO/data/runs/                      # raw responses, including live shard files
+cat $REPO/data/shortcuts_n40_flat.json   # the graph-blind solver's bars
 ```
 
 ### Score without building an environment
@@ -42,7 +37,7 @@ source /home/dcor/galbarak2/anaconda3/etc/profile.d/conda.sh
 conda activate /home/dcor/galbarak2/conda_envs/graphtalk-cu126
 
 cd $REPO
-python preliminary/scripts/score_sweep.py --responses $(ls preliminary/data/runs/*.jsonl | grep -v '\.got\.') --shortcuts preliminary/data/shortcuts.json
+PYTHONPATH=. python scripts/build_raw_frame.py   # then the rest of scripts/README.md
 ```
 
 `graphtalk` is a cu130 build and needs driver 580+. That is a driver
@@ -81,4 +76,4 @@ Do not point a second job at a model already being generated: `run_sweep.py`
 reads the completed set once at startup, so two concurrent jobs on one model
 regenerate each other's rows and interleave duplicates into the same file. Use a
 distinct `--out`, or shard with a job array (`--array=0-3`), which splits the
-prompt file and gives each task its own output. See `cluster/README.md`.
+prompt file and gives each task its own output. See [README.md](README.md).

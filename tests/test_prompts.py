@@ -367,11 +367,16 @@ def test_run_sweep_row_carries_node_naming():
   defaults a missing field to `integer`, so a GoT run whose rows lack it is
   scored against integer gold and comes out near-zero -- silently, because an
   absent field is not a mixed-scheme conflict for `analysis.infer_node_naming`
-  to catch. This pins the one line that prevents that.
+  to catch. This pins the one line that prevents that. The source is parsed,
+  not imported, because importing run_sweep needs torch (the `gpu` extra).
   """
-  import inspect
-  from scripts import run_sweep
-  source = inspect.getsource(run_sweep.main)
+  import ast
+  import pathlib
+  path = pathlib.Path(__file__).parents[1] / "scripts" / "run_sweep.py"
+  text = path.read_text(encoding="utf-8")
+  main = next(node for node in ast.parse(text).body
+              if isinstance(node, ast.FunctionDef) and node.name == "main")
+  source = ast.get_source_segment(text, main)
   assert '"node_naming" in record' in source, (
       "run_sweep.main must copy node_naming from the prompt record onto the "
       "response row; without it a GoT sweep is silently mis-scored"
