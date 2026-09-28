@@ -1,4 +1,4 @@
-"""Figures 2 and 3 of paper/paper, one column each, from outputs/n40-sweep/primer_cells.csv
+"""Figures 2 and 3 of the paper, one column each, from outputs/n40-sweep/primer_cells.csv
 (primer_findings.py --csv-dir writes it).
 
 fig_headroom.pdf (Figure 2): the degree primer's effect on node degree against the no-primer
@@ -6,7 +6,7 @@ correct share, per arm and density.
 fig_addstats.pdf (Figure 3): what adding clustering and RWSE to the same degrees changes
 (all three statistics minus the degree primer), per arm and density.
 
-Usage: python paper/paper/fig_headroom.py   (writes both next to this file)
+Usage: python paper/fig_headroom.py   (writes both next to this file)
 """
 from pathlib import Path
 
@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 HERE = Path(__file__).resolve().parent
-CELLS = HERE.parents[1] / "outputs" / "n40-sweep" / "primer_cells.csv"
+CELLS = HERE.parent / "outputs" / "n40-sweep" / "primer_cells.csv"
 ARMS = ["qwen3-1.7b", "qwen3-1.7b-think", "qwen3-4b", "qwen3-4b-think"]
 LABEL = {"qwen3-1.7b": "1.7P", "qwen3-1.7b-think": "1.7T", "qwen3-4b": "4P", "qwen3-4b-think": "4T"}
 COLOR = {"qwen3-1.7b": "#2a78d6", "qwen3-1.7b-think": "#4a3aa7",
@@ -32,8 +32,8 @@ w["diff"] = w["all"] - w["degree"]
 w["hollow"] = w.flagged | (~w.arm.str.endswith("think") & (w.density >= .65))
 
 
-def axes():
-    fig, ax = plt.subplots(figsize=(3.2, 1.35))
+def axes(height=1.35):
+    fig, ax = plt.subplots(figsize=(3.2, height))
     ax.axhline(0, color=MUTED, lw=0.6)
     ax.tick_params(labelsize=7.5, colors=MUTED, length=2)
     ax.spines[["top", "right"]].set_visible(False)
@@ -58,7 +58,7 @@ a.legend(fontsize=7, frameon=False, loc="upper right", ncol=2, handletextpad=0.2
 fig.tight_layout()
 fig.savefig(HERE / "fig_headroom.pdf", bbox_inches="tight", pad_inches=0.02)
 
-fig, b = axes()
+fig, b = axes(1.7)  # taller: its y-label is longer than a 1.35-inch axis
 for arm in ARMS:
     s = w[w.arm == arm].sort_values("density")
     b.plot(s.density, s["diff"], color=COLOR[arm], lw=1.0, zorder=2)

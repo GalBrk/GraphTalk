@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="paper/structured_graph.pdf"><img alt="Paper" src="https://img.shields.io/badge/paper-PDF-b31b1b?style=flat-square"></a>
+  <a href="paper/paper.pdf"><img alt="Paper" src="https://img.shields.io/badge/paper-PDF-b31b1b?style=flat-square"></a>
   <a href="https://arxiv.org/abs/2310.04560"><img alt="Builds on arXiv:2310.04560" src="https://img.shields.io/badge/builds%20on-arXiv%3A2310.04560-555?style=flat-square"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776ab?style=flat-square">
   <img alt="Models: Qwen3" src="https://img.shields.io/badge/models-Qwen3%201.7B%20%7C%204B-6f42c1?style=flat-square">
@@ -116,7 +116,7 @@ recipe for one arm.
 
 ```bash
 cd paper
-pdflatex structured_graph && bibtex structured_graph && pdflatex structured_graph && pdflatex structured_graph
+pdflatex paper && bibtex paper && pdflatex paper && pdflatex paper
 ```
 
 [paper/README.md](paper/README.md) also regenerates each table and figure, and

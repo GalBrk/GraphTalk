@@ -1,72 +1,46 @@
 # Paper
 
-**Talk Like a Structured Graph: Augmenting Text Encodings with Structural
-Statistics**: [`structured_graph.pdf`](structured_graph.pdf).
+**Talk Like a Structured Graph? Structural Statistics Help Small LLMs Mainly by
+Stating the Answer**: [`paper.pdf`](paper.pdf).
 [← back to the repo](../README.md)
 
-A second version, **Talk Like a Structured Graph? Structural Statistics Help
-Small LLMs Mainly by Stating the Answer**, is [`paper/paper.pdf`](paper/paper.pdf),
-built the same way from [`paper/`](paper/) with `paper` in place of
-`structured_graph`. Its Figure 1 is `docs/img/primer_usage.pdf` (from
-`scripts/readme_figures.py`) and its Figures 2 and 3 are drawn by `paper/fig_headroom.py`;
-`main_truncation.tex` and `table_cycles.tex` start from this folder's and are edited by
-hand to the paper's primer names and order (the cycle table also has the components and
-filler rows of `[ccanswer]`).
-`tests/test_paper_numbers.py` checks every tagged number in `paper/paper.tex`
-against `outputs/`.
+`tests/test_paper_numbers.py` checks every tagged number in `paper.tex` against
+`outputs/`.
 
 ## Build
 
 ACL 2023 style (`acl2023.sty`, `acl_natbib.bst`, `custom.bib`). From this folder:
 
 ```sh
-pdflatex structured_graph.tex
-bibtex structured_graph
-pdflatex structured_graph.tex
-pdflatex structured_graph.tex
+pdflatex paper.tex
+bibtex paper
+pdflatex paper.tex
+pdflatex paper.tex
 ```
 
-## Regenerate the tables and figures
+## Regenerate the figures
 
-Every float is generated from the repo's outputs. The one exception is Figure 3,
-whose values are copied from the `[edgecount]` block. Run these from this folder
-once the pipeline in [`scripts/README.md`](../scripts/README.md) has written
-`../outputs/`:
+Run these from the repo root once the pipeline in
+[`scripts/README.md`](../scripts/README.md) has written `outputs/`:
 
 ```sh
-python metric_audit.py --frame ../outputs/n40-sweep/frame.csv > metric_audit.txt
-python primary_metric_tables.py
-python matrix_audit.py --frame ../outputs/n40-sweep/frame.csv \
-    --report ../outputs/n40-sweep/primer_findings.txt --output main_matrix.tex
-python truncation_table.py --frame ../outputs/n40-sweep/frame.csv --output main_truncation.tex
-python dense_extension_table.py --frame ../outputs/n40-sweep/frame.csv --output dense_extension.tex
-python robustness_audit.py > robustness_audit.txt
-python floats.py
+PYTHONPATH=. python scripts/readme_figures.py && cp docs/img/primer_usage.pdf paper/fig_primer_usage.pdf
+python paper/fig_headroom.py
+cd paper
 python plot_outcomes.py
 ```
 
 | File | Written by | Reads |
 |---|---|---|
-| `main_matrix.tex` (Results matrix) | `matrix_audit.py` | `frame.csv`, and checks all 144 contrasts against `[main]` |
-| `fig_headroom.pdf` (Figure 1) | `floats.py` | `primer_cells.csv` |
-| `fig_clustering.pdf` (Figure 2) | `floats.py` | `[clustarms]`, `[replic]`, `density_followups.txt` |
-| `table_cycles.tex` (Table 2) | `floats.py` | `[ccanswer]`, `[cctest]` in `check_cycle_claims.txt` |
-| `edge_count_outcomes.pdf` (Figure 3) | `plot_outcomes.py` | values copied from `[edgecount]` |
-| `primary_metric_tables.tex` | `primary_metric_tables.py` | `metric_audit.txt`, `[eemain]` |
-| `main_truncation.tex`, `dense_extension.tex` | `truncation_table.py`, `dense_extension_table.py` | `frame.csv` (`[dense-frame]`) |
-| `metric_audit.txt`, `robustness_audit.txt` | `metric_audit.py`, `robustness_audit.py` | `frame.csv`; the density follow-up runs |
+| `fig_primer_usage.pdf` (Figure 1) | `scripts/readme_figures.py`, as `docs/img/primer_usage.pdf` | a five-node example graph |
+| `fig_headroom.pdf`, `fig_addstats.pdf` (Figures 2 and 3) | `fig_headroom.py` | `primer_cells.csv` |
+| `edge_count_outcomes.pdf` (Figure 4) | `plot_outcomes.py` | values copied from `[edgecount]` |
+| `table_cycles.tex` (Table 7), `main_truncation.tex` (Table 8) | edited by hand | `[ccanswer]` in `check_cycle_claims.txt`; the truncated shares of `[main]` |
 
-`metric_audit.py` runs 50,000 seeded paired random-sign draws for set-F1 and
-applies Benjamini–Hochberg within each arm's six primer contrasts.
-`robustness_audit.py`'s `[interaction]` applies BH within three exploratory
-density interactions, and `[bundle-direct]` within six paired high-density
-alternatives. Both count a truncated response as its own outcome. No new model
-inference was run for any of these.
+The other tables are written in `paper.tex`.
 
-`structured_graph` cites the results at `results-sot` commit `641ad66`
-(`graphtalkresults2026`); `paper/paper` cites commit `3cf63ec`, which adds the
-`[vsequiv]`, `[vscross]`, `[globalbh]` and `[rerunflip]` blocks and changes no
-earlier output line. The outputs are in `outputs/`.
+The paper cites the results at `results-sot` commit `3cf63ec`
+(`graphtalkresults2026`). The outputs are in `outputs/`.
 
 ## Where each part of the paper comes from
 
@@ -85,17 +59,17 @@ earlier output line. The outputs are in `outputs/`.
 ## Rules for numbers
 
 1. **Every number comes from a tagged citation**, copied as printed. The
-   citation lives in one of three places:
+   citation lives in one of two places:
    - a doc in `docs/results/`;
    - one of the analysis docs: `primer-directions.md`, `primer-robustness.md`,
-     `investigate_connections_and_cycles.md` or `density-interaction.md`;
-   - this folder's `metric_audit.txt` or `robustness_audit.txt`.
+     `investigate_connections_and_cycles.md` or `density-interaction.md`.
 
    Put the tag in a LaTeX comment on the same line, e.g. `+3.8~points % [ddplain]`,
    so each number can be traced to its block in the script output. If the paper
    needs a number nothing prints yet, add it to the script and the doc first,
    with a tag. `tests/test_results_docs.py` checks the numbers in `docs/results/`
-   and `primer-directions.md` against their outputs. Never cite `preliminary/`.
+   and `primer-directions.md` against their outputs, and
+   `tests/test_paper_numbers.py` the paper's. Never cite `preliminary/`.
 2. **Truncation is its own outcome.** A response is correct, wrong or truncated.
    An effect is the paired change in the correct share of *all* responses, in
    percentage points, with the change in the truncated share beside it when

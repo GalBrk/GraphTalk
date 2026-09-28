@@ -14,11 +14,11 @@ import re
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-PAPER = ROOT / "paper" / "paper" / "paper.tex"
+PAPER = ROOT / "paper" / "paper.tex"
 DESIGN = {0, 5, 9, 10, 15, 19, 20, 25, 40, 50, 75, 90, 100, 160, 400}
 DENSITIES = {".10", ".20", ".35", ".50", ".65", ".75", ".85"}
 TAG_LINE = re.compile(r"^\[([\w-]+)\]")
-NUM = re.compile(r"(?<![\w.])\d*\.?\d+")
+NUM = re.compile(r"(?:(?<![\w.])|(?<=\(x))\d*\.?\d+")
 
 
 def blocks(paths):
@@ -64,7 +64,7 @@ def problems(tex, found):
   return out
 
 
-@pytest.mark.skipif(not PAPER.exists(), reason="no paper at paper/paper/paper.tex")
+@pytest.mark.skipif(not PAPER.exists(), reason="no paper at paper/paper.tex")
 def test_every_tagged_number_in_the_paper_is_in_its_output():
   found = blocks(sorted((ROOT / "outputs").glob("*/*.txt")))
   assert problems(PAPER.read_text(encoding="utf-8"), found) == []

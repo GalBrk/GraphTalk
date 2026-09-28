@@ -1,38 +1,46 @@
-\begin{table}[t]
+\begin{table}[!t]
 \centering\footnotesize
-\setlength{\tabcolsep}{2.1pt}
+\setlength{\tabcolsep}{1.6pt}
 \begin{tabular}{llrrrrrr}
 \toprule
- & & Correct & Valid & \multicolumn{2}{c}{False} & \multicolumn{2}{c}{No cycle}\\
-\cmidrule(lr){4-4}\cmidrule(lr){5-6}\cmidrule(l){7-8}
+ & & Correct & \multicolumn{3}{c}{Cycle named} & \multicolumn{2}{c}{No cycle}\\
+\cmidrule(lr){4-6}\cmidrule(l){7-8}
 Arm & Primer & ``yes'' & Real & Invented & Not a & All & Edge\\
- & & ($n$) & cycle & cycle & cycle & & count\\
+ & & ($n$) & & & cycle & & count\\
 \midrule
 1.7P & none & 363 & 36.9 & 43.5 & 16.0 & 3.6 & 0.8\\ % [ccanswer] [cctest]
+ & degree & 293 & \textbf{13.0} & \textbf{20.5} & 1.4 & 65.2 & 55.6\\ % [ccanswer] [cctest]
  & clustering & 397 & 39.5 & 48.1 & 7.8 & 4.5 & 1.0\\ % [ccanswer] [cctest]
  & RWSE & 362 & 33.7 & 40.3 & 19.9 & 6.1 & 1.7\\ % [ccanswer] [cctest]
- & degree & 293 & \textbf{13.0} & \textbf{20.5} & 1.4 & 65.2 & 55.6\\ % [ccanswer] [cctest]
  & all & 391 & 38.4 & 50.4 & 7.9 & 3.3 & 1.3\\ % [ccanswer] [cctest]
+ & components & 371 & \textbf{27.8} & 40.4 & 25.3 & 6.5 & 4.3\\ % [ccanswer] [cctest]
+ & filler & 375 & 33.3 & \textbf{55.5} & 9.6 & 1.6 & 0.0\\ % [ccanswer] [cctest]
 \addlinespace[2pt]
 1.7T & none & 388 & 79.9 & 17.8 & 1.0 & 1.3 & 0.5\\ % [ccanswer] [cctest]
+ & degree & 301 & \textbf{61.5} & \textbf{29.6} & 0.0 & 9.0 & 9.0\\ % [ccanswer] [cctest]
  & clustering & 386 & 80.6 & 19.2 & 0.0 & 0.3 & 0.3\\ % [ccanswer] [cctest]
  & RWSE & 397 & \textbf{68.0} & 20.7 & 10.6 & 0.8 & 0.5\\ % [ccanswer] [cctest]
- & degree & 301 & \textbf{61.5} & \textbf{29.6} & 0.0 & 9.0 & 9.0\\ % [ccanswer] [cctest]
  & all & 385 & 73.0 & 21.8 & 3.1 & 2.1 & 1.8\\ % [ccanswer] [cctest]
+ & components & 358 & 74.9 & 22.6 & 0.0 & 2.5 & 2.0\\ % [ccanswer] [cctest]
+ & filler & 400 & 77.2 & 19.8 & 2.5 & 0.5 & 0.0\\ % [ccanswer] [cctest]
 \addlinespace[2pt]
 4P & none & 396 & 34.1 & 23.0 & 6.8 & 36.1 & 25.0\\ % [ccanswer] [cctest]
+ & degree & 387 & \textbf{13.4} & \textbf{3.9} & 2.1 & 80.6 & 65.6\\ % [ccanswer] [cctest]
  & clustering & 398 & \textbf{48.7} & \textbf{31.2} & 1.0 & 19.1 & 5.8\\ % [ccanswer] [cctest]
  & RWSE & 395 & 33.2 & 20.8 & 38.7 & 7.3 & 0.5\\ % [ccanswer] [cctest]
- & degree & 387 & \textbf{13.4} & \textbf{3.9} & 2.1 & 80.6 & 65.6\\ % [ccanswer] [cctest]
  & all & 395 & \textbf{45.1} & \textbf{33.4} & 6.6 & 14.9 & 0.8\\ % [ccanswer] [cctest]
+ & components & 388 & 39.2 & 18.6 & 3.4 & 38.9 & 26.5\\ % [ccanswer] [cctest]
+ & filler & 394 & \textbf{44.2} & 28.2 & 5.3 & 22.3 & 2.3\\ % [ccanswer] [cctest]
 \addlinespace[2pt]
 4T & none & 397 & 96.5 & 3.3 & 0.0 & 0.3 & 0.0\\ % [ccanswer] [cctest]
+ & degree & 375 & \textbf{90.9} & 5.1 & 0.0 & 4.0 & 2.7\\ % [ccanswer] [cctest]
  & clustering & 397 & 95.5 & 4.5 & 0.0 & 0.0 & 0.0\\ % [ccanswer] [cctest]
  & RWSE & 398 & \textbf{55.0} & 2.5 & 42.5 & 0.0 & 0.0\\ % [ccanswer] [cctest]
- & degree & 375 & \textbf{90.9} & 5.1 & 0.0 & 4.0 & 2.7\\ % [ccanswer] [cctest]
  & all & 395 & 92.7 & 6.3 & 0.0 & 1.0 & 1.0\\ % [ccanswer] [cctest]
+ & components & 384 & \textbf{92.2} & 4.4 & 0.0 & 3.4 & 2.9\\ % [ccanswer] [cctest]
+ & filler & 399 & 94.2 & 5.0 & 0.5 & 0.3 & 0.0\\ % [ccanswer] [cctest]
 \bottomrule
 \end{tabular}
-\caption{What the correct cycle-check answers rest on (main sweep; every correct answer is ``yes''). \emph{Correct ($n$)}: count of correct, finished answers; the other columns are \% of those $n$, and Real, Invented, Not a cycle and All sum to 100. \emph{Valid}: a cycle whose every step is an edge. \emph{False}: \emph{Invented} has a step that is not an edge; \emph{Not a cycle} is a length-2 or retraced walk. \emph{No cycle}: \emph{All} names none; \emph{Edge count} argues from the number of edges (valid). Bold (Real, Invented only): differs from the same model without a primer (paired, BH $q<.05$).} % [ccanswer] [cctest]
+\caption{What the correct cycle-check answers rest on (main sweep; every correct answer is ``yes''). \emph{Correct ($n$)}: count of correct, finished answers; the other columns are \% of those $n$, and Real, Invented, Not a cycle and All sum to 100. \emph{Real}: every step of the cycle is an edge; \emph{Invented}: a step is not an edge; \emph{Not a cycle}: a length-2 or retraced walk. \emph{Edge count}: the answers under All that argue from the number of edges, identified by their wording. The valid arguments are Real and Edge count, which is valid because $40$ nodes with at least $40$ edges must contain a cycle. Bold (Real, Invented only): differs from the same model without a primer (paired, BH $q<.05$).} % [ccanswer] [cctest]
 \label{tab:cycles}
 \end{table}
