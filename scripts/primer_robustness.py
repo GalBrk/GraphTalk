@@ -16,6 +16,10 @@ here compare those flips across conditions and arms.
   [overlap]     per arm: % of the questions filler flips that a primer flips too,
                 against % of the rest, and that difference within (task, density);
                 permutation within (task, density), BH over the five primers
+  [rerunflip]   qwen3-1.7b node_degree: the questions whose outcome under none
+                changes on a second generation of the same prompt ([rerun])
+                against the rest: % each condition flips, Fisher exact and a
+                permutation within density, BH over the six conditions
   [fragile]     per (arm, task): % of questions right under all seven conditions,
                 wrong under all, or mixed; mixed by density, and when none is
                 truncated vs finished
@@ -206,6 +210,32 @@ def overlap(w):
     print(f"  {SHORT[arm]:6s} filler flips {y.sum()} of {len(y)}: " + " | ".join(
         f"{c} {a:.1f} vs {b:.1f} [{pf.f1(d)}]{'*' if q < .05 else ''} (p={p:.2g})"
         for (c, a, b, d, p), q in zip(rows, pf.bh([1.0 if r[4] != r[4] else r[4] for r in rows]))))
+
+
+def rerun_flip(w):
+  """Questions whose outcome under none changes when the same prompt is generated again (primer_findings'
+  [rerun]: qwen3-1.7b node_degree, the only arm and task generated twice) against the rest: does each
+  condition flip them more often? The part of a condition's flips that chance alone produces."""
+  main = pf.load_runs("data/runs/qwen3-1.7b.densfull40.shard*.jsonl", tasks={"node_degree"}, conds={"none"})
+  again = pf.load_runs("data/runs/qwen3-1.7b.degdens40.shard*.jsonl", conds={"none"})
+  unstable = {k[0].split("/", 2)[2] for k, r in again.items()
+              if k in main and pf.record_correct(r) != pf.record_correct(main[k])}
+  x = one(w, "qwen3-1.7b", "node_degree")
+  y = x.index.get_level_values("graph_id").isin(unstable)
+  g = np.asarray(x.index.get_level_values("density_class"))
+  print(f"[rerunflip] qwen3-1.7b node_degree, main sweep (p<=.50): questions whose outcome under none changes "
+        f"when the same prompt is generated again ([rerun]) against the rest: % each condition flips against "
+        f"none, flips on those questions / all flips, Fisher exact p, permutation within density "
+        f"({ccc.B_PERM} draws), BH over the six conditions on the permutation p")
+  print(f"  outcome changes on a second generation: {y.sum()} of {len(y)} questions")
+  rows = []
+  for c in CONDS[1:]:
+    z = (x[c] != x["none"]).to_numpy()
+    _, p_fisher = stats.fisher_exact([[(z & y).sum(), (~z & y).sum()], [(z & ~y).sum(), (~z & ~y).sum()]])
+    _, p_perm = ccc.perm_within(z.astype(float), y, g, np.random.default_rng(pf.SEED))
+    rows.append((c, 100 * z[y].mean(), 100 * z[~y].mean(), (z & y).sum(), z.sum(), p_fisher, p_perm))
+  for (c, a, b, k, n, pfi, ppe), q in zip(rows, pf.bh([r[6] for r in rows])):
+    print(f"  {c:10s} {a:.1f} vs {b:.1f} ({k} of {n} flips) Fisher p={pfi:.2g} perm p={ppe:.2g} q={q:.2g}")
 
 
 def fragile(w, t):
@@ -495,6 +525,7 @@ def main():
   assert not w.isna().any().any()
   churn(w)
   overlap(w)
+  rerun_flip(w)
   fragile(w, wide(f, "truncated"))
   crossarm(w)
   ok = {(r.arm, r.instance_id, r.condition): (bool(r.truncated), bool(r.correct), r.pred, r.gold)

@@ -33,6 +33,14 @@
   1.7B-T filler flips 250 of 2400: components 57.2 vs 7.1 [+51.4]* (p=0.0005) | clustering 63.2 vs 5.8 [+56.4]* (p=0.0005) | rwse 61.6 vs 5.4 [+58.9]* (p=0.0005) | degree 59.2 vs 12.7 [+41.9]* (p=0.0005) | all 57.6 vs 8.8 [+55.2]* (p=0.0005)
   4B     filler flips 216 of 2400: components 42.1 vs 3.1 [+32.5]* (p=0.0005) | clustering 44.4 vs 3.3 [+40.1]* (p=0.0005) | rwse 54.6 vs 4.0 [+40.9]* (p=0.0005) | degree 48.1 vs 10.3 [+36.3]* (p=0.0005) | all 55.6 vs 6.2 [+43.0]* (p=0.0005)
   4B-T   filler flips 150 of 2400: components 52.7 vs 5.8 [+47.4]* (p=0.0005) | clustering 66.0 vs 4.6 [+61.7]* (p=0.0005) | rwse 51.3 vs 4.2 [+50.5]* (p=0.0005) | degree 54.0 vs 6.1 [+59.9]* (p=0.0005) | all 46.7 vs 4.9 [+48.1]* (p=0.0005)
+[rerunflip] qwen3-1.7b node_degree, main sweep (p<=.50): questions whose outcome under none changes when the same prompt is generated again ([rerun]) against the rest: % each condition flips against none, flips on those questions / all flips, Fisher exact p, permutation within density (2000 draws), BH over the six conditions on the permutation p
+  outcome changes on a second generation: 24 of 400 questions
+  filler     50.0 vs 14.4 (12 of 66 flips) Fisher p=8.5e-05 perm p=0.0005 q=0.001
+  components 45.8 vs 14.4 (11 of 65 flips) Fisher p=0.00041 perm p=0.003 q=0.0036
+  clustering 45.8 vs 22.1 (11 of 94 flips) Fisher p=0.012 perm p=0.018 q=0.018
+  rwse       58.3 vs 20.2 (14 of 90 flips) Fisher p=9.4e-05 perm p=0.0005 q=0.001
+  degree     66.7 vs 18.1 (16 of 84 flips) Fisher p=7.1e-07 perm p=0.0005 q=0.001
+  all        62.5 vs 26.1 (15 of 113 flips) Fisher p=0.00032 perm p=0.0025 q=0.0036
 [fragile] main sweep, 400 questions per (arm, task): % right under all seven conditions / wrong under all / mixed | % mixed by density | % mixed where none is truncated (n) vs finished (n)
   1.7B   node_count        7.5 /   0.2 /  92.2 | 0.1 99.0 0.2 100.0 0.35 91.0 0.5 79.0 | - (0) vs 92.2 (400)
   1.7B   cycle_check      51.2 /   0.0 /  48.8 | 0.1 48.0 0.2 45.0 0.35 59.0 0.5 43.0 | 100.0 (36) vs 43.7 (364)

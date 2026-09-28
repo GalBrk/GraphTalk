@@ -58,10 +58,18 @@ accuracy, and why answers are wrong, are the conclusions of
   - **Thinking models: the token budget.** 83–95% (4B-T) and 44–65% (1.7B-T)
     of the flips have one response that ran out of tokens (R `[churnwhy]`).
   - **Plain models: finished answers that change,** 78–93% (1.7B) and 94–98%
-    (4B). Chance, a common effect of adding text, and difficulty within
-    density all fit. Pure chance is measured only for 1.7B `node_degree`,
-    where regenerating identical prompts changes correctness on 5.3% of
-    questions (P `[rerun]`).
+    (4B).
+- **The flips concentrate on fragile questions, and chance alone explains a
+  minority of them.** Plain 1.7B `node_degree` is the one arm and task
+  generated twice: regenerating identical prompts changes correctness on 5.3%
+  of them (P `[rerun]`), and on 24 of the 400 main-sweep questions under none
+  (R `[rerunflip]`). Every condition flips those 24 far more often than the
+  rest: filler 50.0% against 14.4%, degree 66.7% against 18.1%, and 45.8–66.7%
+  against 14.4–26.1% over the six conditions (BH q ≤ 0.018, permutation
+  within density). Yet they carry only 11 to 16 of each condition's 65 to 113
+  flips. With two generations per prompt, chance is seen once, so that share
+  is a lower bound; a common effect of adding text and difficulty within
+  density account for the rest.
 - **For the paper.** McNemar stays valid: flips in both directions cost it
   power, not bias. But the number of pairs that disagree is not evidence of
   content, and an effect against none includes what any added text does. The
@@ -234,11 +242,15 @@ for 2000 draws. R `[overlap]`:
   so it isn't produced by mixing tasks of different difficulty.
 - **Why they are the same questions.** In the thinking arms, the shared
   questions are mostly those whose response runs close to the token budget
-  (§1, `[churnwhy]`). In the plain arms the three explanations of §1 remain:
-  outcomes re-drawn by any edit, a common effect of adding text, or difficulty
-  within density. With a right/wrong outcome, two conditions that flip a
-  question always flip it the same way. So the overlap alone cannot tell a
-  common effect from chance.
+  (§1, `[churnwhy]`). In the plain arms they are partly fragile questions: on
+  plain 1.7B `node_degree`, the questions whose outcome under none changes on a
+  second generation of the same prompt are flipped by every condition
+  45.8–66.7% of the time, against 14.4–26.1% of the rest (R `[rerunflip]`),
+  though chance alone accounts for only 11 to 16 of each condition's 65 to 113
+  flips. The rest fits a common effect of adding text or difficulty within
+  density; with a right/wrong outcome, two conditions that flip a question
+  always flip it the same way, so the overlap alone cannot tell those two
+  apart.
 - **The degree primer stands out in three arms.** It has the highest flip rate
   on questions filler leaves alone in 1.7B-T (12.7), 4B (10.3) and 4B-T (6.1).
   In 1.7B, all (15.2) and rwse (14.7) are higher. This fits a primer that

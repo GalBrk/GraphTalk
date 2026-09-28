@@ -33,7 +33,7 @@ it in paired tests.
 
 ## How a primer is used
 
-<p align="center"><img src="docs/img/primer_usage.png" width="900" alt="One graph, the prompt the model reads (primer, incident encoding, question), and the seven primer conditions"></p>
+<p align="center"><img src="docs/img/primer_usage.png" width="900" alt="The seven primer conditions, each in its own colour with its sentence about node 2, and the prompt the model reads: one primer, the incident encoding and the question"></p>
 
 Each prompt is a primer, then GraphQA's incident encoding of the graph, then the
 question. The seven conditions go through one renderer (`graphtalk/primers.py`), so

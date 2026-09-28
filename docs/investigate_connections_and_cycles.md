@@ -89,7 +89,7 @@ solver that reads only the primer scores 100% (P `[bars]`). Effects
 - **The largest gains are on `node_count`, and they are not counting.** They
   change which number the model writes (C3).
 
-### C2. Correct answers often rest on false claims, and no primer fixes that
+### C2. Correct answers often rest on false claims, and no primer makes the model find real cycles
 
 At 40 nodes every graph has a cycle, so `cycle_check`'s answer is always yes.
 % of correct finished answers resting on a real or an invented cycle, no
@@ -114,6 +114,12 @@ primer (C `[ccanswer]`):
   - `clustering` and `all` *raise* invented cycles significantly for three
     models each, for example 1.7B-T `clustering` +13.0 and 4B `all` +11.3
     (C `[ccinvent]`).
+- **Counting the edge-count argument as valid** (40 nodes with at least 40
+  edges must contain a cycle), a valid argument backs 34.2% of plain 1.7B's
+  prompts and 58.5% of plain 4B's without a primer, against 78.0% and 95.8%
+  for thinking without one (C `[ccvalid]`). `degree` raises the plain shares
+  to 50.2% and 76.5% (BH q < .05), still below thinking; `rwse`, `all` and
+  `filler` lower plain 4B's to 33.2%, 45.2% and 45.8% (q < .05).
 - **The invented edge is usually the one that closes the walk:** 56.6% of
   1.7B's invented steps (C `[ccwhere]`).
 - **The same happens on `edge_existence`.** A stated fake edge backs 33.9% of
