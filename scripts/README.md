@@ -3,7 +3,9 @@
 The pipeline, from graphs to the numbers in the docs and the paper.
 [← back to the repo](../README.md)
 
-Run everything from the repo root with `PYTHONPATH=.`. Only `run_sweep.py`
+Run everything from the repo root with `PYTHONPATH=.` and the venv active
+(`source .venv/bin/activate`, or prefix each command with `uv run --no-sync`).
+Only `run_sweep.py`
 needs a GPU; every other stage runs on a laptop from the committed files in
 `data/`.
 

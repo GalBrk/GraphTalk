@@ -57,8 +57,6 @@ future work draw on them.
 Also here:
 - [plans/rq3-gpu-tests.md](plans/rq3-gpu-tests.md): a planned GPU test of the
   `clustering` effect, not yet run;
-- [collaborator-access.md](collaborator-access.md): how a teammate reaches the
-  data on the cluster;
 - [proposal.pdf](proposal.pdf): the project proposal.
 
 ## Conventions

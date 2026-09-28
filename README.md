@@ -127,8 +127,9 @@ uv run --no-sync pytest -q                     # ~830 tests
 Reproduce the main experiment's numbers from the committed responses (no GPU):
 
 ```bash
-PYTHONPATH=. python scripts/build_raw_frame.py
-PYTHONPATH=. python scripts/primer_findings.py --csv-dir outputs/n40-sweep > outputs/n40-sweep/primer_findings.txt
+export PYTHONPATH=. PYTHONUTF8=1
+uv run --no-sync python scripts/build_raw_frame.py
+uv run --no-sync python scripts/primer_findings.py --csv-dir outputs/n40-sweep > outputs/n40-sweep/primer_findings.txt
 uv run --no-sync pytest -q tests/test_results_docs.py
 ```
 
