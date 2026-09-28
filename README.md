@@ -65,7 +65,7 @@ text shows which primers give the answer away.
   <sub>The <code>degree</code> primer's effect on node degree against the correct share without a primer,
   one point per model and edge density (P/T: thinking off/on). The gain is largest where a model is
   right about half the time and becomes a loss where it is right most of the time. Hollow: plain model
-  at p ≥ .65 (smaller token budget). Paper Figure 2; details:
+  at p ≥ .65 (smaller token budget). Paper Figure 3; details:
   <a href="docs/results/n40-sweep.md#4-a-primer-that-states-the-answer-changes-the-procedure">n40-sweep §4</a>.</sub>
 </p>
 
