@@ -289,12 +289,19 @@ Cycle & 1.7P & $-17.5$$^\dagger$ {\tiny$[-23.0,-12.2]$} & $+8.5$ {\tiny$[+5.8,+1
 
 \begin{figure}[!h]
 \centering
+\includegraphics[width=\columnwidth]{fig_primer_effect.pdf}
+\caption{Node-degree accuracy per arm with no primer (dot) and with the degree primer (arrow), as in Table~\ref{tab:matrix}. Hollow: the clustering primer, which states no degree. Blue gains and red losses have $q<.05$ against no primer; gray does not.} % [main]
+\label{fig:degreeeffect}
+\end{figure}
+
+\begin{figure}[!h]
+\centering
 \includegraphics[width=\columnwidth]{fig_headroom.pdf}
 \caption{The degree primer's effect on node degree against the no-primer correct share, per arm and density. Hollow: plain arm at $p\geq.65$ (smaller budget).} % [flip] [bands]
 \label{fig:headroom}
 \end{figure}
 
-\paragraph{Stated answers (\S\ref{sec:readoff}).} The effect varies with unaided accuracy (Figure~\ref{fig:headroom}). In node-degree cells answered $25$--$50\%$ and $50$--$75\%$ correctly without them, answer-stating primers gain $16.1$ and $12.9$ points; at $75$--$90\%$ they lose $5.8$. These bands hold on held-out halves of the graphs and with the truncation flag at $10\%$ or $50\%$ (at least $+12.5$ in every case). % [bands] [splithalf] [bandsens]
+\paragraph{Stated answers (\S\ref{sec:readoff}).} The effect varies with unaided accuracy (Figures~\ref{fig:degreeeffect} and~\ref{fig:headroom}). In node-degree cells answered $25$--$50\%$ and $50$--$75\%$ correctly without them, answer-stating primers gain $16.1$ and $12.9$ points; at $75$--$90\%$ they lose $5.8$. These bands hold on held-out halves of the graphs and with the truncation flag at $10\%$ or $50\%$ (at least $+12.5$ in every case). % [bands] [splithalf] [bandsens]
 An effect mostly follows how well the model does unaided. At a fixed accuracy without a primer, density adds little ($p=.28$ for answer-stating primers, $p=.85$ for side statistics), except that side statistics' effect on node degree falls with density ($p=.006$). % [dxbase]
 One model falls on both sides. The degree primer costs plain 4B $12.0$ points at $p=.50$, where it answers $99.0\%$ correctly unaided, and gains $27.0$ at $p=.85$, where it answers $33.0\%$ (both $q<.01$). % [flip]
 Stated answers are not always taken: across all seven densities, where the solver scores $100\%$, node-degree accuracy under the degree primer is $43\%$ and $81\%$ for plain 1.7B and plain 4B, and $79\%$ and $98\%$ with thinking. At high density, where plain 1.7B is weakest, the stated degree barely helps it (at most $2$ points). At $p=.85$ it still answers $39$, the degree of a node joined to all others, on $70.8\%$ of finished responses. % [recover] [plain17] [ddplain]

@@ -3,7 +3,8 @@
   primer_effect.png  node_degree without a primer and with the degree primer
                      (states the answer) or clustering (states none), per arm;
                      every value is read from the [main] block of
-                     outputs/n40-sweep/primer_findings.txt.
+                     outputs/n40-sweep/primer_findings.txt; primer_effect.pdf is
+                     the one-column version for the paper.
   primer_usage.png   how a primer is used: the seven conditions, each in its own
                      colour, and the prompt one opens; primer_usage.pdf is the
                      one-column version for the paper. Every sentence is
@@ -52,43 +53,50 @@ def main_rows(report):
     return rows
 
 
-def primer_effect(rows):
+def primer_effect(rows, wide):
     """Dumbbells: no primer (dot) to the degree primer (arrow); clustering as a gray ghost.
-    Blue gains and red losses have q < .05; gray ones do not."""
+    Blue gains and red losses have q < .05; gray ones do not. Wide for the front page, one column
+    without a legend for the paper."""
     gain, loss, flat, ghost = "#2a78d6", "#e34948", "#9a9994", "#c9c8c3"
-    fig, ax = plt.subplots(figsize=(7.4, 2.9))
+    fs, small = (9, 8.5) if wide else (7, 6.5)
+    w = 1 if wide else 0.6                           # line and marker scale
+    fig, ax = plt.subplots(figsize=(7.4, 2.9) if wide else (3.3, 1.9))
     for y, a in enumerate(reversed(ARMS)):
         none, cl, _, _ = rows[(a, "clustering")]
-        ax.plot([none, cl], [y - .22] * 2, color=ghost, lw=2, solid_capstyle="round", zorder=1)
-        ax.scatter([cl], [y - .22], s=26, facecolors="white", edgecolors=ghost, linewidths=1.5, zorder=2)
+        ax.plot([none, cl], [y - .22] * 2, color=ghost, lw=2 * w, solid_capstyle="round", zorder=1)
+        ax.scatter([cl], [y - .22], s=26 * w * w, facecolors="white", edgecolors=ghost, linewidths=1.5 * w,
+                   zorder=2)
         none, deg, d, q = rows[(a, "degree")]
         color = flat if q >= .05 else gain if d > 0 else loss
-        ax.annotate("", xy=(deg, y), xytext=(none, y), zorder=3,
-                    arrowprops=dict(arrowstyle="-|>,head_length=0.55,head_width=0.3", color=color, lw=2.4,
-                                    shrinkA=0, shrinkB=0))
-        ax.scatter([none], [y], s=46, color=INK, zorder=4)
+        arrow = dict(arrowstyle="-|>,head_length=0.55,head_width=0.3", color=color, lw=2.4 * w,
+                     shrinkA=0, shrinkB=0)
+        if not wide:
+            arrow["mutation_scale"] = 7
+        ax.annotate("", xy=(deg, y), xytext=(none, y), zorder=3, arrowprops=arrow)
+        ax.scatter([none], [y], s=46 * w * w, color=INK, zorder=4)
         label = f"{d:+.1f}".replace("-", "−") + ("" if q < .05 else " (n.s.)")
-        ax.text(max(none, deg) + 1.2, y, label, va="center", fontsize=9, color=INK,
+        ax.text(max(none, deg) + (1.2 if wide else 1.6), y, label, va="center", fontsize=fs, color=INK,
                 fontweight="bold" if q < .05 else "normal")
-    ax.set_yticks(range(len(ARMS)), [NAMES[a] for a in reversed(ARMS)], fontsize=9, color=INK)
+    ax.set_yticks(range(len(ARMS)), [NAMES[a] for a in reversed(ARMS)], fontsize=fs, color=INK)
     ax.set_xlim(55, 106)
     ax.set_xticks([60, 70, 80, 90, 100], ["60%", "70%", "80%", "90%", "100%"])
-    ax.set_xlabel("Node-degree accuracy (correct share of all responses)", fontsize=8.5, color=INK)
-    ax.tick_params(axis="x", labelsize=8.5, colors=MUTED, length=0)
+    ax.set_xlabel("Node-degree accuracy (correct share of all responses)", fontsize=small, color=INK)
+    ax.tick_params(axis="x", labelsize=small, colors=MUTED, length=0)
     ax.tick_params(axis="y", length=0)
     ax.spines[["top", "right", "left"]].set_visible(False)
     ax.spines["bottom"].set_color(LINE)
     ax.grid(axis="x", color="#ecebe7", lw=0.8)
     ax.set_axisbelow(True)
-    handles = [plt.Line2D([], [], marker="o", color=INK, lw=0, markersize=6, label="no primer"),
-               plt.Line2D([], [], color=gain, lw=2.4, marker=">", markersize=6,
-                          label="+ degree primer (states the answer)"),
-               plt.Line2D([], [], color=ghost, lw=2, marker="o", markerfacecolor="white", markersize=5,
-                          label="+ clustering primer (states none)")]
-    ax.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.45, 1.2), ncol=3, frameon=False,
-              fontsize=8.5, handletextpad=0.4, columnspacing=1.6)
+    if wide:                                         # the paper's caption carries the legend
+        handles = [plt.Line2D([], [], marker="o", color=INK, lw=0, markersize=6, label="no primer"),
+                   plt.Line2D([], [], color=gain, lw=2.4, marker=">", markersize=6,
+                              label="+ degree primer (states the answer)"),
+                   plt.Line2D([], [], color=ghost, lw=2, marker="o", markerfacecolor="white", markersize=5,
+                              label="+ clustering primer (states none)")]
+        ax.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.45, 1.2), ncol=3, frameon=False,
+                  fontsize=8.5, handletextpad=0.4, columnspacing=1.6)
     fig.tight_layout()
-    fig.savefig(OUT / "primer_effect.png", dpi=200, bbox_inches="tight", pad_inches=0.08, facecolor="white")
+    return fig
 
 
 # One colour per condition; `all` shows the three statistics it combines.
@@ -215,6 +223,10 @@ def _usage_figure(wide, q, rows, prompt):
 
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
-    primer_effect(main_rows(REPORT.read_text(encoding="utf-8")))
+    rows = main_rows(REPORT.read_text(encoding="utf-8"))
+    primer_effect(rows, True).savefig(OUT / "primer_effect.png", dpi=200, bbox_inches="tight", pad_inches=0.08,
+                                      facecolor="white")
+    primer_effect(rows, False).savefig(OUT / "primer_effect.pdf", bbox_inches="tight", pad_inches=0.02,
+                                       facecolor="white")
     primer_usage()
     print(f"wrote {OUT / 'primer_effect.png'} and {OUT / 'primer_usage.png'}")
