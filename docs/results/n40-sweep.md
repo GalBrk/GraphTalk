@@ -60,9 +60,10 @@ under in one of the two sources, so `+27.2 [edgecount]` is found in the
 
 ## 2. Which primers state the answer
 
-A graph-blind solver reads only the primer text: 16 [bars] exact rules,
-1 [bars] heuristic and 8 [bars] rules fitted on graphs disjoint from the ones
-scored.
+A graph-blind solver reads the primer text, the query targets and the graph's
+node and edge counts, never the incident edge list, and does not return a
+granted count as the answer: 16 [bars] exact rules, 1 [bars] heuristic and
+8 [bars] rules fitted on graphs disjoint from the ones scored.
 
 - `degree` and `all` state the answer to `node_degree` and `edge_count`: the
   solver scores 100.0 [bars] on both.

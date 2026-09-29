@@ -25,9 +25,9 @@ Help Small LLMs Mainly by Stating the Answer** ([PDF](paper/paper.pdf)).
   <img src="docs/img/primer_usage.png" width="900" alt="The seven primer conditions, each in its own colour with its sentence about node 2, and the prompt the model reads: one primer, the incident encoding and the question">
   <br>
   <sub>How a primer is used. Left: the seven conditions, each with its sentence about node 2 of a
-  five-node example (the study's graphs have 40 nodes); ★ marks the two that state a node-degree
-  answer. Right: the prompt the model reads, one primer followed by GraphQA's incident encoding and
-  the question. Paper Figure 1.</sub>
+  five-node example (the study's graphs have 40 nodes). Right: the prompt the model reads, one primer
+  followed by GraphQA's incident encoding and the question. Degree and all state the answer to this
+  example question. Paper Figure 1.</sub>
 </p>
 
 Before the encoding, we place either no primer; one sentence per node stating its

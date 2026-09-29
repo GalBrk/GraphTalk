@@ -146,7 +146,7 @@ def _usage_figure(wide, q, rows, prompt):
     # `all` loses room to its three colour squares.
     row_lines = [textwrap.wrap(t, wrap_row - (7 if n == "all" else 0)) for n, t in rows]
     row_h = [max(lh(body) * 1.25, lh(mono) * len(ls)) for ls in row_lines]
-    cond_h = pad + lh(title) + lh(small) + 4 + sum(h + 4 for h in row_h) + lh(small) + pad
+    cond_h = pad + lh(title) + lh(small) + 4 + sum(h + 4 for h in row_h) + pad
     block_lines = [(k, head, textwrap.wrap(t, wrap_prompt) if isinstance(t, str) else t) for k, head, t in prompt]
     block_h = [lh(small) + 0.92 * lh(mono) * len(ls) + 10 * s for _, _, ls in block_lines]
     prompt_h = pad + lh(title) + 4 + sum(h + 6 for h in block_h) + lh(small) * 2 + pad
@@ -174,10 +174,9 @@ def _usage_figure(wide, q, rows, prompt):
     y = ctop - pad - lh(title) - lh(small) - 4
     degree_mid = None
     for (name, _), ls, h in zip(rows, row_lines, row_h):
-        star = name in ("degree", "all")
         pill_h = lh(body) * 1.2
         rect(cx + pad, y, pill_w, pill_h, COND_COLORS[name], r=pill_h / 2, z=2)
-        ax.text(cx + pad + pill_w / 2, y - pill_h / 2, name + (" ★" if star else ""), fontsize=body,
+        ax.text(cx + pad + pill_w / 2, y - pill_h / 2, name, fontsize=body,
                 ha="center", va="center", color="white", fontweight="bold", zorder=5)
         tx = cx + pad + pill_w + 8 * s
         if name == "all":                            # the three statistics it combines
@@ -188,8 +187,6 @@ def _usage_figure(wide, q, rows, prompt):
         if name == "degree":
             degree_mid = y - pill_h / 2
         y -= h + 4
-    text(cx + pad, ctop - cond_h + pad + lh(small) - 1, "★ states the answer to a node-degree question",
-         small, color=MUTED)
 
     # The prompt card.
     px, ptop = (card_w + 40, H) if wide else (0, H - cond_h - gap - 14)
