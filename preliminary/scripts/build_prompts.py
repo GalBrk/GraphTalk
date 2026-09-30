@@ -11,6 +11,9 @@ same graph and the same query appear under every primer condition and both promp
 styles, differing only in the primer. `instance_id` is the pairing key.
 
   PYTHONPATH=. .venv/bin/python preliminary/scripts/build_prompts.py --count 30
+
+writes `preliminary/data/prompts/prompts.jsonl` (`prompts_got.jsonl` with
+`--node-naming got`); any non-default build needs its own `--out`.
 """
 
 import argparse
@@ -43,6 +46,18 @@ _APPROX_CHARS_PER_TOKEN = 4
 # docs/design/primer-computation.md, where the two draws differ by five points on
 # `edge_existence`.
 SPLIT = "zero_shot_test"
+
+# Where `--out` points when it is not given: the pilot's tracked prompt file for
+# each naming scheme, which holds the default build (`--count 30`, every
+# condition, style and task, the published split). Any other build must name
+# its own `--out` rather than overwrite one of them.
+DEFAULT_OUT = {
+    "integer": "preliminary/data/prompts/prompts.jsonl",
+    "got": "preliminary/data/prompts/prompts_got.jsonl",
+}
+_SHAPING_ARGS = ("count", "split", "conditions", "styles", "k_min", "k_max",
+                 "graph_source", "pool_size", "tasks", "xlarge", "node_count",
+                 "er_min_sparsity", "er_max_sparsity", "algorithms")
 
 
 def load_rows(config: str, count: int, split: str, cache: str) -> list[dict]:
@@ -316,7 +331,10 @@ def main() -> None:
                            "graphs in the shared pool for --graph-source diverse "
                            "(the proposal's starting budget is 30)")
   parser.add_argument("--split", default=SPLIT)
-  parser.add_argument("--out", default="prompts.jsonl")
+  parser.add_argument("--out", default=None,
+                      help="default: the pilot's tracked file for the naming "
+                           "scheme (DEFAULT_OUT), and only for the default "
+                           "build; required otherwise")
   parser.add_argument("--cache", default=".cache/sweep_rows")
   parser.add_argument("--conditions", nargs="+", default=sorted(primers.CONDITIONS))
   parser.add_argument("--styles", nargs="+", default=list(prompts.PROMPT_STYLES))
@@ -394,6 +412,13 @@ def main() -> None:
                            "--count on graphs the density flags actually "
                            "control, instead of wasting 6/7 of it.")
   args = parser.parse_args()
+
+  if args.out is None:
+    if any(getattr(args, name) != parser.get_default(name) for name in _SHAPING_ARGS):
+      parser.error("--out is required for a non-default build: the default path "
+                   "is the pilot's tracked prompt file, which holds the default "
+                   "--count 30 build")
+    args.out = DEFAULT_OUT[args.node_naming]
 
   if args.graph_source == "diverse" and args.node_naming != "integer":
     raise NotImplementedError(

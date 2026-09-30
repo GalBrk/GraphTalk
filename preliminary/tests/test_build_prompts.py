@@ -14,7 +14,9 @@ built from vendored-generator graphs, matching the project's existing
 published dataset's full prose.
 """
 
+import os
 import random
+import sys
 
 import networkx as nx
 import pytest
@@ -278,3 +280,30 @@ def test_raises_when_shipped_answer_disagrees_with_the_parsed_graph(monkeypatch)
         count=1, conditions=["none"], styles=["zero_shot"], split="x",
         cache="unused", k_min=2, k_max=3, pool_size=1,
     )
+
+
+def test_non_default_build_without_out_is_refused(monkeypatch, tmp_path):
+  """The default `--out` is the pilot's tracked prompt file, so a build other
+  than the default must name its own `--out`. Refused before any row is
+  fetched, and nothing is written."""
+  monkeypatch.chdir(tmp_path)
+
+  def _no_fetch(*args, **kwargs):
+    raise AssertionError("fetched rows before checking --out")
+
+  monkeypatch.setattr(build_prompts, "load_rows", _no_fetch)
+  monkeypatch.setattr(sys, "argv", ["build_prompts.py", "--count", "5"])
+  with pytest.raises(SystemExit) as excinfo:
+    build_prompts.main()
+  assert excinfo.value.code == 2
+  assert not list(tmp_path.iterdir())
+
+
+def test_default_out_is_the_tracked_prompt_file_per_scheme():
+  assert build_prompts.DEFAULT_OUT == {
+      "integer": "preliminary/data/prompts/prompts.jsonl",
+      "got": "preliminary/data/prompts/prompts_got.jsonl",
+  }
+  repo_root = os.path.join(os.path.dirname(__file__), "..", "..")
+  for path in build_prompts.DEFAULT_OUT.values():
+    assert os.path.exists(os.path.join(repo_root, path)), path
