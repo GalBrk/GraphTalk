@@ -90,7 +90,8 @@ sbatch --array=0-24 --exclude=n-801 --mem=24G --time=24:00:00 \
 ```
 
 `--exclude=n-801` goes with `graphtalk-cu126` only: it replaces the script's
-default exclude list, which admits the 535.x-driver nodes that env can use
+default exclude list, and so admits the 535.x-driver nodes, which that env can
+use and the default env cannot
 ([below](#half-the-partition-has-a-driver-the-default-env-cannot-use)).
 
 `sweep.sbatch` reads these variables (pass them with `--export=ALL,...`):
@@ -176,7 +177,7 @@ SCRATCH=/path/outside/any/checkout/gt-repro
 PYTHONPATH=. $PY scripts/reproduce_rows.py subset --model qwen3-1.7b \
     --rows 48 --max-tokens 2000 --out $SCRATCH/repro48.jsonl
 
-sbatch --time=04:00:00 --mem=16G \
+sbatch --time=06:00:00 --mem=16G \
   --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=$SCRATCH/repro48.jsonl,GRAPHTALK_RUN_TAG=repro,GRAPHTALK_RUNS_DIR=$SCRATCH/runs,GRAPHTALK_HF_HOME=$SCRATCH/hf_home,GRAPHTALK_MAX_NEW_TOKENS=8192 \
   cluster/sweep.sbatch qwen3-1.7b
 #   -> $SCRATCH/runs/qwen3-1.7b.repro.jsonl
@@ -206,7 +207,7 @@ Reading it:
   outcome agree on at least 41 of the 48 rows. Exact text need not match:
   `data/runs/` does not record which card generated each row, and bf16
   arithmetic on another card or CUDA build flips near-tie tokens part way
-  through a response (the batching check below saw the same thing, with
+  through a response (the batching check below shows the same mechanism, its
   mismatches sharing their first 57-942 characters).
 
 ### Regenerating part of a run
