@@ -41,10 +41,10 @@ difficulty and is shown here only for orientation — read the per-task table fr
 >
 > | model | `none` | `degree` | `all` | `filler` |
 > |---|---|---|---|---|
-> | gemma4-e4b | 96.1% | 97.2% | 96.1% | 96.7% |
+> | gemma4-e4b | 96.1% | 97.8% | 96.1% | 96.7% |
 > | gemma4-12b | 98.9% | **100.0%** | 99.4% | 97.2% |
-> | qwen3-8b | 90.0% | 92.8% | 91.1% | 85.0% |
-> | qwen3-14b | 88.9% | 93.3% | 90.0% | 88.9% |
+> | qwen3-8b | 90.0% | 92.8% | 92.2% | 85.0% |
+> | qwen3-14b | 88.9% | 93.3% | 90.6% | 88.9% |
 >
 > The direction below still holds; the sizes do not.
 

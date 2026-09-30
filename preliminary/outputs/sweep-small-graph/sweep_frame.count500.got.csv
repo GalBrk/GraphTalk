@@ -1966,7 +1966,7 @@ connected_nodes/353,connected_nodes,degree,zero_shot,"0, 1, 7, 8.",qwen3-8b,qwen
 connected_nodes/357,connected_nodes,degree,zero_shot,5.,qwen3-8b,qwen3-8b,False,got,5,7,,True,1.0,1.0,False,False,,False,generator,67,unaffected,True,0.208,222,correct,False
 connected_nodes/361,connected_nodes,degree,zero_shot,"0, 1, 2, 13, 14.",qwen3-8b,qwen3-8b,False,got,"1, 2, 13, 14, 0",11,,True,1.0,1.0,False,False,,False,generator,133,unaffected,True,0.208,347,correct,False
 connected_nodes/365,connected_nodes,degree,zero_shot,"0, 2, 3, 4, 7, 10, 14.",qwen3-8b,qwen3-8b,False,got,"4, 7, 2, 3, 14, 0, 10",5,,True,1.0,1.0,False,False,,False,generator,141,unaffected,True,0.208,377,correct,False
-connected_nodes/369,connected_nodes,degree,zero_shot,"0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 13, 14, 15.",qwen3-8b,qwen3-8b,False,got,"7, 2, 13, 3, 11, 14, 0, 9, 10, 15",6,,True,0.0,0.8695652173913044,False,False,,False,generator,291,unaffected,True,0.208,688,wrong,False
+connected_nodes/369,connected_nodes,degree,zero_shot,"0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 13, 14, 15.",qwen3-8b,qwen3-8b,False,got,"7, 2, 13, 3, 11, 14, 0, 9, 10, 15",6,,True,0.0,0.8695652173913044,False,False,,False,generator,291,unaffected,True,0.208,684,wrong,False
 connected_nodes/373,connected_nodes,degree,zero_shot,"1, 3, 6, 7, 8, 9, 10, 12, 14.",qwen3-8b,qwen3-8b,False,got,"6, 1, 7, 8, 3, 14, 9, 10, 12",4,,True,1.0,1.0,False,False,,False,generator,186,unaffected,True,0.208,433,correct,False
 connected_nodes/377,connected_nodes,degree,zero_shot, No nodes.,qwen3-8b,qwen3-8b,False,got,0,0,,True,0.0,0.0,False,False,,False,generator,259,unaffected,True,0.208,800,wrong,False
 connected_nodes/381,connected_nodes,degree,zero_shot,"3, 8, 10.",qwen3-8b,qwen3-8b,False,got,"8, 3, 10",5,,True,1.0,1.0,False,False,,False,generator,94,unaffected,True,0.208,304,correct,False
@@ -2864,7 +2864,7 @@ edge_existence/445,edge_existence,none,zero_shot,No.,qwen3-8b,qwen3-8b,False,got
 edge_existence/449,edge_existence,none,zero_shot,No.,qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,298,revised,True,0.498,695,correct,False
 edge_existence/453,edge_existence,none,zero_shot,Yes.,qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,133,revised,True,0.498,372,correct,False
 edge_existence/457,edge_existence,none,zero_shot,No.,qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,235,revised,True,0.498,626,correct,False
-edge_existence/461,edge_existence,none,zero_shot,No.,qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,269,revised,True,0.498,1073,correct,False
+edge_existence/461,edge_existence,none,zero_shot,No.,qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,269,revised,True,0.498,1069,correct,False
 edge_existence/465,edge_existence,none,zero_shot,Yes.,qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,125,revised,True,0.498,361,correct,False
 edge_existence/469,edge_existence,none,zero_shot,Yes.,qwen3-8b,qwen3-8b,False,got,Yes,Yes,,True,1.0,1.0,False,False,,False,generator,153,revised,True,0.498,436,correct,False
 edge_existence/473,edge_existence,none,zero_shot,No.,qwen3-8b,qwen3-8b,False,got,No,No,,True,1.0,1.0,False,False,,False,generator,291,revised,True,0.498,798,correct,False

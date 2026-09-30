@@ -24,9 +24,9 @@ edge_count/12,edge_count,filler,zero_shot, 51.,gemma4-12b-think,gemma4-12b,True,
 edge_count/14,edge_count,filler,zero_shot, 3.,gemma4-12b-think,gemma4-12b,True,integer,3,0,,True,1.0,1.0,False,False,0.0,False,generator,804,revised,False,0.018,1974,correct,False
 edge_count/16,edge_count,filler,zero_shot, 45.,gemma4-12b-think,gemma4-12b,True,integer,15,0,False,True,0.0,0.0,False,False,30.0,True,generator,8192,revised,False,0.018,13093,non_terminating,False
 edge_count/18,edge_count,filler,zero_shot, 65.,gemma4-12b-think,gemma4-12b,True,integer,-9,0,False,True,0.0,0.0,False,False,74.0,True,generator,8192,revised,False,0.018,11743,non_terminating,False
-edge_count/20,edge_count,filler,zero_shot, 37.,gemma4-12b-think,gemma4-12b,True,integer,6,0,False,True,0.0,0.0,False,False,31.0,True,generator,8192,revised,False,0.018,14880,non_terminating,False
+edge_count/20,edge_count,filler,zero_shot, 37.,gemma4-12b-think,gemma4-12b,True,integer,7,0,False,True,0.0,0.0,False,False,30.0,True,generator,8192,revised,False,0.018,14880,non_terminating,False
 edge_count/22,edge_count,filler,zero_shot, 5.,gemma4-12b-think,gemma4-12b,True,integer,5,0,,True,1.0,1.0,False,False,0.0,False,generator,1805,revised,False,0.018,3655,correct,False
-edge_count/24,edge_count,filler,zero_shot, 32.,gemma4-12b-think,gemma4-12b,True,integer,6,0,False,True,0.0,0.0,False,False,26.0,True,generator,8192,revised,False,0.018,17380,non_terminating,False
+edge_count/24,edge_count,filler,zero_shot, 32.,gemma4-12b-think,gemma4-12b,True,integer,7,0,False,True,0.0,0.0,False,False,25.0,True,generator,8192,revised,False,0.018,17380,non_terminating,False
 edge_count/26,edge_count,filler,zero_shot, 76.,gemma4-12b-think,gemma4-12b,True,integer,11,0,False,True,0.0,0.0,False,False,65.0,True,generator,8192,revised,False,0.018,14955,non_terminating,False
 edge_count/28,edge_count,filler,zero_shot, 35.,gemma4-12b-think,gemma4-12b,True,integer,6,0,False,True,0.0,0.0,False,False,29.0,True,generator,8192,revised,False,0.018,13958,non_terminating,False
 node_degree/0,node_degree,filler,zero_shot,13.,gemma4-12b-think,gemma4-12b,True,integer,13,14,,True,1.0,1.0,False,False,0.0,False,generator,3469,revised,False,0.082,5358,correct,False
@@ -413,7 +413,7 @@ edge_count/3,edge_count,none,zero_shot, 32.,gemma4-12b-think,gemma4-12b,True,int
 edge_count/4,edge_count,components,zero_shot, 11.,gemma4-12b-think,gemma4-12b,True,integer,1,0,False,True,0.0,0.0,False,False,10.0,True,retokenized,8191,unaffected,False,0.018,19657,non_terminating,False
 edge_count/4,edge_count,rwse,zero_shot, 11.,gemma4-12b-think,gemma4-12b,True,integer,1,0,False,True,0.0,0.0,False,False,10.0,True,retokenized,8191,unaffected,False,0.018,18736,non_terminating,False
 edge_count/5,edge_count,degree,zero_shot, 91.,gemma4-12b-think,gemma4-12b,True,integer,15,17,False,True,0.0,0.0,False,False,76.0,True,retokenized,8191,unaffected,False,1.0,13289,non_terminating,False
-edge_count/6,edge_count,all,zero_shot, 37.,gemma4-12b-think,gemma4-12b,True,integer,11,0,False,True,0.0,0.0,False,False,26.0,True,retokenized,8191,unaffected,False,1.0,12963,non_terminating,False
+edge_count/6,edge_count,all,zero_shot, 37.,gemma4-12b-think,gemma4-12b,True,integer,3,0,False,True,0.0,0.0,False,False,34.0,True,retokenized,8191,unaffected,False,1.0,12963,non_terminating,False
 edge_count/7,edge_count,clustering,zero_shot, 25.,gemma4-12b-think,gemma4-12b,True,integer,7,0,False,True,0.0,0.0,False,False,18.0,True,retokenized,8191,unaffected,False,0.148,15184,non_terminating,False
 edge_count/7,edge_count,none,zero_shot, 25.,gemma4-12b-think,gemma4-12b,True,integer,7,0,False,True,0.0,0.0,False,False,18.0,True,retokenized,8191,unaffected,False,0.018,14054,non_terminating,False
 edge_count/8,edge_count,components,zero_shot, 32.,gemma4-12b-think,gemma4-12b,True,integer,11,0,False,True,0.0,0.0,False,False,21.0,True,retokenized,8191,unaffected,False,0.018,12735,non_terminating,False
@@ -424,7 +424,7 @@ edge_count/11,edge_count,clustering,zero_shot, 8.,gemma4-12b-think,gemma4-12b,Tr
 edge_count/11,edge_count,none,zero_shot, 8.,gemma4-12b-think,gemma4-12b,True,integer,8,0,,True,1.0,1.0,False,False,0.0,False,retokenized,2214,unaffected,False,0.018,4488,correct,False
 edge_count/12,edge_count,components,zero_shot, 51.,gemma4-12b-think,gemma4-12b,True,integer,4,0,False,True,0.0,0.0,False,False,47.0,True,retokenized,8191,unaffected,False,0.018,13622,non_terminating,False
 edge_count/12,edge_count,rwse,zero_shot, 51.,gemma4-12b-think,gemma4-12b,True,integer,10,0,False,True,0.0,0.0,False,False,41.0,True,retokenized,8191,unaffected,False,0.018,13247,non_terminating,False
-edge_count/13,edge_count,degree,zero_shot, 10.,gemma4-12b-think,gemma4-12b,True,integer,8,0,False,True,0.0,0.0,False,False,2.0,True,retokenized,8191,unaffected,False,1.0,15565,non_terminating,False
+edge_count/13,edge_count,degree,zero_shot, 10.,gemma4-12b-think,gemma4-12b,True,integer,15,0,False,True,0.0,0.0,False,False,5.0,True,retokenized,8191,unaffected,False,1.0,15565,non_terminating,False
 edge_count/14,edge_count,all,zero_shot, 3.,gemma4-12b-think,gemma4-12b,True,integer,3,0,,True,1.0,1.0,False,False,0.0,False,retokenized,1040,unaffected,False,1.0,2455,correct,False
 edge_count/15,edge_count,clustering,zero_shot, 29.,gemma4-12b-think,gemma4-12b,True,integer,3,0,False,True,0.0,0.0,False,False,26.0,True,retokenized,8191,unaffected,False,0.148,14947,non_terminating,False
 edge_count/15,edge_count,none,zero_shot, 29.,gemma4-12b-think,gemma4-12b,True,integer,5,0,False,True,0.0,0.0,False,False,24.0,True,retokenized,8191,unaffected,False,0.018,14327,non_terminating,False
@@ -439,14 +439,14 @@ edge_count/20,edge_count,rwse,zero_shot, 37.,gemma4-12b-think,gemma4-12b,True,in
 edge_count/21,edge_count,degree,zero_shot, 80.,gemma4-12b-think,gemma4-12b,True,integer,4,16,False,True,0.0,0.0,False,False,76.0,True,retokenized,8191,unaffected,False,1.0,11970,non_terminating,False
 edge_count/22,edge_count,all,zero_shot, 5.,gemma4-12b-think,gemma4-12b,True,integer,8,0,False,True,0.0,0.0,False,False,3.0,True,retokenized,8191,unaffected,False,1.0,18408,non_terminating,False
 edge_count/23,edge_count,clustering,zero_shot, 54.,gemma4-12b-think,gemma4-12b,True,integer,8,0,False,True,0.0,0.0,False,False,46.0,True,retokenized,8191,unaffected,False,0.148,12168,non_terminating,False
-edge_count/23,edge_count,none,zero_shot, 54.,gemma4-12b-think,gemma4-12b,True,integer,15,0,False,True,0.0,0.0,False,False,39.0,True,retokenized,8191,unaffected,False,0.018,12012,non_terminating,False
+edge_count/23,edge_count,none,zero_shot, 54.,gemma4-12b-think,gemma4-12b,True,integer,7,0,False,True,0.0,0.0,False,False,47.0,True,retokenized,8191,unaffected,False,0.018,12012,non_terminating,False
 edge_count/24,edge_count,components,zero_shot, 32.,gemma4-12b-think,gemma4-12b,True,integer,2,0,False,True,0.0,0.0,False,False,30.0,True,retokenized,8191,unaffected,False,0.018,15665,non_terminating,False
 edge_count/24,edge_count,rwse,zero_shot, 32.,gemma4-12b-think,gemma4-12b,True,integer,6,10,False,True,0.0,0.0,False,False,26.0,True,retokenized,8191,unaffected,False,0.018,13236,non_terminating,False
 edge_count/25,edge_count,degree,zero_shot, 6.,gemma4-12b-think,gemma4-12b,True,integer,6,0,,True,1.0,1.0,False,False,0.0,False,retokenized,1092,unaffected,False,1.0,2498,correct,False
 edge_count/26,edge_count,all,zero_shot, 76.,gemma4-12b-think,gemma4-12b,True,integer,12,13,False,True,0.0,0.0,False,False,64.0,True,retokenized,8191,unaffected,False,1.0,11428,non_terminating,False
 edge_count/27,edge_count,clustering,zero_shot, 20.,gemma4-12b-think,gemma4-12b,True,integer,2,0,False,True,0.0,0.0,False,False,18.0,True,retokenized,8191,unaffected,False,0.148,18695,non_terminating,False
 edge_count/27,edge_count,none,zero_shot, 20.,gemma4-12b-think,gemma4-12b,True,integer,6,0,False,True,0.0,0.0,False,False,14.0,True,retokenized,8191,unaffected,False,0.018,16725,non_terminating,False
-edge_count/28,edge_count,components,zero_shot, 35.,gemma4-12b-think,gemma4-12b,True,integer,11,0,False,True,0.0,0.0,False,False,24.0,True,retokenized,8191,unaffected,False,0.018,12946,non_terminating,False
+edge_count/28,edge_count,components,zero_shot, 35.,gemma4-12b-think,gemma4-12b,True,integer,6,0,False,True,0.0,0.0,False,False,29.0,True,retokenized,8191,unaffected,False,0.018,12946,non_terminating,False
 edge_count/28,edge_count,rwse,zero_shot, 35.,gemma4-12b-think,gemma4-12b,True,integer,2,0,False,True,0.0,0.0,False,False,33.0,True,retokenized,8191,unaffected,False,0.018,13326,non_terminating,False
 edge_count/29,edge_count,degree,zero_shot, 24.,gemma4-12b-think,gemma4-12b,True,integer,1,0,False,True,0.0,0.0,False,False,23.0,True,retokenized,8191,unaffected,False,1.0,14509,non_terminating,False
 node_degree/0,node_degree,all,zero_shot,13.,gemma4-12b-think,gemma4-12b,True,integer,13,14,,True,1.0,1.0,False,False,0.0,False,retokenized,5296,unaffected,False,1.0,8966,correct,True
@@ -641,7 +641,7 @@ edge_count/5,edge_count,all,zero_shot, 91.,gemma4-12b-think,gemma4-12b,True,inte
 edge_count/6,edge_count,clustering,zero_shot, 37.,gemma4-12b-think,gemma4-12b,True,integer,1,0,False,True,0.0,0.0,False,False,36.0,True,retokenized,8191,unaffected,False,0.148,13745,non_terminating,False
 edge_count/6,edge_count,none,zero_shot, 37.,gemma4-12b-think,gemma4-12b,True,integer,3,0,False,True,0.0,0.0,False,False,34.0,True,retokenized,8191,unaffected,False,0.018,14794,non_terminating,False
 edge_count/7,edge_count,components,zero_shot, 25.,gemma4-12b-think,gemma4-12b,True,integer,3,0,False,True,0.0,0.0,False,False,22.0,True,retokenized,8191,unaffected,False,0.018,14595,non_terminating,False
-edge_count/7,edge_count,rwse,zero_shot, 25.,gemma4-12b-think,gemma4-12b,True,integer,0,0,False,True,0.0,0.0,False,False,25.0,True,retokenized,8191,unaffected,False,0.018,15364,non_terminating,False
+edge_count/7,edge_count,rwse,zero_shot, 25.,gemma4-12b-think,gemma4-12b,True,integer,6,0,False,True,0.0,0.0,False,False,19.0,True,retokenized,8191,unaffected,False,0.018,15364,non_terminating,False
 edge_count/8,edge_count,degree,zero_shot, 32.,gemma4-12b-think,gemma4-12b,True,integer,5,0,False,True,0.0,0.0,False,False,27.0,True,retokenized,8190,unaffected,False,1.0,13919,non_terminating,False
 edge_count/9,edge_count,all,zero_shot, 7.,gemma4-12b-think,gemma4-12b,True,integer,7,0,,True,1.0,1.0,False,False,0.0,False,retokenized,1990,unaffected,False,1.0,4800,correct,False
 edge_count/10,edge_count,clustering,zero_shot, 36.,gemma4-12b-think,gemma4-12b,True,integer,36,0,,True,1.0,1.0,False,False,0.0,False,retokenized,1402,unaffected,False,0.148,3140,correct,False
@@ -660,7 +660,7 @@ edge_count/18,edge_count,clustering,zero_shot, 65.,gemma4-12b-think,gemma4-12b,T
 edge_count/18,edge_count,none,zero_shot, 65.,gemma4-12b-think,gemma4-12b,True,integer,8,0,False,True,0.0,0.0,False,False,57.0,True,retokenized,8191,unaffected,False,0.018,11816,non_terminating,False
 edge_count/19,edge_count,components,zero_shot, 34.,gemma4-12b-think,gemma4-12b,True,integer,11,0,False,True,0.0,0.0,False,False,23.0,True,retokenized,8191,unaffected,False,0.018,12896,non_terminating,False
 edge_count/19,edge_count,rwse,zero_shot, 34.,gemma4-12b-think,gemma4-12b,True,integer,11,0,False,True,0.0,0.0,False,False,23.0,True,retokenized,8191,unaffected,False,0.018,12869,non_terminating,False
-edge_count/20,edge_count,degree,zero_shot, 37.,gemma4-12b-think,gemma4-12b,True,integer,10,0,False,True,0.0,0.0,False,False,27.0,True,retokenized,8191,unaffected,False,1.0,14681,non_terminating,False
+edge_count/20,edge_count,degree,zero_shot, 37.,gemma4-12b-think,gemma4-12b,True,integer,7,0,False,True,0.0,0.0,False,False,30.0,True,retokenized,8191,unaffected,False,1.0,14681,non_terminating,False
 edge_count/21,edge_count,all,zero_shot, 80.,gemma4-12b-think,gemma4-12b,True,integer,11,0,False,True,0.0,0.0,False,False,69.0,True,retokenized,8191,unaffected,False,1.0,12402,non_terminating,False
 edge_count/22,edge_count,clustering,zero_shot, 5.,gemma4-12b-think,gemma4-12b,True,integer,5,0,,True,1.0,1.0,False,False,0.0,False,retokenized,2370,unaffected,False,0.148,4647,correct,False
 edge_count/22,edge_count,none,zero_shot, 5.,gemma4-12b-think,gemma4-12b,True,integer,3,0,False,True,0.0,0.0,False,False,2.0,True,retokenized,8191,unaffected,False,0.018,15182,non_terminating,False
@@ -873,7 +873,7 @@ edge_count/10,edge_count,rwse,zero_shot, 36.,gemma4-12b-think,gemma4-12b,True,in
 edge_count/11,edge_count,degree,zero_shot, 8.,gemma4-12b-think,gemma4-12b,True,integer,8,0,,True,1.0,1.0,False,False,0.0,False,retokenized,1851,unaffected,False,1.0,4186,correct,False
 edge_count/12,edge_count,all,zero_shot, 51.,gemma4-12b-think,gemma4-12b,True,integer,7,0,False,True,0.0,0.0,False,False,44.0,True,retokenized,8191,unaffected,False,1.0,15430,non_terminating,False
 edge_count/13,edge_count,clustering,zero_shot, 10.,gemma4-12b-think,gemma4-12b,True,integer,13,0,False,True,0.0,0.0,False,False,3.0,True,retokenized,8191,unaffected,False,0.148,15795,non_terminating,False
-edge_count/13,edge_count,none,zero_shot, 10.,gemma4-12b-think,gemma4-12b,True,integer,1,0,False,True,0.0,0.0,False,False,9.0,True,retokenized,8191,unaffected,False,0.018,15317,non_terminating,False
+edge_count/13,edge_count,none,zero_shot, 10.,gemma4-12b-think,gemma4-12b,True,integer,4,0,False,True,0.0,0.0,False,False,6.0,True,retokenized,8191,unaffected,False,0.018,15317,non_terminating,False
 edge_count/14,edge_count,components,zero_shot, 3.,gemma4-12b-think,gemma4-12b,True,integer,3,0,,True,1.0,1.0,False,False,0.0,False,retokenized,699,unaffected,False,0.018,1671,correct,False
 edge_count/14,edge_count,rwse,zero_shot, 3.,gemma4-12b-think,gemma4-12b,True,integer,3,0,,True,1.0,1.0,False,False,0.0,False,retokenized,2585,unaffected,False,0.018,6707,correct,False
 edge_count/15,edge_count,degree,zero_shot, 29.,gemma4-12b-think,gemma4-12b,True,integer,3,0,False,True,0.0,0.0,False,False,26.0,True,retokenized,8191,unaffected,False,1.0,16875,non_terminating,False
@@ -882,7 +882,7 @@ edge_count/17,edge_count,clustering,zero_shot, 95.,gemma4-12b-think,gemma4-12b,T
 edge_count/17,edge_count,none,zero_shot, 95.,gemma4-12b-think,gemma4-12b,True,integer,12,0,False,True,0.0,0.0,False,False,83.0,True,retokenized,8191,unaffected,False,0.018,12184,non_terminating,False
 edge_count/18,edge_count,components,zero_shot, 65.,gemma4-12b-think,gemma4-12b,True,integer,4,0,False,True,0.0,0.0,False,False,61.0,True,retokenized,8191,unaffected,False,0.018,12605,non_terminating,False
 edge_count/18,edge_count,rwse,zero_shot, 65.,gemma4-12b-think,gemma4-12b,True,integer,6,0,False,True,0.0,0.0,False,False,59.0,True,retokenized,8191,unaffected,False,0.018,11318,non_terminating,False
-edge_count/19,edge_count,degree,zero_shot, 34.,gemma4-12b-think,gemma4-12b,True,integer,4,0,False,True,0.0,0.0,False,False,30.0,True,retokenized,8191,unaffected,False,1.0,14040,non_terminating,False
+edge_count/19,edge_count,degree,zero_shot, 34.,gemma4-12b-think,gemma4-12b,True,integer,11,0,False,True,0.0,0.0,False,False,23.0,True,retokenized,8191,unaffected,False,1.0,14040,non_terminating,False
 edge_count/20,edge_count,all,zero_shot, 37.,gemma4-12b-think,gemma4-12b,True,integer,6,0,False,True,0.0,0.0,False,False,31.0,True,retokenized,8191,unaffected,False,1.0,13690,non_terminating,False
 edge_count/21,edge_count,clustering,zero_shot, 80.,gemma4-12b-think,gemma4-12b,True,integer,-12,0,False,True,0.0,0.0,False,False,92.0,True,retokenized,8191,unaffected,False,0.148,12040,non_terminating,False
 edge_count/21,edge_count,none,zero_shot, 80.,gemma4-12b-think,gemma4-12b,True,integer,2,0,False,True,0.0,0.0,False,False,78.0,True,retokenized,8191,unaffected,False,0.018,11178,non_terminating,False
@@ -1094,11 +1094,11 @@ edge_count/8,edge_count,none,zero_shot, 32.,gemma4-12b-think,gemma4-12b,True,int
 edge_count/9,edge_count,components,zero_shot, 7.,gemma4-12b-think,gemma4-12b,True,integer,7,0,,True,1.0,1.0,False,False,0.0,False,retokenized,1754,unaffected,False,0.018,3721,correct,False
 edge_count/9,edge_count,rwse,zero_shot, 7.,gemma4-12b-think,gemma4-12b,True,integer,7,0,,True,1.0,1.0,False,False,0.0,False,retokenized,1494,unaffected,False,0.018,3151,correct,False
 edge_count/10,edge_count,degree,zero_shot, 36.,gemma4-12b-think,gemma4-12b,True,integer,36,0,,True,1.0,1.0,False,False,0.0,False,retokenized,1572,unaffected,False,1.0,3550,correct,False
-edge_count/11,edge_count,all,zero_shot, 8.,gemma4-12b-think,gemma4-12b,True,integer,5,0,False,True,0.0,0.0,False,False,3.0,True,retokenized,8191,unaffected,False,1.0,15278,non_terminating,False
+edge_count/11,edge_count,all,zero_shot, 8.,gemma4-12b-think,gemma4-12b,True,integer,2,0,False,True,0.0,0.0,False,False,6.0,True,retokenized,8191,unaffected,False,1.0,15278,non_terminating,False
 edge_count/12,edge_count,clustering,zero_shot, 51.,gemma4-12b-think,gemma4-12b,True,integer,0,0,False,True,0.0,0.0,False,False,51.0,True,retokenized,8191,unaffected,False,0.148,14779,non_terminating,False
 edge_count/12,edge_count,none,zero_shot, 51.,gemma4-12b-think,gemma4-12b,True,integer,8,0,False,True,0.0,0.0,False,False,43.0,True,retokenized,8191,unaffected,False,0.018,12308,non_terminating,False
 edge_count/13,edge_count,components,zero_shot, 10.,gemma4-12b-think,gemma4-12b,True,integer,8,0,False,True,0.0,0.0,False,False,2.0,True,retokenized,8191,unaffected,False,0.018,14194,non_terminating,False
-edge_count/13,edge_count,rwse,zero_shot, 10.,gemma4-12b-think,gemma4-12b,True,integer,12,1,False,True,0.0,0.0,False,False,2.0,True,retokenized,8191,unaffected,False,0.018,15065,non_terminating,False
+edge_count/13,edge_count,rwse,zero_shot, 10.,gemma4-12b-think,gemma4-12b,True,integer,5,1,False,True,0.0,0.0,False,False,5.0,True,retokenized,8191,unaffected,False,0.018,15065,non_terminating,False
 edge_count/14,edge_count,degree,zero_shot, 3.,gemma4-12b-think,gemma4-12b,True,integer,3,0,,True,1.0,1.0,False,False,0.0,False,retokenized,1067,unaffected,False,1.0,2665,correct,False
 edge_count/15,edge_count,all,zero_shot, 29.,gemma4-12b-think,gemma4-12b,True,integer,29,0,,True,1.0,1.0,False,False,0.0,False,retokenized,4782,unaffected,False,1.0,8513,correct,False
 edge_count/16,edge_count,clustering,zero_shot, 45.,gemma4-12b-think,gemma4-12b,True,integer,7,0,False,True,0.0,0.0,False,False,38.0,True,retokenized,8191,unaffected,False,0.148,13784,non_terminating,False
@@ -1149,7 +1149,7 @@ node_degree/15,node_degree,components,zero_shot,3.,gemma4-12b-think,gemma4-12b,T
 node_degree/15,node_degree,rwse,zero_shot,3.,gemma4-12b-think,gemma4-12b,True,integer,3,2,,True,1.0,1.0,False,False,0.0,False,retokenized,696,unaffected,False,0.616,1750,correct,False
 node_degree/16,node_degree,degree,zero_shot,4.,gemma4-12b-think,gemma4-12b,True,integer,4,0,,True,1.0,1.0,False,False,0.0,False,retokenized,978,unaffected,False,1.0,1944,correct,False
 node_degree/17,node_degree,all,zero_shot,10.,gemma4-12b-think,gemma4-12b,True,integer,10,5,,True,1.0,1.0,False,False,0.0,False,retokenized,933,unaffected,False,1.0,2316,correct,False
-node_degree/18,node_degree,clustering,zero_shot,9.,gemma4-12b-think,gemma4-12b,True,integer,11,11,False,True,0.0,0.0,False,False,2.0,True,retokenized,8191,unaffected,False,0.082,15261,non_terminating,False
+node_degree/18,node_degree,clustering,zero_shot,9.,gemma4-12b-think,gemma4-12b,True,integer,9,11,False,True,0.0,0.0,True,False,0.0,True,retokenized,8191,unaffected,False,0.082,15261,non_terminating,False
 node_degree/18,node_degree,none,zero_shot,9.,gemma4-12b-think,gemma4-12b,True,integer,9,11,,True,1.0,1.0,False,False,0.0,False,retokenized,1070,unaffected,False,0.082,1953,correct,False
 node_degree/19,node_degree,components,zero_shot,4.,gemma4-12b-think,gemma4-12b,True,integer,4,3,,True,1.0,1.0,False,False,0.0,False,retokenized,789,unaffected,False,0.082,1618,correct,False
 node_degree/19,node_degree,rwse,zero_shot,4.,gemma4-12b-think,gemma4-12b,True,integer,4,3,,True,1.0,1.0,False,False,0.0,False,retokenized,1210,unaffected,False,0.616,2716,correct,False
@@ -4172,12 +4172,12 @@ node_degree/4,node_degree,rwse,zero_shot,4.,gemma4-e4b,gemma4-e4b,False,integer,
 node_degree/5,node_degree,all,zero_shot,14.,gemma4-e4b,gemma4-e4b,False,integer,14,2,,True,1.0,1.0,False,False,0.0,False,retokenized,232,unaffected,False,1.0,573,correct,False
 node_degree/5,node_degree,clustering,zero_shot,14.,gemma4-e4b,gemma4-e4b,False,integer,14,2,,True,1.0,1.0,False,False,0.0,False,retokenized,317,unaffected,False,0.082,983,correct,False
 node_degree/5,node_degree,components,zero_shot,14.,gemma4-e4b,gemma4-e4b,False,integer,14,2,,True,1.0,1.0,False,False,0.0,False,retokenized,231,unaffected,False,0.082,535,correct,False
-node_degree/5,node_degree,degree,zero_shot,14.,gemma4-e4b,gemma4-e4b,False,integer,2,1,,True,0.0,0.0,False,False,12.0,False,retokenized,283,unaffected,False,1.0,733,wrong,False
+node_degree/5,node_degree,degree,zero_shot,14.,gemma4-e4b,gemma4-e4b,False,integer,14,1,,True,1.0,1.0,False,False,0.0,False,retokenized,283,unaffected,False,1.0,733,correct,False
 node_degree/5,node_degree,none,zero_shot,14.,gemma4-e4b,gemma4-e4b,False,integer,14,2,,True,1.0,1.0,False,False,0.0,False,retokenized,222,unaffected,False,0.082,572,correct,False
 node_degree/5,node_degree,rwse,zero_shot,14.,gemma4-e4b,gemma4-e4b,False,integer,14,2,,True,1.0,1.0,False,False,0.0,False,retokenized,227,unaffected,False,0.616,507,correct,False
 node_degree/6,node_degree,all,zero_shot,6.,gemma4-e4b,gemma4-e4b,False,integer,6,3,,True,1.0,1.0,False,False,0.0,False,retokenized,195,unaffected,False,1.0,591,correct,False
 node_degree/6,node_degree,clustering,zero_shot,6.,gemma4-e4b,gemma4-e4b,False,integer,6,3,,True,1.0,1.0,False,False,0.0,False,retokenized,203,unaffected,False,0.082,572,correct,False
-node_degree/6,node_degree,components,zero_shot,6.,gemma4-e4b,gemma4-e4b,False,integer,3,3,,True,0.0,0.0,False,False,3.0,False,retokenized,220,unaffected,True,0.082,674,wrong,False
+node_degree/6,node_degree,components,zero_shot,6.,gemma4-e4b,gemma4-e4b,False,integer,2,3,,True,0.0,0.0,False,False,4.0,False,retokenized,220,unaffected,True,0.082,674,wrong,False
 node_degree/6,node_degree,degree,zero_shot,6.,gemma4-e4b,gemma4-e4b,False,integer,6,1,,True,1.0,1.0,False,False,0.0,False,retokenized,170,unaffected,False,1.0,532,correct,False
 node_degree/6,node_degree,none,zero_shot,6.,gemma4-e4b,gemma4-e4b,False,integer,6,3,,True,1.0,1.0,False,False,0.0,False,retokenized,165,unaffected,False,0.082,515,correct,False
 node_degree/6,node_degree,rwse,zero_shot,6.,gemma4-e4b,gemma4-e4b,False,integer,6,0,,True,1.0,1.0,False,False,0.0,False,retokenized,214,unaffected,False,0.616,597,correct,False
@@ -6142,7 +6142,7 @@ edge_count/13,edge_count,rwse,zero_shot, 10.,qwen3-14b-think,qwen3-14b,True,inte
 edge_count/14,edge_count,degree,zero_shot, 3.,qwen3-14b-think,qwen3-14b,True,integer,3,3,,True,1.0,1.0,False,False,0.0,False,retokenized,1128,unaffected,True,1.0,3482,correct,False
 edge_count/15,edge_count,all,zero_shot, 29.,qwen3-14b-think,qwen3-14b,True,integer,29,29,True,True,0.0,0.0,True,False,0.0,True,retokenized,8192,unaffected,True,1.0,21020,non_terminating,True
 edge_count/16,edge_count,clustering,zero_shot, 45.,qwen3-14b-think,qwen3-14b,True,integer,45,45,True,True,0.0,0.0,True,False,0.0,True,retokenized,8192,unaffected,True,0.148,19388,non_terminating,True
-edge_count/16,edge_count,none,zero_shot, 45.,qwen3-14b-think,qwen3-14b,True,integer,13,0,False,True,0.0,0.0,False,False,32.0,True,retokenized,8192,unaffected,False,0.018,18208,non_terminating,False
+edge_count/16,edge_count,none,zero_shot, 45.,qwen3-14b-think,qwen3-14b,True,integer,-12,0,False,True,0.0,0.0,False,False,57.0,True,retokenized,8192,unaffected,False,0.018,18208,non_terminating,False
 edge_count/17,edge_count,components,zero_shot, 95.,qwen3-14b-think,qwen3-14b,True,integer,95,95,,True,1.0,1.0,False,False,0.0,False,retokenized,5382,unaffected,True,0.018,11473,correct,False
 edge_count/17,edge_count,rwse,zero_shot, 95.,qwen3-14b-think,qwen3-14b,True,integer,95,95,,True,1.0,1.0,False,False,0.0,False,retokenized,5009,unaffected,True,0.018,10057,correct,False
 edge_count/18,edge_count,degree,zero_shot, 65.,qwen3-14b-think,qwen3-14b,True,integer,65,65,,True,1.0,1.0,False,False,0.0,False,retokenized,2420,unaffected,True,1.0,5893,correct,False
@@ -7599,7 +7599,7 @@ node_degree/12,node_degree,filler,zero_shot,10.,qwen3-8b-think,qwen3-8b,True,int
 node_degree/14,node_degree,filler,zero_shot,2.,qwen3-8b-think,qwen3-8b,True,integer,2,2,,True,1.0,1.0,False,False,0.0,False,generator,661,revised,True,0.082,2214,correct,False
 node_degree/16,node_degree,filler,zero_shot,4.,qwen3-8b-think,qwen3-8b,True,integer,4,4,,True,1.0,1.0,False,False,0.0,False,generator,1576,revised,True,0.082,4583,correct,False
 node_degree/18,node_degree,filler,zero_shot,9.,qwen3-8b-think,qwen3-8b,True,integer,9,11,,True,1.0,1.0,False,False,0.0,False,generator,1191,revised,True,0.082,3170,correct,False
-node_degree/20,node_degree,filler,zero_shot,4.,qwen3-8b-think,qwen3-8b,True,integer,13,13,False,True,0.0,0.0,False,False,9.0,True,generator,8192,revised,False,0.082,19762,non_terminating,True
+node_degree/20,node_degree,filler,zero_shot,4.,qwen3-8b-think,qwen3-8b,True,integer,11,13,False,True,0.0,0.0,False,False,7.0,True,generator,8192,revised,False,0.082,19762,non_terminating,True
 node_degree/22,node_degree,filler,zero_shot,2.,qwen3-8b-think,qwen3-8b,True,integer,2,2,,True,1.0,1.0,False,False,0.0,False,generator,1171,revised,True,0.082,3955,correct,False
 node_degree/24,node_degree,filler,zero_shot,8.,qwen3-8b-think,qwen3-8b,True,integer,8,8,,True,1.0,1.0,False,False,0.0,False,generator,1570,revised,True,0.082,4854,correct,False
 node_degree/26,node_degree,filler,zero_shot,10.,qwen3-8b-think,qwen3-8b,True,integer,10,10,,True,1.0,1.0,False,False,0.0,False,generator,2476,revised,True,0.082,6700,correct,False
@@ -8008,7 +8008,7 @@ edge_count/27,edge_count,clustering,zero_shot, 20.,qwen3-8b-think,qwen3-8b,True,
 edge_count/27,edge_count,none,zero_shot, 20.,qwen3-8b-think,qwen3-8b,True,integer,20,20,,True,1.0,1.0,False,False,0.0,False,retokenized,3367,unaffected,True,0.018,9379,correct,False
 edge_count/28,edge_count,components,zero_shot, 35.,qwen3-8b-think,qwen3-8b,True,integer,35,35,True,True,0.0,0.0,True,False,0.0,True,retokenized,8192,unaffected,True,0.018,21322,non_terminating,False
 edge_count/28,edge_count,rwse,zero_shot, 35.,qwen3-8b-think,qwen3-8b,True,integer,35,35,,True,1.0,1.0,False,False,0.0,False,retokenized,6065,unaffected,True,0.018,14842,correct,False
-edge_count/29,edge_count,degree,zero_shot, 24.,qwen3-8b-think,qwen3-8b,True,integer,1,24,False,True,0.0,0.0,False,False,23.0,True,retokenized,8192,unaffected,True,1.0,19848,non_terminating,False
+edge_count/29,edge_count,degree,zero_shot, 24.,qwen3-8b-think,qwen3-8b,True,integer,6,24,False,True,0.0,0.0,False,False,18.0,True,retokenized,8192,unaffected,True,1.0,19848,non_terminating,False
 node_degree/0,node_degree,all,zero_shot,13.,qwen3-8b-think,qwen3-8b,True,integer,13,13,,True,1.0,1.0,False,False,0.0,False,retokenized,1547,unaffected,True,1.0,4474,correct,False
 node_degree/1,node_degree,clustering,zero_shot,1.,qwen3-8b-think,qwen3-8b,True,integer,1,1,,True,1.0,1.0,False,False,0.0,False,retokenized,1909,unaffected,True,0.082,6874,correct,False
 node_degree/1,node_degree,none,zero_shot,1.,qwen3-8b-think,qwen3-8b,True,integer,1,1,,True,1.0,1.0,False,False,0.0,False,retokenized,2093,unaffected,True,0.082,7131,correct,False
@@ -8219,7 +8219,7 @@ edge_count/17,edge_count,all,zero_shot, 95.,qwen3-8b-think,qwen3-8b,True,integer
 edge_count/18,edge_count,clustering,zero_shot, 65.,qwen3-8b-think,qwen3-8b,True,integer,65,65,,True,1.0,1.0,False,False,0.0,False,retokenized,3701,unaffected,True,0.148,8673,correct,False
 edge_count/18,edge_count,none,zero_shot, 65.,qwen3-8b-think,qwen3-8b,True,integer,65,0,,True,1.0,1.0,False,False,0.0,False,retokenized,3940,unaffected,True,0.018,8968,correct,False
 edge_count/19,edge_count,components,zero_shot, 34.,qwen3-8b-think,qwen3-8b,True,integer,34,34,,True,1.0,1.0,False,False,0.0,False,retokenized,5558,unaffected,True,0.018,12694,correct,False
-edge_count/19,edge_count,rwse,zero_shot, 34.,qwen3-8b-think,qwen3-8b,True,integer,15,0,False,True,0.0,0.0,False,False,19.0,True,retokenized,8192,unaffected,False,0.018,16122,non_terminating,False
+edge_count/19,edge_count,rwse,zero_shot, 34.,qwen3-8b-think,qwen3-8b,True,integer,9,0,False,True,0.0,0.0,False,False,25.0,True,retokenized,8192,unaffected,False,0.018,16122,non_terminating,False
 edge_count/20,edge_count,degree,zero_shot, 37.,qwen3-8b-think,qwen3-8b,True,integer,37,37,,True,1.0,1.0,False,False,0.0,False,retokenized,2768,unaffected,True,1.0,7091,correct,False
 edge_count/21,edge_count,all,zero_shot, 80.,qwen3-8b-think,qwen3-8b,True,integer,80,80,,True,1.0,1.0,False,False,0.0,False,retokenized,2611,unaffected,True,1.0,6841,correct,False
 edge_count/22,edge_count,clustering,zero_shot, 5.,qwen3-8b-think,qwen3-8b,True,integer,5,5,,True,1.0,1.0,False,False,0.0,False,retokenized,2688,unaffected,True,0.148,8187,correct,False
@@ -8488,7 +8488,7 @@ node_degree/17,node_degree,degree,zero_shot,10.,qwen3-8b-think,qwen3-8b,True,int
 node_degree/18,node_degree,all,zero_shot,9.,qwen3-8b-think,qwen3-8b,True,integer,9,9,,True,1.0,1.0,False,False,0.0,False,retokenized,1686,unaffected,True,1.0,5301,correct,False
 node_degree/19,node_degree,clustering,zero_shot,4.,qwen3-8b-think,qwen3-8b,True,integer,4,4,,True,1.0,1.0,False,False,0.0,False,retokenized,1461,unaffected,True,0.082,4379,correct,False
 node_degree/19,node_degree,none,zero_shot,4.,qwen3-8b-think,qwen3-8b,True,integer,4,3,,True,1.0,1.0,False,False,0.0,False,retokenized,2040,unaffected,True,0.082,5971,correct,False
-node_degree/20,node_degree,components,zero_shot,4.,qwen3-8b-think,qwen3-8b,True,integer,13,13,False,True,0.0,0.0,False,False,9.0,True,retokenized,8192,unaffected,False,0.082,24978,non_terminating,True
+node_degree/20,node_degree,components,zero_shot,4.,qwen3-8b-think,qwen3-8b,True,integer,11,13,False,True,0.0,0.0,False,False,7.0,True,retokenized,8192,unaffected,False,0.082,24978,non_terminating,True
 node_degree/20,node_degree,rwse,zero_shot,4.,qwen3-8b-think,qwen3-8b,True,integer,4,4,,True,1.0,1.0,False,False,0.0,False,retokenized,1775,unaffected,True,0.616,5473,correct,False
 node_degree/21,node_degree,degree,zero_shot,11.,qwen3-8b-think,qwen3-8b,True,integer,11,0,,True,1.0,1.0,False,False,0.0,False,retokenized,1202,unaffected,True,1.0,3757,correct,False
 node_degree/22,node_degree,all,zero_shot,2.,qwen3-8b-think,qwen3-8b,True,integer,2,2,,True,1.0,1.0,False,False,0.0,False,retokenized,1146,unaffected,True,1.0,4160,correct,False
