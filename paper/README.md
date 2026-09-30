@@ -5,40 +5,50 @@ Stating the Answer**: [`paper.pdf`](paper.pdf).
 [← back to the repo](../README.md)
 
 `tests/test_paper_numbers.py` checks every tagged number in `paper.tex` against
-`outputs/`. `python paper/build_tables.py --check` (from the repo root) also
-checks Table 1 against the saved responses in `frame.csv`, and that Tables 5 and
-10 match their sources.
+`outputs/`: each number must appear in the block its `% [tag]` names (not
+necessarily the row it was copied from), and lines without a tag are skipped.
+`python paper/build_tables.py --check` (from the repo root) also checks Table 1
+against the saved responses in `frame.csv`, and that Tables 5 and 10 match their
+sources.
 
 ## Build
 
-ACL 2023 style (`acl2023.sty`, `acl_natbib.bst`, `custom.bib`). From this folder:
+ACL 2023 style (`acl2023.sty`, `acl_natbib.bst`, `custom.bib`). Needs a TeX
+distribution with `pdflatex`, `bibtex` and `latexmk` (TeX Live or MacTeX). From
+this folder:
 
 ```sh
-pdflatex paper.tex
-bibtex paper
-pdflatex paper.tex
-pdflatex paper.tex
+latexmk -pdf paper
 ```
+
+`latexmk` runs `pdflatex` and `bibtex` as often as the cross-references need.
 
 ## Regenerate the figures and tables
 
-Run these from the repo root once the pipeline in
+Run these from the repo root, with the venv active (`source .venv/bin/activate`,
+or prefix each `python` with `uv run --no-sync`), once the pipeline in
 [`scripts/README.md`](../scripts/README.md) has written `outputs/`:
 
 ```sh
-PYTHONPATH=. python scripts/readme_figures.py && cp docs/img/primer_usage.pdf paper/fig_primer_usage.pdf && cp docs/img/primer_effect.pdf paper/fig_primer_effect.pdf
+export PYTHONPATH=. PYTHONUTF8=1
+python scripts/readme_figures.py && cp docs/img/primer_usage.pdf paper/fig_primer_usage.pdf && cp docs/img/primer_effect.pdf paper/fig_primer_effect.pdf
 python paper/fig_effects.py
 python paper/fig_headroom.py
 python paper/plot_outcomes.py
 python paper/build_tables.py
 ```
 
+A regenerated figure matches the committed one in content but not byte for
+byte (the PDFs embed the time they were drawn, and layout shifts slightly
+across matplotlib versions), so compare figures by eye or with `pdftotext`, not
+with `git diff`. The regenerated tables do match byte for byte.
+
 | File | Written by | Reads |
 |---|---|---|
 | `fig_primer_usage.pdf` (Figure 1) | `scripts/readme_figures.py`, as `docs/img/primer_usage.pdf` | a five-node example graph |
 | `fig_effects.pdf` (Figure 2) | `fig_effects.py` | `[main]` in `primer_findings.txt` |
 | `fig_primer_effect.pdf` (Figure 3) | `scripts/readme_figures.py`, as `docs/img/primer_effect.pdf` | `[main]` in `primer_findings.txt` |
-| `fig_headroom.pdf`, `fig_addstats.pdf` (Figures 4 and 5) | `fig_headroom.py` | `primer_cells.csv` |
+| `fig_headroom.pdf`, `fig_addstats.pdf` (Figures 4 and 5), and `docs/img/headroom.png` | `fig_headroom.py` | `primer_cells.csv` |
 | `edge_count_outcomes.pdf` (Figure 6) | `plot_outcomes.py` | `[edgecount]` in `primer_findings.txt` |
 | rows of `table_cycles.tex` (Table 10) | `build_tables.py` | `[ccanswer]` and `[cctest]` in `check_cycle_claims.txt` |
 | rows of `main_truncation.tex` (Table 5) | `build_tables.py` | `frame.csv` (main sweep, truncated responses) |
@@ -72,8 +82,8 @@ The paper's numbers are the tagged blocks of `outputs/`.
    Put the tag in a LaTeX comment on the same line, e.g. `+3.8~points % [ddplain]`,
    so each number can be traced to its block in the script output. If the paper
    needs a number nothing prints yet, add it to the script and the doc first,
-   with a tag. `tests/test_results_docs.py` checks the numbers in `docs/results/`
-   and `primer-directions.md` against their outputs, and
+   with a tag. `tests/test_results_docs.py` checks the numbers in `docs/results/`,
+   `primer-directions.md` and `density-interaction.md` against their outputs, and
    `tests/test_paper_numbers.py` the paper's. Never cite `preliminary/`.
 2. **Truncation is its own outcome.** A response is correct, wrong or truncated.
    An effect is the paired change in the correct share of *all* responses, in
