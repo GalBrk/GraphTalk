@@ -38,6 +38,7 @@ import collections
 import glob
 import json
 import os
+import re
 
 from graphtalk import significance
 from preliminary.scripts import score_sweep
@@ -56,26 +57,28 @@ def _load(paths: list[str]) -> list[dict]:
   return score_sweep.score_records(score_sweep.desubstitute_named_responses(rows))
 
 
-# Auxiliary corpora that share a `{model}.*jsonl` prefix with the published
-# split but are a different set of graphs entirely (ladder screening, the
-# retrieval-position probe, the size sweep, the edge-count/confirmatory
-# replications). None of these were part of the 30-graphs/task GoT-vs-integer
-# design, so a glob that doesn't exclude them inflates the "integer" row
-# count against the "got" one and the completeness check below rejects every
-# arm that happens to also have one of these files.
-_AUX_MARKERS = (".ladder_screen.", ".retrieval_locate.", ".size.", ".ec500.",
-               ".count500.", ".cc500.", ".probe100.")
+# The published-split design's own files, and nothing else: `{model}.jsonl`,
+# its `.rerun` and `.got` tags, and their `.shard<i>of<n>` splits. Auxiliary
+# corpora share the `{model}.*jsonl` prefix but are a different set of graphs
+# entirely (ladder screening, the retrieval probes and extensions, rewiring, the
+# size sweep, the edge-count/confirmatory replications, the `--count 500` GoT
+# follow-up). None of these were part of the 30-graphs/task GoT-vs-integer
+# design, so a glob that admits them inflates one scheme's row count against
+# the other's and the completeness check below rejects every arm that happens
+# to also have one of these files. Listing what belongs, rather than what does
+# not, keeps a newly added corpus out by default.
+def _is_design_file(name: str, model: str) -> bool:
+  return re.fullmatch(
+      re.escape(model) + r"(\.rerun|\.got)?(\.shard\d+of\d+)?\.jsonl", name) is not None
 
 
 def arm_paths(runs: str, model: str) -> tuple[list[str], list[str]]:
-  """(integer paths, got paths) for one arm, excluding archived rows and
-  auxiliary corpora that are not part of the published-split design."""
-  every = glob.glob(os.path.join(runs, f"{model}.*jsonl")) + \
-          glob.glob(os.path.join(runs, f"{model}.jsonl"))
-  every = [p for p in set(every) if "archive" not in p and ".redo." not in p
-          and not any(marker in p for marker in _AUX_MARKERS)]
-  got = sorted(p for p in every if ".got" in p)
-  integer = sorted(p for p in every if ".got" not in p)
+  """(integer paths, got paths) for one arm: the published-split design's
+  files only, never archived rows or auxiliary corpora."""
+  every = [p for p in glob.glob(os.path.join(runs, f"{model}.*jsonl"))
+           if _is_design_file(os.path.basename(p), model)]
+  got = sorted(p for p in every if ".got" in os.path.basename(p))
+  integer = sorted(p for p in every if ".got" not in os.path.basename(p))
   return integer, got
 
 
