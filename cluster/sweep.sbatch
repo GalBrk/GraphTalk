@@ -141,7 +141,8 @@ fi
 # <arm>.densfull40hi.shard*.jsonl only. Any other tag gives a file the frame
 # never sees -- and one that merely starts with `densfull40` is read by
 # primer_findings.py's `<arm>.densfull40*.shard*.jsonl` glob but not by the
-# frame, so never use one (cluster/README.md, "Regenerating part of a run").
+# frame (which reads the two run sets' shards, then their unsharded
+# `<arm>.<tag>.jsonl`), so never use one (cluster/README.md, "Regenerating part of a run").
 #
 # `redo` is refused: graphtalk.analysis drops every `.redo.shard` path, so rows
 # written under that tag would vanish from every preliminary frame in silence.

@@ -81,7 +81,8 @@ def _chunk(items: list, size: int) -> list[list]:
 
 
 def main() -> None:
-  parser = argparse.ArgumentParser(description=__doc__)
+  parser = argparse.ArgumentParser(description=__doc__,
+                                   formatter_class=argparse.RawDescriptionHelpFormatter)
   parser.add_argument("--model", required=True, choices=sorted(models.MODELS))
   parser.add_argument("--prompts", default="data/prompts/prompts.densfull40.jsonl")
   parser.add_argument("--out", required=True)

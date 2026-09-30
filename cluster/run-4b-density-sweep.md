@@ -29,7 +29,7 @@ Every command uses `GRAPHTALK_ENV=graphtalk-cu126` with `--exclude=n-801`. The
 cu126 build runs on both driver generations, and an `--exclude` on the command
 line replaces `sweep.sbatch`'s default list, so the 535.x nodes join the pool
 while the slow n-801 stays out ([cluster/README.md](README.md)'s driver table).
-That roughly doubles how many nodes can pick up a shard.
+That adds the four 535.x nodes (n-501, n-802, n-803, n-804) to the pool.
 
 Budgets ([cluster/README.md](README.md#token-budgets)): 8192 for both arms on the
 main sweep, because the plain arm's `edge_count` runs past 2048 new tokens at

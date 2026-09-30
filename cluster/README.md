@@ -127,7 +127,7 @@ the budget):
 | `degdensthink`, `degdensfillT` | `qwen3-1.7b-think` | 7 | 8192 |
 
 The registry's defaults (`models.budget`) are the `densfull40` budgets, so only
-the other rows need the variable; every command here passes it anyway. The
+the other rows need the variable; every run-set command here passes it anyway. The
 follow-up run sets `degdens40`, `degdens40hi`, `degdensfill`, `degdensrep` and
 `degceil` (`qwen3-1.7b`) and `qwen3-8b.degfixdeg` have no row that reaches
 2048 tokens, so any budget from 2048 up regenerates them; `density_followups.py`
@@ -147,7 +147,8 @@ preliminary run sets match their model's default.
 ### Smoke test
 
 A second argument runs that many generations and writes them to
-`data/runs/archive/smoke-<model>.jsonl` (under `GRAPHTALK_RUNS_DIR` if set),
+`data/runs/archive/smoke-<model>[.<tag>].jsonl` (under `GRAPHTALK_RUNS_DIR` if set;
+`.<tag>` when `GRAPHTALK_RUN_TAG` is set),
 which no analysis reads:
 
 ```bash

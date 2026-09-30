@@ -80,7 +80,7 @@ def load_rows(paths):
 def load_lines(path):
   """(raw line, parsed record) for every non-empty line, raw text kept so a
   subset is byte-identical to the prompt file it came from."""
-  with open(path, encoding="utf-8") as handle:
+  with open(path, encoding="utf-8", newline="") as handle:
     return [(line, json.loads(line)) for line in handle if line.strip()]
 
 
@@ -243,7 +243,7 @@ def run_subset(args):
   except ValueError as error:
     sys.exit(str(error))
   os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
-  with open(args.out, "w", encoding="utf-8") as handle:
+  with open(args.out, "w", encoding="utf-8", newline="") as handle:
     handle.writelines(lines[i][0] for i in chosen)
 
   picked = [records[i] for i in chosen]
