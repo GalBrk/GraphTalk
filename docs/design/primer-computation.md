@@ -208,7 +208,7 @@ Rows are fetched over the HTTP rows API rather than the `datasets` library, deli
   the encoding's first line (`... and <n-1>.`) lacks, but it sits under the same `has`
   verb the `degree` condition uses, and models read it as a degree statement. In the
   pilot, 8 of 9 sampled rows under that sentence derive a complete graph K_n from it
-  (`git show pre-cleanup:analysis/superseded/failure_sample.csv`); the resulting
+  (`git show 761c9e3:analysis/failure_sample.csv`); the resulting
   accuracy drop cannot be told apart from a length effect. A control's inertness is
   checkable against real completions, and §4 gives the wording that passes that check.
 
@@ -462,7 +462,7 @@ which introduces no numeral at all, and does not share the other node-level part
 `Node 0 has 7 other nodes in this graph.`, is read as a connectivity claim: `n-1` is
 exactly the degree every node has in a complete graph, and the phrase sits after the same
 `has` verb `degree` uses. In the pilot sample
-(`git show pre-cleanup:analysis/superseded/failure_sample.csv`), 8 of the 9 `filler`
+(`git show 761c9e3:analysis/failure_sample.csv`), 8 of the 9 `filler`
 rows under that sentence show the misreading in the model's own
 words -- `gemma4-e4b-think`: *"If D_i = 12 for all 13 nodes, the graph must be a
 complete graph K_13"*; `gemma4-12b-think`: *"Is it possible that 'Node 0 has 8 other
