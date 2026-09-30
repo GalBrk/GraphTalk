@@ -1,30 +1,32 @@
 # Data reference
 
-Every dataset in this repository, its schema, and how the files join to each
-other. `runs/README.md` covers day-to-day use; this file is the authority on
-structure.
+The pilot's datasets, their schema, and how the files join to each other.
+[../data/README.md](../data/README.md) covers day-to-day use and lists the
+screens' runs; this file is the authority on structure. Where a section names
+`runs/`, `prompts.jsonl` or `shortcuts.json` bare, they are the files under
+`preliminary/data/`.
 
 ## Inventory
 
+Paths are from the repo root.
+
 | path | rows | what |
 |---|---|---|
-| `prompts.jsonl` | 2,520 | every prompt in the main sweep |
-| `prompts_zero_shot.jsonl` | 1,260 | the `zero_shot` half, byte-identical to those rows; the thinking arm's input |
-| `runs/<model>.jsonl` | 2,520 × 4 | main sweep responses, one file per model |
-| `runs/<model>-think.shard<i>of<n>.jsonl` | 1,260 × 4 | thinking-arm responses, split across shard files |
-| `runs/<model>-think.redo.shard<i>of<n>.jsonl` | 67 | evidence only — see caveats |
-| `runs/archive/smoke-gemma4-e4b.jsonl` | 20 | a smoke test; archived, excluded by directory |
-| `shortcuts.json` | 42 entries | the primer-only solver bar per (task, condition) |
-| `prompts_got.jsonl` | 1,260 | the same prompts with Game-of-Thrones node names, `zero_shot` only |
-| `runs/<model>.got.jsonl` | 1,260 × 8 | GoT-named responses, every arm, `zero_shot` only; `node_naming: "got"` on every row |
+| `preliminary/data/prompts/prompts.jsonl` | 1,260 | every prompt in the pilot, all `zero_shot` |
+| `preliminary/data/prompts/prompts_zero_shot.jsonl` | 1,260 | byte-identical to `prompts.jsonl`; the thinking arm's input |
+| `preliminary/data/runs/<model>.jsonl` | 900 × 4 | plain-arm responses, one file per model |
+| `preliminary/data/runs/<model>-think.shard<i>of<n>.jsonl` | 900 × 4 | thinking-arm responses, split across shard files |
+| `preliminary/data/runs/<model>[-think].rerun[.shard<i>of<n>].jsonl` | 360 × 8 | the rows regenerated against the reworded prompts; part of their arm |
+| `preliminary/data/shortcuts.json` | 42 entries | the primer-only solver bar per (task, condition) |
+| `preliminary/data/prompts/prompts_got.jsonl` | 1,260 | the same prompts with Game-of-Thrones node names, `zero_shot` only |
+| `preliminary/data/runs/<model>.got[.shard<i>of<n>].jsonl` | 1,260 × 8 | GoT-named responses, every arm, `zero_shot` only; `node_naming: "got"` on every row |
+| `preliminary/analysis/budget-*.jsonl` | 51 | token-budget measurements; see [../analysis/README.md](../analysis/README.md) |
 
-| `analysis/*.jsonl` | 51 | token-budget measurements; see `analysis/README.md` |
-
-25,267 response rows in total: 10,080 main sweep, 5,040 thinking arm, **10,080
-GoT-named**, 67 redo. The GoT rows pair one-to-one with the `zero_shot` half of
-the other two — same graphs, same queries, same primers — and are scored
-separately, never pooled (`graphtalk.analysis.infer_node_naming` raises on a
-mix). See README.md#node-naming.
+20,160 response rows in total: 5,040 in the plain arms, 5,040 in the thinking
+arm, **10,080 GoT-named**. The GoT rows pair one-to-one with the integer rows —
+same graphs, same queries, same primers — and are scored separately, never
+pooled (`graphtalk.analysis.infer_node_naming` raises on a mix). See
+[../data/README.md](../data/README.md#scoring-them).
 
 ## The pairing key
 
@@ -45,7 +47,7 @@ column widens the true key to `(instance_id, condition, style, node_naming)`
 within a model, and every scoring script (`build_sweep_frame.py`,
 `sample_failures.py`, `check_significance.py`) raises rather than silently
 pooling if its input carries more than one scheme — see
-`README.md#node-naming`.
+[../data/README.md](../data/README.md#scoring-them).
 
 ## `prompts.jsonl` / `prompts_zero_shot.jsonl`
 
@@ -101,8 +103,8 @@ schema above but not the same *values*:
   once misread 35 skipped rows as truncated output; see
   `graphtalk/ladder.py`'s `context_headroom` and `tests/test_ladder.py`.
 
-These files are **not excluded from a `runs/*.jsonl` glob** (see the "Scoring
-them" gotcha in `runs/README.md`), so score them with `preliminary/scripts/analyze_ladder.py`
+These files are **not excluded from a `runs/*.jsonl` glob** (see "Scoring
+them" in [../data/README.md](../data/README.md#scoring-them)), so score them with `preliminary/scripts/analyze_ladder.py`
 / `preliminary/scripts/analyze_rewiring_sweep.py`, not `score_sweep.py`.
 
 ## `shortcuts.json`
@@ -110,7 +112,7 @@ them" gotcha in `runs/README.md`), so score them with `preliminary/scripts/analy
 A flat object keyed `"<task>/<condition>"` with a float score in [0, 1]: what a
 deterministic program scoring only the rendered primer text achieves on that cell.
 It is the bar a model result is read against — see
-`docs/plans/shortcut-ceilings.md`.
+[docs/design/shortcut-ceilings.md](../../docs/design/shortcut-ceilings.md).
 
 All **42** cells are present (6 tasks x 7 conditions). Note that
 `shortcut-ceilings.md` speaks of *36* cells: that is 42 minus the six `none`
@@ -500,10 +502,10 @@ Reproduce with `tests/test_prompts.py::test_extracts_integers` and
 
 These are properties of the data, not of the analysis, so they belong here:
 
-- **Anything under `runs/archive/` is not part of the sweep.** It holds the smoke
-  test (20 rows carrying `model: gemma4-e4b`) and the 4x-cap regeneration probe.
-  `runs/*.jsonl` no longer matches them, and `graphtalk/analysis.py` excludes the
-  directory outright rather than matching on filenames.
+- **Anything under a `runs/archive/` directory is not part of the sweep**, and
+  `graphtalk/analysis.py` excludes the directory outright rather than matching on
+  filenames. The pilot's archive (the smoke test and the 4x-cap regeneration
+  probe) is not in this tree; it is `runs/archive/` in git tag `pre-cleanup`.
 - **348 rows never terminate** and are truncated at the token cap. Every row now
   carries `hit_cap`, measured on one instrument (`scripts/backfill_hit_cap.py`).
   **309** are in the thinking arm (6.13%), **39** in the plain arms (0.77%, of
@@ -516,9 +518,10 @@ These are properties of the data, not of the analysis, so they belong here:
   before reporting accuracy: on `gemma4-12b-think` the difference is 81.2% against
   99.1%. The count fell from 350 because the reworded `filler` primer roughly
   halved non-termination in that condition -- see `preliminary/docs/sweep-findings.md`.
-- **`runs/archive/*.redo.shard*.jsonl` are evidence, not answers.** 67 of those
-  rows regenerated at a 4x larger cap; 76% still hit it. They exist to show the cap
-  was not the cause. Do not merge them into the arm.
+- **The 4x-cap regeneration probe is evidence, not answers.** Its 67 rows
+  (`runs/archive/*.redo.shard*.jsonl` in tag `pre-cleanup`) regenerated at a 4x
+  larger cap; 76% still hit it. They exist to show the cap was not the cause. Do
+  not merge them into the arm.
 - **955 main-sweep rows were generated on CPU** before a driver mismatch was
   found — 438 `gemma4-e4b`, 426 `qwen3-14b`, 91 `qwen3-8b`. Greedy decoding means
   they should match GPU output, but this is unverified.
@@ -538,29 +541,32 @@ These are properties of the data, not of the analysis, so they belong here:
 ## Reproducing
 
 `build_prompts.py` reproduces `prompts.jsonl` exactly, and every tracked
-response was generated against that file.
+response was generated against that file. From the repo root:
 
 ```bash
-python preliminary/scripts/build_prompts.py --count 30            # -> prompts.jsonl
-python preliminary/scripts/shortcut_table.py --graphs 500 --json shortcuts.json
-python preliminary/scripts/score_sweep.py --responses $(ls runs/*.jsonl | grep -v smoke) \
-                             --shortcuts shortcuts.json
+export PYTHONPATH=.
+python preliminary/scripts/build_prompts.py --count 30   # -> preliminary/data/prompts/prompts.jsonl
+python preliminary/scripts/shortcut_table.py --graphs 500 --json preliminary/data/shortcuts.json
+python preliminary/scripts/score_sweep.py \
+    --responses preliminary/data/runs/gemma4-12b.jsonl preliminary/data/runs/gemma4-12b.rerun.jsonl \
+    --shortcuts preliminary/data/shortcuts.json
 ```
 
 Beyond `score_sweep.py`'s per-cell McNemar (underpowered at 30 pairs/cell, see
 `preliminary/docs/sweep-findings.md`), `preliminary/scripts/check_significance.py` pools pairs across task and
 style per (model, condition) for a permutation p-value, a bootstrap CI, and a
 Benjamini-Hochberg correction — over both main-sweep accuracy and thinking-arm
-non-termination rate. It reads the joined table `build_sweep_frame.py` writes, and
-needs the `analysis` extra (`pandas`) installed:
+non-termination rate. It reads the joined table `build_sweep_frame.py` writes:
 
 ```bash
-python preliminary/scripts/build_sweep_frame.py --responses $(ls runs/*.jsonl | grep -v smoke) \
-    --shortcuts shortcuts.json --truncated-keys analysis/truncated_keys.json
-python preliminary/scripts/check_significance.py --frame preliminary/outputs/sweep-small-graph/sweep_frame.csv --out significance.csv
+python preliminary/scripts/build_sweep_frame.py \
+    --responses preliminary/data/runs/{gemma4-e4b,gemma4-12b,qwen3-8b,qwen3-14b}{,-think}{.jsonl,'.shard*','.rerun*'} \
+    --shortcuts preliminary/data/shortcuts.json --truncated-keys preliminary/analysis/truncated_keys.json
+python preliminary/scripts/check_significance.py --frame preliminary/outputs/sweep-small-graph/sweep_frame.csv \
+    --out preliminary/analysis/significance_report.csv
 ```
 
 `--count` takes a *prefix* of each split, so a larger value is a strict superset:
-`--count 40` contains all 2,520 `--count 30` rows with byte-identical prompt text.
+`--count 40` contains all 1,260 `--count 30` rows with byte-identical prompt text.
 Existing responses therefore remain valid when the sweep is grown, and
 `run_sweep.py` regenerates only what is missing.
