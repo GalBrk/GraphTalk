@@ -6,7 +6,9 @@ graphs, the density range, and the Qwen3 models. [← back to the repo](../READM
 The paper cites none of these numbers. It states only the pilot's outcome,
 given below. The scripts read and write inside `preliminary/`,
 `preliminary/tests/` is part of the default test suite, and every command in
-this folder's READMEs runs as written from the repo root, under bash or zsh.
+this folder's READMEs runs as written from the repo root, under bash or zsh
+(the `sbatch` submissions in [cluster/README.md](cluster/README.md) on the
+cluster, or anywhere with `--dry-run`).
 The older write-ups quote commands with the paths they were written against;
 [Where things moved](#where-things-moved) translates them.
 
@@ -100,11 +102,11 @@ Paths are under `preliminary/outputs/`.
 | `sweep-small-graph/task_scoped_screen.csv`, `task_scoped_screen.got.csv` | `task_scoped_screen.py`, [Rerun](#rerun) |
 | `sweep-small-graph/significance_report.count500.got.csv` | `check_significance.py`, [Rerun](#rerun) |
 | `ladder-retrieval/ladder_matrix.csv`, `retrieval_matrix.csv` | `analyze_ladder.py`, `analyze_retrieval.py`, [Rerun](#rerun) |
-| `ladder-retrieval/retrieval.qwen3-8b.csv` | `analyze_retrieval.py --responses 'preliminary/data/runs/qwen3-8b.retrieval.shard*.jsonl' --out …` |
-| `ladder-retrieval/retrieval_threshold.qwen3-1.7b.csv` | `analyze_retrieval.py --responses 'preliminary/data/runs/qwen3-1.7b.retrieval_threshold.shard*.jsonl' --out …` |
-| `ladder-retrieval/retrieval_extend_matrix.csv` | `analyze_retrieval.py --responses 'preliminary/data/runs/*.retrieval_extend.jsonl' --out …` |
-| `ladder-retrieval/rewiring_qwen3-1.7b.json`, `rewiring_qwen3-1.7b-think.json` | `analyze_rewiring_sweep.py --responses preliminary/data/runs/<model>.rewire_shared.jsonl --json …` |
-| `ladder-retrieval/rewiring_qwen35-2b.json` | `analyze_rewiring_sweep.py --responses 'preliminary/data/runs/qwen35-2b.rewire_*.jsonl' --json …` |
+| `ladder-retrieval/retrieval.qwen3-8b.csv` | `analyze_retrieval.py --responses 'preliminary/data/runs/qwen3-8b.retrieval.shard*.jsonl'`, `--out` this file |
+| `ladder-retrieval/retrieval_threshold.qwen3-1.7b.csv` | `analyze_retrieval.py --responses 'preliminary/data/runs/qwen3-1.7b.retrieval_threshold.shard*.jsonl'`, `--out` this file |
+| `ladder-retrieval/retrieval_extend_matrix.csv` | `analyze_retrieval.py --responses 'preliminary/data/runs/*.retrieval_extend.jsonl'`, `--out` this file |
+| `ladder-retrieval/rewiring_qwen3-1.7b.json`, `rewiring_qwen3-1.7b-think.json` | `analyze_rewiring_sweep.py --responses preliminary/data/runs/<model>.rewire_shared.jsonl`, `--json` this file |
+| `ladder-retrieval/rewiring_qwen35-2b.json` | `analyze_rewiring_sweep.py --responses 'preliminary/data/runs/qwen35-2b.rewire_*.jsonl'`, `--json` this file |
 | `ladder-retrieval/ladder_matrix.limited.csv` | The two-gate matrix, over the three small Qwen models' arms, that the rewiring stage's shared rung (`n40k12`) was read off. It was cut from partial ladder files with other reading limits, so three rows' counts and nine `readable` flags differ from `ladder_matrix.csv`; no command in this tree rewrites it |
 | `sweep-small-graph/topology_*.csv` | The topology investigation ([scale-vs-topology-investigation.md](docs/scale-vs-topology-investigation.md)), whose scripts are in tag `pre-cleanup` |
 | `sweep-small-graph/sweep_frame.qwen3-1.7b.csv` | The size sweep in [primer-impact-and-truncation.md](docs/primer-impact-and-truncation.md), whose runs were removed |
