@@ -150,7 +150,8 @@ def source(pred, gold, text):
 
 def source_block(d):
   print("[pdsource] A1, degree and all: share of responses reporting a conflict "
-        "(response_patterns.reports_conflict, validated 19/20; under none, where no "
+        "(response_patterns.reports_conflict, validated by check C6 of validate_directions.py; "
+        "under none, where no "
         "degree is stated, for scale); truncated share with vs without a conflict; "
         "finished answers of responses with a conflict: the primer's value / a value "
         "the response computed itself / other")

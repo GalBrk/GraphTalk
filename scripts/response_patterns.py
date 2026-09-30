@@ -12,10 +12,11 @@ follows R1: a truncated response is never correct.
   [rpcontrast]  discovery: phrases whose share of responses (first 12,000
                 characters) moves by 15 points or more, the same way, in three
                 or more arms. Not validated; the named patterns were read off it
-  [rpvalid]     precision of each text pattern on the hand-labelled sample
-                (VALIDATION); a pattern under 0.9 is left out of every block
-                after this one. Numeric patterns are checked against the graph
-                and need no labels
+  [rpvalid]     precision of each text pattern on the labelled sample
+                (VALIDATION, drawn by --sample and labelled by hand); a pattern
+                with no labels, or under 0.9, is left out of every block after
+                this one. Numeric patterns are checked against the graph and
+                need no labels
   [rpchain]     edge_count: the per-node values a response lists, against the
                 true degrees, and the first step at which its chain goes wrong
   [rpcycle]     cycle_check: the cycles responses write out, checked against
@@ -430,9 +431,10 @@ def copy_kind(r, g, degrees, t):
 # ------------------------------------------------------------------ validation
 def write_sample(d):
   """N_SAMPLE seeded positives per text pattern, PER_ARM from each arm first.
-  Refuses to replace a sample that already carries labels."""
-  if os.path.exists(VALIDATION) and pd.read_csv(VALIDATION).label.notna().any():
-    sys.exit(f"{VALIDATION} already has labels; move it aside before drawing a new sample")
+  Refuses to replace an existing sample, labelled or not: VALIDATION is a
+  committed input."""
+  if os.path.exists(VALIDATION):
+    sys.exit(f"{VALIDATION} exists; move it aside before drawing a new sample")
   rng = np.random.default_rng(pf.SEED)
   rows = []
   for name, (tasks, meaning, find) in TEXT.items():
@@ -732,7 +734,8 @@ def main():
   ap.add_argument("--csv-dir", help="also write response_pattern_cells.csv, "
                   "response_contrasts.csv and response_relation.csv here")
   ap.add_argument("--sample", action="store_true",
-                  help=f"write the validation sample to {VALIDATION} and stop")
+                  help=f"write the validation sample to {VALIDATION} and stop; "
+                       "refuses if that file exists")
   args = ap.parse_args()
   sys.stdout.reconfigure(encoding="utf-8")
   d = load()

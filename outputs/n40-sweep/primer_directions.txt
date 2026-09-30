@@ -1,4 +1,4 @@
-[pdsource] A1, degree and all: share of responses reporting a conflict (response_patterns.reports_conflict, validated 19/20; under none, where no degree is stated, for scale); truncated share with vs without a conflict; finished answers of responses with a conflict: the primer's value / a value the response computed itself / other
+[pdsource] A1, degree and all: share of responses reporting a conflict (response_patterns.reports_conflict, validated by check C6 of validate_directions.py; under none, where no degree is stated, for scale); truncated share with vs without a conflict; finished answers of responses with a conflict: the primer's value / a value the response computed itself / other
   node_degree 1.7B   degree conflict  0.0% (none 0.0%) | truncated   - with vs   0% without | finished with a conflict n=0: - / - / -
   node_degree 1.7B   all    conflict  0.3% (none 0.0%) | truncated   0% with vs   0% without | finished with a conflict n=2: 50% / 50% / 0%
   node_degree 1.7B-T degree conflict 38.4% (none 2.1%) | truncated  19% with vs   0% without | finished with a conflict n=218: 66% / 30% / 4%
