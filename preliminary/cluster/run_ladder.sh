@@ -96,16 +96,28 @@ tier_for () {   # tier_for <min_vram_gb> -> "<constraint>|<mem>"
   fi
 }
 
+# The ladder and probe rows of qwen3-1.7b-think ran at 16384 tokens. Its
+# registry budget is the main sweep's 8192, so it is passed explicitly here;
+# every other model runs at its registry budget. Empty means "no override".
+budget_for () {   # budget_for <model> -> max new tokens, or empty
+  case "$1" in
+    qwen3-1.7b-think) echo 16384 ;;
+    *)                echo "" ;;
+  esac
+}
+
 submit () {   # submit <model> <prompts> <tag>
   local model="$1" prompts="$2" tag="$3"
-  local vram tier constraint mem
+  local vram tier constraint mem budget
   vram=$(PYTHONPATH=. "$PYTHON" -c \
     "from graphtalk import models; print(models.MODELS['$model'].min_vram_gb)" 2>/dev/null) || {
       echo "  SKIP $model -- not in graphtalk/models.py" >&2; return 0; }
   tier=$(tier_for "$vram"); constraint="${tier%;*}"; mem="${tier#*;}"
-  echo "  submit $model (${vram}GB -> $mem)  <- $prompts  (tag $tag) -> $RUNS_DIR"
+  budget=$(budget_for "$model")
+  echo "  submit $model (${vram}GB -> $mem, budget ${budget:-registry})  <- $prompts  (tag $tag) -> $RUNS_DIR"
   [[ -n "$DRY_RUN" ]] && return 0
   GRAPHTALK_PROMPTS="$prompts" GRAPHTALK_RUN_TAG="$tag" GRAPHTALK_RUNS_DIR="$RUNS_DIR" \
+    GRAPHTALK_MAX_NEW_TOKENS="$budget" \
     sbatch --job-name="${model}_${tag}" \
       --constraint="$constraint" --mem="$mem" \
       --exclude="$EXCLUDE" \

@@ -19,7 +19,7 @@ scheme is). `preliminary/cluster/submit_sweep.sh`
 wraps that into one flag, and does stage 1 for you first if it hasn't run yet:
 
 ```bash
-preliminary/cluster/submit_sweep.sh --node-naming got --exclude=n-801 --mem=32G \
+preliminary/cluster/submit_sweep.sh --node-naming got --mem=32G \
     cluster/sweep.sbatch gemma4-12b
 ```
 
