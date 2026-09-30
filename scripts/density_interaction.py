@@ -26,6 +26,7 @@ The four tasks whose answer varies; every primer against none on the same graphs
 
   PYTHONPATH=. python scripts/density_interaction.py > outputs/n40-sweep/density_interaction.txt
 """
+import argparse
 import json
 import os
 import sys
@@ -221,6 +222,8 @@ def print_base(t, label):
 
 
 def main():
+  argparse.ArgumentParser(description=__doc__,
+                          formatter_class=argparse.RawDescriptionHelpFormatter).parse_args()
   sys.stdout.reconfigure(encoding="utf-8")
   f = pf.with_outcomes(pd.read_csv(pf.FRAME))
   with open(pf.BARS) as fh:

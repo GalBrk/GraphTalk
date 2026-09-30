@@ -14,6 +14,7 @@ check that the saved primers re-render byte for byte.
 
 Rule R1 for the models' accuracy: a truncated response is never correct.
 """
+import argparse
 import collections
 import json
 import random
@@ -78,6 +79,8 @@ class Lookup:
 
 
 def main():
+  argparse.ArgumentParser(description=__doc__,
+                          formatter_class=argparse.RawDescriptionHelpFormatter).parse_args()
   rows = [json.loads(line) for p in PROMPTS for line in open(p, encoding="utf-8")]
   rows = [r for r in rows if r["task"] in TASKS and r["condition"] in CONDS]
   sweep = {d: shortcuts.generate_n40_corpus(100, SWEEP_SEED, d) for d in DENS}

@@ -35,6 +35,7 @@ value is read from the primer text itself, exactly as the model saw it.
 
   PYTHONPATH=. python scripts/primer_directions.py > outputs/n40-sweep/primer_directions.txt
 """
+import argparse
 import collections
 import functools
 import os
@@ -549,6 +550,8 @@ def error_block(d):
 
 
 def main():
+  argparse.ArgumentParser(description=__doc__,
+                          formatter_class=argparse.RawDescriptionHelpFormatter).parse_args()
   sys.stdout.reconfigure(encoding="utf-8")
   d = rp.load()
   for block in (source_block, misread_block, commit_block, position_block,

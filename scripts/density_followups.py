@@ -12,6 +12,7 @@ time.
 
   PYTHONPATH=. python scripts/density_followups.py > outputs/density-followups/density_followups.txt
 """
+import argparse
 import json
 import os
 import sys
@@ -84,6 +85,8 @@ def setup():
 
 
 def main():
+  argparse.ArgumentParser(description=__doc__,
+                          formatter_class=argparse.RawDescriptionHelpFormatter).parse_args()
   setup()
   block("ddplain", "qwen3-1.7b node_degree, plain: seven densities, vs none",
         PLAIN, pools=POOLS, trend=True, continuum=True, headroom=LO)

@@ -517,7 +517,8 @@ def samples(L, F):
 
 
 def main():
-  ap = argparse.ArgumentParser()
+  ap = argparse.ArgumentParser(description=__doc__,
+                               formatter_class=argparse.RawDescriptionHelpFormatter)
   ap.add_argument("--csv-dir", help="write robustness_responses.csv: one row per response the text checks read")
   args = ap.parse_args()
   _selfcheck()

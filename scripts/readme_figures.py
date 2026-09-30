@@ -12,6 +12,7 @@
 
   PYTHONPATH=. python scripts/readme_figures.py
 """
+import argparse
 import re
 import textwrap
 from pathlib import Path
@@ -219,6 +220,8 @@ def _usage_figure(wide, q, rows, prompt):
 
 
 if __name__ == "__main__":
+    argparse.ArgumentParser(description=__doc__,
+                            formatter_class=argparse.RawDescriptionHelpFormatter).parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     rows = main_rows(REPORT.read_text(encoding="utf-8"))
     primer_effect(rows, True).savefig(OUT / "primer_effect.png", dpi=200, bbox_inches="tight", pad_inches=0.08,

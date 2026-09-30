@@ -527,7 +527,8 @@ def filler_by_density(f):
 
 
 def main():
-  ap = argparse.ArgumentParser()
+  ap = argparse.ArgumentParser(description=__doc__,
+                               formatter_class=argparse.RawDescriptionHelpFormatter)
   ap.add_argument("--csv-dir", help="write cycle_claims.csv (one row per named cycle, and per "
                   "answer naming none) and response_claims.csv (one row per response of the other tasks)")
   args = ap.parse_args()
