@@ -14,6 +14,7 @@ classification and any bar-relative Δ can be computed honestly.
 
 import argparse
 import json
+import math
 
 from graphtalk import primers
 from graphtalk import shortcuts
@@ -28,10 +29,11 @@ def flatten(per_density: dict) -> dict:
   cell rather than per (task, condition, density). Averaging rather than
   taking a single density keeps the classification density-independent,
   the same way the published-split preliminary/data/shortcuts.json is graph-size-independent
-  within its own corpus.
+  within its own corpus. `math.fsum` is exactly rounded, so the last digit
+  does not depend on the order the densities are summed in.
   """
   keys = {k for bars in per_density.values() for k in bars}
-  return {k: sum(bars.get(k, 0.0) for bars in per_density.values()) / len(per_density)
+  return {k: math.fsum(bars.get(k, 0.0) for bars in per_density.values()) / len(per_density)
           for k in keys}
 
 
@@ -69,13 +71,13 @@ def main(argv=None):
               f"{cell.shortcut:>7.1%}   {gap:>+6.1f}pp")
     out[f"{density:g}"] = bars
 
-  with open(args.json, "w") as fh:
+  with open(args.json, "w", newline="\n") as fh:      # LF on every platform
     json.dump(out, fh, indent=1)
   print(f"\nwrote {sum(len(v) for v in out.values())} cells "
         f"across {len(out)} densities to {args.json}")
 
   if args.flat_json:
-    with open(args.flat_json, "w") as fh:
+    with open(args.flat_json, "w", newline="\n") as fh:
       json.dump(flatten(out), fh, indent=1, sort_keys=True)
     print(f"wrote the density-averaged flat table to {args.flat_json}")
 
