@@ -10,7 +10,13 @@ Reports, per (task, style):
     rather than only against the control;
   * McNemar against the no-primer control, on the paired rows.
 
-  PYTHONPATH=. .venv/bin/python preliminary/scripts/score_sweep.py --responses preliminary/data/runs/*.jsonl
+  PYTHONPATH=. .venv/bin/python preliminary/scripts/score_sweep.py \
+      --responses preliminary/data/runs/gemma4-12b.jsonl preliminary/data/runs/gemma4-12b.rerun.jsonl \
+      --shortcuts preliminary/data/shortcuts.json
+
+One arm's files at a time, or all 40 pilot files; never another family's. The
+report groups each model's rows by (task, style, condition) only, so a ladder,
+rewiring or probe run file would be pooled into the pilot's cells.
 """
 
 import argparse

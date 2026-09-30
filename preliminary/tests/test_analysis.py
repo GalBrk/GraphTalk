@@ -1,7 +1,7 @@
 """Tests for graphtalk/analysis.py.
 
 The ground-truth regression is the point of this file: `analysis.build_frame`
-must reproduce `analysis/truncated_keys.json`'s exact per-model non-
+must reproduce `preliminary/analysis/truncated_keys.json`'s exact per-model non-
 terminating counts on real thinking-arm data. If a future change to the
 detection logic disagrees with any of those labelled rows, that is a bug
 in the new code, not a new finding -- see `preliminary/docs/sweep-findings.md`, which

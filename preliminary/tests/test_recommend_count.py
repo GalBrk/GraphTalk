@@ -103,7 +103,7 @@ def test_family_significant_not_global_is_skipped_without_a_frame():
 
 
 def _synthetic_frame(control_rate: float, treatment_rate: float, n: int, seed: int):
-  """Mirrors `tests/test_significance.py`'s own `_near_ceiling_frame`-style
+  """Mirrors `preliminary/tests/test_significance.py`'s own `_near_ceiling_frame`-style
   fixtures: `n` paired instances, control/treatment exact outcomes drawn
   from fixed rates so the resulting delta and MDE are both real, non-
   degenerate numbers."""

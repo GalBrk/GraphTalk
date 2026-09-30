@@ -3,8 +3,8 @@ sweep frame for manual visual inspection, with full response text and the
 underlying graph's size joined back in. No GPU needed.
 
 Reads the CSV `preliminary/scripts/build_sweep_frame.py` wrote -- does not re-score.
-`response` text is re-joined from `preliminary/data/runs/*.jsonl` and `nodes`/`edges` from
-`prompts.jsonl`/`preliminary/data/prompts/prompts_zero_shot.jsonl` on `(instance_id, condition,
+`response` text is re-joined from the pilot's run files and `nodes`/`edges` from
+`preliminary/data/prompts/prompts.jsonl` on `(instance_id, condition,
 style[, model]), node_naming`, since neither lives in the canonical frame
 (see `graphtalk/analysis.py` for why). `node_naming` is part of both join
 keys so a `--responses`/`--prompts` glob that also catches the other
@@ -12,9 +12,13 @@ scheme's files simply matches nothing for those rows, rather than joining in
 the wrong text. `--frame` must carry a single scheme -- raises otherwise.
 
   PYTHONPATH=. .venv/bin/python preliminary/scripts/sample_failures.py \
-      --frame preliminary/outputs/sweep-small-graph/sweep_frame.csv --responses preliminary/data/runs/*.jsonl \
-      --prompts prompts.jsonl preliminary/data/prompts/prompts_zero_shot.jsonl \
+      --frame preliminary/outputs/sweep-small-graph/sweep_frame.csv \
+      --responses preliminary/data/runs/{gemma4-e4b,gemma4-12b,qwen3-8b,qwen3-14b}{,-think}{.jsonl,'.shard*','.rerun*'} \
+      --prompts preliminary/data/prompts/prompts.jsonl \
       --out preliminary/analysis/failure_sample.csv
+
+The quotes keep `*` away from the shell; the script globs `--responses`
+itself, so the line runs the same under bash and zsh.
 """
 
 import argparse
@@ -72,8 +76,8 @@ def main() -> None:
                        help="canonical CSV from preliminary/scripts/build_sweep_frame.py")
   parser.add_argument("--responses", nargs="+", required=True)
   parser.add_argument("--prompts", nargs="+", default=[],
-                       help="prompts.jsonl / preliminary/data/prompts/prompts_zero_shot.jsonl, for the "
-                            "nodes/edges columns")
+                       help="preliminary/data/prompts/prompts.jsonl (or the "
+                            "GoT file), for the nodes/edges columns")
   parser.add_argument("--n-per-stratum", type=int, default=3,
                        help="max sampled rows per (model, failure_type)")
   parser.add_argument("--seed", type=int, default=1234)
@@ -81,7 +85,7 @@ def main() -> None:
                        help="default preliminary/analysis/failure_sample.csv, or "
                             "preliminary/analysis/failure_sample.<scheme>.csv for a "
                             "non-integer node_naming scheme -- see "
-                            "README.md#node-naming")
+                            "preliminary/data/README.md#scoring-them")
   args = parser.parse_args()
 
   frame = pd.read_csv(args.frame)

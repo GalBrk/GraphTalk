@@ -6,9 +6,12 @@ non-termination breakdown, and an overall failure_type tally. No GPU needed.
 Rows under any `archive/` directory are excluded (`graphtalk.analysis.is_excluded`).
 
   PYTHONPATH=. .venv/bin/python preliminary/scripts/build_sweep_frame.py \
-      --responses preliminary/data/runs/*.jsonl --shortcuts preliminary/data/shortcuts.json \
-      --truncated-keys preliminary/analysis/truncated_keys.json \
-      --out preliminary/outputs/sweep-small-graph/sweep_frame.csv
+      --responses preliminary/data/runs/{gemma4-e4b,gemma4-12b,qwen3-8b,qwen3-14b}{,-think}{.jsonl,'.shard*','.rerun*'} \
+      --shortcuts preliminary/data/shortcuts.json \
+      --truncated-keys preliminary/analysis/truncated_keys.json
+
+`--responses` takes glob patterns and expands them itself; the quotes keep
+`*` away from the shell, so the line runs the same under bash and zsh.
 
 The written CSV is the input `preliminary/scripts/sample_failures.py` reads back in to
 pull the manual-inspection sample (objective 4) without re-scoring.
@@ -103,9 +106,9 @@ def main() -> None:
                             "ground-truth non_terminating column")
   parser.add_argument("--out", default=None,
                        help="default preliminary/outputs/sweep-small-graph/sweep_frame.csv, or "
-                            "preliminary/analysis/sweep_frame.<scheme>.csv for a "
-                            "non-integer node_naming scheme -- see "
-                            "README.md#node-naming")
+                            "preliminary/outputs/sweep-small-graph/sweep_frame.<scheme>.csv "
+                            "for a non-integer node_naming scheme -- see "
+                            "preliminary/data/README.md#scoring-them")
   args = parser.parse_args()
 
   paths = _load_paths(args.responses)

@@ -43,7 +43,7 @@ def _frame(rows: list[dict]) -> pd.DataFrame:
 
 def test_shortcut_flag_looks_up_the_audit_for_a_known_shortcut_pair():
   """degree/edge_count is the audit's canonical exact-theorem shortcut
-  (sum of stated degrees / 2) -- see analysis/primer_task_shortcut_audit.md."""
+  (sum of stated degrees / 2) -- see preliminary/analysis/primer_task_shortcut_audit.md."""
   rows = []
   for i in range(30):
     rows.append({"model": "qwen3-8b", "model_family": "qwen3-8b",

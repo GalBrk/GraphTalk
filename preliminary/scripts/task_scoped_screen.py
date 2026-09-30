@@ -231,7 +231,9 @@ def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--frame", default="preliminary/outputs/sweep-small-graph/sweep_frame.got.csv")
   parser.add_argument("--out", default=None,
-                      help="default preliminary/analysis/task_scoped_screen.<scheme>.csv")
+                      help="default preliminary/outputs/sweep-small-graph/"
+                           "task_scoped_screen.csv, suffixed with the "
+                           "frame's node_naming scheme when it is not integer")
   parser.add_argument("--n-perm", type=int, default=10_000)
   parser.add_argument("--n-boot", type=int, default=10_000)
   parser.add_argument("--alpha", type=float, default=0.05)
