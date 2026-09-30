@@ -2,93 +2,98 @@
 #SBATCH --partition=killable
 #SBATCH --account=gpu-research
 #SBATCH --gpus=1
-# Widened from `a6000|l40s|h100` on 2026-09-17. That set had stopped being a
-# filter and become a bottleneck: every a6000 and l40s GPU in `killable` was
-# allocated, while 25 GPUs sat free on the 3090 and a5000 nodes the constraint
-# excluded -- for a sweep whose largest live model is 4B (~8 GB of bf16
-# weights). Driver versions were measured across the whole partition before
-# widening rather than assumed (the table in cluster/README.md); all six
-# reachable 3090 nodes are on 595.84, well past the 580+ the default cu130 env
-# needs, so this costs no env change.
+# The Ampere/Ada cards with bf16 tensor cores: 24 GB (3090, a5000) and 48 GB
+# (a6000, l40s). The main sweep's largest model is 4B (~8 GB of bf16 weights),
+# so it fits anywhere in this pool. Every card here has at least 24 GB, which
+# covers the registry up to `min_vram_gb=24`; the 48 GB models (qwen3-14b,
+# gemma4-12b) do NOT fit the 24 GB half, so the VRAM guard further down refuses
+# them on a too-small card rather than letting them OOM an hour in -- that
+# guard, not this line, is what keeps the wide pool safe for the big models.
+# Driver versions were measured across the whole partition (the table in
+# cluster/README.md); all six reachable 3090 nodes are on 595.84, past the 580+
+# the default cu130 env needs.
 #
-# Every card named here has at least 24 GB, which covers the registry up to
-# `min_vram_gb=24`. The 48 GB models (qwen3-14b, gemma4-12b) are NOT safe on
-# the 24 GB half of that pool, so the VRAM guard further down refuses them on a
-# too-small card rather than letting them OOM an hour in -- that guard, not
-# this line, is what keeps the wider pool honest for the big models.
+# The 2080 nodes and the DGX v100/quadro nodes stay out: Turing and Volta have
+# no bf16 tensor cores, so `device_map="auto"` would place all or part of the
+# model on CPU there -- silently, per the driver check below, not with an error.
 #
-# The 2080 nodes are deliberately still out even though 30 of them are idle:
-# sm_75 has no bf16, so they need an fp16 path first, not just a wider
-# constraint.
+# The `h100` term never matches from `killable`: n-102 and t-100 live in
+# `gpu-h100-killable` (see the override below).
 #SBATCH --constraint="a6000|l40s|a5000|geforce_rtx_3090|h100"
-# The 535.x-driver nodes the default cu130 env cannot use, plus n-801, whose
-# read throughput collapses to 3.4 MB/s under load (both stalls in this project
-# landed there; its driver is fine at 580.126.09, it is the I/O that is not).
-# Measured 2026-09-17. Note n-501 is an a5000, not an l40s, and only became
-# reachable at all when `a5000` joined the constraint above.
+# The 535.x-driver nodes the default cu130 env cannot use (n-501, an a5000, and
+# the l40s nodes n-802, n-803, n-804), plus n-801, whose read throughput
+# collapses to 3.4 MB/s under load (its driver is fine at 580.126.09; it is the
+# I/O that is not). Measured 2026-09-17.
 #
 # An --exclude on the sbatch command line REPLACES this list rather than adding
-# to it, so `--exclude=n-801` silently re-admits all four 535.x nodes. To use
-# those nodes on purpose, pass GRAPHTALK_ENV=graphtalk-cu126 instead, which
-# runs on both driver generations.
+# to it, so `--exclude=n-801` re-admits all four 535.x nodes. That is right for
+# GRAPHTALK_ENV=graphtalk-cu126, which runs on both driver generations, and
+# wrong for the default env.
 #SBATCH --exclude=n-501,n-801,n-802,n-803,n-804
 #SBATCH --cpus-per-task=8
 # Sized to hold the largest checkpoint in the page cache the warm-up below fills:
 # 29.6 GB for Qwen3-14B, plus the loader's buffers. The weights land on the GPU
 # rather than staying resident here, so the headroom above 30 GB is comfortable.
 #
-# Not larger. An earlier 96G was guesswork and cost real queue time: the nodes
-# with a spare GPU had 40-47 GB of RAM free while the ones with RAM free had no
-# GPU, so nothing could satisfy gpu=1 + mem=96G and all twelve jobs sat on
-# Reason=Resources. 64G is what the budget measurement actually ran at.
+# Not larger, and override it downward per model (cluster/README.md's --mem
+# table): the nodes with a spare GPU are often the ones with the least RAM free,
+# so a request larger than the checkpoint needs costs queue time.
 #SBATCH --mem=64G
-# The partition ceiling. A full model needs roughly 45 h at the measured
-# zero_shot budget, so no single job finishes one: submit a chain and let the
-# resume logic below carry the work across them.
+# The partition ceiling. A 25-way array finishes a plain arm of the main sweep
+# inside one 24 h link; a thinking arm needs several, so submit a chain and let
+# the resume logic below carry the work across them.
 #SBATCH --time=24:00:00
 #SBATCH --job-name=graphtalk_sweep
+# Slurm does not create this directory: run `mkdir -p out` in the clone root
+# before the first submission, or the job fails before it starts, with no log.
 #SBATCH --output=out/slurm-%j.out
 #SBATCH --signal=USR1@120
 
-# One model over one prompt file. Submit once per model:
-#   sbatch cluster/sweep.sbatch gemma4-12b
+# One model over one prompt file. Submit from the root of your clone, once per
+# model (cluster/README.md has the command for every committed run set):
+#   mkdir -p out
+#   sbatch --array=0-24 --export=ALL,GRAPHTALK_RUN_TAG=densfull40 cluster/sweep.sbatch qwen3-1.7b
 #
 # An optional second argument runs a smoke test of that many generations:
-#   sbatch --time=00:30:00 cluster/sweep.sbatch gemma4-e4b 20
+#   sbatch --time=00:40:00 cluster/sweep.sbatch qwen3-1.7b 20
 #
 # The h100 cards are NOT reachable from this partition: n-102 and t-100 live in
-# `gpu-h100-killable`, so the `h100` term in the --constraint below can never
+# `gpu-h100-killable`, so the `h100` term in the --constraint above can never
 # match while --partition is `killable`. To use them, override the partition:
 #   sbatch --partition=gpu-h100-killable --constraint=h100 cluster/sweep.sbatch qwen3-14b
-#
-# The default --constraint below is the 48 GB tier (a6000|l40s|h100), sized for
-# the largest model in graphtalk/models.py (min_vram_gb=48). A model with a
-# smaller min_vram_gb can also run on the Ampere 24 GB tier -- same generation
-# as a6000, bf16 tensor cores, just less VRAM -- which is a much bigger, often
-# much less contended pool (`killable` has 2 a6000 nodes and up to 6 l40s nodes
-# vs. 3 a5000 + 7 geforce_rtx_3090 nodes). Override --constraint (and size
-# --mem down to the checkpoint, not the 64G default) for such a model:
-#   sbatch --constraint="a5000|geforce_rtx_3090|a6000|l40s|h100" --mem=16G \
-#       cluster/sweep.sbatch qwen3-1.7b
-# Deliberately excludes geforce_rtx_2080 and the DGX v100/quadro nodes: Turing
-# and Volta lack bf16 tensor cores, so `device_map="auto"` would place all or
-# part of the model on CPU there -- silently, per the driver check below, not
-# with an error. cluster/run_size_sweep.sh applies this override already.
 #
 # `killable` is preemptible, so this job can be stopped and requeued at any
 # moment. run_sweep.py appends to its output and skips work already present, so a
 # requeue resumes rather than restarting -- which is why --out must be a stable
 # path across requeues and not something with a job id in it.
+#
+# Environment overrides, all optional (sbatch --export=ALL,NAME=value,...):
+#   GRAPHTALK_PROMPTS         prompt file (default data/prompts/prompts.densfull40.jsonl)
+#   GRAPHTALK_RUN_TAG         run-set name in the output file, <model>.<tag>.jsonl
+#   GRAPHTALK_MAX_NEW_TOKENS  token budget, in place of models.budget
+#   GRAPHTALK_RUNS_DIR        output directory (default <submit dir>/data/runs)
+#   GRAPHTALK_TASK_DIR        a subdirectory of the output directory to write into
+#   GRAPHTALK_ENV             conda env (default graphtalk; graphtalk-cu126)
+#   GRAPHTALK_CONDA           conda install whose etc/profile.d/conda.sh to source
+#   GRAPHTALK_ENVS_DIR        directory holding the conda envs
+#   GRAPHTALK_HF_CACHE        HF hub cache to load weights from (default: the lab's shared one)
+#   GRAPHTALK_HF_HOME         writable HF_HOME (default <submit dir>/.hf_home)
+#   GRAPHTALK_BATCH_SIZE      batched generation; not for a sweep (see below)
 
 set -euo pipefail
 
 MODEL="${1:?usage: sbatch cluster/sweep.sbatch <model-key> [limit]}"
 LIMIT="${2:-}"
 
-# The prompt file is overridable so an arm can run a subset. The thinking arm
-# uses a zero_shot-only file whose 1260 rows are byte-identical to the zero_shot
-# half of the main one, so the two arms are comparable row for row. Also how a
-# GoT-named run points at preliminary/data/prompts/prompts_got.jsonl -- see
+# Where the job was submitted from: the clone whose scripts run and whose
+# data/runs/ receives the output. Anchored explicitly because RUNS_DIR is built
+# before the `cd` below; $PWD is the fallback for running the script by hand.
+SUBMIT_DIR="${SLURM_SUBMIT_DIR:-$PWD}"
+
+# The prompt file is overridable so an arm can run another run set (the
+# high-density extension is data/prompts/prompts.densfull40hi.jsonl) or a
+# subset (scripts/reproduce_rows.py subset). Also how a GoT-named run points at
+# preliminary/data/prompts/prompts_got.jsonl -- see
 # preliminary/cluster/submit_sweep.sh, which builds it before ever setting this.
 PROMPTS="${GRAPHTALK_PROMPTS:-data/prompts/prompts.densfull40.jsonl}"
 if [[ ! -f "$PROMPTS" ]]; then
@@ -96,13 +101,15 @@ if [[ ! -f "$PROMPTS" ]]; then
   # but with a bare Python traceback instead of a message that says what to
   # do about it, and this way it fails before conda even activates.
   echo "FATAL: prompt file '$PROMPTS' does not exist. Build it first" >&2
-  echo "(e.g. cluster/submit_sweep.sh --node-naming got ...) or point" >&2
+  echo "(e.g. preliminary/cluster/submit_sweep.sh --node-naming got ...) or point" >&2
   echo "GRAPHTALK_PROMPTS at an existing file." >&2
   exit 1
 fi
 
-# Absolute path for runs directory to ensure correct permissions and storage location
-RUNS_DIR="/home/dcor/avivyossef/inbal/GraphTalk/data/runs"
+# The submitting clone's data/runs/ unless GRAPHTALK_RUNS_DIR names another
+# directory, e.g. a scratch directory for a check whose rows must stay out of
+# every checkout.
+RUNS_DIR="${GRAPHTALK_RUNS_DIR:-${SUBMIT_DIR}/data/runs}"
 
 TASK_DIR="${GRAPHTALK_TASK_DIR:-}"
 if [[ -n "$TASK_DIR" ]]; then
@@ -115,26 +122,29 @@ fi
 OUT="${RUNS_DIR}/${MODEL}.jsonl"
 EXTRA=()
 if [[ -n "$LIMIT" ]]; then
-  # Straight into the archive: a smoke run is never part of the sweep, and
-  # data/runs/archive/ is excluded by directory rather than by the `smoke-` prefix.
+  # Straight into archive/: a smoke run is never part of the sweep. No analysis
+  # reads it -- the main scripts glob data/runs/ itself, not its subdirectories,
+  # and graphtalk.analysis excludes archive/ by directory.
   mkdir -p "${RUNS_DIR}/archive"
   OUT="${RUNS_DIR}/archive/smoke-${MODEL}.jsonl"
   EXTRA=(--limit "$LIMIT")
 fi
 
-# An optional run tag gives a partial regeneration its own output files, so the
-# operation is auditable and reversible instead of appending into the arm:
+# An optional run tag names the run set, so the output is
+# <model>.<tag>.jsonl (plus a .shard<i>of<n> suffix under --array):
 #
-#   GRAPHTALK_RUN_TAG=rerun sbatch --array=0-3 ... <model>
-#     -> data/runs/<model>.rerun.shard0of4.jsonl
+#   GRAPHTALK_RUN_TAG=densfull40 sbatch --array=0-24 ... qwen3-4b
+#     -> data/runs/qwen3-4b.densfull40.shard0of25.jsonl ... shard24of25.jsonl
 #
-# score_sweep.py pools by each row's `model` field rather than by filename, so a
-# tagged file joins its arm with no reassembly.
+# Analyses select runs by this file name, not by the rows' `model` field:
+# scripts/build_raw_frame.py reads data/runs/<arm>.densfull40.shard*.jsonl and
+# <arm>.densfull40hi.shard*.jsonl only. Any other tag gives a file the frame
+# never sees -- and one that merely starts with `densfull40` is read by
+# primer_findings.py's `<arm>.densfull40*.shard*.jsonl` glob but not by the
+# frame, so never use one (cluster/README.md, "Regenerating part of a run").
 #
-# `redo` is still refused. Exclusion is now by directory (archive/) rather
-# than by filename, so the old footgun is mostly gone -- but ".redo.shard" is kept
-# as a safety net in analysis.is_excluded for paths predating that move, and a file
-# named that way would still be dropped from every frame in silence.
+# `redo` is refused: graphtalk.analysis drops every `.redo.shard` path, so rows
+# written under that tag would vanish from every preliminary frame in silence.
 RUN_TAG="${GRAPHTALK_RUN_TAG:-}"
 if [[ -n "$RUN_TAG" ]]; then
   if [[ "$RUN_TAG" == *redo* ]]; then
@@ -145,12 +155,15 @@ if [[ -n "$RUN_TAG" ]]; then
   OUT="${OUT%.jsonl}.${RUN_TAG}.jsonl"
 fi
 
-# Submitting as a job array shards one model across that many GPUs:
-#   sbatch --array=0-7 cluster/sweep.sbatch qwen3-8b-think
+# Submitting as a job array shards one model across that many GPUs. Each task
+# takes every n-th prompt (run_sweep.py strides the file) and writes its own
+# <out>.shard<i>of<n>.jsonl:
+#   sbatch --array=0-24 --export=ALL,GRAPHTALK_RUN_TAG=densfull40 cluster/sweep.sbatch qwen3-1.7b-think
 #
-# Each shard writes its own file. score_sweep.py groups by the `model` field in
-# each row rather than by filename, so the shards need no reassembly -- point it
-# at data/runs/*.jsonl and they are pooled automatically.
+# Keep the width coprime with the prompt file's (task, condition) cycle -- 42
+# rows in densfull40, 14 in densfull40hi -- or each shard gets a skewed subset of
+# the pairs. The committed shards are 25-way, and 11-way for the plain arms'
+# densfull40hi.
 SHARD="${SLURM_ARRAY_TASK_ID:-0}"
 NSHARDS="${SLURM_ARRAY_TASK_COUNT:-1}"
 # If Slurm ever hands us a task id without a count, every task would fall back to
@@ -166,79 +179,86 @@ if [[ "$NSHARDS" -gt 1 ]]; then
   EXTRA+=(--shard "$SHARD" --num-shards "$NSHARDS")
 fi
 
-# Track 2.3: batched generation (graphtalk.hf_backend.generate_batch), opt-in
-# and unset by default so every existing invocation keeps using the exact
-# single-stream code path every row on disk so far was generated with.
-# NOT YET VALIDATED against a GPU -- see generate_batch's docstring for the
-# reference check (preliminary/analysis/budget-gemma4-e4b.jsonl /
-# budget-qwen3-8b.jsonl) to run before using this for a real sweep, not a
-# smoke test.
+# Batched generation (graphtalk.hf_backend.generate_batch), opt-in and unset by
+# default, so an ordinary invocation runs the single-stream path the sweep was
+# generated with. Validated on a GPU and not used for the sweep: batch size 4
+# changed 3 of 24 answers for a 1.44x speedup (cluster/README.md, "Two levers").
 BATCH_SIZE="${GRAPHTALK_BATCH_SIZE:-}"
 if [[ -n "$BATCH_SIZE" ]]; then
   EXTRA+=(--batch-size "$BATCH_SIZE")
 fi
 
-# Override the spec's max_new_tokens budget, e.g. for a prompt file that mixes
-# in edge_count at a density/size where the default 2048 truncates it:
-#   GRAPHTALK_MAX_NEW_TOKENS=8192 sbatch cluster/sweep.sbatch <model>
-# Applies to every row in this job, not just the ones that need it -- harmless
-# for short-answer tasks since generation still stops at EOS, not at the cap.
+# Override the spec's token budget (models.budget). The main sweep's four arms
+# default to the 8192 their densfull40 rows were generated with; cluster/README.md
+# lists the run sets generated at another budget, e.g. the plain arms'
+# densfull40hi at 2048:
+#   GRAPHTALK_MAX_NEW_TOKENS=2048 sbatch cluster/sweep.sbatch <model>
+# Applies to every row in this job -- harmless for short answers, since
+# generation still stops at EOS, not at the cap.
 MAX_NEW_TOKENS="${GRAPHTALK_MAX_NEW_TOKENS:-}"
 if [[ -n "$MAX_NEW_TOKENS" ]]; then
   EXTRA+=(--max-new-tokens "$MAX_NEW_TOKENS")
 fi
 
-# Which env, and therefore which half of the cluster is reachable.
+# Which env, and therefore which part of the partition is reachable.
 #
-# The default is the cu130 build the first sweep was generated with. It needs
-# driver 580+, which n-602, n-805 and t-806 have and n-802, n-803 and n-804 do
-# not -- so it can only ever use half the partition.
+# The default `graphtalk` env is torch 2.13.0 built for CUDA 13.0. It needs
+# driver 580+, which the 535.x nodes (n-501, n-802, n-803, n-804) do not have;
+# the default --exclude above keeps jobs off them.
 #
 # graphtalk-cu126 is the same torch 2.13.0 built against CUDA 12.6, and CUDA
 # minor-version compatibility means it runs on both driver generations. Verified
-# on all three 535.183.01 nodes: cuda.is_available() true, L40S detected at
-# sm_89, bf16 matmul finite. Using it doubles the reachable pool to 48 GPUs.
+# on all three 535.183.01 l40s nodes: cuda.is_available() true, L40S detected at
+# sm_89, bf16 matmul finite. Pair it with --exclude=n-801 to admit the 535.x
+# nodes as well:
 #
-#   sbatch --export=ALL,GRAPHTALK_ENV=graphtalk-cu126 cluster/sweep.sbatch <model>
+#   sbatch --exclude=n-801 --export=ALL,GRAPHTALK_ENV=graphtalk-cu126 cluster/sweep.sbatch <model>
 #
 # It cannot drive a B200: the cu126 build stops at sm_90 and Blackwell is sm_100.
 # Irrelevant on `killable`, which has no B200, but it rules the env out if this
 # ever moves to gpu-b200.
+#
+# Both envs are the lab's, readable in place (cluster/collaborator-access.md);
+# GRAPHTALK_CONDA and GRAPHTALK_ENVS_DIR point at another install.
 GRAPHTALK_ENV="${GRAPHTALK_ENV:-graphtalk}"
+CONDA_ROOT="${GRAPHTALK_CONDA:-/home/dcor/galbarak2/anaconda3}"
+ENVS_DIR="${GRAPHTALK_ENVS_DIR:-/home/dcor/galbarak2/conda_envs}"
 set +u
-source /home/dcor/galbarak2/anaconda3/etc/profile.d/conda.sh
-conda activate "/home/dcor/galbarak2/conda_envs/${GRAPHTALK_ENV}"
+source "${CONDA_ROOT}/etc/profile.d/conda.sh"
+conda activate "${ENVS_DIR}/${GRAPHTALK_ENV}"
 set -u
 echo "env: $GRAPHTALK_ENV"
 
-# Models are pre-fetched on the login node; compute nodes may have no outbound
+# Models are pre-fetched on the login node; compute nodes have no outbound
 # network, and a job that tries to download blocks until it times out.
-# Weights come from the lab-shared cache by default: it holds Qwen3-0.6B/1.7B/
-# 3.5-2B/8B/14B and gemma-4-E4B/12B, so nothing needs re-downloading.
+# Weights come from the lab-shared, read-only cache by default
+# (cluster/collaborator-access.md lists what it holds).
 #
 # HF_HOME and HF_HUB_CACHE are set SEPARATELY and that split is load-bearing.
 # Pointing HF_HOME at the shared cache fails: huggingface_hub writes a `token`
 # file at HF_HOME's root, and the shared tree is read-only to everyone but its
 # owner, so every load dies with `PermissionError at .../token`. HF_HOME must
-# therefore be somewhere writable, with only HF_HUB_CACHE aimed at the shared
+# therefore be somewhere writable -- by default .hf_home/ in the submitting
+# clone, the submitter's own -- with only HF_HUB_CACHE aimed at the shared
 # blobs. Benign `Ignoring corrupted tree cache file ... Permission denied`
 # warnings are expected from the same read-only-ness and are not an error.
 #
-# Override either for a checkout with its own weights:
-#   GRAPHTALK_HF_CACHE=/path/to/hub sbatch ... <model>
+# Override either:
+#   GRAPHTALK_HF_CACHE=/path/to/hub   a hub cache holding your own weights
+#   GRAPHTALK_HF_HOME=/path/to/dir    a writable HF_HOME somewhere else
 #
 # Offline is NOT negotiable: the GPU nodes have no route to huggingface.co, so a
 # cache miss fails on the node after queueing rather than at submit time.
-export HF_HOME="${GRAPHTALK_HF_HOME:-/home/dcor/avivyossef/inbal/GraphTalk/.hf_home}"
+export HF_HOME="${GRAPHTALK_HF_HOME:-${SUBMIT_DIR}/.hf_home}"
 export HF_HUB_CACHE="${GRAPHTALK_HF_CACHE:-/home/dcor/galbarak2/hf_cache/hub}"
 mkdir -p "$HF_HOME"
 export HF_HUB_OFFLINE=1
-# Reclaims fragmented VRAM, which is what pushed the SlidesGen 12B run over the
-# edge on a 48 GB card.
+# Reclaims fragmented VRAM, which is what pushed a 12B run over the edge on a
+# 48 GB card.
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
-cd "$SLURM_SUBMIT_DIR"
-export PYTHONPATH="$SLURM_SUBMIT_DIR"
+cd "$SUBMIT_DIR"
+export PYTHONPATH="$SUBMIT_DIR"
 
 mkdir -p "$RUNS_DIR" out
 nvidia-smi
@@ -285,10 +305,11 @@ fi
 # looks exactly like a busy filer or an oversubscribed card, so it sends you
 # chasing the wrong thing.
 #
-# The cause is that `killable` spans two driver generations: n-802, n-803 and
-# n-804 are on 535.x (CUDA 12.2) while n-602, n-805 and t-806 are on 580+/595.
-# The env's torch is a cu130 build and needs 580 or newer. Landing on an old node
-# is luck of the scheduler, which is why the first smoke test passed.
+# The cause is that `killable` spans two driver generations: n-501, n-802, n-803
+# and n-804 are on 535.x (CUDA 12.2) while every other node measured is on
+# 580+/595 (cluster/README.md's table). The default env's torch is a cu130 build
+# and needs 580 or newer, and a smoke test that passes proves only that its own
+# node was fine.
 #
 # Checking costs one torch import against hours of silent waste. Exiting non-zero
 # is deliberate: the job fails visibly and the chain's next link gets another
@@ -311,19 +332,17 @@ PY
 # Refuse to run a model that does not fit the card we landed on.
 #
 # The --constraint above spans 24 GB cards (3090, a5000) and 48 GB ones (a6000,
-# l40s), because the small models this sweep actually runs fit anywhere and
-# pinning them to the 48 GB half is what left them queueing behind a full
-# partition. `min_vram_gb` has been in the registry since the beginning,
-# documented as the field used "to pick a --constraint rather than discovering
-# an OOM an hour into the queue" -- but nothing read it, so nothing enforced it.
-# This is that enforcement, and it is what makes the wider constraint safe for
-# qwen3-14b and gemma4-12b (48 GB) rather than a way to OOM them on a 3090.
+# l40s), because the small models this sweep runs fit anywhere and pinning them
+# to the 48 GB half leaves them queueing behind a full partition. The registry's
+# `min_vram_gb` is the field for this, and this check enforces it: it is what
+# makes the wide constraint safe for qwen3-14b and gemma4-12b (48 GB) rather
+# than a way to OOM them on a 3090.
 #
 # Checked here, before the page-cache warm-up: the warm-up costs ~20 min and
 # reads the whole checkpoint, so discovering the mismatch after it is 20 wasted
 # minutes plus a pointless hammering of the filer.
 #
-# Two details that a first cut of this check got wrong, both worth keeping:
+# Two details matter:
 #
 # `min_vram_gb` is written in spec-sheet GB (decimal), not GiB, so the byte
 # count divides by 1e9 and not by 1024**3. Measured totals, 2026-09-17:
@@ -332,7 +351,7 @@ PY
 #   a6000  49140 MiB    l40s   46068 MiB
 #
 # An l40s is sold as 48 GB and reports 45.0 GiB. Dividing by 1024**3 and asking
-# for `>= 48` therefore REFUSES qwen3-14b and gemma4-12b on the l40s nodes --
+# for `>= 48` would therefore REFUSE qwen3-14b and gemma4-12b on the l40s nodes --
 # the exact cards those models are meant to run on, and the only cards in
 # `killable` that can. A fixed slack cannot paper over this either, because the
 # nominal-to-reported gap is 0% on a 3090 and 6% on an l40s.
@@ -375,7 +394,7 @@ PY
 # 20 min on a good node and much more on a bad one. Measured with 2 GiB of direct
 # I/O, twice each: n-802 and n-805 served ~31 MB/s, while n-801 managed 12.4 MB/s
 # idle and 3.4 MB/s under load, on a 195-day uptime. Both stalls in this project
-# landed on n-801. Pass `--exclude=n-801` until someone reboots it.
+# landed on n-801, which is why the default --exclude carries it.
 #
 # `cat` and not python: this has to happen before `import torch`, and the point
 # is the kernel's cache, not anything in the process.
