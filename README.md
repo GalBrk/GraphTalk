@@ -142,7 +142,7 @@ responses.
 
 ```bash
 uv venv --python 3.11 && uv pip install -e ".[dev]"
-uv run --no-sync pytest -q                     # ~830 tests
+uv run --no-sync pytest -q                     # about 840 tests
 ```
 
 Reproduce the main experiment's numbers from the committed responses (no GPU):
@@ -166,7 +166,8 @@ follow-ups, and then the paper's table and figure scripts.
 <details>
 <summary><b>Generate responses on a GPU</b></summary>
 
-`scripts/run_sweep.py` is the only stage that needs a GPU (`pip install -e ".[gpu]"`).
+`scripts/run_sweep.py` is the only stage that needs a GPU
+(`uv pip install -e ".[dev,gpu]"`; on the cluster, the conda env's `pip`).
 [cluster/README.md](cluster/README.md) covers how every response in `data/runs/`
 was generated on the TAU CS cluster, and
 [cluster/run-4b-density-sweep.md](cluster/run-4b-density-sweep.md) is the exact
@@ -177,9 +178,12 @@ recipe for one arm.
 <details>
 <summary><b>Build the paper</b></summary>
 
+Needs a TeX distribution with `pdflatex`, `bibtex` and `latexmk` (TeX Live or
+MacTeX); `latexmk` runs `pdflatex` and `bibtex` as often as the cross-references need.
+
 ```bash
 cd paper
-pdflatex paper && bibtex paper && pdflatex paper && pdflatex paper
+latexmk -pdf paper
 ```
 
 [paper/README.md](paper/README.md) also regenerates each table and figure, and
