@@ -17,8 +17,16 @@ Each cost GPU time a reader should not have to spend again to check the claim.
 | `confirmatory_*.json` | Pre-registered cells for `check_significance.py --confirmatory-config`; see that script's docstring for the format |
 | [primer_task_shortcut_audit.md](primer_task_shortcut_audit.md) | Which (primer, task) pairs let the primer text alone determine the answer |
 | [task_scoped_screen_comparison.md](task_scoped_screen_comparison.md) | The per-task screen under Game-of-Thrones names against integer names |
+| `rerun/probe100.qwen3-4b.txt` | Console output of `score_sweep.py --responses preliminary/data/runs/qwen3-4b.probe100.shard*.jsonl --shortcuts preliminary/data/shortcuts.json` |
+| `rerun/retrieval.qwen3-8b.txt`, `rerun/retrieval_threshold.qwen3-1.7b.txt` | Console output of the two `analyze_retrieval.py` runs whose CSVs are in `../outputs/ladder-retrieval/` ([../README.md](../README.md#outputs) has the commands); only the printed `--out` path differs from a rerun |
+| `rerun/size.qwen3-4b.txt` | Console output of `score_density_sweep.py` on `qwen3-4b.size.*`, from the version of that script in `superseded/scripts/` in tag `pre-cleanup` |
+| `tables/published_split.cc500.txt`, `tables/published_split.ec500.txt` | Console output of `score_sweep.py --responses preliminary/data/runs/*.cc500.shard*.jsonl` (and `*.ec500.shard*.jsonl`), no `--shortcuts` |
+| `topology_distribution_plots/` | The distribution plots of [../docs/scale-vs-topology-investigation.md](../docs/scale-vs-topology-investigation.md) |
 
-The pilot's scored frames and significance reports are in `../outputs/sweep-small-graph/`.
+The pilot's scored frames and per-task screens, and the significance report of
+the GoT `--count 500` follow-up, are in `../outputs/sweep-small-graph/`. The
+integer report is not tracked: the [Rerun](../README.md#rerun) block writes it
+to `significance_report.csv` here.
 
 The pilot's significance-testing notes, which older docs here cite by section
 ("Current significance results", "Phase A1 candidates", "Track 2", "Phase C"),
