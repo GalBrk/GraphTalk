@@ -41,13 +41,12 @@ TAGS = ("densfull40", "densfull40hi")
 
 _KEY = re.compile(r"^(.+)/size(\d+)/p([\d.]+)/(\d+)$")
 
-# Behaviour markers. `narrates_neighbors` was originally written as `cites_primer`;
-# hand-validation showed 20/20 of its positives cite the *edge list* ("Node N is
-# connected to ...") and none cite the primer, so it is named for what it measures.
-# Deliberately conservative: each is validated against a
-# hand-labelled sample by `superseded/scripts/raw_trends.py --question markers` (tag
-# `pre-cleanup`), and any marker under
-# 0.9 precision is dropped rather than loosened until it agrees.
+# Behaviour markers, deliberately conservative. Each was checked by hand on the
+# sample that `superseded/scripts/raw_trends.py --question markers` (tag
+# `pre-cleanup`) prints; those labels are not committed. `narrates_neighbors` is
+# named for what its positives cite (20 of 20 in that sample): the *edge list*
+# ("Node N is connected to ..."), not the primer. A marker under 0.9 precision is
+# dropped rather than loosened until it agrees.
 _MARKERS = {
     "uses_degree_sum": re.compile(
         r"divide[d]?\s+by\s+2|divided by two|sum of (?:the )?degrees|handshak", re.I),
