@@ -42,7 +42,7 @@ future work draw on them.
 | [investigate_connections_and_cycles.md](investigate_connections_and_cycles.md) | Whether correct answers rest on true claims about the graph: invented cycles, fabricated edges, misread neighbour lists, the `node_count` off-by-one. Opens with conclusions C1–C5 | current |
 | [primer-robustness.md](primer-robustness.md) | How much of each effect is prompt churn, whether the arms fail on the same questions, why responses truncate. Opens with conclusions R1–R5 | current |
 | [primer-directions.md](primer-directions.md) | Nine further questions about what primers do to the responses | exploratory; its numbers are test-checked |
-| [primer-directions-validation.md](primer-directions-validation.md) | The blind hand-validation of primer-directions' text detectors | all six checks pass |
+| [primer-directions-validation.md](primer-directions-validation.md) | The blind hand-validation of primer-directions' text detectors | the five pass/fail checks pass; C2 is descriptive |
 | [density-interaction.md](density-interaction.md) | Whether graph density changes each primer's effect, and whether it matters beyond task difficulty | exploratory |
 
 ## Design

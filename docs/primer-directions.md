@@ -2,14 +2,14 @@
 
 **Status: exploratory; text detectors validated by hand.** The text measures A1,
 A2 and A3 rest on (stated values, quotes, candidate answers, revision words,
-`reports_conflict`) were checked on a blind, seeded sample of 226 items. The user
-labelled the sample by hand, and three independent LLM labellers labelled it too;
-the user's labels agree with the final labels. Every pass/fail check passes (see
+`reports_conflict`) were checked on a blind, seeded sample of 226 items. One of
+the authors labelled the sample by hand, and three independent LLM labellers
+labelled it too; the author's labels agree with the final labels. Every pass/fail check passes (see
 [Validation](#validation) and
 [`primer-directions-validation.md`](primer-directions-validation.md)). A4 and
 B5–B9 are numeric (answers and node ids against the graph and the primer text)
 and need no labels. Intervals are unadjusted across the many comparisons below. Every number cited
-here is checked against the two outputs below by `tests/test_results_docs.py`;
+here is checked against the outputs below by `tests/test_results_docs.py`;
 the main results are in [`results/n40-sweep.md`](results/n40-sweep.md).
 
 Source: `outputs/n40-sweep/directions_validation.txt`
@@ -292,10 +292,10 @@ Finished responses with a numeric answer.
 ## Validation
 
 A blind, seeded sample of each text detector was drawn and scored by
-`scripts/validate_directions.py`. The user labelled it by hand, and three
-independent LLM labellers labelled it too. The user decided the 8 items where
-the LLM labellers disagreed (six C3, one C4, one C6), and the user's own labels
-agree with the final labels. A check passes when the detector agrees with the
+`scripts/validate_directions.py`. One of the authors labelled it by hand, and
+three independent LLM labellers labelled it too. The author decided the 8 items
+where the LLM labellers disagreed (six C3, one C4, one C6), and the author's own
+labels agree with the final labels. A check passes when the detector agrees with the
 labels on 90% or more.
 
 | Check | Detector | Agreement | Supports |
