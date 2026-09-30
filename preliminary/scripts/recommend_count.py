@@ -328,7 +328,7 @@ def main() -> None:
     print(skipped["skip_reason"].value_counts().to_string())
 
   if args.out:
-    result.to_csv(args.out, index=False)
+    result.to_csv(args.out, index=False, lineterminator="\n")
     print(f"\nwrote {len(result)} rows to {args.out}")
 
 

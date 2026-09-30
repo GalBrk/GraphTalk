@@ -278,7 +278,7 @@ def main() -> None:
   out = args.out or analysis.tagged_path(
       "preliminary/outputs/sweep-small-graph/task_scoped_screen.csv", scheme
   )
-  result.to_csv(out, index=False)
+  result.to_csv(out, index=False, lineterminator="\n")
   print(f"wrote {len(result)} rows to {out}")
 
   candidates = result[result["p_value"] <= args.screen_p]

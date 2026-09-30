@@ -126,7 +126,7 @@ def main() -> None:
 
   frame = analysis.build_frame(records, truncated_keys, shortcuts_by_cell)
   out = args.out or analysis.tagged_path("preliminary/outputs/sweep-small-graph/sweep_frame.csv", scheme)
-  frame.to_csv(out, index=False)
+  frame.to_csv(out, index=False, lineterminator="\n")
   print(f"wrote {len(frame)} rows to {out} (node_naming: {scheme})")
 
   _print_baseline(frame)

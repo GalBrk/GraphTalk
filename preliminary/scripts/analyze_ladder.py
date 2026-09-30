@@ -23,6 +23,7 @@ to avoid.
 """
 
 import argparse
+import csv
 import glob
 import json
 import re
@@ -160,9 +161,9 @@ def main():
       print(f"{model:<22} NO VALID RUNG -- never leaves ceiling/floor on this ladder.")
 
   if args.out:
-    import csv
     with open(args.out, "w", newline="", encoding="utf-8") as handle:
-      writer = csv.DictWriter(handle, fieldnames=list(rows_out[0]))
+      writer = csv.DictWriter(handle, fieldnames=list(rows_out[0]),
+                              lineterminator="\n")
       writer.writeheader()
       writer.writerows(rows_out)
     print(f"\nwrote {len(rows_out)} rows -> {args.out}")

@@ -1385,7 +1385,7 @@ def main() -> None:
 
   if args.out:
     out = analysis.tagged_path(args.out, scheme)
-    pd.DataFrame(records).to_csv(out, index=False)
+    pd.DataFrame(records).to_csv(out, index=False, lineterminator="\n")
     print(f"\nwrote {len(records)} rows to {out}")
 
 

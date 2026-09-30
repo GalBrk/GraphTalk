@@ -30,6 +30,7 @@ bracket; do not cite these as exact token counts the way `graphtalk/ladder.py`'s
 """
 
 import argparse
+import csv
 import glob
 import json
 import re
@@ -179,9 +180,9 @@ def main():
     print(f"  --reading-limits {model}={reading_limit if reading_limit is not None else 0}\n")
 
   if args.out:
-    import csv
     with open(args.out, "w", newline="", encoding="utf-8") as handle:
-      writer = csv.DictWriter(handle, fieldnames=list(rows_out[0]))
+      writer = csv.DictWriter(handle, fieldnames=list(rows_out[0]),
+                              lineterminator="\n")
       writer.writeheader()
       writer.writerows(rows_out)
     print(f"wrote {len(rows_out)} rows -> {args.out}")

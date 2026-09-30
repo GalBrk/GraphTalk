@@ -119,7 +119,7 @@ def main() -> None:
       edges=edges,
   )
   out = args.out or analysis.tagged_path("preliminary/analysis/failure_sample.csv", scheme)
-  sample.to_csv(out, index=False)
+  sample.to_csv(out, index=False, lineterminator="\n")
   print(f"wrote {len(sample)} sampled failure rows to {out} (node_naming: {scheme})")
   print(sample["failure_type"].value_counts().to_string())
 
