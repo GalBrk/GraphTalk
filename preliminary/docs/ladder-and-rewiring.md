@@ -104,21 +104,24 @@ the rewiring invariant. Prompt length is a function of `(n, m)` alone.
 ## Running it
 
 ```bash
-cluster/run_ladder.sh              # probe + ladder screen, both arms
-cluster/run_ladder.sh --dry-run
+preliminary/cluster/run_ladder.sh              # probe + ladder screen, both arms
+preliminary/cluster/run_ladder.sh --dry-run
 ```
 
 `sweep.sbatch` exports `HF_HUB_OFFLINE=1`, so a model whose weights are not
-under `.cache/hub/` **cannot run** — it fails on the node after queueing, not at
-submit time. Only `Qwen/Qwen3-1.7B` is cached here; adding a model means
-fetching its checkpoint on the login node first.
+in its `HF_HUB_CACHE` **cannot run** — it fails on the node after queueing, not
+at submit time. The lab-shared cache it points at holds every model
+`run_ladder.sh` submits by default; adding another model means fetching its
+checkpoint on the login node first.
 
 Analysis:
 
 ```bash
-PYTHONPATH=. python scripts/analyze_ladder.py --responses 'runs/*.ladder_screen.jsonl' \
-    --reading-limits qwen3-1.7b=<from probe> --out csv2/ladder-retrieval/ladder_matrix.csv
-PYTHONPATH=. python scripts/analyze_rewiring_sweep.py --responses 'runs/*.rewire.jsonl'
+PYTHONPATH=. python preliminary/scripts/analyze_ladder.py \
+    --responses 'preliminary/data/runs/*.ladder_screen*.jsonl' \
+    --reading-limits qwen3-1.7b=<from probe> --out preliminary/outputs/ladder-retrieval/ladder_matrix.csv
+PYTHONPATH=. python preliminary/scripts/analyze_rewiring_sweep.py \
+    --responses 'preliminary/data/runs/*.rewire*.jsonl'
 ```
 
 `analyze_rewiring_sweep.py` asks **"does `none` move across rewiring levels?"
