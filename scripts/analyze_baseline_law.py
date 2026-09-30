@@ -15,8 +15,10 @@ DEGENERATE_TASKS = ("node_count", "cycle_check")
 
 # A primer is treated as offering a substitute route when the blind solver
 # recovers meaningfully more from it than from `none`. The threshold is a
-# rounding guard, not a tuned parameter: every gain in `preliminary/data/shortcuts.json` is
-# either <= 0.012 or >= 0.114, so anything in [0.02, 0.10] gives this split.
+# rounding guard, not a tuned parameter: on `data/shortcuts_n40_flat.json`, the
+# bars analyze_rq3_leads.py splits on, every gain outside DEGENERATE_TASKS is
+# either <= 0.011 or >= 0.066, so any threshold between the two gives the same
+# split and the same analyze_rq3_leads.py screen; 0.05 lies inside that gap.
 ROUTE_GAIN_THRESHOLD = 0.05
 
 DENSFULL_ARMS = ("qwen3-1.7b", "qwen3-1.7b-think", "qwen3-4b", "qwen3-4b-think")
