@@ -51,7 +51,11 @@ copied from the prompt, plus:
 - `model`, the arm (`-think` marks thinking mode);
 - `response`, the generated text;
 - `n_new_tokens`;
-- `hit_cap`, true when generation used the whole token budget.
+- `hit_cap`, true when generation used the whole token budget;
+- `overflow`, true when the prompt did not fit the model's context window, so
+  nothing was generated and `response` is null. `scripts/run_sweep.py` writes it
+  on every row; the committed rows do not carry it, and every one of them has a
+  response.
 
 The prompt text is not repeated; join on `(instance_id, condition)` to recover it.
 
