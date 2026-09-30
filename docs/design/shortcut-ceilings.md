@@ -431,10 +431,10 @@ honest figures are lower than there because this fitting set is 500 graphs rathe
 
 On n <= 6 (9.2% of rows), enumerating every labelled graph consistent with the stated
 degrees gives the exact ceiling for *any* primer-only solver. It shows where rules are
-missing: the last column is the best comparison rule, without the reconstruction
-theorems.
+missing: the last column is the same solver as `our best` (the comparison theorems, the
+heuristic and the fitted rules) without the three degree-sequence reconstruction theorems.
 
-| task | determined | exact ceiling | our best | comparison rules only |
+| task | determined | exact ceiling | our best | without reconstruction |
 |---|---|---|---|---|
 | `edge_existence` | 67.4% | 93.5% | 91.3% | 91.3% |
 | `cycle_check` | 97.8% | 100% | **97.8%** | 65.2% |
