@@ -505,9 +505,7 @@ of whether the model would have gotten the answer right anyway.
   at n60/n80 (Part 1). Any primer-effect conclusion drawn from n60/n80 cells
   (especially `edge_count`, and the think arm's bursty per-primer truncation)
   should be treated as running on a reduced effective sample, not the nominal
-  n=30, until the token-budget plan
-  (`can-i-shorten-the-structured-sloth` in `~/.claude/plans/`) is implemented and
-  re-run.
+  n=30, until a token-budget plan is implemented and re-run.
 
 ## Recommended node-count range
 

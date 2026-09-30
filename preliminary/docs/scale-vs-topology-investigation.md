@@ -56,9 +56,9 @@ The global-significance flip is pure added power** (MDE shrinking as
 measured.
 
 One loose end the script itself flags: the "original" slice's delta here
-(+0.0611, p=0.0125) doesn't quite match the standalone tracked `--count 30`
+(+0.0611, p=0.0125) doesn't quite match the standalone `--count 30`
 report's delta for the same cell (+0.0778, p=0.0018, from
-`analysis/significance_report.got.csv`). `scripts/diff_shared_instances.py`
+`git show 30fa9ed:analysis/significance_report.got.csv`). `scripts/diff_shared_instances.py`
 traces this exactly: of the 180 shared pairs, **5 flip** between the two
 runs (`edge_count/1`, `edge_count/9`, `edge_count/18`, `edge_count/28`,
 `cycle_check/5`), every one with byte-identical prompts in both runs. That
@@ -181,7 +181,7 @@ density, monotonically:**
 > absent: fitted as a slope on the per-graph paired difference, `clustering`
 > gives +0.113 per unit density (p=0.15) and `components` **-0.148** (p~0.02),
 > i.e. the only relationship approaching significance runs *backwards*. See
-> `../primer-effects-and-power.md`, "The trend test". A fourth caveat applies to
+> [primer-effects-and-power.md](primer-effects-and-power.md), "The trend test". A fourth caveat applies to
 > every row: the deltas are against `none`, a shorter prompt, and length alone
 > is worth up to 11.7 points at these sizes.
 
@@ -207,6 +207,9 @@ collecting more data, rather than treating this write-up's numbers as
 already establishing it.
 
 ## Reproducing this investigation
+
+The five scripts are in git tag `pre-cleanup`, and every path below resolves in
+a checkout of it (`git checkout pre-cleanup`):
 
 ```bash
 PYTHONPATH=. .venv/Scripts/python.exe scripts/check_old_vs_new_subsample.py \

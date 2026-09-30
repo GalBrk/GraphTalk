@@ -92,6 +92,8 @@ rows from the HuggingFace datasets-server and needs network access.
 
 ## Outputs
 
+Paths are under `preliminary/outputs/`.
+
 | File | Written by |
 |---|---|
 | `sweep-small-graph/sweep_frame.csv`, `sweep_frame.got.csv`, `sweep_frame.count500.got.csv` | `build_sweep_frame.py`, [Rerun](#rerun) |
