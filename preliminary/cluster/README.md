@@ -4,9 +4,12 @@ How the Game-of-Thrones and ladder/rewiring runs of the preliminary work were
 submitted. [← preliminary/](../README.md) · general cluster setup:
 [cluster/README.md](../../cluster/README.md)
 
-Both drivers call `cluster/sweep.sbatch`, whose default output directory is now
-`data/runs/`. Point `GRAPHTALK_TASK_DIR` or move the files into
-`preliminary/data/runs/` afterwards.
+Both drivers call `cluster/sweep.sbatch`, whose defaults are the main
+experiment's: the 40-node prompts and `data/runs/`. So every job either driver
+submits carries the preliminary paths explicitly, `GRAPHTALK_PROMPTS` (a file
+under `preliminary/data/prompts/`) and `GRAPHTALK_RUNS_DIR=preliminary/data/runs`.
+Run both from the repo root; `--dry-run` prints those variables with the
+`sbatch` line.
 
 ## Running the GoT node-naming scheme
 
@@ -25,7 +28,8 @@ key, the smoke-test limit) passes straight through in whatever position it's
 given -- only `--node-naming`, `--count`, and `--dry-run` are consumed by the
 wrapper. `--count N` (GoT scheme only) requests a prompt file larger than the
 tracked sweep's 30-per-task default -- e.g. for a targeted follow-up sized by
-`preliminary/scripts/recommend_count.py` (see `preliminary/analysis/README.md`'s Track 2 section) --
+`preliminary/scripts/recommend_count.py` (see the "Track 2" section of
+`git show pre-cleanup:analysis/README.md`) --
 tagged into both the prompt filename and `GRAPHTALK_RUN_TAG` so it can't
 collide with the tracked `--count 30` sweep's own files:
 
@@ -46,8 +50,10 @@ no outbound network (`HF_HUB_OFFLINE=1`, same reason as everywhere else in
 this file). The wrapper builds `preliminary/data/prompts/prompts_got.jsonl` right there, before
 `sbatch` is ever called, and reuses it on every later invocation rather than
 rebuilding (`load_rows()`'s cache makes that safe -- see `graphtalk/node_naming.py`).
-Omit `--node-naming` (or pass `--node-naming integer`) for the plain scheme;
-nothing else about the wrapper's behavior changes.
+Omit `--node-naming` (or pass `--node-naming integer`) for the integer scheme:
+the wrapper then submits `preliminary/data/prompts/prompts.jsonl`, the pilot's
+file, which serves both the plain and the `-think` arms (`prompts_zero_shot.jsonl`
+is byte-identical to it). Nothing is built for it.
 
 ## Running the ladder/rewiring sweep
 

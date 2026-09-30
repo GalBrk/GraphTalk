@@ -15,10 +15,15 @@
 # here -- it should only be spent on rungs that both passes have shown to be
 # valid for that model.
 #
-#   cd /home/dcor/avivyossef/inbal/GraphTalk
-#   cluster/run_ladder.sh                 # both stages, default models
-#   cluster/run_ladder.sh --dry-run       # print, build nothing, submit nothing
-#   STAGES=ladder MODELS=qwen3-1.7b cluster/run_ladder.sh
+#   cd <repo root>
+#   preliminary/cluster/run_ladder.sh                 # both stages, default models
+#   preliminary/cluster/run_ladder.sh --dry-run       # print, build nothing, submit nothing
+#   STAGES=ladder MODELS=qwen3-1.7b preliminary/cluster/run_ladder.sh
+#
+# Every job reads its prompt file from preliminary/data/prompts/ and writes
+# into preliminary/data/runs/: submit() passes GRAPHTALK_PROMPTS and
+# GRAPHTALK_RUNS_DIR explicitly, so sweep.sbatch's defaults (the main
+# experiment's prompts and data/runs/) never apply.
 #
 # OFFLINE CHECKPOINTS. sweep.sbatch exports HF_HUB_OFFLINE=1 and points
 # HF_HUB_CACHE at the lab-shared cache, which holds all seven checkpoints -- so
@@ -46,6 +51,10 @@ PROBE_COUNT="${PROBE_COUNT:-25}"
 # Documented bad-driver / slow nodes (cluster/README.md). Every other submission
 # path in this repo passes these; jobs that land there die on the CUDA check.
 EXCLUDE="${EXCLUDE:-n-501,n-801,n-802,n-803,n-804}"
+
+# Relative: sweep.sbatch resolves it after `cd "$SLURM_SUBMIT_DIR"`, the repo
+# root this script is run from.
+RUNS_DIR="preliminary/data/runs"
 
 DRY_RUN="${DRY_RUN:-}"
 for arg in "$@"; do
@@ -94,9 +103,9 @@ submit () {   # submit <model> <prompts> <tag>
     "from graphtalk import models; print(models.MODELS['$model'].min_vram_gb)" 2>/dev/null) || {
       echo "  SKIP $model -- not in graphtalk/models.py" >&2; return 0; }
   tier=$(tier_for "$vram"); constraint="${tier%;*}"; mem="${tier#*;}"
-  echo "  submit $model (${vram}GB -> $mem)  <- $prompts  (tag $tag)"
+  echo "  submit $model (${vram}GB -> $mem)  <- $prompts  (tag $tag) -> $RUNS_DIR"
   [[ -n "$DRY_RUN" ]] && return 0
-  GRAPHTALK_PROMPTS="$prompts" GRAPHTALK_RUN_TAG="$tag" \
+  GRAPHTALK_PROMPTS="$prompts" GRAPHTALK_RUN_TAG="$tag" GRAPHTALK_RUNS_DIR="$RUNS_DIR" \
     sbatch --job-name="${model}_${tag}" \
       --constraint="$constraint" --mem="$mem" \
       --exclude="$EXCLUDE" \
@@ -132,7 +141,7 @@ for STAGE in $STAGES; do
       # Stage 3. Unlike the two gating stages this is NOT run on every rung:
       # REWIRE_PROMPTS must already have been built with build_ladder.py
       # --stage rewire --rungs <only the rungs that cleared BOTH gates for
-      # these models>, read off preliminary/analysis/ladder_matrix.limited.csv. Running it
+      # these models>, read off preliminary/outputs/ladder-retrieval/ladder_matrix.limited.csv. Running it
       # on a rung the model ceilings or cannot read measures nothing.
       PROMPTS="${REWIRE_PROMPTS:?set REWIRE_PROMPTS to a built rewire file}"
       TAG="${REWIRE_TAG:-rewire}"
@@ -149,6 +158,6 @@ done
 echo
 echo "when the jobs finish:"
 echo "  PYTHONPATH=. $PYTHON preliminary/scripts/analyze_ladder.py \\"
-echo "      --responses 'preliminary/data/runs/*.ladder_screen.jsonl' --out preliminary/analysis/ladder_matrix.csv"
+echo "      --responses 'preliminary/data/runs/*.ladder_screen*.jsonl' --out preliminary/outputs/ladder-retrieval/ladder_matrix.csv"
 echo "  # then re-run it with the reading limits the probe gives you:"
 echo "  #   --reading-limits qwen3-1.7b=2600 qwen3-1.7b-think=2600"

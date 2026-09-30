@@ -3,23 +3,30 @@
 # preliminary/data/prompts/prompts_got.jsonl (login-node work: network, no torch, no GPU) if it
 # doesn't already exist, then submits exactly as `sbatch` would.
 #
+# Both schemes run the pilot's own prompts and write into the pilot's own
+# runs directory: the wrapper exports GRAPHTALK_PROMPTS (the scheme's file
+# under preliminary/data/prompts/) and GRAPHTALK_RUNS_DIR=preliminary/data/runs
+# for every submission, so sweep.sbatch's defaults -- the main experiment's
+# 40-node prompts and data/runs/ -- never apply here. To run anything else,
+# call sweep.sbatch directly.
+#
 # `build_prompts.py` fetches dataset rows over plain `urllib` and has to run
 # on the login node -- compute nodes have no outbound network, which is why
 # `cluster/sweep.sbatch` sets HF_HUB_OFFLINE=1. `sbatch` itself only queues a
 # job; the job body runs later on a compute node. So building the prompt
 # file has to happen here, at submission time, not inside sweep.sbatch.
 #
-# Original scheme, unchanged from today:
-#   cluster/submit_sweep.sh cluster/sweep.sbatch gemma4-12b
+# Integer scheme, preliminary/data/prompts/prompts.jsonl:
+#   preliminary/cluster/submit_sweep.sh cluster/sweep.sbatch gemma4-12b
 #
 # GoT scheme, one flag:
-#   cluster/submit_sweep.sh --node-naming got cluster/sweep.sbatch gemma4-12b
+#   preliminary/cluster/submit_sweep.sh --node-naming got cluster/sweep.sbatch gemma4-12b
 #
 # Every other sbatch flag/positional (--array, --exclude, --mem, the model
 # key, the smoke-test limit) passes through untouched, in whatever position
 # it's given -- only --node-naming, --count and --dry-run are consumed here:
 #
-#   cluster/submit_sweep.sh --node-naming got --array=0-7 \
+#   preliminary/cluster/submit_sweep.sh --node-naming got --array=0-7 \
 #       cluster/sweep.sbatch qwen3-8b-think
 #
 # --count N (GoT scheme only -- see below) requests a larger prompt file
@@ -27,7 +34,7 @@
 # one (model, condition) cell that Track 2.1's `preliminary/scripts/recommend_count.py`
 # says needs more graphs to reliably detect an already-observed effect:
 #
-#   cluster/submit_sweep.sh --node-naming got --count 500 \
+#   preliminary/cluster/submit_sweep.sh --node-naming got --count 500 \
 #       cluster/sweep.sbatch qwen3-8b
 #
 # --dry-run prints what would run instead of building anything or calling
@@ -66,16 +73,28 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Relative, like every other path here: sweep.sbatch resolves it after `cd
+# "$SLURM_SUBMIT_DIR"`, which is the repo root this wrapper runs from.
+export GRAPHTALK_RUNS_DIR="preliminary/data/runs"
+
 case "$NODE_NAMING" in
   integer)
     if [[ "$COUNT" != "30" ]]; then
       echo "FATAL: --count is only wired up for --node-naming got here --" >&2
-      echo "the integer scheme's prompts.jsonl is assumed pre-built at the" >&2
-      echo "tracked --count 30; build a custom one by hand and set" >&2
-      echo "GRAPHTALK_PROMPTS/GRAPHTALK_RUN_TAG yourself before calling" >&2
-      echo "sweep.sbatch directly." >&2
+      echo "the integer scheme runs the tracked --count 30 file," >&2
+      echo "preliminary/data/prompts/prompts.jsonl; build a custom one by hand" >&2
+      echo "and set GRAPHTALK_PROMPTS/GRAPHTALK_RUN_TAG yourself before" >&2
+      echo "calling sweep.sbatch directly." >&2
       exit 1
     fi
+    # One file serves both arms: the thinking arm's zero_shot-only file,
+    # prompts_zero_shot.jsonl, is byte-identical to this one.
+    PROMPTS_FILE="preliminary/data/prompts/prompts.jsonl"
+    if [[ ! -f "$PROMPTS_FILE" ]]; then
+      echo "FATAL: $PROMPTS_FILE not found; run this from the repo root." >&2
+      exit 1
+    fi
+    export GRAPHTALK_PROMPTS="$PROMPTS_FILE"
     ;;
   got)
     # At the default --count 30, matches prompts.jsonl's own generation
@@ -111,9 +130,9 @@ case "$NODE_NAMING" in
 esac
 
 if [[ -n "$DRY_RUN" ]]; then
-  ENV_PREFIX=""
+  ENV_PREFIX="GRAPHTALK_PROMPTS=$GRAPHTALK_PROMPTS GRAPHTALK_RUNS_DIR=$GRAPHTALK_RUNS_DIR "
   if [[ "$NODE_NAMING" == "got" ]]; then
-    ENV_PREFIX="GRAPHTALK_PROMPTS=$GRAPHTALK_PROMPTS GRAPHTALK_RUN_TAG=$GRAPHTALK_RUN_TAG "
+    ENV_PREFIX+="GRAPHTALK_RUN_TAG=$GRAPHTALK_RUN_TAG "
   fi
   echo "would run: ${ENV_PREFIX}sbatch ${ARGS[*]}"
 else
