@@ -222,8 +222,8 @@ def make():
       key.append(dict(id=item, check=check, arm=r.arm, task=r.task, condition=r.condition,
                       instance_id=r.instance_id, truncated=int(r.hit_cap),
                       expected=expected, detail=detail))
-  pd.DataFrame(sheet).to_csv(SHEET, index=False, encoding="utf-8-sig")
-  pd.DataFrame(key).to_csv(KEY, index=False)
+  pd.DataFrame(sheet).to_csv(SHEET, index=False, encoding="utf-8-sig", lineterminator="\n")
+  pd.DataFrame(key).to_csv(KEY, index=False, lineterminator="\n")
   counts = pd.DataFrame(key).check.value_counts().sort_index()
   print(f"wrote {len(sheet)} items to {SHEET} and the key to {KEY}: "
         + ", ".join(f"{c} {n}" for c, n in counts.items()))

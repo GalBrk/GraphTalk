@@ -454,7 +454,7 @@ def write_sample(d):
                        condition=r.condition, instance_id=r.instance_id,
                        truncated=int(r.hit_cap), targets=" ".join(map(str, r.targets)),
                        excerpt=" ".join(ex.split()), label=""))
-  pd.DataFrame(rows).to_csv(VALIDATION, index=False)
+  pd.DataFrame(rows).to_csv(VALIDATION, index=False, lineterminator="\n")
   print(f"wrote {len(rows)} samples to {VALIDATION}; fill in label (1 = the excerpt "
         f"shows the meaning, 0 = it does not)")
 
@@ -753,10 +753,13 @@ def main():
   associations(d, keys)
   rel = relation(lean, r)
   if args.csv_dir:
-    r.to_csv(os.path.join(args.csv_dir, "response_pattern_cells.csv"), index=False)
+    # LF on every platform (pandas ends lines with os.linesep by default).
+    r.to_csv(os.path.join(args.csv_dir, "response_pattern_cells.csv"), index=False,
+             lineterminator="\n")
     pd.DataFrame(phrases).to_csv(os.path.join(args.csv_dir, "response_contrasts.csv"),
-                                 index=False)
-    rel.to_csv(os.path.join(args.csv_dir, "response_relation.csv"), index=False)
+                                 index=False, lineterminator="\n")
+    rel.to_csv(os.path.join(args.csv_dir, "response_relation.csv"), index=False,
+               lineterminator="\n")
 
 
 if __name__ == "__main__":

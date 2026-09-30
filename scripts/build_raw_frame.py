@@ -182,7 +182,8 @@ def main():
 
   os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
   with open(args.out, "w", encoding="utf-8", newline="") as handle:
-    writer = csv.DictWriter(handle, fieldnames=FIELDS)
+    # LF on every platform: the csv module's default terminator is CRLF.
+    writer = csv.DictWriter(handle, fieldnames=FIELDS, lineterminator="\n")
     writer.writeheader()
 
     for arm in args.arms:

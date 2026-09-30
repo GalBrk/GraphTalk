@@ -132,6 +132,7 @@ import csv
 import glob
 import json
 import os
+import posixpath
 import random
 import re
 import sys
@@ -1028,15 +1029,17 @@ def main():
             "edge_count_argument", "rejected_real", "n_named", "index", "kind", "verdict", "rejected",
             "walk", "quoted", "text_after", "invented_steps", "closing_invented", "from_adjacent_line",
             "off_by_one"]
-    path = os.path.join(args.csv_dir, "cycle_claims.csv")
+    # LF line ends and forward slashes on every platform: the csv module ends
+    # lines with CRLF, and os.path.join would print a backslash on Windows.
+    path = posixpath.join(args.csv_dir, "cycle_claims.csv")
+    other_path = posixpath.join(args.csv_dir, "response_claims.csv")
     with open(path, "w", newline="", encoding="utf-8") as fh:
-      wr = csv.DictWriter(fh, fieldnames=cols)
+      wr = csv.DictWriter(fh, fieldnames=cols, lineterminator="\n")
       wr.writeheader()
       wr.writerows(claim_rows)
     other = pd.concat([ee, nd, cn, ec, nc], ignore_index=True)
-    other.to_csv(os.path.join(args.csv_dir, "response_claims.csv"), index=False)
-    print(f"wrote {len(claim_rows)} rows to {path} and {len(other)} rows to "
-          f"{os.path.join(args.csv_dir, 'response_claims.csv')}")
+    other.to_csv(other_path, index=False, lineterminator="\n")
+    print(f"wrote {len(claim_rows)} rows to {path} and {len(other)} rows to {other_path}")
 
 
 if __name__ == "__main__":

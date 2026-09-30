@@ -1484,9 +1484,12 @@ def figure_data(f, bars, out):
                               j.correct_b.astype(bool).to_numpy())["p_value"])
   t["p"] = ps
   t["q"] = t.groupby(["arm", "task"]).p.transform(lambda s: bh(s.to_numpy()))
-  t.to_csv(os.path.join(out, "primer_cells.csv"), index=False)
-  collapse_rows(f).to_csv(os.path.join(out, "edge_existence_collapse.csv"), index=False)
-  route_data(f).to_csv(os.path.join(out, "node_degree_routes.csv"), index=False)
+  # LF on every platform (pandas ends lines with os.linesep by default).
+  t.to_csv(os.path.join(out, "primer_cells.csv"), index=False, lineterminator="\n")
+  collapse_rows(f).to_csv(os.path.join(out, "edge_existence_collapse.csv"), index=False,
+                          lineterminator="\n")
+  route_data(f).to_csv(os.path.join(out, "node_degree_routes.csv"), index=False,
+                       lineterminator="\n")
   print("wrote primer_cells.csv, edge_existence_collapse.csv and "
         "node_degree_routes.csv to", out)
 

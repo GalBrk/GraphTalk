@@ -103,7 +103,7 @@ def main():
       "label": "", "notes": ""})
   # utf-8-sig: Excel reads a BOM-less file as the local code page and garbles
   # the responses' non-ASCII characters; pandas skips the BOM.
-  out.to_csv(args.out, index=False, encoding="utf-8-sig")
+  out.to_csv(args.out, index=False, encoding="utf-8-sig", lineterminator="\n")
   print(f"wrote {len(out)} rows to {args.out}")
   print(out.groupby("direction").size().to_string())
 

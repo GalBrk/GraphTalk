@@ -76,6 +76,7 @@ import glob
 import itertools
 import json
 import os
+import posixpath
 import random
 import re
 import sys
@@ -543,10 +544,12 @@ def main():
   ee_degree(f)
   samples(L, F)
   if args.csv_dir:
-    out = os.path.join(args.csv_dir, "robustness_responses.csv")
+    # LF and a forward-slash path on every platform (pandas ends lines with
+    # os.linesep, and os.path.join would print a backslash on Windows).
+    out = posixpath.join(args.csv_dir, "robustness_responses.csv")
     pd.concat([L.drop(columns="tail").assign(source="densfull40", check="loop"),
                F.drop(columns=["trace_tail", "answer_head"]).assign(source="densfull40", check="faithful"),
-               X.assign(source="densfull40", check="boxed")]).to_csv(out, index=False)
+               X.assign(source="densfull40", check="boxed")]).to_csv(out, index=False, lineterminator="\n")
     print(f"wrote {out}")
 
 
