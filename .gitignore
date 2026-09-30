@@ -10,8 +10,21 @@ dist/
 figures/
 .cache/
 
+# No lockfile ships: setup is `uv pip install` (README.md), and a lock resolved on
+# one machine records that machine's package index.
+uv.lock
+
+# Local credentials, and Claude Code's per-machine settings and worktrees.
+.env
+.netrc
+.claude/
+
 # Slurm logs: per-job noise.
 out/
+
+# The HF_HOME cluster/sweep.sbatch creates in the clone; huggingface_hub keeps its
+# token there.
+.hf_home/
 
 # Smoke runs (cluster/sweep.sbatch writes them to data/runs/archive/) and replaced
 # data files; never tracked. graphtalk.analysis skips rows under any archive/.
@@ -26,6 +39,21 @@ archive/
 # The Game-of-Thrones-named build of the 40-node prompts: no runs use it, and at
 # 125 MB it is over GitHub's 100 MB file limit.
 /data/prompts/prompts.densfull40.got.jsonl
+
+# Files documented commands write at the repo root: prompt builds (the default
+# --out of preliminary/scripts/build_prompts.py is prompts.jsonl), the subset of a
+# partial regeneration in cluster/README.md, and the shortcuts.json and
+# significance.csv of preliminary/docs/DATA.md. The tracked copies live under
+# data/ and preliminary/.
+/prompts*.jsonl
+/subset.jsonl
+/shortcuts.json
+/significance.csv
+
+# Reports the preliminary scripts regenerate: check_significance.py --out in
+# preliminary/README.md's Rerun, and sample_failures.py's default.
+/preliminary/analysis/significance_report*.csv
+/preliminary/analysis/failure_sample*.csv
 
 # primer_flips.py output (16 MB), regenerable from the committed frame and runs.
 /outputs/n40-sweep/primer_flips.csv
