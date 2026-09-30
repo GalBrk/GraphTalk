@@ -8,16 +8,30 @@ lose hours of generation every time that happened.
 
   python scripts/run_sweep.py --model qwen3-4b \\
       --prompts data/prompts/prompts.densfull40.jsonl --out data/runs/qwen3-4b.densfull40.jsonl
+
+Generation needs the `gpu` extra (torch, transformers); `--help`, argument
+checks and the resume count work without it.
 """
 
 import argparse
 import collections
 import json
 import os
+import sys
 import time
 
-from graphtalk import hf_backend
 from graphtalk import models
+
+# The backend imports torch at module scope. Guarded so a machine without the
+# `gpu` extra can still read --help and count outstanding work; the import error
+# is reported only when generation is about to start.
+try:
+  from graphtalk import hf_backend
+except ImportError as _error:
+  hf_backend = None
+  _BACKEND_ERROR = _error
+else:
+  _BACKEND_ERROR = None
 
 
 def load_prompts(path: str) -> list[dict]:
@@ -51,9 +65,9 @@ def _group_by_budget(records: list[dict], spec, max_new_tokens_override) -> dict
   A batched `model.generate` call takes one `max_new_tokens` for the whole
   batch, so rows needing different budgets (different `style`s, or a
   `--max-new-tokens` override applied selectively) can't share a batch --
-  see `models.budget`. Today's data is `style="zero_shot"` only (post-purge),
-  so this always yields a single group in practice, but stays correct if
-  that ever changes rather than silently mixing budgets.
+  see `models.budget`. Every prompt file is `style="zero_shot"`, so this
+  yields a single group in practice, but stays correct for a mixed file
+  rather than silently mixing budgets.
   """
   groups = collections.defaultdict(list)
   for record in records:
@@ -74,20 +88,20 @@ def main() -> None:
   parser.add_argument("--limit", type=int, default=None,
                       help="stop after this many generations, for smoke tests")
   parser.add_argument("--max-new-tokens", type=int, default=None,
-                      help="override the spec's budget; for regenerating rows "
-                           "that were truncated at a smaller one")
+                      help="override the spec's budget (models.budget), for a "
+                           "run set generated at another budget; the table in "
+                           "cluster/README.md lists them")
   parser.add_argument("--shard", type=int, default=0,
                       help="which shard of the prompt file this job generates")
   parser.add_argument("--num-shards", type=int, default=1,
                       help="split the prompts across this many concurrent jobs")
   parser.add_argument("--batch-size", type=int, default=1,
-                      help="rows generated per forward pass (Track 2.3). "
-                           "Default 1 keeps today's exact single-stream code "
-                           "path (hf_backend.generate); >1 routes through "
-                           "hf_backend.generate_batch, which is NOT YET "
-                           "VALIDATED against a GPU -- see its docstring. "
-                           "Do not use >1 for a real sweep before that "
-                           "validation has been done.")
+                      help="rows generated per forward pass. Default 1 is the "
+                           "single-stream path (hf_backend.generate) the sweep "
+                           "runs on; >1 routes through "
+                           "hf_backend.generate_batch, which on a GPU changed "
+                           "3 of 24 answers for a 1.44x speedup -- do not use "
+                           "it for a sweep (see its docstring).")
   args = parser.parse_args()
 
   if not 0 <= args.shard < args.num_shards:
@@ -95,11 +109,14 @@ def main() -> None:
 
   spec = models.MODELS[args.model]
   records = load_prompts(args.prompts)
-  # Stride, not contiguous blocks. The prompt file is ordered by task, so a block
-  # split would hand one shard every `edge_count` row -- the task that runs an
-  # order of magnitude longer than the rest -- and that shard would still be
-  # generating long after the others had finished. Striding gives every shard the
-  # same task mix, so they finish together.
+  # Stride, not contiguous blocks. The main prompt file is density-major and
+  # cycles through every (task, condition) pair every 42 rows, so a block split
+  # would give each shard a single density, and the shards holding the densest
+  # graphs -- where `edge_count` runs an order of magnitude longer than the
+  # rest -- would still be generating long after the others had finished.
+  # Striding gives every shard every density and, with a shard count coprime
+  # with the cycle length, every (task, condition) pair, so they finish
+  # together.
   if args.num_shards > 1:
     records = records[args.shard::args.num_shards]
   already = done_keys(args.out)
@@ -119,6 +136,9 @@ def main() -> None:
     print("nothing to do", flush=True)
     return
 
+  if hf_backend is None:
+    sys.exit(f"run_sweep.py: generation needs the gpu extra "
+             f"(pip install -e \".[gpu]\"): {_BACKEND_ERROR}")
   tokenizer, model = hf_backend.load(spec)
   os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
 
@@ -143,10 +163,7 @@ def main() -> None:
   with open(args.out, "a") as handle:
     for budget, batch in work:
       if args.batch_size == 1:
-        # Unchanged from before batching existed: `generate_batch` at
-        # batch size 1 should be equivalent, but this path is the one
-        # every row on disk so far was generated with, so it stays the
-        # default rather than being replaced by an unvalidated one.
+        # The single-stream path the sweep runs on (see --batch-size).
         try:
           completions = [hf_backend.generate(
               tokenizer, model, batch[0]["prompt"], budget, spec.chat_kwargs,
@@ -171,10 +188,9 @@ def main() -> None:
           # the one that was actually oversized.
           completions = [None] * len(batch)
       for record, completion in zip(batch, completions):
-        # `n_new_tokens`/`hit_cap` are new as of the prompt-rewording re-run; rows
-        # generated before it do not carry them, so anything reading these must
-        # treat absence as "unknown" and fall back to
-        # `preliminary/analysis/truncated_keys.json` -- see `graphtalk/analysis.py`.
+        # `n_new_tokens`/`hit_cap` say how the generation ended (rule R1,
+        # graphtalk/outcomes.py); `overflow` marks a prompt that did not fit
+        # the model's context window and was not generated at all.
         row = {
             "instance_id": record["instance_id"],
             "task": record["task"],
@@ -199,8 +215,8 @@ def main() -> None:
         if "node_naming" in record:
           row["node_naming"] = record["node_naming"]
         handle.write(json.dumps(row) + "\n")
-      # Flushed once per *batch*, not per row: at batch_size 1 this is
-      # exactly the old per-row flush (a preemption loses at most the row
+      # Flushed once per *batch*, not per row: at batch_size 1 this is a
+      # per-row flush (a preemption loses at most the row
       # in flight); at batch_size > 1 a preemption can lose up to one
       # batch, traded deliberately for the forward-pass savings batching
       # exists for.
