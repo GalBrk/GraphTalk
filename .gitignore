@@ -40,15 +40,11 @@ archive/
 # 125 MB it is over GitHub's 100 MB file limit.
 /data/prompts/prompts.densfull40.got.jsonl
 
-# Files documented commands write at the repo root: prompt builds (the default
-# --out of preliminary/scripts/build_prompts.py is prompts.jsonl), the subset of a
-# partial regeneration in cluster/README.md, and the shortcuts.json and
-# significance.csv of preliminary/docs/DATA.md. The tracked copies live under
-# data/ and preliminary/.
+# Scratch files documented commands can write at the repo root: a prompt build
+# given a bare --out, and the subset of a partial regeneration in
+# cluster/README.md. The tracked prompt files live under data/ and preliminary/.
 /prompts*.jsonl
 /subset.jsonl
-/shortcuts.json
-/significance.csv
 
 # Reports the preliminary scripts regenerate: check_significance.py --out in
 # preliminary/README.md's Rerun, and sample_failures.py's default.
