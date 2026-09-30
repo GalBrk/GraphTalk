@@ -23,7 +23,7 @@ One arm is enough to test the mechanism:
   explain.
 - The cost of restricting to one arm is generality, not correctness: this
   tells you the mechanism in one model, not whether it holds elsewhere.
-  The paper already limits the claim to "one model, one task."
+  The paper already limits the claim to plain 1.7B on `node_degree`.
 - Plain 4B's position split needs no new GPU time: `docs/primer-directions.md`
   A4 splits each primer's `node_degree` effect by the queried node's quarter of
   the list, over all seven densities.
