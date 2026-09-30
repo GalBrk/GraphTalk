@@ -1620,8 +1620,10 @@ def main():
   ap.add_argument("--frame", default=FRAME)
   ap.add_argument("--csv-dir")
   ap.add_argument("--figure-data", action="store_true",
-                  help="write the two figure CSVs to --csv-dir and stop")
+                  help="write the three figure CSVs to --csv-dir and stop")
   args = ap.parse_args()
+  if args.figure_data and not args.csv_dir:
+    ap.error("--figure-data needs --csv-dir")
   f = with_outcomes(pd.read_csv(args.frame))
   bars = json.load(open(BARS, encoding="utf-8"))
   if args.figure_data:
