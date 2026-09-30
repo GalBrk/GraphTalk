@@ -152,7 +152,7 @@ A second direction replaces the fixed primer with interaction. An agent that que
 
 \section{Conclusion}
 \label{sec:conclusion}
-Our answer to the question in Section~\ref{sec:intro} is no: explicit structural statistics did not consistently improve how the models executed graph queries. Stated degrees produced the clearest gains, chiefly where the model counted unreliably but could use the stated value; they could also disrupt accurate counting. Clustering and random-walk returns produced task- and density-dependent effects without a consistent gain in joint degree and neighbor-set correctness. Accuracy alone is insufficient: added text can change answers, and a correct cycle label can cite a nonexistent edge. The value of a textual statistic depends on the query, what the statistic gives away, and what the model can already compute.
+Do explicit structural statistics help a language model execute queries over a textual graph? In our tests, not consistently. Stated degrees gave the clearest gains, but mainly by supplying the answer: they helped where a model counted unreliably yet could use the printed value, and hurt plain 4B, which already counted accurately. Clustering and RWSE, which state no answer, had task- and density-dependent effects and never significantly improved joint degree and neighbor-set correctness, while a nearly constant component sentence produced the largest gain without stated degrees, so primers also change how a model uses the prompt. Judging a primer thus needs a graph-blind solver, a length control and graph-checked answers: a correct cycle answer can cite a nonexistent edge.
 
 \section*{Limitations}
 \begin{itemize}\setlength{\itemsep}{0pt}
