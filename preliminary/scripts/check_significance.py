@@ -71,8 +71,8 @@ row's raw, pre-override `exact` was actually a hit.
 
 Forcing every non-terminating row to wrong is not free of bias: non-
 termination itself responds to the primer condition (preliminary/docs/
-sweep-findings.md), so a condition that induces more truncation will now
-mechanically look worse here in a way that partly reflects generation
+sweep-findings.md), so a condition that induces more truncation
+mechanically looks worse here in a way that partly reflects generation
 length rather than reasoning quality. This is the flip side of the old
 `excluded` bound's own bias (a condition that truncates on instances it
 would have gotten wrong anyway looked artificially *better* there) --

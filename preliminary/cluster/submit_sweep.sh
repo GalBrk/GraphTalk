@@ -77,6 +77,15 @@ done
 # "$SLURM_SUBMIT_DIR"`, which is the repo root this wrapper runs from.
 export GRAPHTALK_RUNS_DIR="preliminary/data/runs"
 
+# A tag, budget or task dir left in this shell by main-experiment work would
+# pass straight through to sbatch; the pilot runs set their own.
+for v in GRAPHTALK_RUN_TAG GRAPHTALK_MAX_NEW_TOKENS GRAPHTALK_TASK_DIR; do
+  if [[ -n "${!v:-}" ]]; then
+    echo "FATAL: $v is set in this shell (${!v}); unset it first." >&2
+    exit 1
+  fi
+done
+
 case "$NODE_NAMING" in
   integer)
     if [[ "$COUNT" != "30" ]]; then

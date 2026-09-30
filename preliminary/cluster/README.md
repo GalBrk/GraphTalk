@@ -8,8 +8,9 @@ Both drivers call `cluster/sweep.sbatch`, whose defaults are the main
 experiment's: the 40-node prompts and `data/runs/`. So every job either driver
 submits carries the preliminary paths explicitly, `GRAPHTALK_PROMPTS` (a file
 under `preliminary/data/prompts/`) and `GRAPHTALK_RUNS_DIR=preliminary/data/runs`.
-Run both from the repo root; `--dry-run` prints those variables with the
-`sbatch` line.
+Run both from the repo root. `submit_sweep.sh --dry-run` prints those variables
+with the `sbatch` line; `run_ladder.sh --dry-run` prints one summary line per job
+(model, memory, budget, prompt file, tag, runs directory).
 
 ## Running the GoT node-naming scheme
 
@@ -31,7 +32,10 @@ tracked sweep's 30-per-task default -- e.g. for a targeted follow-up sized by
 `preliminary/scripts/recommend_count.py` (see the "Track 2" section of
 `git show pre-cleanup:analysis/README.md`) --
 tagged into both the prompt filename and `GRAPHTALK_RUN_TAG` so it can't
-collide with the tracked `--count 30` sweep's own files:
+collide with the tracked `--count 30` sweep's own files. It builds all seven
+conditions; the tracked `qwen3-8b.got.count500.shard*of8.jsonl` came from the
+`degree`-only `prompts_got.count500.degree.jsonl` under the same tag, so move
+those shards aside before rerunning this for `qwen3-8b`:
 
 ```bash
 preliminary/cluster/submit_sweep.sh --node-naming got --count 500 \

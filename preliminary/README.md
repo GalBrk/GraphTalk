@@ -35,7 +35,7 @@ Other docs:
 
 | Folder | What's inside |
 |---|---|
-| `scripts/` | The pilot pipeline: `build_prompts.py` (fetches the published split), `score_sweep.py` (per-cell McNemar), `build_sweep_frame.py`, `check_significance.py` (pooled permutation tests). Also the ladder, retrieval, rewiring and naming analyses |
+| `scripts/` | The pilot pipeline: `build_prompts.py` (fetches the published split), `score_sweep.py` (per-cell McNemar), `build_sweep_frame.py`, `check_significance.py` (pooled permutation tests), `shortcut_table.py` (writes `data/shortcuts.json`), `sample_failures.py`, `recommend_count.py`, `measure_real_rows.py` (re-measures the published split's statistics). Also the ladder, retrieval (`build_retrieval_probe.py`), rewiring and naming analyses |
 | `tests/` | Their tests, which run in the default suite |
 | `docs/`, `analysis/` | The write-ups listed above, and the significance and token-budget measurements; see [analysis/README.md](analysis/README.md) |
 | `data/` | The prompts, runs and published-split solver bars (`shortcuts.json`); see [data/README.md](data/README.md) |
@@ -46,6 +46,9 @@ Other docs:
 
 From the repo root. The quoted patterns are globbed by the scripts themselves,
 so the braces expand the same way in bash and zsh:
+
+With the venv active (`source .venv/bin/activate`), or prefix each `python`
+with `uv run --no-sync`:
 
 ```bash
 export PYTHONPATH=.
@@ -139,6 +142,9 @@ What these docs mention and this tree does not have is in git tag
   `backfill_hit_cap.py`, `rewording_effect.py`, `characterize_non_termination.py`,
   the topology investigation and the GEE/Bayesian cross-checks;
 - `docs/plans/finding-graphs-that-make-primer-effects-measurable.md`;
+- `runs/README.md` and `runs/archive/` (the smoke tests, the `.redo.` probe and
+  the cancelled shards), `analysis/superseded/` (including `failure_sample.csv`)
+  and `scripts/task_breakdown.py`;
 - `superseded/`, the replaced paper drafts and their analyses.
 
 ```bash

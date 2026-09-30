@@ -22,7 +22,7 @@ is in [../docs/DATA.md](../docs/DATA.md). The main experiment's data is in
 | `<model>.ladder_screen*` | 900/arm; `qwen3-14b-think` 450 (25 graphs per rung), `qwen35-2b-think` 868 | `prompts.ladder_screen.jsonl` | The ladder screen: 18 (n, k̄) rungs × 50 graphs, `node_degree`, `none` |
 | `<model>.retrieval_locate.jsonl` | 1,050/arm; `qwen3-0.6b-think` 614 | `prompts.retrieval_locate.jsonl` | The graph-free retrieval probe, `condition=retrieval` |
 | `<model>.retrieval_extend.jsonl` | 450/arm | `prompts.retrieval_extend.jsonl` | Retrieval extension for `qwen3-8b` and `qwen3-14b` |
-| `<model>.retrieval.*`, `qwen3-1.7b.retrieval_threshold.*` | 3,600/arm, 1,800 | not tracked (`.gitignore`) | Retrieval extensions: `.retrieval.` for `qwen3-1.7b` and `qwen3-8b`, `.retrieval_threshold.` for `qwen3-1.7b` |
+| `<model>.retrieval.*`, `qwen3-1.7b.retrieval_threshold.*` | 3,600/arm, 1,800 | not tracked | Retrieval extensions: `.retrieval.` for `qwen3-1.7b` and `qwen3-8b`, `.retrieval_threshold.` for `qwen3-1.7b` |
 | `<model>.rewire_shared.jsonl` | 1,800/arm | `prompts.rewire_shared.jsonl` | The rewiring stage at the shared rung, for `qwen3-1.7b[-think]` and `qwen35-2b` |
 | `qwen35-2b.rewire_extra.jsonl` | 2,700 | `prompts.rewire_2b_extra.jsonl` | Two extra rewiring rungs for `qwen35-2b` |
 

@@ -261,7 +261,7 @@ sweep" section already documents (never tag anything containing `redo` —
 GRAPHTALK_PROMPTS=prompts_hard.jsonl GRAPHTALK_RUN_TAG=hard \
   sbatch --exclude=n-801,n-802,n-803,n-804 --mem=48G --time=24:00:00 \
   cluster/sweep.sbatch qwen3-14b-think
-#   -> runs/qwen3-14b-think.hard.jsonl
+#   -> runs/qwen3-14b-think.hard.jsonl   (planned; never run)
 ```
 
 Smoke-test first, same caveat as any other run — a small `--limit` sees
@@ -309,7 +309,7 @@ python scripts/score_sweep.py --responses runs/*.jsonl --shortcuts shortcuts.jso
 ```
 
 `score_sweep.py`/`graphtalk.analysis` pool by each row's `model` field, so
-`runs/qwen3-14b-think.hard.jsonl` joins normally; nothing about scoring
+`runs/qwen3-14b-think.hard.jsonl` (planned; never run) would join normally; nothing about scoring
 `reachability` rows needs new code (`_BOOLEAN_TASKS` covers it), but a
 `reachability` cell has no shortcut-solver ceiling yet — `graphtalk/shortcuts.py`
 keeps its own, separate task list and was not extended here, so
