@@ -1,15 +1,21 @@
 # Shortcut ceilings
 
-> **Status: executed.** `graphtalk/shortcuts.py` implements this plan --
-> `ALL_RULES` holds 25 rules (16 theorem, 1 heuristic, 8 fitted) and
-> `preliminary/data/shortcuts.json` holds the resulting table. Kept as the record of the
-> reasoning; read the module and `preliminary/docs/primer-effects-and-power.md` for what
-> the numbers currently are.
+> **Scope.** The design of the graph-blind solver in `graphtalk/shortcuts.py`:
+> `ALL_RULES` holds 25 rules (16 theorem, 1 heuristic, 8 fitted), read at three
+> rungs, with fitted rules fit and scored on disjoint graphs. It was designed and
+> first measured on GraphQA's published 5–19-node `zero_shot_test` split (the
+> pilot), and every measurement below is from that split or the generator that
+> produced it (`preliminary/scripts/shortcut_table.py`,
+> `preliminary/data/shortcuts.json`).
+> The 40-node bars the results use come from the same rung-3 solver, refit per
+> density by `scripts/shortcut_table_n40.py` (`data/shortcuts_n40.json`,
+> `data/shortcuts_n40_flat.json`); they are reported in
+> [n40-sweep.md §2](../results/n40-sweep.md#2-which-primers-state-the-answer).
 
 ## Context
 
-This plan depends on `docs/design/primer-computation.md` and cannot start before it: it
-consumes rendered primer text, and that text must be stable and correct first.
+This design builds on `docs/design/primer-computation.md`: it consumes rendered primer
+text, and that text must be stable and correct first.
 
 The primer plan's taxonomy audit found deterministic routes from primer text into every
 one of the six tasks for the `degree` and `all` conditions, and into `node_count` and
@@ -80,12 +86,11 @@ the encoding are not equally cheap:
 
 ### The ladder does not separate on every arm
 
-Measured once the parser existed, and not anticipated when the rungs were written: **a
-node-level primer emits one sentence per node, so counting sentences recovers n at rung
-1.** That applies to `degree`, `clustering`, `rwse`, `filler` and `all`. For the `degree`
-arm m comes free at rung 1 too, since `sum(degrees) / 2 = m` is one of the theorem rules
-below — verified on a 14-node graph: 14 sentences give n, and the stated degrees sum to
-2·9 for m = 9.
+**A node-level primer emits one sentence per node, so counting sentences recovers n at
+rung 1.** That applies to `degree`, `clustering`, `rwse`, `filler` and `all`. For the
+`degree` arm m comes free at rung 1 too, since `sum(degrees) / 2 = m` is one of the
+theorem rules below — verified on a 14-node graph: 14 sentences give n, and the stated
+degrees sum to 2·9 for m = 9.
 
 | condition | what actually separates |
 |---|---|
@@ -122,13 +127,13 @@ So a model landing near 93% read the component count and stopped; a model reachi
 counted the edges and did the arithmetic. That distinguishes *which step failed*, which no
 single accuracy number can.
 
-It also shows the components condition is not the clean arm it was assumed to be: rung 1
+It also shows the components condition is not a clean arm: rung 1
 already beats the baseline by ten points without any of the intended reasoning.
 
 ## The four regimes
 
 Three numbers per cell — majority baseline, shortcut score, model accuracy — give an
-interpretation that the original two-number design could not:
+interpretation that the baseline and the model's accuracy alone cannot:
 
 | where the model lands | reading |
 |---|---|
@@ -149,10 +154,8 @@ four points."
 ### The shortcut score is a program's capability, not a model's
 
 The four regimes above describe how to read a result. They say nothing about where a model
-will actually land, and an earlier version of this plan quietly assumed the two were
-related — that a cell with a 100% shortcut would see a model near 100%, so running it was
-pointless. **That assumption is false, and the paper this project builds on is the
-counterexample.**
+will actually land: **a cell with a 100% shortcut does not predict a model near 100%,
+and the paper this project builds on is the counterexample.**
 
 `node_count` is the sharpest case. The shortcut is 100% on every node-level arm, for the
 most mechanical reason available: the renderer emits one sentence per node, so counting
@@ -220,11 +223,11 @@ needed. Report accuracy on the test rows.
 
 - `d_a + d_b > n−1` → Yes for `edge_existence` (79.2% ± 1.7 over 200 query resamples)
 - Chung-Lu mode for `connected_nodes` — answer with the `d_t` other nodes of largest
-  degree. **Measured but deliberately not landed**: 31.4% on `degree` and 40.0% on `all`,
-  and it attains the exact Bayes ceiling on the `degree` arm. Left out because the landed
-  theorems already settle how those cells must be read, and this is the one rule here with
-  no precision guarantee. Recorded because the `degree` arm's true bar is 31.4%, not the
-  20.8% its theorem reaches.
+  degree. **Measured but deliberately not in the solver**: 31.4% on `degree` and 40.0% on
+  `all`, and it attains the exact Bayes ceiling on the `degree` arm. Left out because the
+  solver's theorems already settle how those cells must be read, and this is the one rule
+  here with no precision guarantee. Recorded because the `degree` arm's true bar is 31.4%,
+  not the 20.8% its theorem reaches.
 
 **Fitted rules.** Contain numbers or lookup tables derived from data. These **must** be
 fitted on a disjoint set of graphs — a different generator seed — and evaluated on the
@@ -305,12 +308,11 @@ missing one is a result you cannot interpret later.
 
 ### The table sorts the sweep; it does not prune it
 
-An earlier version of this section used the table as a filter — skip the cells whose
-shortcut is ~100%, spend the cluster time on the rest, "the table is what tells you which
-parts of the experiment not to run." That rested on the assumption corrected in the four
-regimes section: that a 100% shortcut predicts a model near 100%. On `node_count` the
-shortcut is 100% and PaLM 2 scores 18.8%, so the filter would have discarded the single
-sharpest demonstration in the design of a model failing to use a fact it was handed.
+Using the table as a filter — skipping the cells whose shortcut is ~100% and spending the
+cluster time on the rest — would rest on the assumption the four regimes section rules
+out: that a 100% shortcut predicts a model near 100%. On `node_count` the shortcut is 100%
+and PaLM 2 scores 18.8%, so such a filter would discard the single sharpest demonstration
+in the design of a model failing to use a fact it was handed.
 
 **Run every cell. Use the table to decide what each result means, not whether to collect
 it.** Cells then sort into three questions rather than being kept or dropped:
@@ -323,18 +325,18 @@ it.** Cells then sort into three questions rather than being kept or dropped:
 
 `node_degree` × `degree` is the cleanest manipulation check available, because the primer
 states the answer verbatim. A model that does not reach ~100% there constrains how every
-other cell in the sweep should be read, and the old filter proposed skipping it.
+other cell in the sweep should be read, and a filter would skip it.
 
-The cost argument that motivated pruning is worth re-checking rather than inheriting. The
-full sweep is 7 x 6 x 500 = 21,000 queries, or 4,200 at 100 rows per cell. If that is API
-calls rather than booked cluster time, pruning saves little and costs the null results —
-which, per the four regimes, are the findings this design is best placed to produce.
+On cost: the full sweep is 7 x 6 x 500 = 21,000 queries, or 4,200 at 100 rows per cell.
+If that is API calls rather than booked cluster time, pruning saves little and costs the
+null results — which, per the four regimes, are the findings this design is best placed
+to produce.
 
-One discipline point that replaces the cost discipline: 42 cells invites cherry-picking.
+One discipline point: 42 cells invite cherry-picking.
 Decide before the sweep which cells test the thesis and which are secondary, and report
 all of them either way.
 
-## Measured results
+## Measured results (pilot split)
 
 Computed by `preliminary/scripts/shortcut_table.py --graphs 500`, fitted on seed 999 and scored on
 seed 1234. Shortcut score at rung 3, against the majority baseline.
@@ -358,26 +360,18 @@ would produce the same number. It does not mean the cell is uninformative, and i
 predict where a model lands — see the four regimes section, where the paper's 18.8% on
 `node_count` against this table's 100% is the standing counterexample.
 
-### Degree-sequence reconstruction, and two claims it falsified
+### Degree-sequence reconstruction
 
-An earlier version of this section recorded two findings in the cells above. Both were
-artefacts of the rules we had implemented, and both are now false. They are kept here
-rather than deleted, because the way they failed is the most useful thing this document
-records: **an absent shortcut is never evidence that no shortcut exists.**
+**An absent shortcut is never evidence that no shortcut exists.** Comparison rules alone
+leave two cells looking shortcut-free. On `cycle_check` under the per-node arms,
+`clustering > 0` fires at 80.8% coverage and `m >= n` at 78.6%, both at precision 1, but
+both answer only *Yes*, and a one-directional rule cannot beat the "always Yes" baseline
+of 83.2%. On `connected_nodes` the gold answer is a neighbour list, and a comparison rule
+can produce nothing but `" No nodes."`.
 
-> ~~`cycle_check` gains nothing on any per-node arm.~~ `clustering > 0` fires at 80.8%
-> coverage and `m >= n` at 78.6%, both at precision 1, but both answer only *Yes* — and
-> the majority baseline is already "always Yes" at 83.2%. A one-directional rule cannot
-> beat a baseline that agrees with it.
->
-> ~~`connected_nodes` has no shortcut at all.~~ The gold answer is a neighbour list, and a
-> primer-only solver can produce nothing but `" No nodes."`. Shortcut equals baseline on
-> all seven arms, so every point a model scores above 8.2% is genuine. This is the
-> cleanest cell in the design.
-
-The diagnosis in the exact-island section below was right: the stated degree sequence
-constrains which graphs are possible, and often constrains them to one. Three theorems now
-exploit that, all at **rung 1** — none needs a granted `n` or `m`:
+The stated degree sequence does more: it constrains which graphs are possible, and often
+constrains them to one, as the exact-island section below shows. Three theorems exploit
+that, all at **rung 1** — none needs a granted `n` or `m`:
 
 - **`degree_peel`.** Repeatedly remove a vertex whose residual degree is `0` or `|S|-1`;
   each such removal decides that vertex's adjacency to the entire remaining set, so a
@@ -400,19 +394,18 @@ exploit that, all at **rung 1** — none needs a granted `n` or `m`:
 Consequences for the design, in descending order of how much they cost:
 
 - **`connected_nodes` is not the clean cell.** On the `all` arm a model must clear 35.2%,
-  not 8.2%, and all of that is theorem with no fitted content. Every point between the two
-  that the earlier reading treated as genuine graph reasoning is not.
-- **The argument for the `components` arm weakens.** `degree` reaches 94.6% on
-  `cycle_check` at rung 1 with no circuit-rank reasoning at all, so `components` is no
-  longer the only arm that can answer *No* — `cycle_from_degrees` can, which was the whole
-  reason the landed triangle tests scored exactly the baseline. `components` keeps a real
-  advantage, but it is now "100% at rung 3 versus 94.6% at rung 1", not "the only arm that
-  works".
+  not 8.2%, and all of that is theorem with no fitted content. No point between the two is
+  evidence of graph reasoning.
+- **The argument for the `components` arm is narrower.** `degree` reaches 94.6% on
+  `cycle_check` at rung 1 with no circuit-rank reasoning at all, so `components` is not
+  the only arm that can answer *No* — `cycle_from_degrees` can, where the triangle tests,
+  which answer only *Yes*, score exactly the baseline. `components` keeps a real
+  advantage: 100% at rung 3 against 94.6% at rung 1.
 - **`degree` x `connected_nodes` is not merely leaky but solved.** A parameter-free
   Chung-Lu heuristic — answer with the `d_t` other nodes of largest degree — attains the
-  Bayes ceiling on that arm to four significant figures. It is deliberately **not landed**:
-  it is the one rule here with no precision guarantee, and the theorems are enough to
-  settle how the cell must be read. Recorded so nobody reports the 20.8% theorem figure as
+  Bayes ceiling on that arm to four significant figures. It is deliberately **not in the
+  solver**: it is the one rule here with no precision guarantee, and the theorems are
+  enough to settle how the cell must be read. Recorded so nobody reports the 20.8% theorem figure as
   the ceiling for that arm.
 
 The `none` arm equals its baseline exactly at rung 1 on all six tasks, as the sanity check
@@ -430,17 +423,18 @@ In-sample fitting inflates as predicted, and more table rows inflate more:
 | `c` -> Yes/No | 15 | 94.4% | 92.6% | +1.8pp |
 | `(c, n)` -> Yes/No | 95 | 97.6% | 90.6% | +7.0pp |
 
-Both in-sample figures match the values the plan recorded (94.4% and 97.6%). The honest
-figures are lower here than the plan's because the fitting set is 500 graphs rather than
+The in-sample figures equal the ones in "Rule taxonomy" above (94.4% and 97.6%); the
+honest figures are lower than there because this fitting set is 500 graphs rather than
 4000.
 
 ### The exact island, and the gaps it correctly predicted
 
 On n <= 6 (9.2% of rows), enumerating every labelled graph consistent with the stated
-degrees gives the exact ceiling for *any* primer-only solver. The island did its job: it
-said rules were missing, it said where, and both gaps closed once someone looked.
+degrees gives the exact ceiling for *any* primer-only solver. It shows where rules are
+missing: the last column is the best comparison rule, without the reconstruction
+theorems.
 
-| task | determined | exact ceiling | our best | before reconstruction |
+| task | determined | exact ceiling | our best | comparison rules only |
 |---|---|---|---|---|
 | `edge_existence` | 67.4% | 93.5% | 91.3% | 91.3% |
 | `cycle_check` | 97.8% | 100% | **97.8%** | 65.2% |
@@ -455,13 +449,13 @@ reach.
 **Read the `our best` column with care — it is not a bound violation.** The 76.1% on
 `connected_nodes` sits above the 69.6% ceiling because both are accuracies against the one
 graph that happened to be drawn, and the Bayes rule maximises only *expected* hits, so a
-single draw over 46 rows can hand another rule a few extra. The soundness check is now a
+single draw over 46 rows can hand another rule a few extra. The soundness check is a
 separate `excess` column computed pointwise in posterior mass, where Bayes is maximal by
 definition; it reads `+0.0000` for every task. See the verification section.
 
-**The floor is still a floor.** Two of three gaps closed on the first attempt, which is
-evidence that the remaining ones are worth attacking rather than evidence that the table is
-now tight. The `all` arm keeps roughly 10pp of unfound headroom at n <= 8.
+**The floor is still a floor.** Reconstruction closes two of the three gaps, which says
+the remaining ones are worth attacking, not that the table is tight. The `all` arm keeps
+roughly 10pp of unfound headroom at n <= 8.
 
 One observation that falls out of the island work and belongs in the write-up rather than
 here: conditioning on the full `all` primer text leaves a **mean of 1.45 consistent
@@ -484,25 +478,27 @@ each task's own query sampling:
 | `clustering` × `cycle_check` | 83.2% | fires on 80.8% at 100% precision; 97.6% as a rule | clustering > 0 ⟹ triangle |
 | `degree` × `connected_nodes` | — | 9.4% coverage at 100% precision | degree 0 ⟹ `" No nodes."` |
 
-Every number here was generator-derived, and has since been checked against the published
-rows by `preliminary/scripts/measure_real_rows.py`. The graph-level ones are exact rather than
-approximate: `generate_graphs(500, "er", False, random_seed=1234)` and the published
-`zero_shot_test` split are the same multiset of graphs, merely shuffled. Only the rates
-that depend on the per-row query draw moved — `edge_existence` from ≈51.6% to 53.0%, and
-`connected_nodes` degree-0 coverage from 9.0% to 9.4%. See the provenance section of the
-primer plan.
+`preliminary/scripts/measure_real_rows.py` checks every number here against the
+published rows. The graph-level ones are exact rather than approximate:
+`generate_graphs(500, "er", False, random_seed=1234)` and the published `zero_shot_test`
+split are the same multiset of graphs, merely shuffled. Only the rates that depend on the
+per-row query draw differ — the `edge_existence` baseline, ≈51.6% on the generator's
+draw and 53.0% on the published one, and `connected_nodes` degree-0 coverage, 9.0% and
+9.4%. See the provenance section of `docs/design/primer-computation.md`.
 
 ## Files
 
-- `graphtalk/shortcuts.py` — **landed in full**: the primer parser, sixteen theorem rules
-  (thirteen comparison rules and three degree-sequence reconstruction rules), one
-  parameter-free heuristic, eight fitted rules with the train/test split, the solver, the
-  exact enumeration bound, and `island_posterior` for bounding a solver pointwise.
-- `preliminary/scripts/shortcut_table.py` — **landed**; computes and prints the 36-cell table at all
-  three rungs, with coverage for theorems and accuracy for the rest
-- `tests/test_shortcuts.py` — **landed**, 152 tests covering all of the above
+- `graphtalk/shortcuts.py` — the primer parser, sixteen theorem rules (thirteen
+  comparison rules and three degree-sequence reconstruction rules), one parameter-free
+  heuristic, eight fitted rules with the train/test split, the solver, the exact
+  enumeration bound, and `island_posterior` for bounding a solver pointwise.
+- `preliminary/scripts/shortcut_table.py` — computes and prints the pilot's 36-cell table
+  at all three rungs, with coverage for theorems and accuracy for the rest
+- `scripts/shortcut_table_n40.py` — refits the rung-3 solver on 40-node graphs at each
+  density of the main study
+- `tests/test_shortcuts.py` — tests covering all of the above
 - depends on `graphtalk.graphqa.expected_answer` and `normalize` for gold answers, which
-  is why the primer plan moves them into the package
+  is why they live in the package
 
 ## Verification
 
@@ -517,17 +513,16 @@ primer plan.
   `shortcuts.solve` accepts no graph argument, so the guarantee survives refactoring.
 - **Round trip.** Render a primer, parse it back, and assert the recovered values equal
   the rounded originals exactly, on a corpus. This checks renderer and parser against each
-  other — **which requires that they share no code.** A first draft validated the RWSE
-  step list by calling the renderer's own `_join`, so mutating that function mutated the
-  check with it and the two agreed under any change. `shortcuts.py` now imports nothing
-  from `primers.py` and restates the join rule independently in `_expected_separators`.
-  The parser is also strict about which join style it accepts: tolerating both `a, b and
-  c` and `a, b, and c` made a change to the join rule invisible.
+  other — **which requires that they share no code.** A check that validated the RWSE
+  step list with the renderer's own `_join` would change whenever that function changed,
+  so the two would agree under any change. `shortcuts.py` imports nothing from
+  `primers.py` and restates the join rule independently in `_expected_separators`. The
+  parser is also strict about which join style it accepts: tolerating both `a, b and c`
+  and `a, b, and c` would make a change to the join rule invisible.
 
   Established by mutation testing rather than by inspection. Seven deliberate renderer
   breakages — decimal places, both join-rule variants, dropped RWSE step labels, wrong
-  plurals, a wrong noun, and misaligned node values — are all caught; the first pass
-  caught five of seven, which is how both defects above were found. Re-run that check
+  plurals, a wrong noun, and misaligned node values — are all caught. Re-run that check
   after any change to either side.
 - **`none` sanity.** The shortcut score for the `none` condition must equal the
   majority-class baseline, since the primer is empty. If it does not, the solver is
@@ -560,8 +555,10 @@ primer plan.
   strictly more. A violation means a fitted rule is overfitting or a rung is leaking.
 
 ```bash
-uv run --no-sync pytest tests/ -q
-.venv/bin/python preliminary/scripts/shortcut_table.py --graphs 500
+uv run --no-sync pytest -q tests/test_shortcuts.py
+PYTHONPATH=. python preliminary/scripts/shortcut_table.py --graphs 500
+PYTHONPATH=. python scripts/shortcut_table_n40.py --json data/shortcuts_n40.json \
+    --flat-json data/shortcuts_n40_flat.json
 ```
 
 Read the table before analysing any sweep. Every cell's model result is interpreted
@@ -570,47 +567,40 @@ results are read, not which of them get collected.
 
 ## What this does not settle
 
-- **Whether the table is a paper result or internal scaffolding.** It is being built to the
-  standard needed for the former — train/test discipline throughout — because that costs
-  almost nothing in code and is the difference between a number that can be published and
-  one that cannot. Promoting it additionally needs the n ≤ 6 exact check done carefully,
-  which is scoped here but should be treated as a follow-on. Note that it can no longer be
-  *purely* internal: since every cell is now run, every cell's model result is reported
-  against its shortcut score, so the table appears in the analysis whether or not it
-  appears as a result in its own right.
 - **Whether the clean arms are clean or merely unexamined.** The exact island conditions on
   the stated *degree sequence*, so it bounds the `degree` and `all` arms and says nothing
-  about `clustering`-only or `rwse`-only. Those arms currently read shortcut = baseline on
-  several tasks, which is exactly what `connected_nodes` read on all seven arms before the
-  reconstruction theorems existed. The same enumeration can be pointed at any arm — keep
-  the realisations whose rendered clustering-only primer matches, and count how many
-  distinct answers survive — and until that is run, "clean" on those arms means "nobody has
-  attacked it", not "no shortcut exists".
-- **Whether to also report a leak-free `edge_existence` stratum.** Reporting the shortcut
-  score covers the interpretation problem, so the sampling filter is now optional. It
-  would still buy one cell where the proposal's aligned/adjacent/agnostic framing survives
-  intact, at the cost of a sampling constraint already verified as distribution-neutral.
-  Decide when writing up, not now.
-- ~~**Real-data confirmation.**~~ **Settled.** `preliminary/scripts/measure_real_rows.py
-  --shortcut-table` re-runs the table with the 500 published `zero_shot_test` graphs as
-  the evaluation set, still fitting on generated seed-999 graphs. Every theorem keeps
-  precision 1.0, all six verdicts hold, and the `components` × `cycle_check` ladder
-  reproduces exactly at 83.2% / 92.6% / 94.6% / 100%. The cells that moved are the ones
-  whose task draws query nodes, and they moved because the published draw differs from
-  the resampled one, not because the data differs: `edge_existence` 49.8% → 48.2%
-  baseline and 79.4% → 77.8% shortcut, `node_degree` and `connected_nodes` 8.2% → 9.6%
-  baseline. The generator turned out to be not merely a good proxy but the same corpus,
-  so there was less here to confirm than the plan assumed.
+  about `clustering`-only or `rwse`-only. Those arms read shortcut = baseline on several
+  tasks, as `connected_nodes` does under comparison rules alone. The same enumeration can
+  be pointed at any arm — keep the realisations whose rendered clustering-only primer
+  matches, and count how many distinct answers survive — and until that is run, "clean"
+  on those arms means "nobody has attacked it", not "no shortcut exists". For the 40-node
+  study, `scripts/blind_bars.py` attacks them with a lookup from the printed values to the
+  answer ([n40-sweep.md §2](../results/n40-sweep.md#2-which-primers-state-the-answer)).
+- **A leak-free `edge_existence` stratum.** Reporting the shortcut score covers the
+  interpretation problem, so the sampling filter is optional. It would buy one cell where
+  the proposal's aligned/adjacent/agnostic framing survives intact, at the cost of a
+  sampling constraint verified as distribution-neutral.
 
-  One caveat the table cannot shed: `build_rows` resamples queries rather than reading
-  the ones the dataset ships, so `edge_existence`, `connected_nodes` and `node_degree`
-  cells are still scored on a query draw of our own. On the published draw the
-  `edge_existence` baseline is 53.0%, four points above the 48.2% the table reports.
-  Reading a model's score against the table means resampling the model's queries too, or
-  re-deriving the baseline from the published `task_description` fields.
+## Real-data check
 
-  The n ≤ 6 exact island is too small to confirm anything either way: at 46 rows a single
-  query draw carries a 3–6 point standard deviation, measured over ten seeds, which is
-  wider than the differences between any two draws. In particular the `edge_existence`
-  row's "tight" verdict was never robust — it flips to a 13-point gap on another draw of
-  the same graphs.
+`preliminary/scripts/measure_real_rows.py --shortcut-table` re-runs the pilot table with
+the 500 published `zero_shot_test` graphs as the evaluation set, still fitting on
+generated seed-999 graphs. Every theorem keeps precision 1.0, all six verdicts hold, and
+the `components` × `cycle_check` ladder reproduces exactly at 83.2% / 92.6% / 94.6% /
+100%. The cells that differ are the ones whose task draws query nodes, because the
+published draw differs from the resampled one, not because the data differs:
+`edge_existence` 49.8% → 48.2% baseline and 79.4% → 77.8% shortcut, `node_degree` and
+`connected_nodes` 8.2% → 9.6% baseline. The generator at seed 1234 is the same corpus as
+the published split.
+
+One caveat the table cannot shed: `build_rows` resamples queries rather than reading the
+ones the dataset ships, so `edge_existence`, `connected_nodes` and `node_degree` cells are
+scored on a query draw of our own. On the published draw the `edge_existence` baseline is
+53.0%, four points above the 48.2% the table reports. Reading a model's score against the
+table means resampling the model's queries too, or re-deriving the baseline from the
+published `task_description` fields.
+
+The n ≤ 6 exact island is too small to confirm anything either way: at 46 rows a single
+query draw carries a 3–6 point standard deviation, measured over ten seeds, which is wider
+than the differences between any two draws. The `edge_existence` row in particular reads
+as tight on one draw and shows a 13-point gap on another draw of the same graphs.
