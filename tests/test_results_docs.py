@@ -13,7 +13,8 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DOCS = sorted([p for p in (ROOT / "docs" / "results").glob("*.md")
-               if p.name != "README.md"] + [ROOT / "docs" / "primer-directions.md"])
+               if p.name != "README.md"] + [ROOT / "docs" / "primer-directions.md",
+                                             ROOT / "docs" / "density-interaction.md"])
 SOURCE = re.compile(r"^Source: `([^`]+)`", re.M)
 TAG_LINE = re.compile(r"^\[([a-z0-9]+)\]")
 CITE = re.compile(r"(?<![\w.])([+\-−]?(?:\d[\d,]*(?:\.\d+)?|\.\d+)%?) "

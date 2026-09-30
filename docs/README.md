@@ -87,10 +87,10 @@ committed file in `outputs/`. A results doc names that file in a `Source:` line
 and cites each number exactly as printed, followed by its tag, e.g.
 `+27.3 [edgecount]`. A tag's block runs from the line that starts with `[tag]`
 to the next line that starts with a tag. `tests/test_results_docs.py` checks
-every cited number in `docs/results/` and in `primer-directions.md`.
-`density-interaction.md` uses the same format, and
-`investigate_connections_and_cycles.md` and `primer-robustness.md` tag their
-numbers against a table of sources; these three are not test-checked.
+every cited number in `docs/results/`, `primer-directions.md` and
+`density-interaction.md`. `investigate_connections_and_cycles.md` and
+`primer-robustness.md` tag their numbers against a table of sources; these two
+are not test-checked.
 
 **R4: current claims only.** A doc states what the current output shows. It
 does not mention earlier versions, corrections or retracted numbers.
