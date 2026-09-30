@@ -14,7 +14,10 @@ already reach without seeing the graph at all.
 
 ## Where things are
 
-Every folder has a README; start at [README.md](README.md)'s repository map.
+Start at [README.md](README.md)'s repository map. Each folder it lists names a
+start-here document: a README, `talk_like_a_graph/UPSTREAM.md`, the module
+docstrings for `graphtalk/`, and
+[scripts/README.md](scripts/README.md#outputs) for `outputs/`.
 
 | Question | Read |
 |---|---|
@@ -31,8 +34,9 @@ Every folder has a README; start at [README.md](README.md)'s repository map.
 uv venv --python 3.11 && uv pip install -e ".[dev]"      # add ,gpu for scripts/run_sweep.py
 ```
 
-**On the lab machines there is no `.venv`.** Docstrings spell commands as
-`PYTHONPATH=. .venv/bin/python ...`, which is right for a fresh clone. There, use
+Script docstrings spell commands as `PYTHONPATH=. python ...`, run from the repo
+root; in a fresh clone that `python` is the `.venv` one (`uv run --no-sync
+python` or `.venv/bin/python`). **On the lab machines there is no `.venv`**; use
 the conda env instead (`cluster/README.md` documents how it was built):
 
 ```bash
@@ -44,7 +48,7 @@ the conda env instead (`cluster/README.md` documents how it was built):
 ```bash
 uv run --no-sync pytest -q                                   # the whole suite, preliminary/ included
 uv run --no-sync pytest -q tests/test_primers.py
-uv run --no-sync pytest -q tests/test_primers.py::test_round_trip
+uv run --no-sync pytest -q tests/test_shortcuts.py::test_round_trip_on_corpus
 ```
 
 Always use `--no-sync`; a plain `uv run` re-syncs the environment. The
@@ -92,7 +96,8 @@ a path.
     rule R1: a truncated response is its own outcome.
   - `graphqa.py` — parses a graph out of a GraphQA row, recomputes gold answers;
     `canonical()` fixes node/edge order so re-encoding is reproducible.
-    `diverse_corpus.py` generates the synthetic graphs.
+    `diverse_corpus.make_row` draws the query and gold answer for a generated
+    graph (`scripts/build_size_sweep.py` generates the 40-node graphs).
   - `models.py` — model configs only, free of `torch`/`transformers`;
     `hf_backend.py` is the only module that imports them (used by
     `scripts/run_sweep.py`).
@@ -108,8 +113,11 @@ break them:
 
 - **One renderer.** All seven primer conditions (`none`, `components`, `degree`,
   `clustering`, `rwse`, `filler`, `all`) go through `render_primer`, so they
-  differ in content only, never in format. This is what makes a difference
-  between conditions interpretable.
+  differ in content and, with one deliberate exception, never in format. This
+  is what makes a difference between conditions interpretable. The exception is
+  `filler`, which does not use the other node-level conditions' `Node X has ...`
+  frame, because in that frame it reads as a degree claim (see
+  `graphtalk/primers.py`'s module docstring).
 - **The shortcut solver never sees the graph.** `shortcuts.py` operates on
   rendered primer *text*, not on graph objects or full-precision statistics —
   structurally, not just by discipline (there's no graph parameter to pass). This
@@ -120,7 +128,7 @@ break them:
   renderer's join/format rules instead of importing them, this test catches
   renderer changes that would otherwise pass silently. If you change
   `render_primer`'s output format, update the parser in the same change and
-  expect `test_primers.py`'s round-trip test to fail until you do.
+  expect the round-trip tests in `tests/test_shortcuts.py` to fail until you do.
 - **Fitted rules must be fit/scored on disjoint graph sets.** `shortcuts.Split`
   enforces different fit/test seeds structurally (raises if they're equal).
   Fitting and scoring a rule on the same graphs inflates its accuracy and
