@@ -605,8 +605,8 @@ def mcnemar(control_hits, treatment_hits) -> dict:
   the same graphs. Only the discordant pairs carry information: b is the count
   where the control was right and the treatment wrong, c the reverse, and under
   the null each discordant pair is a fair coin. The exact binomial version is used
-  rather than the chi-square approximation because at 30 rows the discordant count
-  is often single digits, where the approximation is not trustworthy.
+  rather than the chi-square approximation because the discordant count of a
+  small cell can be single digits, where the approximation is not trustworthy.
 
   Takes sequences of 0/1 (or bool) aligned pairwise; raises if they are not the
   same length, since a silent misalignment would invert the pairing.

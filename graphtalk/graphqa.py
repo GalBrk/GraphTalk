@@ -3,9 +3,8 @@
 The published GraphQA dataset ships no edge lists -- every field is a string and
 the graph exists only as rendered English inside the `question` field, which is
 why `parse_graph` exists. Rows are fetched over the HTTP rows API rather than
-the `datasets` library on purpose: `datasets` brings its own pyarrow/fsspec pins
-and this venv holds a hand-tuned TensorFlow / tf-keras / tensorflow-gnn
-combination that is easy to disturb.
+the `datasets` library on purpose: `datasets` brings its own pyarrow/fsspec pins,
+which this project does not need.
 """
 
 import json

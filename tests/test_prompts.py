@@ -368,7 +368,7 @@ def test_run_sweep_row_carries_node_naming():
   scored against integer gold and comes out near-zero -- silently, because an
   absent field is not a mixed-scheme conflict for `analysis.infer_node_naming`
   to catch. This pins the one line that prevents that. The source is parsed,
-  not imported, because importing run_sweep needs torch (the `gpu` extra).
+  not imported, so the test does not depend on how run_sweep loads the `gpu` extra.
   """
   import ast
   import pathlib

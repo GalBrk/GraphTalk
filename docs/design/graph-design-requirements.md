@@ -65,8 +65,8 @@ So "does not truncate" is the wrong target. The target is "below this model's
 reading limit", and that number comes only from the retrieval probe
 (`preliminary/scripts/build_retrieval_probe.py`), per model.
 
-Note the think arm reserves 16,384 tokens for generation, so its usable prompt
-budget is ~16k even though the window is 32,768. That has never been the
+Note the retrieval probe gave `qwen3-1.7b-think` 16,384 tokens for generation,
+so its usable prompt budget there is ~16k even though the window is 32,768. That has never been the
 binding constraint for any model measured so far.
 
 ## 4. `clu_sd >= 0.10` after rewiring -- and plain ER cannot deliver it

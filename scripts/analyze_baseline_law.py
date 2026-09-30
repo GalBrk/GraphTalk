@@ -64,9 +64,8 @@ def is_replication_seed(instance_id: str) -> bool:
 def pearson(xs, ys) -> tuple[float, float]:
   """Pearson r and a two-sided p-value, via the exact t transform.
 
-  Hand-rolled rather than imported: this script is run on machines where the
-  `analysis` extra (scipy) is not installed, and r on a few hundred points
-  does not need it.
+  Hand-rolled rather than imported: r on a few hundred points does not need
+  scipy.
   """
   n = len(xs)
   if n < 3:

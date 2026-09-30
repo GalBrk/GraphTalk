@@ -54,8 +54,7 @@ uv run --no-sync pytest -q tests/test_shortcuts.py::test_round_trip_on_corpus
 Always use `--no-sync`; a plain `uv run` re-syncs the environment. The
 commands that reproduce every output are in
 [scripts/README.md](scripts/README.md#reproduce-everything). After a
-regeneration, `git diff outputs/` should show no change except lines that print
-a path.
+regeneration, `git diff outputs/` should show no change.
 
 ## Rules for results and docs
 

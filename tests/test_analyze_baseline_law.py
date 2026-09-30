@@ -53,8 +53,8 @@ def test_degenerate_tasks_report_no_route_gain():
 
 
 def test_offers_route_threshold_sits_in_the_empty_band():
-  # Every gain in the real table is <= 0.012 or >= 0.114, so the threshold
-  # only has to land between them.
+  # Every gain in data/shortcuts_n40_flat.json outside DEGENERATE_TASKS is
+  # <= 0.011 or >= 0.066, so the threshold only has to land between them.
   assert abl.offers_route(BARS, "node_degree", "rwse")
   assert not abl.offers_route(BARS, "node_degree", "clustering")
 
