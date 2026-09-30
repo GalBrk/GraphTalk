@@ -1,4 +1,5 @@
-"""The two figures on the repo's front page, written to docs/img/.
+"""Two of the three figures on the repo's front page, written to docs/img/ (the
+third, docs/img/headroom.png, is written by paper/fig_headroom.py).
 
   primer_effect.png  node_degree without a primer and with the degree primer
                      (states the answer) or clustering (states none), per arm;
@@ -33,6 +34,8 @@ NAMES = {"qwen3-1.7b": "Qwen3-1.7B", "qwen3-1.7b-think": "Qwen3-1.7B thinking",
 INK, MUTED, LINE = "#0b0b0b", "#52514e", "#d6d5d0"
 ACCENT, ACCENT_BG, GRAY_BG, CARD = "#2a78d6", "#e9f2fc", "#f1f0ec", "#fbfbfa"
 MONO = "DejaVu Sans Mono"
+# No creation date in the PDFs, so two runs with the same matplotlib write the same bytes.
+PDF_METADATA = {"CreationDate": None}
 
 
 def main_rows(report):
@@ -130,7 +133,8 @@ def primer_usage():
     _usage_figure(True, q, rows, prompt).savefig(OUT / "primer_usage.png", dpi=200, facecolor="white",
                                                  bbox_inches="tight", pad_inches=0.06)
     _usage_figure(False, q, rows, prompt).savefig(OUT / "primer_usage.pdf", facecolor="white",
-                                                  bbox_inches="tight", pad_inches=0.02)
+                                                  bbox_inches="tight", pad_inches=0.02,
+                                                  metadata=PDF_METADATA)
 
 
 def _usage_figure(wide, q, rows, prompt):
@@ -227,6 +231,6 @@ if __name__ == "__main__":
     primer_effect(rows, True).savefig(OUT / "primer_effect.png", dpi=200, bbox_inches="tight", pad_inches=0.08,
                                       facecolor="white")
     primer_effect(rows, False).savefig(OUT / "primer_effect.pdf", bbox_inches="tight", pad_inches=0.02,
-                                       facecolor="white")
+                                       facecolor="white", metadata=PDF_METADATA)
     primer_usage()
     print(f"wrote {OUT / 'primer_effect.png'} and {OUT / 'primer_usage.png'}")
