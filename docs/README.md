@@ -55,9 +55,8 @@ future work draw on them.
 | [design/graph-design-requirements.md](design/graph-design-requirements.md) | The four requirements a graph corpus must meet to be a fair primer test |
 
 Also here:
-- [plans/rq3-gpu-tests.md](plans/rq3-gpu-tests.md): a planned GPU test of the
-  `clustering` effect, not yet run;
-- [proposal.pdf](proposal.pdf): the project proposal.
+[plans/rq3-gpu-tests.md](plans/rq3-gpu-tests.md), a planned GPU test of the
+`clustering` effect, not yet run.
 
 ## Conventions
 
