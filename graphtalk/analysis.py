@@ -8,13 +8,13 @@ layer that does that -- it stays a `graphtalk/` module rather than living
 directly in a script because the non-termination heuristic below is exactly
 the kind of quiet source of measurement error `graphtalk/scoring.py`'s own
 docstring warns about, so it gets the same test-pinned treatment as any other
-rule in this package: see `tests/test_analysis.py`, which pins it against
+rule in this package: see `preliminary/tests/test_analysis.py`, which pins it against
 `preliminary/analysis/truncated_keys.json`'s labelled rows.
 
 Deliberately does not import from `scripts/`: `graphtalk/` is the reusable
 layer scripts are built on, not the other way around. Callers (the
 `preliminary/scripts/build_sweep_frame.py` CLI) are expected to load and score records
-with `scripts.score_sweep.load`/`score_records` first and pass the already-
+with `preliminary.scripts.score_sweep.load`/`score_records` first and pass the already-
 scored records in here.
 """
 
@@ -99,7 +99,7 @@ def infer_node_naming(records) -> str:
   if len(schemes) > 1:
     raise ValueError(
         f"mixed node_naming schemes in input: {sorted(schemes)} -- score "
-        f"each scheme separately, see README.md#node-naming"
+        f"each scheme separately, see preliminary/data/README.md#scoring-them"
     )
   return schemes.pop() if schemes else "integer"
 
@@ -119,7 +119,7 @@ def frame_node_naming(frame: pd.DataFrame) -> str:
   if len(schemes) > 1:
     raise ValueError(
         f"mixed node_naming schemes in frame: {sorted(schemes)} -- score "
-        f"each scheme separately, see README.md#node-naming"
+        f"each scheme separately, see preliminary/data/README.md#scoring-them"
     )
   return next(iter(schemes)) if schemes else "integer"
 
@@ -148,7 +148,8 @@ def graph_index(instance_id: str) -> str:
   """The graph number out of an `"<task>/<index>"` `instance_id`.
 
   The same index under different tasks is the *same graph* -- same nodes,
-  same edges, byte-identical encoding in `prompts.jsonl` -- asked a
+  same edges, byte-identical encoding in
+  `preliminary/data/prompts/prompts.jsonl` -- asked a
   different question. So this, not the whole `instance_id`, is the unit
   rows can be correlated within, and every analysis that clusters or groups
   by graph has to agree on it: `preliminary/scripts/check_significance.py`'s
@@ -173,8 +174,9 @@ def graph_index(instance_id: str) -> str:
 
 def tagged_path(path: str, scheme: str) -> str:
   """`path` unchanged for `"integer"`; `.<scheme>` inserted before the
-  extension otherwise -- `preliminary/analysis/sweep_frame.csv` -> `.got.csv`, matching
-  the `.rerun.`/`.shard<i>of<n>.` dot-tag convention already live in `data/runs/`.
+  extension otherwise -- `preliminary/outputs/sweep-small-graph/sweep_frame.csv`
+  -> `.got.csv`, matching the `.rerun.`/`.shard<i>of<n>.` dot-tag convention
+  already live in `data/runs/`.
 
   Idempotent: a `path` that already ends in `.<scheme>` right before its
   extension is returned unchanged rather than tagged a second time. Without
@@ -258,7 +260,7 @@ def build_frame(
 ) -> pd.DataFrame:
   """The canonical table: one row per scored response.
 
-  `scored_records` is the output of `scripts.score_sweep.score_records` --
+  `scored_records` is the output of `preliminary.scripts.score_sweep.score_records` --
   each record already carries `predicted` and `score` (from
   `graphtalk.scoring.extract_answer`/`score_one`) alongside the raw
   `instance_id`/`task`/`condition`/`style`/`gold`/`model`/`response` fields.
