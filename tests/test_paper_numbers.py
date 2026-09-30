@@ -7,6 +7,10 @@ the named blocks of outputs/*/*.txt (a block runs from a line that starts with
 (43% for 0.43); a table row whose comment ends in "(%)" shows every number on it
 as a percentage. Whole numbers that define the design rather than report a result
 (the 40 nodes, the 15% flag, band edges) are in DESIGN and not checked.
+
+The check is membership in the block, not in a row of it: it catches a missing or
+unknown tag and a number the block never prints, but not a value copied from the
+wrong row of a large block such as [main].
 """
 import pathlib
 import re
