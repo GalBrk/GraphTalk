@@ -455,9 +455,9 @@ Reproduce with `preliminary/scripts/naming_effect.py`.
 
 This is not an underpowered null. The intervals are roughly ±1.5 points over
 about 1,200 paired rows per plain arm, so it is a *precise* zero, which says more
-than "no significant difference". The thinking arms print `n/a` because too few
-of their pairs disagree for a percentile bootstrap, both schemes sitting at
-99.7–100%.
+than "no significant difference". Three of the four thinking arms (all but
+`gemma4-e4b-think`) print `n/a` because too few of their pairs disagree for a
+percentile bootstrap, both schemes sitting at 99.7–100%.
 
 **What it bears on.** Fatemi et al.'s central result — quoted in
 `graphtalk/primers.py` as the reason every condition must share a format — is
