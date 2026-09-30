@@ -1,7 +1,7 @@
 # Primer impact on success rate, and truncation among all rows
 
 > **Status (2026-09-25): not reproducible from this tree.** The size-sweep runs
-> this document reads were removed in `b49ce3b`; rerun it from that commit's
+> this document reads were removed in `ac9f703`; rerun it from that commit's
 > parent. It predates the current scoring rule (a truncated response is its own
 > outcome) and is not cited by the paper. The status of every family of runs:
 > [results/README.md](../../docs/README.md).

@@ -32,7 +32,7 @@ difficulty and is shown here only for orientation — read the per-task table fr
 > fallback that rescues 276 boolean rows sweep-wide, and the `filler` primer and
 > `edge_existence` question were reworded, with 2,880 `zero_shot` rows regenerated
 > against the new text. The originally published table is preserved in git at
-> `3545662`. One of the three patterns below did not survive -- it turned out to be the
+> `56eaa51`. One of the three patterns below did not survive -- it turned out to be the
 > length control misbehaving rather than a property of primers; see `filler`.
 
 > **Stale in 14 of 16 cells** — carried forward unchanged when the 30 Aug

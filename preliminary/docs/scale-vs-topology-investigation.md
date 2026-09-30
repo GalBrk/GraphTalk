@@ -8,7 +8,7 @@
 
 ## Context
 
-Commit `30fa9ed` replicated `qwen3-8b`/`degree` (GOT node-naming) at
+Commit `79ba58b` replicated `qwen3-8b`/`degree` (GOT node-naming) at
 `--count 500`: delta shrank +7.8pp -> +6.5pp, and `bh_significant_global`
 flipped False -> True (n_clusters 180 -> 3,000; p 0.0018 -> 0.0001). The
 committed narrative calls the shrinkage "the expected winner's-curse
@@ -29,7 +29,7 @@ nondeterminism on the shared instances).
 
 One structural fact bounds the whole investigation: the 500-row corpus is a
 strict, byte-identical superset of the 30-row corpus (verified in commit
-`13b7310`) -- both are the first N rows of one fixed HF split, itself one
+`7d8d106`) -- both are the first N rows of one fixed HF split, itself one
 fixed shuffle of one Erdos-Renyi generator run (`seed=1234`, no algorithm
 variation anywhere in the published data; confirmed independently here via
 `scripts/extract_graph_topology.py --verify-config edge_count`, 0/500
@@ -58,13 +58,13 @@ measured.
 One loose end the script itself flags: the "original" slice's delta here
 (+0.0611, p=0.0125) doesn't quite match the standalone `--count 30`
 report's delta for the same cell (+0.0778, p=0.0018, from
-`git show 30fa9ed:analysis/significance_report.got.csv`). `scripts/diff_shared_instances.py`
+`git show 79ba58b:analysis/significance_report.got.csv`). `scripts/diff_shared_instances.py`
 traces this exactly: of the 180 shared pairs, **5 flip** between the two
 runs (`edge_count/1`, `edge_count/9`, `edge_count/18`, `edge_count/28`,
 `cycle_check/5`), every one with byte-identical prompts in both runs. That
 rules out a prompt/content change and points to decoding-level
 nondeterminism between the two generation runs (both single-stream,
-batching independently ruled out as a confound in commit `d409c11`) --
+batching independently ruled out as a confound in commit `4fa231a`) --
 a real, if minor, methodological wrinkle worth knowing about (greedy
 decoding across two separate cluster jobs is not perfectly reproducible
 here), but it is a property of the *shared* 30 instances specifically, not

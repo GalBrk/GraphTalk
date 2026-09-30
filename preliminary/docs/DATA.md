@@ -533,7 +533,7 @@ These are properties of the data, not of the analysis, so they belong here:
 - **The two arms used different torch builds**, cu130 for the main sweep and
   cu126 for the thinking arm. Same version, same transformers, greedy throughout.
 - **The `filler` primer and the `edge_existence` question were reworded** in
-  `d7cdcf7..3545662`, and every tracked row was regenerated against the revised
+  `ce2f96f..56eaa51`, and every tracked row was regenerated against the revised
   text, so the whole sweep now shares one wording — the frame's `wording`
   column (`analysis.wording`) still marks which cells the rewording touched
   (`"revised"` for `filler`/`edge_existence`, `"unaffected"` elsewhere).

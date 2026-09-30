@@ -46,7 +46,7 @@ commands in `README.md` refer to the upstream repository.
   edit here is for consistency with the vendored source, not functional.
 
 - `graph_generators.py`: `generate_graphs` gained an optional
-  `node_size_ranges` parameter (added 2026-09-06 in `da13241`). Omitted, it
+  `node_size_ranges` parameter (added 2026-09-06 in `3637da0`). Omitted, it
   resolves to the module's own `_NUMBER_OF_NODES_RANGE`, so every existing
   caller is byte-identical; passed, it lets a caller ask for graphs outside
   upstream's 5-19 node range without mutating the module-level dict that the

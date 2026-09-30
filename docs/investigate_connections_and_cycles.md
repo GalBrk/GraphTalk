@@ -895,9 +895,9 @@ prompt row's for every graph).
   under a count column (degree, count, number of, connections), skipping
   running totals ("total up to Node 18: 48"), decimals, and any column that
   lists neighbours ("3, 7, 12"). A truncated response with correct but
-  incomplete values is "cut". Against the reading of `87fbf80`, this changes
+  incomplete values is "cut". Against the reading of `e8e1297`, this changes
   216 of 11,200 responses, 132 of them truncated responses no longer counted as
-  missing nodes. The reading of `795f5a1` also took a "Connections" column that
+  missing nodes. The reading of `7e3bf78` also took a "Connections" column that
   lists neighbours as a count column, so a node with one neighbour got that
   neighbour's id as its degree; that flagged 168 correct tables as wrong and is
   fixed here.
