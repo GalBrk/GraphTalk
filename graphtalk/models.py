@@ -1,18 +1,14 @@
-"""The models the proposal names, as configuration only.
+"""Every model the project generated with, as configuration only.
 
 Deliberately free of `torch` and `transformers` so that prompt building and
 scoring stay importable on a laptop with no GPU stack. The loading and generation
-live in `graphtalk/hf_backend.py`, which the cluster job imports and nothing else
-does.
+live in `graphtalk/hf_backend.py`, which only `scripts/run_sweep.py` imports.
 
-Two families at two sizes each, per the proposal: a within-family capacity
-comparison and a cross-family check. Plus `qwen3-0.6b`, added afterwards and
-outside the proposal's grid, to put a point below the ceiling the first sweep ran
-into -- it extends the Qwen ladder to a third size rather than opening a third
-family, so the within-family comparison stays a comparison. All queried greedily
--- the proposal fixes temperature at 0, which in `transformers` means
-`do_sample=False` rather than `temperature=0.0`, since a literal zero temperature
-is a division by zero in the sampling path.
+The main sweep's four arms are `qwen3-1.7b`, `qwen3-4b` and their `-think` twins
+(`ARMS` in `scripts/build_raw_frame.py`). The other specs are the models of the
+screens in `preliminary/`. Every model is queried greedily: temperature 0, which
+in `transformers` means `do_sample=False` rather than `temperature=0.0`, since a
+literal zero temperature is a division by zero in the sampling path.
 """
 
 import dataclasses
@@ -49,8 +45,8 @@ class ModelSpec:
   `max_context_tokens` is the checkpoint's published context window (input +
   output combined), used only to catch an oversized prompt before generation
   (`graphtalk/hf_backend.py`) rather than to change anything about how a
-  prompt is built. `None` until measured/filled in per model, which makes the
-  check a no-op rather than a guess.
+  prompt is built. `None` for a spec whose window is not recorded, which makes
+  the check a no-op rather than a guess.
   """
 
   key: str
@@ -64,17 +60,16 @@ class ModelSpec:
   max_context_tokens: int | None = None
 
 
-# Budget for the thinking arm. Placeholder until measured -- see
-# scripts/measure_budget.py; the number below is replaced by the measured one
-# before the arm is launched, because a truncated <think> block loses the answer
-# rather than shortening it.
+# Budget for the thinking arms: the cap their committed rows reach (8192 in every
+# run set of data/runs/). Generous on purpose, because a truncated <think> block
+# loses the answer rather than shortening it.
 THINK_MAX_NEW_TOKENS = {"zero_shot": 8192}
 
 MODELS = {
     spec.key: spec
     for spec in (
         # Gemma 4 12B in bf16 is ~24 GB of weights and is verified working on a
-        # 48 GB A6000 in the SlidesGen setup on this same cluster and account.
+        # 48 GB A6000 on the TAU cluster.
         #
         # The proposal names "Gemma 4 4B", but no such checkpoint exists: the
         # small Gemma 4 releases are the E2B/E4B variants, whose "E" size is an
@@ -85,9 +80,6 @@ MODELS = {
                   "AutoModelForImageTextToText", 24),
         ModelSpec("gemma4-12b", "google/gemma-4-12B-it", "gemma4", "12B",
                   "AutoModelForImageTextToText", 48),
-        ModelSpec("qwen3-1.7b", "Qwen/Qwen3-1.7B", "qwen3", "1.7B",
-                  "AutoModelForCausalLM", 8,
-                  {"enable_thinking": False}, {"zero_shot": 8192}, 32768),
         ModelSpec("qwen3-8b", "Qwen/Qwen3-8B", "qwen3", "8B",
                   "AutoModelForCausalLM", 24,
                   {"enable_thinking": False}),
@@ -126,7 +118,7 @@ MODELS = {
         # confuse and only one of them is about primers.
         # Weights come from the lab-shared cache rather than a fresh download
         # for the shared difficulty ladder (preliminary/docs/ladder-and-rewiring.md) -- see
-        # cluster/sweep.sbatch's GRAPHTALK_HF_HOME.
+        # cluster/sweep.sbatch's GRAPHTALK_HF_CACHE.
         ModelSpec("qwen3-0.6b", "Qwen/Qwen3-0.6B", "qwen3", "0.6B",
                   "AutoModelForCausalLM", 4,
                   {"enable_thinking": False},
@@ -142,12 +134,12 @@ MODELS = {
         # appear at all in the 8B or 14B. 1.7B is the next rung up the same
         # ladder and the cheapest test of whether clearing that limit restores
         # `node_count` as an interpretable cell while keeping the headroom that
-        # made the 0.6B worth running.
-        # Own budget and context cap rather than the module defaults: this key
-        # is sized for the 20/40/80-node sweep and the difficulty ladder (up to
-        # ~4x the node count the default zero-shot budget was set for), so it
-        # needs more headroom than the other plain specs -- measured, not
-        # guessed.
+        # made the 0.6B worth running. It is one of the main sweep's two models.
+        #
+        # 8192 rather than the module default: the budget of its main-sweep
+        # (`densfull40`) rows and of the preliminary ladder screen. At 40 nodes
+        # `edge_count` outgrows 2048 from p = 0.35 (390 edges at p = 0.50 take
+        # ~2,700 output tokens).
         ModelSpec("qwen3-1.7b", "Qwen/Qwen3-1.7B", "qwen3", "1.7B",
                   "AutoModelForCausalLM", 8,
                   {"enable_thinking": False}, {"zero_shot": 8192}, 32768),
@@ -156,27 +148,16 @@ MODELS = {
         # 8B -> 14B), rather than jumping straight to 8B where the headroom is
         # already gone on five of six tasks. Same loader and chat setup as every
         # other Qwen3 spec above -- unlike `qwen35-2b` below, this is still the
-        # Qwen3 architecture, so it costs no cross-generation confound.
+        # Qwen3 architecture, so it costs no cross-generation confound. The
+        # main sweep's other model.
         #
         # ~8 GB of bf16 weights (4.02B params, verified via the HF API).
         # `min_vram_gb` is an estimate scaled from the 1.7B/8B specs' measured
-        # figures, not yet measured on this cluster the way those are.
+        # figures. 8192 for the same reason as `qwen3-1.7b`: the budget of its
+        # `densfull40` rows.
         ModelSpec("qwen3-4b", "Qwen/Qwen3-4B", "qwen3", "4B",
                   "AutoModelForCausalLM", 16,
-                  {"enable_thinking": False}),
-
-        # The next rung up the same within-family ladder (0.6B -> 1.7B -> 4B ->
-        # 8B -> 14B), rather than jumping straight to 8B where the headroom is
-        # already gone on five of six tasks. Same loader and chat setup as every
-        # other Qwen3 spec above -- unlike `qwen35-2b` below, this is still the
-        # Qwen3 architecture, so it costs no cross-generation confound.
-        #
-        # ~8 GB of bf16 weights (4.02B params, verified via the HF API).
-        # `min_vram_gb` is an estimate scaled from the 1.7B/8B specs' measured
-        # figures, not yet measured on this cluster the way those are.
-        ModelSpec("qwen3-4b", "Qwen/Qwen3-4B", "qwen3", "4B",
-                  "AutoModelForCausalLM", 16,
-                  {"enable_thinking": False}),
+                  {"enable_thinking": False}, {"zero_shot": 8192}),
 
         # A newer generation, and deliberately a *pair* candidate rather than a
         # fifth unpaired point: Qwen3.5 (Feb 2026) is a different family from
@@ -210,15 +191,12 @@ MODELS = {
         # the key: `data/runs/<key>.jsonl`. Sharing a path would let the resume logic
         # treat a thinking row as satisfying a non-thinking one and silently mix
         # the two arms in a file nothing could unmix afterwards.
-        #
-        # THINK_MAX_NEW_TOKENS is measured, not guessed; see below.
-        # Own override rather than the shared THINK_MAX_NEW_TOKENS: this key
-        # is sized for the 20/40/80-node sweep (up to ~4x the node count the
-        # 8192 placeholder was set for), so it needs more headroom than the
-        # other -think specs without changing their still-unmeasured budget.
         ModelSpec("qwen3-1.7b-think", "Qwen/Qwen3-1.7B", "qwen3", "1.7B",
                   "AutoModelForCausalLM", 8,
-                  {"enable_thinking": True}, {"zero_shot": 16384}, 32768),
+                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS, 32768),
+        ModelSpec("qwen3-4b-think", "Qwen/Qwen3-4B", "qwen3", "4B",
+                  "AutoModelForCausalLM", 16,
+                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
         ModelSpec("gemma4-e4b-think", "google/gemma-4-E4B-it", "gemma4", "E4B",
                   "AutoModelForImageTextToText", 24,
                   {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
@@ -247,46 +225,34 @@ MODELS = {
         ModelSpec("qwen3-0.6b-think", "Qwen/Qwen3-0.6B", "qwen3", "0.6B",
                   "AutoModelForCausalLM", 4,
                   {"enable_thinking": True}, THINK_MAX_NEW_TOKENS, 32768),
-        # Own budget and context cap rather than the shared THINK_MAX_NEW_TOKENS:
-        # this key is sized for the 20/40/80-node sweep and the difficulty
-        # ladder (up to ~4x the node count the 8192 placeholder was set for),
-        # so it needs more headroom than the other -think specs, without
-        # changing their still-unmeasured shared budget.
-        ModelSpec("qwen3-1.7b-think", "Qwen/Qwen3-1.7B", "qwen3", "1.7B",
-                  "AutoModelForCausalLM", 8,
-                  {"enable_thinking": True}, {"zero_shot": 16384}, 32768),
-        ModelSpec("qwen3-4b-think", "Qwen/Qwen3-4B", "qwen3", "4B",
-                  "AutoModelForCausalLM", 16,
-                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
-        ModelSpec("qwen3-4b-think", "Qwen/Qwen3-4B", "qwen3", "4B",
-                  "AutoModelForCausalLM", 16,
-                  {"enable_thinking": True}, THINK_MAX_NEW_TOKENS),
         ModelSpec("qwen35-2b-think", "Qwen/Qwen3.5-2B", "qwen35", "2B",
                   "AutoModelForImageTextToText", 12,
                   {"enable_thinking": True}, THINK_MAX_NEW_TOKENS, 32768),
     )
 }
 
-# Generation length. A truncated response loses its conclusion specifically --
-# which the extractor reads as unparseable, or worse, reads as a wrong answer
-# after picking up an integer from the abandoned working.
+# Generation length for a plain arm. A truncated response loses its conclusion
+# specifically -- which the extractor reads as unparseable, or worse, reads as a
+# wrong answer after picking up an integer from the abandoned working.
 #
-# `zero_shot` was 64 on the assumption that a zero-shot answer is a few tokens
-# long. Measured on 24 rows spanning all six tasks, that is false for these
-# instruction-tuned chat models: given room, they narrate their working and then
-# answer, so 64 tokens truncated ~90% of rows mid-sentence. The measured
-# distribution (gemma4-e4b, cap 2048) is median 271 and max 1974, with
-# `edge_count` the tail -- it enumerates and sums every edge, median 1390. At 64
-# tokens gemma4-e4b scored 3/24; at 2048 it scored 24/24, and no row hit the cap.
+# These instruction-tuned chat models narrate their working before they answer,
+# so a zero-shot answer is not a few tokens long. Measured on 24 pilot rows
+# spanning all six tasks (gemma4-e4b, cap 2048): median 271 new tokens, max
+# 1974, with `edge_count` the tail -- it enumerates and sums every edge, median
+# 1390. At 64 tokens gemma4-e4b scored 3/24; at 2048 it scored 24/24, and no row
+# hit the cap.
 MAX_NEW_TOKENS = {"zero_shot": 2048}
 
 
 def budget(spec: ModelSpec, style: str) -> int:
   """New-token budget for one (model, style).
 
-  Falls back to the module-level table, so the non-thinking specs keep exactly
-  the numbers the first sweep was generated with -- changing that silently would
-  make new rows incomparable with the 10,080 already on disk.
+  A spec without its own table falls back to MAX_NEW_TOKENS. For the main
+  sweep's four arms the default is the cap of their `densfull40` rows. A run
+  set generated at another budget passes it explicitly (`run_sweep.py
+  --max-new-tokens`; the table in cluster/README.md), because a changed budget
+  changes every row that reaches it and makes new rows incomparable with the
+  committed ones.
   """
   table = spec.max_new_tokens or MAX_NEW_TOKENS
   return table[style]
