@@ -142,7 +142,7 @@ responses.
 
 ```bash
 uv venv --python 3.11 && uv pip install -e ".[dev]"
-uv run --no-sync pytest -q                     # about 840 tests
+uv run --no-sync pytest -q                     # about 850 tests
 ```
 
 Reproduce the main experiment's numbers from the committed responses (no GPU):
@@ -155,11 +155,12 @@ uv run --no-sync pytest -q tests/test_results_docs.py
 ```
 
 <details>
-<summary><b>Reproduce every number</b> (about an hour on a laptop)</summary>
+<summary><b>Reproduce every number</b> (about 20 minutes on a laptop)</summary>
 
-The full list, in order, is in [scripts/README.md](scripts/README.md#reproduce-everything).
-It rebuilds the frame, reruns each analysis into `outputs/`, reruns the density
-follow-ups, and then the paper's table and figure scripts.
+The analyses, in order, are in [scripts/README.md](scripts/README.md#reproduce-everything):
+they rebuild the frame, rerun each analysis into `outputs/` and rerun the density
+follow-ups. The paper's table and figure scripts follow, in
+[paper/README.md](paper/README.md).
 
 </details>
 
@@ -170,8 +171,8 @@ follow-ups, and then the paper's table and figure scripts.
 (`uv pip install -e ".[dev,gpu]"`; on the cluster, the conda env's `pip`).
 [cluster/README.md](cluster/README.md) covers how every response in `data/runs/`
 was generated on the TAU CS cluster, and
-[cluster/run-4b-density-sweep.md](cluster/run-4b-density-sweep.md) is the exact
-recipe for one arm.
+[cluster/run-4b-density-sweep.md](cluster/run-4b-density-sweep.md) gives the
+commands for the two Qwen3-4B arms.
 
 </details>
 

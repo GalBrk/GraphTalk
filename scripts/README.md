@@ -92,7 +92,7 @@ The last two also run on their own; see their docstrings.
 
 ## Reproduce everything
 
-About 15 minutes on an Apple-silicon laptop. Each command overwrites its
+About 15 minutes on a laptop. Each command overwrites its
 committed output; `git diff outputs/` should then show no change.
 
 ```bash
