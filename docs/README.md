@@ -50,9 +50,9 @@ future work draw on them.
 | Document | What it covers |
 |---|---|
 | [design/features-considered.md](design/features-considered.md) | Which graph statistics were considered for the primer, and why these four |
-| [design/primer-computation.md](design/primer-computation.md) | How `graphtalk/primers.py` computes and renders each statistic |
-| [design/shortcut-ceilings.md](design/shortcut-ceilings.md) | The graph-blind solver: how to tell a primer that states the answer from one that helps |
-| [design/graph-design-requirements.md](design/graph-design-requirements.md) | The four requirements a graph corpus must meet to be a fair primer test |
+| [design/primer-computation.md](design/primer-computation.md) | How `graphtalk/primers.py` computes and renders each statistic; its measurements are on the pilot's 5–19-node graphs |
+| [design/shortcut-ceilings.md](design/shortcut-ceilings.md) | The graph-blind solver: how to tell a primer that states the answer from one that helps. Its numbers are the pilot's; the 40-node bars are in [n40-sweep.md §2](results/n40-sweep.md#2-which-primers-state-the-answer) |
+| [design/graph-design-requirements.md](design/graph-design-requirements.md) | The four requirements the preliminary difficulty ladder set for a graph corpus. The main 40-node corpus meets the first (n ≥ 40) and is plain G(n,p), without the ladder's rewiring |
 
 Also here:
 [plans/rq3-gpu-tests.md](plans/rq3-gpu-tests.md), a planned GPU test of the
@@ -60,7 +60,8 @@ Also here:
 
 ## Conventions
 
-Every results doc and analysis follows these rules.
+These rules govern the results docs and the analyses; R3 says which of them
+are test-checked.
 
 **R1: truncation is its own outcome.** Every response is exactly one of
 `correct`, `wrong` or `truncated`. A response that hit the token budget is
@@ -81,11 +82,15 @@ column. `edge_existence` also reports balanced accuracy and the yes-rate beside
 raw accuracy, because the share of true edges rises from 10% to 85% with
 density.
 
-**R3: every number is tagged and tested.** Each pipeline writes its full output
-to a committed file in `outputs/`. A doc names that file in a `Source:` line and
-cites each number exactly as printed, followed by its tag, e.g.
+**R3: every number is tagged.** Each pipeline writes its full output to a
+committed file in `outputs/`. A results doc names that file in a `Source:` line
+and cites each number exactly as printed, followed by its tag, e.g.
 `+27.3 [edgecount]`. A tag's block runs from the line that starts with `[tag]`
-to the next line that starts with a tag.
+to the next line that starts with a tag. `tests/test_results_docs.py` checks
+every cited number in `docs/results/` and in `primer-directions.md`.
+`density-interaction.md` uses the same format, and
+`investigate_connections_and_cycles.md` and `primer-robustness.md` tag their
+numbers against a table of sources; these three are not test-checked.
 
 **R4: current claims only.** A doc states what the current output shows. It
 does not mention earlier versions, corrections or retracted numbers.
