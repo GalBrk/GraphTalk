@@ -25,6 +25,8 @@ import re
 import sys
 
 import networkx as nx
+import numpy as np
+import statsmodels.api as sm
 
 from graphtalk import graphqa, outcomes, prompts, scoring
 from graphtalk import diverse_corpus
@@ -223,8 +225,6 @@ def _ols(rows, graphs, a, b, pred):
     cv = covariates(*graphs[i])
     data.append([100 * (x - y), cv["z"], 10 * cv["c"], cv["pos"] / 10]
                 + [1.0 * (abl.density_of(i) == p) for p in levels])
-  import numpy as np
-  import statsmodels.api as sm
   arr = np.array(data)
   fit = sm.OLS(arr[:, 0], arr[:, 1:]).fit(cov_type="HC1")
   return {n: dict(coef=round(float(fit.params[k]), 2), p=float(fit.pvalues[k]))
