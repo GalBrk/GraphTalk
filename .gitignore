@@ -13,28 +13,19 @@ figures/
 # Slurm logs: per-job noise.
 out/
 
-# Local holding pen for replaced data files (see archive/README.md); never tracked.
+# Smoke runs (cluster/sweep.sbatch writes them to data/runs/archive/) and replaced
+# data files; never tracked. graphtalk.analysis skips rows under any archive/.
 archive/
 
 # Prompt files are tracked (a response is only interpretable against its exact
-# prompt), except these: each is rebuilt exactly by the script that uses it, or
+# prompt), except these: each is rebuilt exactly by the script that writes it, or
 # was never run in full.
-/data/prompts/prompts.degdensity40.jsonl
-/data/prompts/prompts.degdensity40hi.jsonl
-/data/prompts/prompts.degdensity40think.jsonl
-/data/prompts/prompts.degdensfiller.jsonl
-/data/prompts/prompts.degdensrep.jsonl
-/data/prompts/prompts.degfixdeg.jsonl
-/data/prompts/prompts.degceil.jsonl
-/preliminary/data/prompts/prompts.rerun.jsonl
-/preliminary/data/prompts/prompts.smoke.jsonl
 /preliminary/data/prompts/prompts_got.count500.jsonl
 /preliminary/data/prompts/prompts.retrieval.jsonl
-/preliminary/data/prompts/prompts.retrieval_threshold.jsonl
 
 # The Game-of-Thrones-named build of the 40-node prompts: no runs use it, and at
 # 125 MB it is over GitHub's 100 MB file limit.
-/prompts.densfull40.got.jsonl
+/data/prompts/prompts.densfull40.got.jsonl
 
 # primer_flips.py output (16 MB), regenerable from the committed frame and runs.
 /outputs/n40-sweep/primer_flips.csv
