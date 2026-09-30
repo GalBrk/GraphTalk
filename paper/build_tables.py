@@ -143,7 +143,7 @@ def check_primary_matrix(counts) -> None:
     for line in block.splitlines():
         if "% [main] [bars]" not in line:
             continue
-        row = re.sub(r"\\cellcolor\{[^}]+\}", "", line.split("%", 1)[0])
+        row = re.sub(r"\\cellcolor\{[^}]+\}|\$\^\{\\dagger\}\$", "", line.split("%", 1)[0])
         cells = [c.strip() for c in row.rsplit(r"\\", 1)[0].split("&")]
         if cells[0]:
             task = next((t for t, label in TASKS if label == cells[0]), None)
