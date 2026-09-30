@@ -1,11 +1,11 @@
 \begin{table}[!t]
-\centering\footnotesize
-\setlength{\tabcolsep}{1.6pt}
-\begin{tabular}{llrrrrrr}
+\centering\scriptsize
+\setlength{\tabcolsep}{3.4pt}
+\begin{tabular}{@{}llrrrrrr@{}}
 \toprule
  & & Correct & \multicolumn{3}{c}{Cycle named} & \multicolumn{2}{c}{No cycle}\\
 \cmidrule(lr){4-6}\cmidrule(l){7-8}
-Arm & Primer & ``yes'' & Real & Invented & Not a & All & Edge\\
+Arm & Primer & ``yes'' & Real & Invented & Not a & Total & Edge\\
  & & ($n$) & & & cycle & & count\\
 \midrule
 1.7P & none & 363 & 36.9 & 43.5 & 16.0 & 3.6 & 0.8\\ % [ccanswer] [cctest]
@@ -41,6 +41,6 @@ Arm & Primer & ``yes'' & Real & Invented & Not a & All & Edge\\
  & filler & 399 & 94.2 & 5.0 & 0.5 & 0.3 & 0.0\\ % [ccanswer] [cctest]
 \bottomrule
 \end{tabular}
-\caption{What the correct cycle-check answers rest on (main sweep; every correct answer is ``yes''). \emph{Correct ($n$)}: count of correct, finished answers; the other columns are \% of those $n$, and Real, Invented, Not a cycle and All sum to 100. \emph{Real}: every step of the cycle is an edge; \emph{Invented}: a step is not an edge; \emph{Not a cycle}: a length-2 or retraced walk. \emph{Edge count}: the answers under All that argue from the number of edges, identified by their wording. The valid arguments are Real and Edge count, which is valid because $40$ nodes with at least $40$ edges must contain a cycle. Bold (Real, Invented only): differs from the same model without a primer (paired, BH $q<.05$).} % [ccanswer] [cctest]
+\caption{What the correct cycle-check answers rest on (main sweep; every correct answer is ``yes''). \emph{Correct ($n$)}: count of correct, finished answers; the other columns are \% of those $n$, and Real, Invented, Not a cycle and Total sum to 100. \emph{Real}: every step of the cycle is an edge; \emph{Invented}: a step is not an edge; \emph{Not a cycle}: a length-2 or retraced walk. \emph{Edge count}: the answers under Total that argue from the number of edges, identified by their wording. The valid arguments are Real and Edge count, which is valid because $40$ nodes with at least $40$ edges must contain a cycle. Bold (Real, Invented only): differs from the same model without a primer (paired, BH $q<.05$).} % [ccanswer] [cctest]
 \label{tab:cycles}
 \end{table}

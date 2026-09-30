@@ -80,7 +80,7 @@ Edge exists & 1.7P & 70.50 & $+4.0^{\mathrm{f}}$ & $+3.8^{\mathrm{f}}$ & $+5.0^{
  & 4T & 99.75 & $+0.0$ & $-0.8$ & $-1.2$ & $-1.0$ & $-0.5$ & $+0.0$\\ % [main] [bars]
 \bottomrule
 \end{tabular}
-\caption{Primary result: correct share without a primer (\% of all prompts) and paired change under each primer (points), on the same $400$ graphs per row ($p\leq.50$). Shaded: the primer supplies the degree answer or every term needed to compute edge count. Bold: $q<.05$ against no primer (BH within arm, task and control); $^{\mathrm{f}}$: $q<.05$ against filler; $\dagger$: at least $15\%$ truncation on either side, and no significance marks. Intervals and constant-answer tasks: Table~\ref{tab:full}; truncation: Table~\ref{tab:truncmatrix}; balanced accuracy: Table~\ref{tab:ee}. P/T: plain/thinking.} % [setup] [main] [bars]
+\caption{Primary result: correct share without a primer (\% of all prompts) and paired change under each primer (points), on the same $400$ graphs per row ($p\leq.50$). Shaded: the primer supplies the degree answer or every term needed to compute edge count. Bold: $q<.05$ against no primer (BH within arm, task and control); $^{\mathrm{f}}$: $q<.05$ against filler; $\dagger$: at least $15\%$ truncation on either side, and no significance marks. Intervals for selected contrasts: Table~\ref{tab:full}; truncation: Table~\ref{tab:truncmatrix}; balanced accuracy: Table~\ref{tab:ee}. P/T: plain/thinking.} % [setup] [main] [bars]
 \label{tab:matrix}
 \end{table*}
 
@@ -94,7 +94,7 @@ Before the encoding, we place either no primer; one sentence per node stating it
 
 \paragraph{Outcomes and inference.} Each response is classified as correct, wrong, or truncated; accuracy uses all prompts as its denominator. The primary effect is the paired change in accuracy, in percentage points, against no primer and against filler on the $400$ main-sweep graphs per task (Table~\ref{tab:matrix}). We use exact McNemar tests \citep{mcnemar1947note}, bootstrap intervals over graphs, and Benjamini--Hochberg correction \citep{benjaminihochberg1995controlling} within each arm--task--control family. Cells with at least $15\%$ truncation in either condition are flagged and excluded from pooled summaries. We also report balanced accuracy for edge existence because its positive-answer rate varies with density. Plain--thinking comparisons use the same graphs; we call the modes equivalent only when the $90\%$ interval for their difference lies within $\pm3$ points. A non-significant effect is not evidence of no effect (detectable sizes in Appendix~\ref{app:audit}).
 
-\paragraph{Evidence of graph use.} Because degree and neighbor-set questions target the same node, their joint correctness tests whether a degree gain accompanies correct identification of that node's neighbors; it does not establish the model's internal procedure. Rule-based classifiers identify direct-answer and neighbor-list response patterns, primer conflicts, and graph claims. For correct, finished cycle-check answers, we distinguish a cited cycle whose steps are all edges, a claimed cycle containing a nonexistent edge, a walk that is not a cycle, and an answer without an explicit cycle. Within the last category, we also identify valid arguments from edge count: a $40$-node graph with at least $40$ edges must contain a cycle. Conflict detection was compared with blind hand labels; the other classifiers were spot-checked by an LLM under human supervision (Appendix~\ref{app:audit}).
+\paragraph{Evidence of graph use.} Because degree and neighbor-set questions target the same node, their joint correctness tests whether a degree gain accompanies correct identification of that node's neighbors; it does not establish the model's internal procedure. Rule-based classifiers (Appendix~\ref{app:audit}) identify direct-answer and neighbor-list response patterns, primer conflicts, and graph claims. For correct, finished cycle-check answers, we distinguish a cited cycle whose steps are all edges, a claimed cycle containing a nonexistent edge, a walk that is not a cycle, and an answer without an explicit cycle. Within the last category, we also identify valid arguments from edge count: a $40$-node graph with at least $40$ edges must contain a cycle. Conflict detection was compared with blind hand labels; the other classifiers were spot-checked by an LLM under human supervision.
 
 \paragraph{Follow-ups.} We repeat Qwen3-1.7B node-degree tests on $400$ graphs per density across all seven densities and run fresh-seed and $20$--$160$-node checks at mean degrees $8$ and $16$; the size grid also includes Qwen3-8B. % [ddplain] [ddrep] [fixdeg17]
 
@@ -103,7 +103,7 @@ Before the encoding, we place either no primer; one sentence per node stating it
 \subsection{What the primers make available}
 \label{sec:states}
 From stated degrees alone, the graph-blind solver recovers node degree directly and edge count by halving the degree sum, both with $100\%$ accuracy. Without degrees, the rule-based solver reaches at most $21.0\%$ on degree and $10.4\%$ on edge count, compared with $14.4\%$ and $3.0\%$ without a primer (Appendix Table~\ref{tab:solver}). % [bars] [blindbar]
-On sparse graphs, however, a lookup fitted on separate graphs recovers degree from rounded clustering or RWSE values substantially better than the majority answer (Appendix~\ref{app:detail}). In the models' responses, the largest main-sweep gains on the four variable-answer tasks occur when degrees supply the answer or its terms; primers without degrees and the controls produce effects of either sign (Table~\ref{tab:matrix}; Appendix Figure~\ref{fig:effects}). % [main]
+On sparse graphs, however, a lookup fitted on separate graphs recovers degree from rounded clustering or RWSE values substantially better than the majority answer (Appendix~\ref{app:audit}). In the models' responses, the largest main-sweep gains on the four variable-answer tasks occur when degrees supply the answer or its terms; primers without degrees and the controls produce effects of either sign (Table~\ref{tab:matrix}; Appendix Figure~\ref{fig:effects}). % [main]
 
 \subsection{Stated degrees can help or disrupt counting}
 \label{sec:readoff}
@@ -119,14 +119,14 @@ Its losses under the degree primer are concentrated on prompts where the respons
 \label{sec:side}
 Filler alone flips up to $18.6\%$ of an arm's outcomes against no primer, showing that added text can matter without adding a statistic (Appendix~\ref{app:detail}). % [churn]
 Clustering and RWSE mostly have smaller main-sweep effects than degree, varying in sign by task and model. On plain 4B's edge-existence queries, clustering raises balanced accuracy by $3.0$ points while RWSE lowers it by $6.5$ (Appendix Table~\ref{tab:ee}). % [eemain]
-Clustering's $3.0$-point gain on plain 1.7B degree queries is not significant in Table~\ref{tab:matrix} but replicates on additional low-density graphs but is not detected at high density or in Qwen3-8B (Appendix~\ref{app:pilot}). % [main]
+Clustering's $3.0$-point gain on plain 1.7B degree queries is not significant in Table~\ref{tab:matrix} but replicates on unscreened graphs and a fresh seed; it is not detected at $p\geq.65$ or in Qwen3-8B (Appendix~\ref{app:pilot}). % [main] [ddplain] [fixdeg17]
 Combining the statistics can reverse their separate effects: on plain 4B's dense degree queries, degree, clustering, and RWSE each raise accuracy ($9.3$, $11.3$, and $7.7$ points), but the combined primer lowers it by $21.3$ on the same graphs (Appendix~\ref{app:detail}). % [main] [clusthi]
 
 On the four variable-answer tasks, the largest unflagged main-sweep gain without degrees is the component sentence's $9.2$-point increase in plain 4B's \emph{exact} neighbor-set accuracy; its set-F1 barely moves (Appendix~\ref{app:detail}). The sentence is identical across all sampled graphs at $p\geq.20$, yet responses restate the queried node's incident line much more often with it than with no primer or filler ($98.5\%$, $63.0\%$, and $21.8\%$). Filler moves this response pattern in the opposite direction and lowers exact-match accuracy (Table~\ref{tab:matrix}). % [main] [comp] [compproc]
 
 \subsection{Can a primer close the gap to thinking?}
 \label{sec:vsthink}
-Where thinking outperforms plain mode, primers rarely close the gap, and for plain 4B several widen it (Table~\ref{tab:vsthink}). Among the exceptions, the component sentence brings plain 4B's neighbor-set exact match within the $\pm3$-point equivalence margin of thinking 4B without a primer, while filler widens that gap; the combined primer reduces plain 1.7B's node-degree gap from $15.8$ to $5.5$ points; and under degree, plain 1.7B's neighbor-set gap is not significant, though its interval extends beyond the margin. % [vsthink]
+Where thinking outperforms plain mode, primers rarely close the gap, and for plain 4B several widen it (Appendix Table~\ref{tab:vsthink}). Among the exceptions, the component sentence brings plain 4B's neighbor-set exact match within the $\pm3$-point equivalence margin of thinking 4B without a primer, while filler widens that gap; the combined primer reduces plain 1.7B's node-degree gap from $15.8$ to $5.5$ points; and under degree, plain 1.7B's neighbor-set gap is not significant, though its interval extends beyond the margin. % [vsthink]
 
 The degree primer puts plain 4B ahead of thinking 4B on edge count, but the comparison mostly reflects completion: thinking 4B is correct on $97.6\%$ of the edge-count responses it finishes, while $79.50\%$ of its responses exhaust the token budget. % [edgecount]
 
@@ -140,7 +140,7 @@ Truncation also shapes thinking 4B's results: in every comparison, most changed 
 \label{sec:reston}
 Clustering and RWSE do not significantly improve the joint correctness of degree and neighbor-set answers for the same node in any arm (Appendix~\ref{app:detail}). The degree primer raises this measure by $8.5$ points for plain 1.7B but lowers it by $9.2$ for plain 4B; the component sentence raises plain 4B's by $9.2$. % [joint]
 
-Because cycle-check accuracy cannot measure cycle detection here (Section~\ref{sec:method}), we instead examine the support in correct, finished ``yes'' responses (Table~\ref{tab:cycles}). Without a primer, $43.5\%$ of plain 1.7B's correct, finished responses cite an invented cycle containing a nonexistent edge. % [ccanswer]
+Because cycle-check accuracy cannot measure cycle detection here (Section~\ref{sec:method}), we instead examine the support in correct, finished ``yes'' responses (Appendix Table~\ref{tab:cycles}). Without a primer, $43.5\%$ of plain 1.7B's correct, finished responses cite an invented cycle containing a nonexistent edge. % [ccanswer]
 Counting over all prompts, valid cited cycles or edge-count arguments support $34.2\%$ and $58.5\%$ for plain 1.7B and plain 4B, respectively. % [ccvalid]
 The degree primer shifts plain-model responses toward valid edge-count arguments, which need no named cycle; plain 1.7B's share of prompts with valid support rises to $50.2\%$, although its cycle-check accuracy falls by $17.5$ points as truncation rises by $8.2$. Thus, a correct ``yes'' can be accompanied by a valid proof, an invalid claimed cycle, or no explicit cycle; the label alone does not distinguish them. % [ccvalid] [main]
 
@@ -176,6 +176,7 @@ We test two Qwen3 models (Qwen3-8B in one follow-up), one incident encoding, fix
 \setlength{\dbltextfloatsep}{10pt plus 2pt minus 2pt}
 \setlength{\intextsep}{8pt plus 2pt minus 2pt}
 \renewcommand{\topfraction}{0.9}\renewcommand{\dbltopfraction}{0.9}\renewcommand{\textfraction}{0.1}\setcounter{topnumber}{3}\setcounter{dbltopnumber}{2}
+\clearpage
 \section{Method Details}
 \label{app:audit}
 
@@ -183,110 +184,81 @@ We test two Qwen3 models (Qwen3-8B in one follow-up), one incident encoding, fix
 
 \paragraph{Feature choice.} Degree and random-walk encodings are used in graph Transformers \citep{rampasek2022recipe}; clustering records edges among a node's neighbors. We use return steps 2 and 3: step 1 is zero in a simple graph, while step 3 reflects triangles. We omit Laplacian coordinates because their signs and degenerate eigenspace bases require a convention \citep{dwivedi2022graph}. Component count is a global control, though it is informative in principle: a graph with $n$ nodes, $m$ edges and $c$ components is acyclic exactly when $m=n-c$.
 
-\paragraph{Models, budgets and inference.} We run the Qwen3 checkpoints with \texttt{transformers}, greedy decoding and one response per prompt. The output limit is $8{,}192$ tokens, except $2{,}048$ for plain arms at $p\geq.65$; none of these shorter-budget cells truncates above $2.5\%$. The main sweep and extension comprise $84{,}000$ responses on $700$ graphs. % [setup] [extract]
-In one $100$-graph cell the median smallest detectable paired effect is $7.4$ points, and $13.7$ for side statistics at $25$--$75\%$ baseline accuracy. % [power]
-Under one BH correction over all $264$ tests, every bold cell of Table~\ref{tab:matrix} but one and all but three $^{\mathrm{f}}$ marks stay significant. % [globalbh]
-Even greedy reruns change correctness on $5.3\%$ of identical prompts. Paired effects therefore compare net correct shares; the number of responses that switch outcome is a separate descriptive measure. % [rerun]
+\paragraph{Models, budgets and inference.} We run the Qwen3 checkpoints with \texttt{transformers}. The output limit is $8{,}192$ tokens, except $2{,}048$ for plain arms at $p\geq.65$; the shorter limit costs little, because, pooled over primers, no arm and task in the high-density extension truncates more than $2.5\%$. % [setup] [extract]
+Because Table~\ref{tab:matrix} compares $400$ paired graphs, its non-significant cells rule out only moderate gains: the median detectable gain is $5.7$ points in the 1.7B arms and $3.2$ in the 4B arms, and $18$ of thinking 4B's $28$ null comparisons sit too close to ceiling for any gain to be detectable. % [lmde]
+A single $100$-graph density cell needs $7.4$ points, and side statistics (primers that do not state the queried answer) need $13.7$ at $25$--$75\%$ baseline accuracy. % [power]
+The significant results survive stricter correction: under one BH correction over all $264$ tests, every bold cell of Table~\ref{tab:matrix} but one, and all but three $^{\mathrm{f}}$ marks, stay significant. % [globalbh]
+Finally, even greedy decoding is not fully repeatable: rerunning $1{,}200$ identical plain-1.7B node-degree prompts changes correctness on $5.3\%$ of them. We therefore compare net correct shares, and report the number of responses that switch outcome only descriptively. % [rerun]
 
-\paragraph{Graph-blind solver.} It receives the printed primer and the query targets, plus the graph's node and edge counts as auxiliary facts; it never reads the incident edge list. It does not return a granted count as the answer: edge count is derived from stated degrees. It uses $16$ exact rules, one heuristic and eight fitted rules; fitting and evaluation use disjoint graphs. Its score shows what one shortcut achieves, not an upper bound on what the full prompt conveys (Table~\ref{tab:solver}). % [bars] [leak]
+\paragraph{Graph-blind solver.} Besides the printed primer and the query targets, the solver sees the graph's node and edge counts (\S\ref{sec:method}), never the incident edge list. For edge count, it computes the answer from stated degrees, estimates it from mean clustering with a fitted rule, or otherwise falls back to the majority answer of the fitting graphs. Its $16$ exact rules, one heuristic and eight fitted rules are fit and scored on disjoint graphs. Fitted rules can fail outside their range: one RWSE rule infers density from return values to answer edge-existence questions, but scores below the majority answer at high density, which is why RWSE falls below no primer on that task in Table~\ref{tab:solver}. The solver's score therefore shows what one shortcut achieves, not an upper bound on what the full prompt conveys. % [bars] [leak] [rwsefit]
+Sparse graphs leave strong indirect clues (\S\ref{sec:states}): from rounded clustering values alone, a separately fitted lookup answers $51.0\%$ and $54.0\%$ of degree queries at $p=.10$ and $p=.20$, against majority answers of $17.0\%$ and $16.0\%$. % [blindbar]
 
 \begin{table}[h]
 \centering\scriptsize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrrr}
+\setlength{\tabcolsep}{2.7pt}
+\begin{tabular}{lrrrrr}
 \toprule
-Primer & Degree & Neighbors & Edge count & Edge exists\\
+Primer & Mean chars & Degree & Neighbors & Edge count & Edge exists\\
 \midrule
-none & 14.4 & 0.0 & 3.0 & 73.5\\ % [bars]
-degree & 100.0 & 0.1 & 100.0 & 74.6\\ % [bars]
-clustering & 14.4 & 0.0 & 10.4 & 72.7\\ % [bars]
-RWSE & 21.0 & 0.1 & 3.0 & 55.4\\ % [bars]
-all & 100.0 & 0.8 & 100.0 & 74.1\\ % [bars]
-components & 14.4 & 0.0 & 3.0 & 73.5\\ % [bars]
-filler & 14.4 & 0.0 & 3.0 & 73.5\\ % [bars]
+none & 0 & 14.4 & 0.0 & 3.0 & 73.5\\ % [bars] [length]
+degree & 891 & 100.0 & 0.1 & 100.0 & 74.6\\ % [bars] [length]
+clustering & 1,629 & 14.4 & 0.0 & 10.4 & 72.7\\ % [bars] [length]
+RWSE & 2,949 & 21.0 & 0.1 & 3.0 & 55.4\\ % [bars] [length]
+all & 4,691 & 100.0 & 0.8 & 100.0 & 74.1\\ % [bars] [length]
+components & 37 & 14.4 & 0.0 & 3.0 & 73.5\\ % [bars] [length]
+filler & 1,829 & 14.4 & 0.0 & 3.0 & 73.5\\ % [bars] [length]
 \bottomrule
 \end{tabular}
-\caption{Graph-blind solver accuracy (\%) on the four variable-answer tasks, averaged over seven densities ($p=.10$--$.85$, 40 nodes). It sees the primer, query targets and the graph's node and edge counts, but no incident edges; queried counts are not echoed. Fitted rules use separate graphs. The RWSE density rule scores $38.0$, $48.0$ and $12.0\%$ on edge existence at $p\geq.65$, below the majority answer.} % [bars] [rwsefit]
-\label{tab:solver}
+\caption{Graph-blind solver accuracy (\%) on the four variable-answer tasks, averaged over seven densities ($p=.10$--$.85$, 40 nodes) and scored on separately generated test graphs, with mean primer length in characters (none adds no text). Components and filler score the same as no primer. The solver sees graph size and the query targets but no incident edges.} % [bars] [length]
+\label{tab:solver}\label{tab:primerlength}
 \end{table}
 
-\begin{table}[h]
-\centering\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrp{3.1cm}}
-\toprule
-Primer & Mean chars & Information\\
-\midrule
-degree & 891 & Degree for each node\\ % [length]
-clustering & 1,629 & Local clustering for each node\\ % [length]
-RWSE & 2,949 & Two rounded return values per node\\ % [length]
-all & 4,691 & Degree, clustering and RWSE\\ % [length]
-components & 37 & Number of connected components\\ % [length]
-filler & 1,829 & Node names, no graph statistic\\ % [length]
-\bottomrule
-\end{tabular}
-\caption{Mean preamble length in characters over the main-sweep graphs.} % [length]
-\label{tab:primerlength}
-\end{table}
+\paragraph{Response classifiers.} A \emph{lookup} answer does not restate the queried node's incident line; among answers that do, an \emph{enumeration} lists at least five neighbors on separate lines. The cycle and edge classifiers check each stated graph step against the incident encoding.
+\paragraph{Scoring.} The answer extractor parses $99.84\%$ of responses. Neighbor-set exact match is the primary measure and set-F1 a secondary one: among the five contrasts whose exact match changes by at least $5$ points, F1 moves the same way in three, at $0.11$--$0.17$ times the size, and reverses in two. For edge existence, balanced accuracy is tested with paired permutation tests, BH-adjusted over the six conditions within each arm. % [extract] [f1] [eemain]
 
-\paragraph{Response readers.} A \emph{lookup} answer does not restate the queried node's neighbor list; the list detector requires at least five neighbors on separate lines. Cycle and edge readers check stated graph steps against the incident encoding. These behavioral labels do not establish the model's internal computation. Only the conflict readers were compared with blind hand labels; the others received supervised spot checks.
-\paragraph{Scoring.} The answer extractor parses $99.84\%$ of responses. Neighbor-set exact match is primary; set-F1 gives partial credit and moves in the same direction in three of five large contrasts, at $0.11$--$0.17$ times the size. Edge-existence balanced accuracy uses paired permutation tests with BH adjustment over the six conditions within each arm. % [extract] [f1] [eemain]
-
+\clearpage
 \section{Detailed Results}
 \label{app:detail}
-\label{app:more}
-\label{app:tables}
-Tables~\ref{tab:full} and~\ref{tab:truncmatrix} extend the main result with bootstrap intervals, truncated shares and the two constant-answer tasks. Figure~\ref{fig:effects} groups the main effects; Figures~\ref{fig:headroom} and~\ref{fig:addstats} show the density follow-up. The remaining tables separate edge-existence balance, cycle support and the plain--thinking gap.
+Table~\ref{tab:full} gives intervals for selected contrasts; Table~\ref{tab:truncmatrix} reports every truncation contrast. Figure~\ref{fig:effects} groups the effects; Figures~\ref{fig:degreeeffect}, \ref{fig:headroom} and~\ref{fig:addstats} show degree effects across arms and densities; Figure~\ref{fig:outcomes} separates completion from accuracy on edge count. Other tables examine edge existence, cycle support and the plain--thinking gap.
 
-\begin{figure}[!t]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{fig_effects.pdf}
 \caption{Unflagged main-sweep effects from Table~\ref{tab:matrix}, grouped by whether the primer supplies the answer, gives another statistic, or is a control. Each dot is one arm--task--primer cell; filled dots have BH $q<.05$ against no primer. The answer-stating group contains degree and all on node-degree and edge-count questions.}
 \label{fig:effects}
 \end{figure}
 
-\begin{table*}[t]
-\centering\scriptsize
-\setlength{\tabcolsep}{2pt}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{llrrrrrr}
+\begin{table}[H]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lllrrl@{}}
 \toprule
-Task & Arm & degree & clustering & RWSE & all & components & filler\\
+Task & Arm & Primer & No primer & $\Delta$ & 95\% CI\\
 \midrule
-Degree & 1.7P & $+7.5$ {\tiny$[+3.0,+11.8]$} & $+3.0$ {\tiny$[-1.5,+7.5]$} & $+4.0$ {\tiny$[-0.5,+8.5]$} & $+10.2$ {\tiny$[+5.2,+15.2]$} & $+1.8$ {\tiny$[-2.2,+5.8]$} & $-0.5$ {\tiny$[-4.2,+3.5]$}\\ % [main]
- & 1.7T & $+8.8$ {\tiny$[+4.2,+13.2]$} & $+1.5$ {\tiny$[-2.5,+5.5]$} & $+2.5$ {\tiny$[-2.0,+6.8]$} & $+12.2$ {\tiny$[+8.0,+16.5]$} & $-1.0$ {\tiny$[-4.2,+2.5]$} & $-3.0$ {\tiny$[-7.0,+0.8]$}\\ % [main]
- & 4P & $-6.5$ {\tiny$[-9.2,-4.0]$} & $-0.5$ {\tiny$[-2.0,+0.8]$} & $-2.2$ {\tiny$[-4.2,-0.5]$} & $-8.0$ {\tiny$[-11.0,-5.2]$} & $+0.2$ {\tiny$[+0.0,+0.8]$} & $-0.5$ {\tiny$[-2.0,+1.0]$}\\ % [main]
- & 4T & $+2.5$ {\tiny$[+0.8,+4.2]$} & $+1.8$ {\tiny$[-0.2,+3.8]$} & $-1.2$ {\tiny$[-3.8,+1.0]$} & $+0.5$ {\tiny$[-1.5,+2.8]$} & $+0.2$ {\tiny$[-1.8,+2.5]$} & $+2.0$ {\tiny$[+0.5,+3.8]$}\\ % [main]
-\addlinespace[1pt]
-Neighbors & 1.7P & $+3.5$ {\tiny$[-0.5,+7.2]$} & $+1.2$ {\tiny$[-3.0,+5.5]$} & $+1.0$ {\tiny$[-3.2,+5.2]$} & $+2.0$ {\tiny$[-2.5,+6.5]$} & $+0.8$ {\tiny$[-2.5,+4.5]$} & $-6.2$ {\tiny$[-10.5,-2.2]$}\\ % [main]
- & 1.7T & $+6.2$ {\tiny$[+2.8,+10.0]$} & $+2.0$ {\tiny$[-2.0,+6.0]$} & $+0.2$ {\tiny$[-3.5,+4.0]$} & $+6.2$ {\tiny$[+2.5,+10.0]$} & $+2.5$ {\tiny$[-0.8,+6.0]$} & $+2.5$ {\tiny$[-1.0,+6.0]$}\\ % [main]
- & 4P & $-3.0$ {\tiny$[-7.0,+1.0]$} & $+1.0$ {\tiny$[-2.8,+4.8]$} & $+0.0$ {\tiny$[-3.8,+4.0]$} & $-2.8$ {\tiny$[-7.0,+1.8]$} & $+9.2$ {\tiny$[+6.0,+12.8]$} & $-12.5$ {\tiny$[-17.2,-7.8]$}\\ % [main]
- & 4T & $+0.5$ {\tiny$[-2.2,+3.2]$} & $-0.8$ {\tiny$[-3.2,+1.8]$} & $+0.5$ {\tiny$[-1.8,+3.0]$} & $-1.2$ {\tiny$[-3.8,+1.2]$} & $+0.5$ {\tiny$[-1.8,+2.8]$} & $+1.2$ {\tiny$[-1.0,+3.5]$}\\ % [main]
-\addlinespace[1pt]
-Edge count & 1.7P & $+3.0$$^\dagger$ {\tiny$[+0.8,+5.2]$} & $-0.5$$^\dagger$ {\tiny$[-2.0,+1.0]$} & $-0.8$$^\dagger$ {\tiny$[-2.0,+0.5]$} & $+0.8$$^\dagger$ {\tiny$[-1.0,+2.5]$} & $-1.0$$^\dagger$ {\tiny$[-2.2,+0.0]$} & $-0.5$$^\dagger$ {\tiny$[-1.8,+0.8]$}\\ % [main]
- & 1.7T & $-3.2$$^\dagger$ {\tiny$[-7.8,+1.2]$} & $-1.2$$^\dagger$ {\tiny$[-5.5,+3.0]$} & $-3.2$$^\dagger$ {\tiny$[-7.2,+0.5]$} & $+5.0$$^\dagger$ {\tiny$[+0.2,+10.0]$} & $-0.8$$^\dagger$ {\tiny$[-5.0,+3.8]$} & $-1.5$$^\dagger$ {\tiny$[-5.5,+2.5]$}\\ % [main]
- & 4P & $+27.2$ {\tiny$[+22.8,+32.0]$} & $-1.2$ {\tiny$[-3.0,+0.2]$} & $-1.5$ {\tiny$[-3.0,-0.2]$} & $+3.8$ {\tiny$[+1.2,+6.2]$} & $-1.2$ {\tiny$[-2.8,+0.0]$} & $+1.2$ {\tiny$[-0.8,+3.0]$}\\ % [main]
- & 4T & $+8.5$$^\dagger$ {\tiny$[+3.2,+14.2]$} & $+24.8$$^\dagger$ {\tiny$[+19.5,+30.2]$} & $+10.2$$^\dagger$ {\tiny$[+5.5,+15.0]$} & $+1.8$$^\dagger$ {\tiny$[-3.5,+7.2]$} & $+24.8$$^\dagger$ {\tiny$[+19.8,+30.0]$} & $+12.2$$^\dagger$ {\tiny$[+7.2,+17.0]$}\\ % [main]
-\addlinespace[1pt]
-Edge exists & 1.7P & $+4.0$ {\tiny$[-0.2,+8.2]$} & $+3.8$ {\tiny$[-0.5,+8.0]$} & $+5.0$ {\tiny$[+0.2,+9.5]$} & $+11.5$ {\tiny$[+6.2,+16.5]$} & $-8.2$ {\tiny$[-11.8,-4.8]$} & $-15.8$ {\tiny$[-20.0,-11.8]$}\\ % [main]
- & 1.7T & $-2.5$ {\tiny$[-4.5,-0.8]$} & $-1.0$ {\tiny$[-2.8,+0.5]$} & $-1.2$ {\tiny$[-3.0,+0.5]$} & $-1.8$ {\tiny$[-3.8,+0.0]$} & $-0.8$ {\tiny$[-2.5,+0.8]$} & $-0.5$ {\tiny$[-2.0,+1.0]$}\\ % [main]
- & 4P & $-4.8$ {\tiny$[-7.8,-1.5]$} & $+4.0$ {\tiny$[+1.0,+7.0]$} & $-10.0$ {\tiny$[-13.8,-6.2]$} & $-10.0$ {\tiny$[-14.0,-6.0]$} & $-2.8$ {\tiny$[-5.8,+0.2]$} & $-7.0$ {\tiny$[-10.5,-3.5]$}\\ % [main]
- & 4T & $+0.0$ {\tiny$[-0.8,+0.8]$} & $-0.8$ {\tiny$[-1.8,+0.0]$} & $-1.2$ {\tiny$[-2.5,+0.0]$} & $-1.0$ {\tiny$[-2.2,+0.0]$} & $-0.5$ {\tiny$[-1.5,+0.5]$} & $+0.0$ {\tiny$[+0.0,+0.0]$}\\ % [main]
-\addlinespace[1pt]
-Node count & 1.7P & $+6.8$ {\tiny$[+3.2,+10.5]$} & $+67.2$ {\tiny$[+64.5,+70.0]$} & $+2.0$ {\tiny$[-3.2,+6.8]$} & $+47.0$ {\tiny$[+42.5,+51.2]$} & $+21.2$ {\tiny$[+16.2,+26.2]$} & $+39.8$ {\tiny$[+36.0,+43.5]$}\\ % [main]
- & 1.7T & $+5.5$ {\tiny$[+2.5,+8.5]$} & $+9.0$ {\tiny$[+6.5,+11.8]$} & $+9.0$ {\tiny$[+6.5,+11.8]$} & $+9.0$ {\tiny$[+6.5,+11.8]$} & $+1.5$ {\tiny$[-2.2,+5.0]$} & $+9.0$ {\tiny$[+6.5,+11.8]$}\\ % [main]
- & 4P & $+8.0$ {\tiny$[+5.2,+10.8]$} & $+8.8$ {\tiny$[+6.0,+11.5]$} & $+9.2$ {\tiny$[+6.5,+12.0]$} & $+9.8$ {\tiny$[+7.2,+12.5]$} & $+9.0$ {\tiny$[+6.5,+11.8]$} & $+9.2$ {\tiny$[+6.8,+11.8]$}\\ % [main]
- & 4T & $+0.2$ {\tiny$[-0.5,+1.2]$} & $+0.2$ {\tiny$[-0.5,+1.2]$} & $+0.2$ {\tiny$[-0.5,+1.2]$} & $+0.5$ {\tiny$[+0.0,+1.2]$} & $+0.0$ {\tiny$[-1.0,+1.0]$} & $+0.5$ {\tiny$[+0.0,+1.2]$}\\ % [main]
-\addlinespace[1pt]
-Cycle & 1.7P & $-17.5$$^\dagger$ {\tiny$[-23.0,-12.2]$} & $+8.5$ {\tiny$[+5.8,+11.2]$} & $-0.2$ {\tiny$[-4.2,+3.5]$} & $+7.0$ {\tiny$[+4.0,+10.2]$} & $+2.0$ {\tiny$[-1.5,+5.3]$} & $+3.0$ {\tiny$[-0.8,+6.8]$}\\ % [main]
- & 1.7T & $-21.8$$^\dagger$ {\tiny$[-26.5,-17.5]$} & $-0.5$ {\tiny$[-2.8,+1.8]$} & $+2.2$ {\tiny$[+0.5,+4.0]$} & $-0.8$ {\tiny$[-3.2,+1.8]$} & $-7.5$ {\tiny$[-11.0,-4.2]$} & $+3.0$ {\tiny$[+1.5,+4.8]$}\\ % [main]
- & 4P & $-2.2$ {\tiny$[-4.2,-0.5]$} & $+0.5$ {\tiny$[-0.5,+1.8]$} & $-0.2$ {\tiny$[-1.8,+1.2]$} & $-0.2$ {\tiny$[-1.8,+1.0]$} & $-2.0$ {\tiny$[-4.0,-0.2]$} & $-0.5$ {\tiny$[-2.0,+0.8]$}\\ % [main]
- & 4T & $-5.5$ {\tiny$[-8.0,-3.0]$} & $+0.0$ {\tiny$[-1.2,+1.2]$} & $+0.2$ {\tiny$[-0.8,+1.5]$} & $-0.5$ {\tiny$[-2.0,+0.8]$} & $-3.2$ {\tiny$[-5.2,-1.2]$} & $+0.5$ {\tiny$[-0.5,+1.5]$}\\ % [main]
+Degree & 1.7P & degree & 60.50 & $+7.5$ & {\scriptsize$[+3.0,+11.8]$}\\ % [main]
+ & 1.7T & degree & 76.25 & $+8.8$ & {\scriptsize$[+4.2,+13.2]$}\\ % [main]
+ & 4P & degree & 99.25 & $-6.5$ & {\scriptsize$[-9.2,-4.0]$}\\ % [main]
+ & 4P & all & 99.25 & $-8.0$ & {\scriptsize$[-11.0,-5.2]$}\\ % [main]
+\addlinespace[2pt]
+Neighbors & 1.7T & degree & 78.75 & $+6.2$ & {\scriptsize$[+2.8,+10.0]$}\\ % [main]
+ & 4P & components & 86.00 & $+9.2$ & {\scriptsize$[+6.0,+12.8]$}\\ % [main]
+ & 4P & filler & 86.00 & $-12.5$ & {\scriptsize$[-17.2,-7.8]$}\\ % [main]
+\addlinespace[2pt]
+Edge count & 4P & degree & 2.00 & $+27.2$ & {\scriptsize$[+22.8,+32.0]$}\\ % [main]
+\addlinespace[2pt]
+Edge exists & 1.7P & all & 70.50 & $+11.5$ & {\scriptsize$[+6.2,+16.5]$}\\ % [main]
+ & 1.7P & filler & 70.50 & $-15.8$ & {\scriptsize$[-20.0,-11.8]$}\\ % [main]
+ & 4P & clustering & 90.50 & $+4.0$ & {\scriptsize$[+1.0,+7.0]$}\\ % [main]
+ & 4P & RWSE & 90.50 & $-10.0$ & {\scriptsize$[-13.8,-6.2]$}\\ % [main]
+\addlinespace[2pt]
+Node count & 1.7P & clustering & 31.50 & $+67.2$ & {\scriptsize$[+64.5,+70.0]$}\\ % [main]
+\addlinespace[2pt]
+Cycle & 1.7P & degree & 90.75 & $-17.5^{\dagger}$ & {\scriptsize$[-23.0,-12.2]$}\\ % [main]
+ & 1.7T & degree & 97.00 & $-21.8^{\dagger}$ & {\scriptsize$[-26.5,-17.5]$}\\ % [main]
 \bottomrule
-\end{tabular}}
-\caption{Every main-sweep effect against no primer (points) with its $95\%$ bootstrap interval over graphs, $400$ paired graphs per cell ($p\leq.50$). $\dagger$: at least $15\%$ truncation on either side. Node count (always $40$) and cycle check (always yes) cannot measure reading the graph at $40$ nodes. P/T: plain/thinking.} % [main]
+\end{tabular}
+\caption{Uncertainty for selected contrasts: no-primer accuracy (\% of all prompts) and paired change (points) with its graph-bootstrap interval. Every unflagged contrast shown has BH $q<.05$; $\dagger$ marks at least $15\%$ truncation on either side. Main-sweep point estimates for all four variable-answer tasks are in Table~\ref{tab:matrix}; all intervals are in the repository output \texttt{outputs/n40-sweep/}\allowbreak\texttt{primer\_findings.txt}. Node count and cycle check have constant gold answers. P/T: plain/thinking.} % [main]
 \label{tab:full}
-\end{table*}
+\end{table}
 
 \begin{figure}[!h]
 \centering
@@ -302,11 +274,32 @@ Cycle & 1.7P & $-17.5$$^\dagger$ {\tiny$[-23.0,-12.2]$} & $+8.5$ {\tiny$[+5.8,+1
 \label{fig:headroom}
 \end{figure}
 
-\paragraph{Stated answers (\S\ref{sec:readoff}).} The effect varies with unaided accuracy (Figures~\ref{fig:degreeeffect} and~\ref{fig:headroom}). In node-degree cells answered $25$--$50\%$ and $50$--$75\%$ correctly without a primer, answer-stating primers gain $16.1$ and $12.9$ points; at $75$--$90\%$ they lose $5.8$. These bands hold on held-out halves of the graphs and with the truncation flag at $10\%$ or $50\%$ (at least $+12.5$ in every case). % [bands] [splithalf] [bandsens]
-An effect mostly follows how well the model does unaided. At a fixed accuracy without a primer, density adds little ($p=.28$ for answer-stating primers, $p=.85$ for side statistics), except that side statistics' effect on node degree falls with density ($p=.006$). % [dxbase]
-One model shows both effects. The degree primer costs plain 4B $12.0$ points at $p=.50$, where it answers $99.0\%$ correctly unaided, and gains $27.0$ at $p=.85$, where it answers $33.0\%$ (both $q<.01$). % [flip]
-Stated answers are not always taken: across all seven densities, where the solver scores $100\%$, node-degree accuracy under the degree primer is $43\%$ and $81\%$ for plain 1.7B and plain 4B, and $79\%$ and $98\%$ with thinking. At high density, where plain 1.7B is weakest, the stated degree barely helps it (at most $2$ points). At $p=.85$ it still answers $39$, the degree of a node joined to all others, on $70.8\%$ of finished responses. % [recover] [plain17] [ddplain]
-Plain 4B's wrong lookups copy a nearby line: $17$ of $57$ equal the degree printed one sentence away, against $10.4$ expected by chance ($p=.017$). Adding clustering and RWSE to the same degrees costs dense plain 4B the most (Figure~\ref{fig:addstats}): pooled over $p\geq.65$, degree alone gains $9.3$ points ($q=.03$) and all three statistics lose $21.3$ ($q<.001$). % [copyerr] [clusthi]
+\begin{table}[H]
+\centering\footnotesize\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{lrr}
+\toprule
+Unaided accuracy & Answer stated & Side statistic\\
+\midrule
+$0$--$25\%$ & $+8.3$ (16) & $-1.7$ (23)\\ % [bands]
+$25$--$50\%$ & $+16.1$ (10) & $+2.6$ (20)\\ % [bands]
+$50$--$75\%$ & $+12.9$ (8) & $+3.9$ (47)\\ % [bands]
+$75$--$90\%$ & $-5.8$ (4) & $+0.7$ (51)\\ % [bands]
+$90$--$100\%$ & $-0.9$ (28) & $-0.9$ (177)\\ % [bands]
+\bottomrule
+\end{tabular}
+\caption{Mean accuracy change against no primer (points; number of cells in parentheses) by unaided-accuracy band, over unflagged arm--task--density cells of the four variable-answer tasks ($p\leq.50$, plus $p\geq.65$ for node degree and edge existence). \emph{Answer stated}: degree and all on node degree and edge count. \emph{Side statistic}: every other primer--task pair, including components and degree or all on neighbor sets and edge existence; filler is excluded.} % [bands]
+\label{tab:bands}
+\end{table}
+
+\input{main_truncation.tex}
+
+\paragraph{Stated answers (\S\ref{sec:readoff}).} Answer-stating primers gain most, in points, where unaided accuracy is intermediate (Table~\ref{tab:bands}; Figures~\ref{fig:degreeeffect} and~\ref{fig:headroom}). This holds when bands are formed on one half of the graphs and evaluated on the other, and at truncation thresholds from $5\%$ to $50\%$ (at least $+11.6$). % [bands] [splithalf] [bandsens]
+On a log-odds scale, however, the gain is similar across the three lower bands, so the intermediate peak partly reflects the points scale; and the losses at high unaided accuracy come from plain 4B alone. % [bandlor]
+Density, by contrast, has no detectable effect at a fixed unaided accuracy (in the main sweep, permutation $p=.28$ for answer-stating primers and $p=.85$ for side statistics). The one exception, a side-statistic effect on node degree that falls with density ($p=.006$), disappears once $p\geq.65$ is added ($p=.58$). % [dxbase]
+Plain 4B spans both ends of Table~\ref{tab:bands}: besides its gain at $p=.85$, the degree primer costs it $12.0$ points at $p=.50$, where it answers $99.0\%$ unaided (both $q<.01$; Figure~\ref{fig:headroom}). % [flip]
+A printed answer must still be found and used. Across seven densities, even though the solver reads every degree correctly, accuracy under the degree primer ranges from $43\%$ for plain 1.7B to $98\%$ for thinking 4B. % [recover]
+At high density, the degree primer does not detectably help plain 1.7B ($+1.2$ points, $q=.44$); instead, at $p=.85$ the model answers $39$, the degree of a node joined to all others, on $70.8\%$ of finished responses with the primer and $61.0\%$ without. % [ddplain]
+One source of error is a neighboring line: across seven densities, $17$ of $57$ wrong plain-4B lookups copy the degree of an adjacent sentence, more than chance predicts ($p=.017$). The combined primer is costlier still for dense plain 4B (\S\ref{sec:side}; $q<.001$, against $q=.03$ for degree alone's gain); Figure~\ref{fig:addstats} shows this change for every arm and density. % [copyerr] [clusthi]
 \begin{figure}[!h]
 \centering
 \includegraphics[width=\columnwidth]{fig_addstats.pdf}
@@ -314,131 +307,154 @@ Plain 4B's wrong lookups copy a nearby line: $17$ of $57$ equal the degree print
 \label{fig:addstats}
 \end{figure}
 
-\paragraph{Filler and fragile questions (\S\ref{sec:side}).} Filler changes $6.2$--$18.6\%$ of outcomes per arm. % [churn]
-A primer changes $38.5$--$69.1\%$ of the questions filler changes and $3.1$--$15.2\%$ of the rest. % [overlap]
-Some questions are fragile: on plain 1.7B's node degree, $24$ of $400$ change outcome when the same prompt is generated again. Every condition changes them far more often than the rest ($45.8$--$66.7\%$ against $14.4$--$26.1\%$, $q\leq.018$). Yet they carry only $11$ to $16$ of each condition's $65$ to $113$ changes, a lower bound on chance changes, given two generations per prompt. % [rerunflip]
-Where accuracy without a primer is $25$--$75\%$, components, clustering and RWSE average $+1.6$ points while filler averages $-6.9$ on the same cells. % [fillerband]
+\paragraph{Controls and run-to-run noise (\S\ref{sec:side}).} Filler changes $6.2$--$18.6\%$ of outcomes per arm, and the primers largely change the same questions. % [churn]
+In every arm, every primer, components included, changes $38.5$--$69.1\%$ of the questions filler changes but only $3.1$--$15.2\%$ of the rest, and this gap holds within task and density ($q<.05$ for all twenty contrasts). % [overlap]
+Part of this overlap is noise. When plain 1.7B's node-degree prompts are generated a second time, $24$ of $400$ questions change outcome, and every condition changes these questions more often than the rest ($q\leq.018$). However, they account for only $11$--$16$ of each condition's $65$--$113$ changes, and because each prompt was generated only twice, this undercounts how many changes noise alone causes. % [rerunflip]
+Filler's changes also tend to be losses: where unaided accuracy is $25$--$75\%$, components, clustering and RWSE average $+1.6$ points, while filler averages $-6.9$ on the same arm--task--density cells. % [fillerband]
+On plain 4B's neighbor sets, restatements of the queried incident line are about equally accurate with the component sentence and without a primer ($95\%$ and $92\%$; $84\%$ with filler), so the sentence's gain comes mainly from restating more often. % [compproc]
 
-\begin{table}[!t]
-\centering\footnotesize\setlength{\tabcolsep}{4pt}
-\begin{tabular}{llrrr}
+
+
+\paragraph{Edge existence (\S\ref{sec:side}).} Primers change edge existence mainly in the plain arms (Table~\ref{tab:ee}). There, clustering and RWSE move plain 4B in opposite directions, and the combined primer helps plain 1.7B but harms plain 4B. Because the share of true edges changes with density, the table adds balanced accuracy, which weights a correct yes and a correct no equally; ``yes share'' is the fraction of finished responses answering yes. % [eemain]
+\begin{table}[H]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrrrrr@{}}
 \toprule
-Arm & Primer & Raw & Balanced & Yes\\
+ & \multicolumn{3}{c}{1.7P} & \multicolumn{3}{c}{4P}\\
+\cmidrule(lr){2-4}\cmidrule(l){5-7}
+Primer & Raw & Balanced & Yes & Raw & Balanced & Yes\\
 \midrule
-1.7P & none & 70.50 & 79.86 & 56.2\\ % [eemain] (%)
- & degree & 74.50 & 82.30 & 51.7\\ % [eemain] (%)
- & clustering & 74.25 & 82.42 & 52.5\\ % [eemain] (%)
- & RWSE & 75.50 & 82.68 & 50.1\\ % [eemain] (%)
- & all & 82.00 & \textbf{87.71} & 44.8\\ % [eemain] (%)
- & components & 62.25 & \textbf{74.23} & 64.5\\ % [eemain] (%)
- & filler & 54.75 & \textbf{69.11} & 72.0\\ % [eemain] (%)
-\addlinespace[2pt]
-1.7T & none & 99.00 & 99.02 & 27.1\\ % [eemain] (%)
- & degree & 96.50 & 97.61 & 29.9\\ % [eemain] (%)
- & clustering & 98.00 & 98.63 & 28.6\\ % [eemain] (%)
- & RWSE & 97.75 & 98.17 & 28.3\\ % [eemain] (%)
- & all & 97.25 & 98.12 & 29.5\\ % [eemain] (%)
- & components & 98.25 & 98.81 & 28.3\\ % [eemain] (%)
- & filler & 98.50 & 98.68 & 27.8\\ % [eemain] (%)
-\addlinespace[2pt]
-4P & none & 90.50 & 93.22 & 35.7\\ % [eemain] (%)
- & degree & 85.75 & \textbf{90.27} & 40.7\\ % [eemain] (%)
- & clustering & 94.50 & \textbf{96.25} & 32.3\\ % [eemain] (%)
- & RWSE & 80.50 & \textbf{86.69} & 46.3\\ % [eemain] (%)
- & all & 80.50 & \textbf{86.69} & 46.1\\ % [eemain] (%)
- & components & 87.75 & 91.64 & 39.0\\ % [eemain] (%)
- & filler & 83.50 & \textbf{88.74} & 43.2\\ % [eemain] (%)
-\addlinespace[2pt]
-4T & none & 99.75 & 99.83 & 26.8\\ % [eemain] (%)
- & degree & 99.75 & 99.83 & 26.8\\ % [eemain] (%)
- & clustering & 99.00 & 99.32 & 27.0\\ % [eemain] (%)
- & RWSE & 98.50 & 98.68 & 26.9\\ % [eemain] (%)
- & all & 98.75 & 99.15 & 27.1\\ % [eemain] (%)
- & components & 99.25 & 99.49 & 27.0\\ % [eemain] (%)
- & filler & 99.75 & 99.83 & 26.8\\ % [eemain] (%)
+none & 70.50 & 79.86 & 56.2 & 90.50 & 93.22 & 35.7\\ % [eemain] (%)
+degree & 74.50 & 82.30 & 51.7 & 85.75 & \textbf{90.27} & 40.7\\ % [eemain] (%)
+clustering & 74.25 & 82.42 & 52.5 & 94.50 & \textbf{96.25} & 32.3\\ % [eemain] (%)
+RWSE & 75.50 & 82.68 & 50.1 & 80.50 & \textbf{86.69} & 46.3\\ % [eemain] (%)
+all & 82.00 & \textbf{87.71} & 44.8 & 80.50 & \textbf{86.69} & 46.1\\ % [eemain] (%)
+components & 62.25 & \textbf{74.23} & 64.5 & 87.75 & 91.64 & 39.0\\ % [eemain] (%)
+filler & 54.75 & \textbf{69.11} & 72.0 & 83.50 & \textbf{88.74} & 43.2\\ % [eemain] (%)
 \bottomrule
 \end{tabular}
-\caption{Edge existence, main sweep ($400$ prompts per row): raw and balanced accuracy over all prompts and the share of finished answers that say yes, all in \%. Truncation is in Table~\ref{tab:truncmatrix}. Bold: balanced accuracy differs from the same arm without a primer (paired permutation, BH $q<.05$ within arm).} % [eemain]
+\caption{Edge existence in plain arms ($400$ prompts per row): raw and balanced accuracy over all prompts and ``yes'' share among finished answers (\%). Bold: balanced accuracy differs from no primer (paired permutation, BH $q<.05$ within arm). Thinking-arm balanced accuracy remains $97.61$--$99.83\%$; their full rows are in the repository output \texttt{outputs/n40-sweep/}\allowbreak\texttt{primer\_findings.txt}.} % [eemain]
 \label{tab:ee}
 \end{table}
+False alarms rise with the number of shared neighbors (Table~\ref{tab:shared}). In $G(n,p)$ that number is independent of whether the pair is joined, so this pattern suggests that models mistake proximity for adjacency. It is not a density artifact: within each density and without a primer, false alarms share on average $4.48$ more neighbors than correct no's for plain 1.7B ($p=.0005$) and $2.81$ more for plain 4B ($p=.014$). % [eeshared]
+Clustering changes stated reasons more than decisions: under clustering, plain 1.7B's responses explicitly claiming a non-edge is an edge fall from $13.7\%$ to $4.4\%$, but its false alarms fall only from $40.3\%$ to $35.2\%$. % [eeclaims]
+\begin{table}[H]
+\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrr}
+\toprule
+Plain arm & $0$ & $1$ & $2$--$3$ & $4+$\\
+\midrule
+1.7B & 1.7 & 34.3 & 47.3 & 65.9\\ % [eeshared]
+4B & 0.2 & 4.6 & 19.0 & 38.8\\ % [eeshared]
+\bottomrule
+\end{tabular}
+\caption{False ``yes'' on non-edges (\% of finished answers), by number of shared neighbors in the true graph; all seven conditions pooled (including no primer and filler) at $p\leq.50$. Bin sizes (1.7B / 4B): 524/524, 350/350, 448/447, 728/727. Pooling across densities is descriptive.} % [eeshared]
+\label{tab:shared}
+\end{table}
 
-\input{table_cycles.tex}
+\paragraph{Dense graphs (\S\ref{sec:side}).} Clustering raises dense plain 4B's node-degree accuracy although its printed values barely vary there: at $p=.65$, a graph's clustering values have SD $0.021$, and rounded RWSE takes $2.08$ distinct value pairs per graph against $12.04$ distinct degrees. % [cluster] [rwse] [clusthi]
+Neither added length nor a change of strategy explains the gain: length-matched filler does not help ($+2.0$, $q=.59$), and neighbor enumeration is about as common with clustering as without ($69\%$ and $74\%$). The gain may therefore come from how the added numeric sentences change the prompt, which this design cannot isolate. % [clusthi] [clustproc]
 
-\input{main_truncation.tex}
 
-\paragraph{Side statistics (\S\ref{sec:side}).} On edge existence, every primer that moves balanced accuracy does so in a plain arm (bold in Table~\ref{tab:ee}); clustering and RWSE on plain 4B have $q\leq.018$, and the all primer raises plain 1.7B's by $7.8$ points and lowers plain 4B's by $6.5$. % [eemain]
-Plain 1.7B's false alarms rise steeply with the number of neighbors a non-edge pair shares, from $1.7\%$ with none to $65.9\%$ with four or more, and plain 4B's from $0.2\%$ to $38.8\%$. In $G(n,p)$ shared neighbors say nothing about whether a pair is joined, so this is consistent with mistaking nearby ids for adjacency. Under clustering, plain 1.7B's responses explicitly claiming a non-edge is an edge fall from $13.7\%$ to $4.4\%$, while its false alarms fall only from $40.3\%$ to $35.2\%$: stated reasons move more than decisions. % [eeshared] [eeclaims]
-The component sentence raises plain 4B's neighbor-set set-F1 from $0.987$ to $0.998$, and responses that restate the queried node's line are right $95\%$, $92\%$ and $84\%$ of the time with it, with no primer and with filler. % [main] [comp] [compproc]
-At high density the printed statistics vary less within a graph: clustering values have SD $0.021$ at $p=.65$, and rounded RWSE takes $3.30$ distinct value pairs per graph at $p=.50$, against $12.50$ distinct degrees. Clustering still gains $11.3$ on dense plain 4B node degree with similar rates of neighbor enumeration, making presentation a plausible contributor. % [cluster] [rwse] [clusthi] [clustproc]
 
-\begin{table}[!t]
+\paragraph{Against the thinking mode (\S\ref{sec:vsthink}).} The one equivalence in Table~\ref{tab:vsthink} comes from the component sentence: on neighbor sets, the $90\%$ interval of plain 4B's gap to thinking 4B without a primer is $[-2.0,+2.5]$, within the prespecified $\pm3$-point margin. For plain 1.7B's neighbor sets under degree, the gap is also nonsignificant ($q=.24$), but its interval reaches $+6.2$, so equivalence is not established. To avoid selecting a primer on the graphs it is scored on, each row's best primer is chosen on even-index graphs and scored on odd-index graphs, and vice versa; both halves chose the same primer. % [vsthink] [vscross] [vsequiv]
+\begin{table}[H]
 \centering\scriptsize
-\setlength{\tabcolsep}{3.2pt}
+\setlength{\tabcolsep}{2.3pt}
 \begin{tabular}{llrlrr}
 \toprule
-Task & Model & Gap without & Best & Gap after & Gap with\\
- & & primer & primer & primer & Cl./RW.\\
+Task & Model & No primer & Best primer & Gap with best & Gap with\\
+ & & gap & for plain & primer & Cl./RWSE\\
 \midrule
 Degree & 1.7B & $\mathbf{+15.8}$ & all & $\mathbf{+5.5}$ & $\mathbf{+11.8}$\\ % [vsthink]
  & 4B & $-2.2$ & components & $\mathbf{-2.5}$ & $-1.8$\\ % [vsthink]
 Neighbors & 1.7B & $\mathbf{+6.2}$ & degree & $+2.8$ & $\mathbf{+5.0}$\\ % [vsthink]
- & 4B & $\mathbf{+9.5}$ & components & $+0.2$ & $\mathbf{+8.5}$\\ % [vsthink]
-Edge count$^\dagger$ & 1.7B & $\mathbf{+14.5}$ & degree & $\mathbf{+11.5}$ & $\mathbf{+15.0}$\\ % [vsthink]
- & 4B & $\mathbf{+18.0}$ & degree & $\mathbf{-9.2}$ & $\mathbf{+19.2}$\\ % [vsthink]
+ & 4B & $\mathbf{+9.5}$ & components & $+0.2^{\mathrm{e}}$ & $\mathbf{+8.5}$\\ % [vsthink]
+Edge count$^\dagger$ & 1.7B & $+14.5$ & degree & $+11.5$ & $+15.0$\\ % [vsthink]
+ & 4B & $+18.0$ & degree & $-9.2$ & $+19.2$\\ % [vsthink]
 Edge exists & 1.7B & $\mathbf{+28.5}$ & all & $\mathbf{+17.0}$ & $\mathbf{+23.5}$\\ % [vsthink]
  & 4B & $\mathbf{+9.2}$ & clustering & $\mathbf{+5.2}$ & $\mathbf{+5.2}$\\ % [vsthink]
 \bottomrule
 \end{tabular}
-\caption{Gap in correct share (points): the same model thinking without a primer minus plain under no primer, its held-out-selected best primer, or the better of clustering and RWSE. Negative values put plain ahead. Bold: paired BH $q<.05$; $\dagger$: thinking edge count truncates frequently (Table~\ref{tab:truncmatrix}). Selection and equivalence details are in the text.} % [vsthink] [vscross]
+\caption{Gap in correct share (points): the same model thinking without a primer minus plain under no primer, the plain arm's best primer selected on held-out graphs (see text), or the better of clustering and RWSE. Negative values put plain ahead. Bold: paired BH $q<.05$; $\dagger$: at least $15\%$ truncation on one side (Table~\ref{tab:truncmatrix}), so no significance marks. Edge-existence gaps are in raw accuracy; balanced accuracy is in Table~\ref{tab:ee}. $^{\mathrm{e}}$: the $90\%$ interval lies within the prespecified $\pm3$-point equivalence margin.} % [vsthink] [vscross]
 \label{tab:vsthink}
 \end{table}
-
-\paragraph{Against the thinking mode (\S\ref{sec:vsthink}).} Equivalence in Table~\ref{tab:vsthink} rests on $90\%$ intervals. The component sentence's gap on plain 4B's neighbor sets lies in $[-2.0,+2.5]$, inside the $\pm3$-point margin. The degree primer's gap on plain 1.7B's neighbor sets is not significant ($q=.24$), but its interval reaches $+6.2$, so the two are not shown to be equivalent. % [vsthink] [vsequiv]
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{edge_count_outcomes.pdf}
-\caption{Thinking 4B on edge count: correct, wrong and truncated shares of \emph{all} responses. Conditions from top: none, components, degree, all three.}
+\caption{Thinking 4B on edge count: correct, wrong and truncated shares of \emph{all} responses.}
 \label{fig:outcomes}
 \end{figure}
 
-\paragraph{Thinking mode (\S\ref{sec:thinkmode}).} Thinking-mode responses often check stated values against their own count. Under the degree primer, thinking 1.7B still lists the neighbors in $90\%$ of responses at $p\geq.35$; when their count conflicts with the stated value, thinking 1.7B and thinking 4B end on the stated value in $66\%$ and $93\%$ of cases. % [verify] [pdsource]
-In the follow-ups, clustering gains thinking 1.7B $2.5$ points at $p\leq.50$ ($q=.043$) and loses $5.4$ at $p\geq.65$ ($q=.0015$), where filler loses $11.4$. % [ddthink]
-Of the answers a condition changes, $44.4$--$64.5\%$ for thinking 1.7B and $83.3$--$95.2\%$ for thinking 4B involve a response that ran out of tokens; Figure~\ref{fig:outcomes} shows this for thinking 4B's edge count. % [churnwhy]
+\paragraph{Thinking mode (\S\ref{sec:thinkmode}).} Under the degree primer, thinking 1.7B still lists the neighbors in $90\%$ of responses at $p\geq.35$, and thinking 4B ends on the stated value in $93\%$ of finished conflict responses, more often than thinking 1.7B. % [verify] [pdsource]
+Because thinking responses are long, truncation drives many of the changes in these arms: of the answers a condition changes, either response hit the token budget in $44.4$--$64.5\%$ for thinking 1.7B and $83.3$--$95.2\%$ for thinking 4B (Figure~\ref{fig:outcomes} shows this for thinking 4B's edge count). % [churnwhy]
 
-\paragraph{Graph support (\S\ref{sec:reston}).} Neither clustering nor RWSE significantly changes joint degree--neighbor correctness in any arm ($q\geq.16$). Plain 4B's is $85.75\%$ with no primer, $76.50\%$ with degree and $95.00\%$ with the component sentence; the degree primer raises plain 1.7B's from $54.00\%$ to $62.50\%$. % [joint]
-Table~\ref{tab:cycles} classifies every correct, finished cycle-check answer by the argument it cites. For example, on one $p=.20$ graph plain 1.7B without a primer answers with $0\to4\to1\to5\to14\to13\to15\to16\to18\to\cdots\to38\to39\to0$, which climbs the ids almost in order; steps such as $15\to16$, $21\to25$ and $38\to39$ are not edges. % example: cycle_claims.csv, cycle_check/size40/p0.2/95
-With thinking and no primer, valid arguments back $78.0\%$ and $95.8\%$ of all prompts. The degree primer raises plain 4B's valid share from $58.5\%$ to $76.5\%$. Truncation accounts for $21.2$ of the $21.8$ points it costs thinking 1.7B but only $8.2$ of the $17.5$ it costs plain 1.7B (Tables~\ref{tab:full} and~\ref{tab:truncmatrix}). RWSE, all three statistics and filler lower plain 4B's valid share to $33.2\%$, $45.2\%$ and $45.8\%$ ($q<.05$). % [ccvalid] [main] [trunc]
+\paragraph{Graph support (\S\ref{sec:reston}).} Table~\ref{tab:support} gives the values behind that section: no clustering or RWSE change in joint correctness is significant ($q\geq.16$). The table also reports valid cycle support. % [joint] [ccvalid]
+\begin{table}[H]
+\centering\footnotesize\setlength{\tabcolsep}{7pt}
+\begin{tabular}{lrrrr}
+\toprule
+ & \multicolumn{2}{c}{Joint correct} & \multicolumn{2}{c}{Valid cycle support}\\
+\cmidrule(lr){2-3}\cmidrule(l){4-5}
+Primer & 1.7P & 4P & 1.7P & 4P\\
+\midrule
+none & 54.00 & 85.75 & 34.2 & 58.5\\ % [joint] [ccvalid]
+degree & \textbf{62.50} & \textbf{76.50} & \textbf{50.2} & \textbf{76.5}\\ % [joint] [ccvalid]
+clustering & 58.00 & 86.25 & 40.2 & 54.2\\ % [joint] [ccvalid]
+RWSE & 58.25 & 83.75 & 32.0 & \textbf{33.2}\\ % [joint] [ccvalid]
+all & \textbf{61.75} & \textbf{77.50} & 38.8 & \textbf{45.2}\\ % [joint] [ccvalid]
+components & 54.50 & \textbf{95.00} & 29.8 & 63.7\\ % [joint] [ccvalid]
+filler & 52.00 & \textbf{72.50} & 31.2 & \textbf{45.8}\\ % [joint] [ccvalid]
+\bottomrule
+\end{tabular}
+\caption{Two graph-support checks in the plain arms (\% of all prompts). \emph{Joint correct}: both the degree and the exact neighbor set are right for the same queried node. \emph{Valid cycle support}: a correct, finished cycle ``yes'' backed by a valid argument, a real cycle or the edge-count argument. Bold: BH $q<.05$ against no primer. Response categories are in Table~\ref{tab:cycles}.}
+\label{tab:support}
+\end{table}
 
-\paragraph{Node count.} Because the encoding lists all $40$ ids, this constant-answer task cannot establish graph reading. Plain 1.7B answers $39$, the last id, on $68.5\%$ of finished responses without a primer and on $1.2\%$ under clustering, hence Table~\ref{tab:full}'s large node-count effects. % [nodecount] [ncanswer]
+\input{table_cycles.tex}
 
+Table~\ref{tab:cycles} breaks every correct, finished cycle-check answer down by the argument it cites, and many rest on invented cycles. For example, on one $p=.20$ graph plain 1.7B without a primer answers with $0\to4\to1\to5\to14\to13\to15\to16\to18\to\cdots\to38\to39\to0$, which climbs the ids almost in order; steps such as $15\to16$, $21\to25$ and $38\to39$ are not edges. % example: cycle_claims.csv, cycle_check/size40/p0.2/95
+The degree primer raises valid support for plain 4B as well as plain 1.7B (\S\ref{sec:reston}), while RWSE, all three statistics and filler reduce plain 4B's. % [ccvalid]
+Thinking arms cite real cycles far more often ($79.9\%$ and $96.5\%$ of correct answers without a primer), but RWSE turns $42.5\%$ of thinking 4B's correct answers into walks that are not cycles. % [ccanswer]
+Finally, truncation explains almost all of the degree primer's cycle-check loss for thinking 1.7B, but less than half for plain 1.7B (Tables~\ref{tab:full} and~\ref{tab:truncmatrix}). % [main] [trunc]
+
+\paragraph{Node count.} This task cannot show graph reading, because every graph has $40$ nodes, all named in the encoding's first line. Plain 1.7B often mistakes the last identifier, $39$, for the count, and most primers reduce that error: clustering nearly eliminates it ($68.5\%$ to $1.2\%$ of finished answers), and even filler, which states nothing, raises accuracy by $39.8$ points. The large effect in Table~\ref{tab:full} is therefore not specific to clustering and does not show graph reading. % [nodecount] [ncanswer] [main]
+
+\clearpage
 \section{Pilot and the Clustering Screen}
 \label{app:pilot}
 \paragraph{Pilot.} On the published GraphQA graphs ($5$--$19$ nodes), Gemma~4 E4B/12B \citep{gemma4} and Qwen3-8B/14B, in both modes, were near ceiling without a primer on most tasks. Edge count remained difficult. These pilot results motivated the 40-node graphs and smaller models; they are not pooled with the main sweep.
 
-\paragraph{The clustering effect.} Clustering on plain 1.7B's node degree emerged from a $40$-cell screen, so Table~\ref{tab:clust} tests it on graphs the screen did not see, on a fresh seed, against filler, on $20$--$160$-node graphs at fixed mean degree, at high density and on Qwen3-8B. The low-density gain appears on unscreened graphs, a fresh seed and the fixed-mean-degree grid, but is not detected at high density or in Qwen3-8B (Table~\ref{tab:clust}). The screened-graph row is descriptive, because it reuses graphs from the initial search. No sampled response explicitly invokes clustering, and the gain does not vary detectably with the queried node's coefficient ($p=.50$). These observations motivate a position-based explanation but do not prove one. % [rqbehaviour] [rqhetero] [rqselection] [ddrep] [fixdeg8]
-The clustering contrast is $+5.01$, $+0.75$ and $-0.11$ points for queried nodes in the first, middle and last third of the list, pooled across seven densities. A regression adjusting for degree, clustering and density estimates $1.74$ points less gain per ten later positions ($p=.018$); filler and component controls show no corresponding gradient. The clustering format resolves $224$ prior neighbor-list copying errors and introduces $176$ new ones. These associations do not isolate the cause of the gain; shuffling node order would test it directly. % [rqhetero] [rqbehaviour]
-Components and filler also cut the neighbors the model misses ($0.94$ and $1.05$ per response at $p=.35$--$.50$, against $0.86$ with clustering and $1.49$ with none). % [rqbehaviour] [rqhetero]
-
-\begin{table}[!t]
-\centering\scriptsize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrl}
+\paragraph{The clustering effect.} Because clustering's gain on plain 1.7B's node degree emerged from a $40$-cell screen, Table~\ref{tab:clust} retests it. The unscreened, fresh-seed, fixed-mean-degree and Qwen3-8B rows use graphs the screen did not see; the $p\leq.50$, against-filler and $p\geq.65$ rows use the full $400$-graph-per-density runs, which include the screened graphs. The screened-graph row is descriptive only, because it reuses graphs from the initial search. % [rqselection]
+The gain holds up on unscreened graphs, a fresh seed and the fixed-mean-degree grid, where it is largest in the densest cell ($20$ nodes, $p=.842$: $+16.5$) but reverses in the other $20$-node cell ($p=.421$). However, it is not detected on 40-node graphs at $p\geq.65$, nor in Qwen3-8B, which is near ceiling in most cells (Table~\ref{tab:clust}). % [fixdeg17] [ddplain] [fixdeg8]
+Thinking 1.7B shows a similar split in the follow-ups: clustering gains it $2.5$ points at $p\leq.50$ ($q=.043$) but loses $5.4$ at $p\geq.65$ ($q=.0015$), where filler loses $11.4$. % [ddthink]
+\begin{table}[H]
+\centering\scriptsize\setlength{\tabcolsep}{3.8pt}
+\begin{tabular}{lrrll}
 \toprule
-Test & Gain & $p$ or $q$\\
+Test & $N$ & Gain & Statistic & Correction\\
 \midrule
-Screened graphs ($700$) & $+1.29$ & $p=.47$\\ % [ddplain] [ddrep] [rqselection] [ddplainfill] [fixdeg8]
-Unscreened graphs ($2{,}100$) & $+2.1$ & $p=.031$\\ % [ddplain] [ddrep] [rqselection] [ddplainfill] [fixdeg8]
-$p\leq.50$ ($1{,}600$ pairs) & $+3.8$ & $q=.0035$\\ % [ddplain] [ddrep] [rqselection] [ddplainfill] [fixdeg8]
-Fresh seed & $+4.2$ & $p=.00055$ ($.022$ corr.)\\ % [ddplain] [ddrep] [rqselection] [ddplainfill] [fixdeg8]
-Against filler & $+3.2$ & $q=.014$\\ % [ddplain] [ddrep] [rqselection] [ddplainfill] [fixdeg8]
-Fixed mean degree ($3{,}200$) & $+6.2$ & $q<.001$\\ % [fixdeg17]
-$p\geq.65$ ($1{,}200$ pairs) & $-0.7$ & $q=.57$\\ % [ddplain] [ddrep] [rqselection] [ddplainfill] [fixdeg8]
-Qwen3-8B ($3{,}200$) & $-1.0$ & $q=.05$\\ % [ddplain] [ddrep] [rqselection] [ddplainfill] [fixdeg8]
+Screened graphs & 700 & $+1.29$ & $p=.47$ & none\\ % [rqselection]
+Unscreened graphs & 2,100 & $+2.1$ & $p=.031$ & none\\ % [rqselection]
+$p\leq.50$ & 1,600 & $+3.8$ & $q=.0035$ & BH\\ % [ddplain]
+Fresh seed & 1,600 & $+4.2$ & $p=.00055$ & Bonf. $=.022$\\ % [ddrep] [rqselection]
+Against filler & 1,600 & $+3.2$ & $q=.014$ & BH\\ % [ddplainfill]
+Fixed mean degree & 3,200 & $+6.2$ & $q<.001$ & one test\\ % [fixdeg17]
+$p\geq.65$ & 1,200 & $-0.7$ & $q=.57$ & BH\\ % [ddplain]
+Qwen3-8B & 3,200 & $-1.0$ & $q=.05$ & one test\\ % [fixdeg8]
 \bottomrule
 \end{tabular}
-\caption{Change in node-degree accuracy (points) for plain Qwen3-1.7B, except the Qwen3-8B row. Comparisons use no primer unless labeled against filler. \emph{Screened}: graphs reused from the discovery screen; \emph{fixed mean degree}: the 20--160-node grid; \emph{corr.}: Bonferroni correction over screened cells. Each $p$ or $q$ keeps its own adjustment.}
+\caption{Node-degree accuracy change (points) for plain Qwen3-1.7B, except the Qwen3-8B row. $N$ is paired prompts. Comparisons use no primer unless labeled against filler. \emph{Screened}: the $700$ graphs the discovery screen used; \emph{unscreened}: the other $2{,}100$; \emph{fresh seed}: newly generated graphs; \emph{fixed mean degree}: the $20$--$160$-node grid. $p$ is unadjusted; $q$ is BH-adjusted (equal to $p$ in a one-test family); the fresh-seed Bonferroni value corrects across the $40$ screened cells.} % [rqselection] [ddplain] [ddrep] [ddplainfill] [fixdeg17] [fixdeg8]
 \label{tab:clust}
 \end{table}
+
+How clustering helps is unclear. No sampled response explicitly invokes clustering, and the gain does not vary detectably with the queried node's coefficient ($p=.50$), though it grows with the node's degree ($p=.012$). % [rqbehaviour] [rqhetero]
+The clearest pattern is list position: the gain is $+5.01$, $+0.75$ and $-0.11$ points for queried nodes in the first, middle and last list thirds, and, adjusting for degree, clustering and density, it shrinks by $1.74$ points per ten later positions ($p=.018$), while filler and component controls show no corresponding gradient. % [rqhetero]
+These patterns motivate a position-based explanation but do not prove one: clustering resolves some prior copying errors while introducing others, and components and filler also reduce missed neighbors, so no clustering-specific mechanism is isolated. Shuffling node order would test the position hypothesis directly. % [rqbehaviour]
+
+
+
+
 
 
 \end{document}
