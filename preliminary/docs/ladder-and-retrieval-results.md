@@ -1,17 +1,36 @@
 # Ladder screen and retrieval-probe results (2026-09-11)
 
-Read `docs/ladder-and-rewiring.md` first — this is the design; this document is
-the first results pass over it, run with two scripts:
+> **Status: not re-verified.** The tables and recommendations below cover a
+> subset of the ladder and retrieval runs: they omit `qwen3-8b-think`'s full
+> ladder, `qwen3-14b-think`'s ladder and probe, and `gemma4-12b-think`'s probe,
+> all of which are in the two output files named here. Read the files, not the
+> tables. Not cited by the paper. Current results:
+> [results index](../../docs/README.md).
 
-- `scripts/analyze_ladder.py` → `csv2/ladder-retrieval/ladder_matrix.csv` (215 rows), now
-  covering all 12 model arms (it previously covered only 6 — `gemma4-12b`,
-  `gemma4-e4b(-think)`, `qwen3-8b-think`, and `qwen3-14b` were missing).
-- `scripts/analyze_retrieval.py` (new) → `csv2/ladder-retrieval/retrieval_matrix.csv`
-  (445 rows), scoring the `retrieval_locate` reading-limit probe. Nothing
-  turned this into per-model reading limits before this pass; the only
-  numbers that existed were `graphtalk/ladder.py`'s `READING_CLEAN`/
+Read [ladder-and-rewiring.md](ladder-and-rewiring.md) first — this is the
+design; this document is the first results pass over it, run with two scripts:
+
+- `preliminary/scripts/analyze_ladder.py` →
+  `preliminary/outputs/ladder-retrieval/ladder_matrix.csv` (234 rows, 13 model
+  arms).
+- `preliminary/scripts/analyze_retrieval.py` →
+  `preliminary/outputs/ladder-retrieval/retrieval_matrix.csv` (529 rows, 13
+  models), scoring the `retrieval_locate` reading-limit probe. Apart from it,
+  the only reading-limit numbers are `graphtalk/ladder.py`'s `READING_CLEAN`/
   `READING_DEGRADED`/`READING_MIDDLE_COLLAPSE` constants, measured by hand
   for `qwen3-1.7b` alone.
+
+Both, from the repo root:
+
+```bash
+PYTHONPATH=. python preliminary/scripts/analyze_retrieval.py \
+    --responses 'preliminary/data/runs/*.retrieval_locate.jsonl' \
+    --out preliminary/outputs/ladder-retrieval/retrieval_matrix.csv
+PYTHONPATH=. python preliminary/scripts/analyze_ladder.py \
+    --responses 'preliminary/data/runs/*.ladder_screen*.jsonl' \
+    --reading-limits qwen3-0.6b=0 qwen3-0.6b-think=0 qwen3-1.7b=1509 qwen3-1.7b-think=2449 \
+    --out preliminary/outputs/ladder-retrieval/ladder_matrix.csv
+```
 
 ## Why this pair of files answers one question
 
@@ -65,10 +84,11 @@ that have a real one; the other 7 are scored with readability unassessed
 
 ## Ladder: hard-but-readable rungs per model
 
-```
-PYTHONPATH=. python scripts/analyze_ladder.py --responses 'runs/*.ladder_screen.jsonl' \
+```bash
+PYTHONPATH=. python preliminary/scripts/analyze_ladder.py \
+    --responses 'preliminary/data/runs/*.ladder_screen*.jsonl' \
     --reading-limits qwen3-0.6b=0 qwen3-0.6b-think=0 qwen3-1.7b=1509 qwen3-1.7b-think=2449 \
-    --out csv2/ladder-retrieval/ladder_matrix.csv
+    --out preliminary/outputs/ladder-retrieval/ladder_matrix.csv
 ```
 
 | model | valid (hard but readable) rungs | reading limit applied? |
@@ -421,9 +441,9 @@ not a tested-and-confirmed non-effect:
    in it. Adding rungs means extending `RUNGS` itself (a shared constant
    `tests/test_ladder.py` checks against `cell_screen`), then:
    ```bash
-   PYTHONPATH=. python scripts/build_ladder.py --stage screen --conditions none \
+   PYTHONPATH=. python preliminary/scripts/build_ladder.py --stage screen --conditions none \
        --rungs n40k20,n60k20,n80k24,n120k24 \
-       --out prompts.ladder_screen_k20plus.jsonl
+       --out preliminary/data/prompts/prompts.ladder_screen_k20plus.jsonl
    ```
    (picking 4 of the 8 as a first, cheaper screen before committing to all
    eight — same "cheap screen before expensive rewire" discipline the
