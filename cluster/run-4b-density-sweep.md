@@ -1,84 +1,98 @@
-# Running the qwen3-4b arms of the n=40 density sweep
+# Running the qwen3-4b arms of the 40-node sweep
 
-Gal is running `qwen3-1.7b` and `qwen3-1.7b-think` on this sweep; this is the
-recipe for the two remaining arms, `qwen3-4b` and `qwen3-4b-think`, against the
-**same prompt file** so all four models are directly comparable.
+The commands that produce the committed files of the two Qwen3-4B arms,
+`qwen3-4b` and `qwen3-4b-think`, under the names `scripts/build_raw_frame.py`
+reads. The Qwen3-1.7B arms run the same way with the model key changed.
+[← cluster/README.md](README.md)
 
 ## The design
 
 `n=40` fixed, ER density pinned to `{0.10, 0.20, 0.35, 0.50}`, all 7 primer
 conditions (`none`, `components`, `degree`, `clustering`, `rwse`, `filler`,
-`all`), all 6 tasks, 100 graphs per (density, task) cell -- 16,800 prompts.
-Already built at `data/prompts/prompts.densfull40.jsonl`; you
-do not need to rebuild it (it's tracked in git, or read it in place on the
-cluster).
+`all`), all 6 tasks, 100 graphs per (density, task) cell -- 16,800 prompts in
+`data/prompts/prompts.densfull40.jsonl`. The high-density extension,
+`data/prompts/prompts.densfull40hi.jsonl`, is `{0.65, 0.75, 0.85}` with
+`node_degree` and `edge_existence` only, the same 7 conditions and 100 graphs per
+cell -- 4,200 prompts. Both files are tracked, so there is nothing to rebuild
+([scripts/README.md](../scripts/README.md) has the commands that built them).
 
-**Heads up on validity before you look at results:** `preliminary/docs/primer-effects-and-power.md`
-documents that at this size/density, `node_count` is contaminated by nearly
-every primer (any per-node sentence lets you count sentences), `cycle_check`'s
-gold is "yes" for almost every graph past the sparsest level, and the `degree`
-primer states the `node_degree` answer verbatim (bar 1.00) -- read effects
-against `data/shortcuts_n40_flat.json`'s bar, not against zero, especially for those cells.
-`node_degree` with `{none, components, clustering, filler}` is the one cell
-this project has already validated as clean.
+Which cells a primer's effect can be read on, against the graph-blind solver's
+bar in `data/shortcuts_n40_flat.json`: [docs/results/n40-sweep.md](../docs/results/n40-sweep.md).
 
 ## Submitting
 
-Both models need `--max-new-tokens` raised from the 2048 default to 8192, or
-`edge_count` truncates at these densities (390 edges at p=0.50 needs ~2,700
-output tokens; some rows need more). `cluster/sweep.sbatch` now takes this via
-`GRAPHTALK_MAX_NEW_TOKENS` (added for this sweep). Use `GRAPHTALK_ENV=graphtalk-cu126`
-so the job isn't restricted to the cu130-only half of the partition (see
-`cluster/README.md`'s driver table) -- that roughly doubles how many nodes can
-pick up a shard.
+Run from the root of a clone, after `mkdir -p out` (Slurm writes the job logs
+there and does not create the directory). Output lands in that clone's
+`data/runs/`.
 
-Use a **run tag** so your output files don't collide with Gal's (`densfull40`,
-already in use) or with the tracked sweep's own files:
+Every command uses `GRAPHTALK_ENV=graphtalk-cu126` with `--exclude=n-801`. The
+cu126 build runs on both driver generations, and an `--exclude` on the command
+line replaces `sweep.sbatch`'s default list, so the 535.x nodes join the pool
+while the slow n-801 stays out ([cluster/README.md](README.md)'s driver table).
+That roughly doubles how many nodes can pick up a shard.
+
+Budgets ([cluster/README.md](README.md#token-budgets)): 8192 for both arms on the
+main sweep, because the plain arm's `edge_count` truncates at 2048 from
+p = 0.35 (390 edges at p = 0.50 take ~2,700 output tokens); on the extension,
+2048 for the plain arm and 8192 for the thinking arm.
 
 ```bash
-cd /home/dcor/galbarak2/GraphTalk
+cd <your clone>
+mkdir -p out
+COMMON="--exclude=n-801 --mem=24G --time=24:00:00"
 
-# non-think -- fast, ~1 link should suffice (qwen3-1.7b's non-think chain
-# finished its 25-way array comfortably inside one 24h link at this scale)
-sbatch --array=0-24 --exclude=n-801 --mem=24G --time=24:00:00 \
-  --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=data/prompts/prompts.densfull40.jsonl,GRAPHTALK_RUN_TAG=densfull40-inbal,GRAPHTALK_MAX_NEW_TOKENS=8192 \
+# main sweep, plain -- one 24 h link is enough (a 25-way shard of the plain
+# qwen3-4b arm is ~0.2M new tokens)
+sbatch --array=0-24 $COMMON \
+  --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=data/prompts/prompts.densfull40.jsonl,GRAPHTALK_RUN_TAG=densfull40,GRAPHTALK_MAX_NEW_TOKENS=8192 \
   --job-name=q4b-densfull cluster/sweep.sbatch qwen3-4b
 
-# thinking -- much slower (the same design's qwen3-1.7b-think chain needed
-# multiple 24h links), so chain it. Submit link 1, then once it's running
-# add more links depending on the previous one (afterany):
-sbatch --array=0-24 --exclude=n-801 --mem=24G --time=24:00:00 \
-  --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=data/prompts/prompts.densfull40.jsonl,GRAPHTALK_RUN_TAG=densfull40-inbal \
-  --job-name=q4bT-densfull cluster/sweep.sbatch qwen3-4b-think
+# main sweep, thinking -- ~1.5M new tokens per shard, so chain it: submit
+# link 1, then add links that depend on the previous one (afterany)
+PREV=$(sbatch --parsable --array=0-24 $COMMON \
+  --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=data/prompts/prompts.densfull40.jsonl,GRAPHTALK_RUN_TAG=densfull40,GRAPHTALK_MAX_NEW_TOKENS=8192 \
+  --job-name=q4bT-densfull cluster/sweep.sbatch qwen3-4b-think)
+PREV=$(sbatch --parsable --dependency=afterany:$PREV --array=0-24 $COMMON \
+  --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=data/prompts/prompts.densfull40.jsonl,GRAPHTALK_RUN_TAG=densfull40,GRAPHTALK_MAX_NEW_TOKENS=8192 \
+  --job-name=q4bT-densfull cluster/sweep.sbatch qwen3-4b-think)
+# ... repeat the last command for each further link
 
-# capture the job id above as $PREV, then for each additional link:
-sbatch --parsable --dependency=afterany:$PREV --array=0-24 --exclude=n-801 --mem=24G --time=24:00:00 \
-  --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=data/prompts/prompts.densfull40.jsonl,GRAPHTALK_RUN_TAG=densfull40-inbal \
-  --job-name=q4bT-densfull cluster/sweep.sbatch qwen3-4b-think
+# high-density extension: 11 shards at 2048 for the plain arm, 25 at 8192 for
+# the thinking arm
+sbatch --array=0-10 $COMMON \
+  --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=data/prompts/prompts.densfull40hi.jsonl,GRAPHTALK_RUN_TAG=densfull40hi,GRAPHTALK_MAX_NEW_TOKENS=2048 \
+  --job-name=q4b-densfullhi cluster/sweep.sbatch qwen3-4b
+sbatch --array=0-24 $COMMON \
+  --export=ALL,GRAPHTALK_ENV=graphtalk-cu126,GRAPHTALK_PROMPTS=data/prompts/prompts.densfull40hi.jsonl,GRAPHTALK_RUN_TAG=densfull40hi,GRAPHTALK_MAX_NEW_TOKENS=8192 \
+  --job-name=q4bT-densfullhi cluster/sweep.sbatch qwen3-4b-think
 ```
 
-Don't override `--max-new-tokens` on the `-think` arm -- it already defaults to
-8192 (`models.THINK_MAX_NEW_TOKENS`), same value.
+Output lands at:
 
-Output lands at `data/runs/qwen3-4b.densfull40-inbal.shard<i>of25.jsonl` and
-`data/runs/qwen3-4b-think.densfull40-inbal.shard<i>of25.jsonl`.
-`scripts/build_raw_frame.py` and `score_density_sweep.py` pool by each row's `model`
-field, not by filename, so the `-inbal` tag rejoins the arm automatically --
-nothing to reassemble.
+| Command | Files |
+|---|---|
+| main sweep | `data/runs/qwen3-4b.densfull40.shard<i>of25.jsonl`, `data/runs/qwen3-4b-think.densfull40.shard<i>of25.jsonl` |
+| extension | `data/runs/qwen3-4b.densfull40hi.shard<i>of11.jsonl`, `data/runs/qwen3-4b-think.densfull40hi.shard<i>of25.jsonl` |
 
-## Two things that will bite you if skipped
+Each shard holds every n-th prompt of its file, as the committed shards do.
+`build_raw_frame.py` selects runs by these file names
+(`data/runs/<arm>.densfull40.shard*.jsonl` and `<arm>.densfull40hi.shard*.jsonl`),
+not by the rows' `model` field, so a different run tag gives files the frame
+does not read.
 
-- **The array width (25) must stay coprime with 42** (6 tasks x 7 conditions,
-  the cycle length in the prompt file) -- otherwise some shards get a skewed
-  subset of task/condition combinations instead of a proportional mix. If you
-  need a different width, pick one not divisible by 2, 3, or 7 (e.g. 11, 13,
-  25, 29).
+## Two limits that bite if ignored
+
+- **The array width must stay coprime with the prompt file's cycle**: 42 rows
+  (6 tasks x 7 conditions) in `densfull40`, 14 (2 x 7) in `densfull40hi`.
+  Otherwise some shards get a skewed subset of task/condition combinations
+  instead of a proportional mix. For another width, pick one not divisible by
+  2, 3 or 7 (e.g. 11, 13, 25, 29).
 - **There's a 100-job submit cap per user** (QOS `general`, `MaxSubmitPU=100`
-  on this account). A 25-wide array plus a couple of chained links adds up
-  fast -- check `squeue --me -r -h | wc -l` before adding another link, and if
-  you hit `QOSMaxSubmitJobPerUserLimit`, wait for earlier shards to finish (or
-  cancel a pending link) before resubmitting.
+  on this account), and every array task counts. A 25-wide array plus a couple
+  of chained links adds up fast -- check `squeue --me -r -h | wc -l` before
+  adding another link, and if you hit `QOSMaxSubmitJobPerUserLimit`, wait for
+  earlier shards to finish (or cancel a pending link) before resubmitting.
 
-See `cluster/README.md` for the rest of the standing gotchas (n-801 is slow,
-the page-cache warm-up, preemption/resume behaviour) -- all of it applies
-unchanged here.
+See [cluster/README.md](README.md) for the rest of the standing gotchas (n-801
+is slow, the page-cache warm-up, preemption and resume) -- all of it applies
+here unchanged.
