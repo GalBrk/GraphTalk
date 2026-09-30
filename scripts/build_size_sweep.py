@@ -1,16 +1,27 @@
-"""Build a size-scaling prompt set: ER graphs well beyond the published range.
+"""Build a prompt file of Erdos-Renyi graphs at chosen sizes and densities.
 
 The published `zero_shot_test` split, and the vendored generator behind it, cap
 node counts at 19 (`talk_like_a_graph/graph_generators._NUMBER_OF_NODES_RANGE`
-is small 5-9 / medium 10-14 / large 15-19). Nothing in the tracked corpus
-answers "does this model degrade as graphs get big?", because the corpus has no
-big graphs.
+is small 5-9 / medium 10-14 / large 15-19). This script generates its own
+graphs, so it can go past that. It has two modes.
 
-This script generates its own graphs at chosen sizes, keeping the published
-corpus's density policy -- Erdos-Renyi with sparsity ~ U(0, 1) -- so a size
-class differs from the tracked corpus in size and nothing else.
+**Pinned density (`--densities`): the 40-node sweep.** Sparsity is fixed at
+each listed level, one cell per (density, size), which makes density a
+controlled variable. Every prompt file in `data/prompts/` is built this way;
+the commands in scripts/README.md reproduce each one byte for byte. Rows are
+written in the order `--tasks` and `--conditions` are listed, and
+`run_sweep.py` shards a prompt file by row position, so a rebuild has to list
+them in the same order as the command it reproduces.
 
-  PYTHONPATH=. python scripts/build_size_sweep.py --sizes 20 40 80 --count 50
+**Drawn density (no `--densities`): the size sweep.** Sparsity is drawn per
+graph from U(0, 1), the published corpus's density policy, so a size class
+differs from the published corpus in size and nothing else. The default task
+set is this mode's, and
+
+  PYTHONPATH=. python scripts/build_size_sweep.py --sizes 20 40 80 --count 50 \\
+      --out preliminary/data/prompts/prompts.sizesweep.jsonl
+
+reproduces that file byte for byte.
 
 **Why sizes stop at ~80.** Under U(0, 1) sparsity, edges grow as O(n^2) and the
 `incident` encoding lists every one of them, so prompt length does too. Measured
@@ -27,12 +38,13 @@ fixed average degree (edges linear in n, ~13k tokens at n=320) -- a different
 density regime, and therefore a different experiment, not a bigger version of
 this one.
 
-Task set is deliberately four of the six. `edge_count` is excluded because a
-large graph has hundreds of edges and the model enumerates them, so it hits the
-generation budget and fails by *truncation* rather than by inability -- the
-measurement would be of `max_new_tokens`, not of the model. `cycle_check` is
-excluded because every graph this dense has a cycle, so gold is "yes" for every
-instance and the task degenerates.
+The default task set is four of the six, for the size sweep. `edge_count` is
+left out because a large graph has hundreds of edges and the model enumerates
+them, so it hits the generation budget and fails by *truncation* rather than by
+inability -- the measurement would be of `max_new_tokens`, not of the model.
+`cycle_check` is left out because every graph this dense has a cycle, so gold is
+"yes" for every instance and the task degenerates. The 40-node sweep passes all
+six with `--tasks`.
 
 Gold answers come from `graphqa.gold_answer` via `diverse_corpus.make_row`,
 never re-derived here, so a bug in this script cannot corrupt its own answer key.
@@ -70,12 +82,13 @@ def build(sizes, count, conditions, seed, style="zero_shot", densities=None,
   formula below (and therefore the graphs drawn) is untouched, so an
   "integer" and a "got" build with the same flags are the same graphs.
 
-  `densities=None` is the original size-sweep behaviour: sparsity is drawn
-  per graph from U(0, 1), the instance_id carries only the size class, and
-  no density keys are emitted -- so re-running this script with no new flags
-  reproduces `preliminary/data/prompts/prompts.sizesweep.jsonl` byte for byte. Passing explicit
-  levels pins sparsity to each one instead (`random.uniform(p, p) == p`),
-  which is what turns density from corpus noise into a controlled variable.
+  `densities=None` is the size sweep: sparsity is drawn per graph from
+  U(0, 1), the instance_id carries only the size class, and no density keys
+  are emitted -- so the size-sweep command in the module docstring reproduces
+  `preliminary/data/prompts/prompts.sizesweep.jsonl` byte for byte. Passing
+  explicit levels pins sparsity to each one instead
+  (`random.uniform(p, p) == p`), which is what turns density from corpus noise
+  into a controlled variable.
   """
   records = []
   density_levels = list(densities) if densities else [None]
@@ -163,17 +176,20 @@ def build(sizes, count, conditions, seed, style="zero_shot", densities=None,
 
 
 def main() -> None:
-  parser = argparse.ArgumentParser(description=__doc__)
+  parser = argparse.ArgumentParser(
+      description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
   parser.add_argument("--sizes", type=int, nargs="+", default=[20, 40, 80])
   parser.add_argument("--count", type=int, default=50,
                       help="graphs per size class")
-  parser.add_argument("--conditions", nargs="+", default=["none"])
+  parser.add_argument("--conditions", nargs="+", default=["none"],
+                      help="rows are written in this order (default: none)")
   parser.add_argument("--densities", type=float, nargs="+", default=None,
                       help="pin ER sparsity to each of these levels instead "
                            "of drawing it from U(0, 1); one cell per "
-                           "(density, size). Omit for the original behaviour.")
+                           "(density, size). Omit for the size sweep.")
   parser.add_argument("--tasks", nargs="+", default=list(TASKS),
-                      help=f"default: {' '.join(TASKS)}")
+                      help="rows are written in this order "
+                           f"(default: {' '.join(TASKS)})")
   parser.add_argument("--seed", type=int, default=DEFAULT_SEED,
                       help=f"default {DEFAULT_SEED}; any other value tags the "
                            "instance_id with /s<seed> so a replication corpus "
@@ -184,7 +200,9 @@ def main() -> None:
                            "Game-of-Thrones names instead of node integers "
                            "(graphtalk/node_naming.py); tags each row "
                            "node_naming: 'got'")
-  parser.add_argument("--out", default="preliminary/data/prompts/prompts.sizesweep.jsonl")
+  parser.add_argument("--out", required=True,
+                      help="the prompt file to write; required, so that no "
+                           "run overwrites a committed file by default")
   args = parser.parse_args()
 
   for task in args.tasks:
@@ -194,7 +212,7 @@ def main() -> None:
   records = build(args.sizes, args.count, args.conditions, args.seed,
                   densities=args.densities, tasks=tuple(args.tasks),
                   node_naming_scheme=args.node_naming)
-  with open(args.out, "w") as handle:
+  with open(args.out, "w", newline="\n") as handle:     # LF on every platform
     for record in records:
       handle.write(json.dumps(record) + "\n")
 
