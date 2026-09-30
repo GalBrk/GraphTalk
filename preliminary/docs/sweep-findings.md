@@ -438,24 +438,26 @@ The effect is nil, in every arm:
 
 | arm | integer | got | delta | 95% CI | p |
 |---|---|---|---|---|---|
-| `gemma4-e4b` | 97.9% | 97.6% | −0.3 | [−1.4, +0.8] | 0.60 |
+| `gemma4-e4b` | 98.0% | 97.6% | −0.4 | [−1.5, +0.7] | 0.50 |
 | `gemma4-12b` | 98.6% | 98.4% | −0.2 | [−0.6, +0.2] | 0.69 |
-| `qwen3-8b` | 90.2% | 90.1% | −0.1 | [−1.6, +1.4] | 0.87 |
-| `qwen3-14b` | 90.5% | 90.8% | +0.3 | [−1.0, +1.6] | 0.73 |
+| `qwen3-8b` | 90.5% | 90.2% | −0.3 | [−1.7, +1.1] | 0.71 |
+| `qwen3-14b` | 90.6% | 90.9% | +0.3 | [−1.0, +1.6] | 0.72 |
 | `gemma4-e4b-think` | 98.4% | 97.3% | −1.1 | [−2.4, +0.1] | 0.07 |
-| `gemma4-12b-think` | 100.0% | 99.9% | −0.1 | [−0.4, +0.0] | 0.25 |
-| `qwen3-8b-think` | 99.8% | 99.7% | −0.2 | [−0.8, +0.3] | 0.75 |
-| `qwen3-14b-think` | 99.8% | 100.0% | +0.2 | [+0.0, +0.6] | 0.50 |
+| `gemma4-12b-think` | 100.0% | 99.9% | −0.1 | n/a | 0.25 |
+| `qwen3-8b-think` | 99.8% | 99.7% | −0.2 | n/a | 0.75 |
+| `qwen3-14b-think` | 99.8% | 100.0% | +0.2 | n/a | 0.50 |
 
-Pooled: **−0.19 points** (sd 0.42, range −1.1 to +0.3). **Zero of eight**
+Pooled: **−0.23 points** (sd 0.44, range −1.1 to +0.3). **Zero of eight**
 significant after Benjamini-Hochberg. Paired permutation test and cluster
 bootstrap from `graphtalk/significance.py`, clustered on `instance_id` because
 one graph recurs under all seven conditions; truncated responses excluded.
-Reproduce with `scripts/naming_effect.py`.
+Reproduce with `preliminary/scripts/naming_effect.py`.
 
 This is not an underpowered null. The intervals are roughly ±1.5 points over
-1,200+ paired rows per arm, so it is a *precise* zero, which says more than
-"no significant difference".
+about 1,200 paired rows per plain arm, so it is a *precise* zero, which says more
+than "no significant difference". The thinking arms print `n/a` because too few
+of their pairs disagree for a percentile bootstrap, both schemes sitting at
+99.7–100%.
 
 **What it bears on.** Fatemi et al.'s central result — quoted in
 `graphtalk/primers.py` as the reason every condition must share a format — is
