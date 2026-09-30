@@ -1,13 +1,12 @@
-"""HuggingFace generation for the sweep. Imported only by the cluster job.
+"""HuggingFace generation for the sweep. Imported only by `scripts/run_sweep.py`.
 
 Kept apart from `graphtalk/models.py` so that everything else in the package --
 prompt building, scoring, the shortcut table -- stays importable without `torch`
 or `transformers`. That split is what lets stages 1 and 3 of the pipeline run and
 be tested on a laptop while only stage 2 needs a GPU.
 
-Mirrors the loading pattern already verified on this cluster in the SlidesGen
-`gemma_play` setup: bf16 weights, `device_map="auto"`, the tokenizer's own chat
-template, and greedy decoding.
+The loading pattern is the one verified on the TAU cluster: bf16 weights,
+`device_map="auto"`, the tokenizer's own chat template, and greedy decoding.
 """
 
 import dataclasses
@@ -24,11 +23,11 @@ class Completion:
 
   Recorded per row because non-termination is a measurement, not a hunch. A
   response cut off at the cap still parses -- the extractor finds an integer in
-  the abandoned working -- so it scores as a confident wrong answer rather than
-  as missing data, and `preliminary/docs/DATA.md` puts the difference on `gemma4-12b-think`
-  at 81.2% against 99.1%. Until now the only record of which rows those were was
-  the hand-maintained `preliminary/analysis/truncated_keys.json`, derived by a route nothing
-  in the repo scripts; the generator states it directly instead.
+  the abandoned working -- so it would score as a confident wrong answer rather
+  than as missing data; `preliminary/docs/DATA.md` puts the difference on
+  `gemma4-12b-think` at 81.2% against 99.1%. The generator therefore states
+  which rows reached the cap, and `graphtalk/outcomes.py` counts them as
+  truncated.
 
   `n_new_tokens` counts generated ids including a trailing EOS, which
   `skip_special_tokens=True` drops from `text` -- so it can exceed what the
@@ -56,10 +55,14 @@ class PromptOverflowError(ValueError):
 def load(spec: models.ModelSpec):
   """Loads one model in bf16 and returns (tokenizer, model).
 
-  bf16 rather than a quantised checkpoint: the SlidesGen run found that a w4a16
-  Gemma checkpoint is decompressed back to full bf16 on the first forward pass by
-  `compressed-tensors`, so quantisation cost VRAM instead of saving it. Plain bf16
-  is both simpler and what fits.
+  bf16 rather than a quantised checkpoint: a w4a16 Gemma checkpoint is
+  decompressed back to full bf16 on the first forward pass by
+  `compressed-tensors`, so quantisation costs VRAM instead of saving it. Plain
+  bf16 is both simpler and what fits.
+
+  `dtype=` is the `from_pretrained` keyword from transformers 4.56 on (older
+  releases take only `torch_dtype=` and reject `dtype=` when the model is
+  built), which is why the `gpu` extra in pyproject.toml requires 4.56.
   """
   tokenizer = transformers.AutoTokenizer.from_pretrained(spec.repo_id)
   loader = getattr(transformers, spec.loader)
@@ -122,22 +125,19 @@ def generate_batch(tokenizer, model, prompts: list[str], max_new_tokens: int,
                     chat_kwargs: dict | None = None,
                     max_context_tokens: int | None = None) -> list[Completion]:
   """Like `generate`, but one forward pass for the whole `prompts` list
-  instead of one call per prompt -- Track 2.3, the infrastructure 2.1/2.2's
-  larger recommended `--count`s need to be affordable at all (single-stream
-  leaves most of the GPU idle; see `cluster/README.md`'s "Two levers"
-  section, which already measured the padding-side hazard this function
-  has to get right).
+  instead of one call per prompt (`scripts/run_sweep.py --batch-size`).
 
-  **NOT YET VALIDATED ON A GPU** -- this dev environment has no `torch`
-  install and no CUDA device, so this function has only been checked by
-  reading, not by running. Before trusting it for a real sweep: run it
-  against the same prompts `preliminary/analysis/budget-gemma4-e4b.jsonl` and
-  `preliminary/analysis/budget-qwen3-8b.jsonl` came from and confirm the decoded text
-  matches `generate`'s single-stream output near-identically (greedy
-  decoding, so it should be exact modulo the known floating-point
-  non-associativity of batched vs. unbatched matmuls) -- for *both*
-  families, since they need opposite padding sides (below) and only
-  testing one would leave the other's hazard unchecked.
+  **Validated on a GPU, and not used for the sweep.** Against
+  single-stream output on the 24 budget-reference prompts
+  (`preliminary/analysis/budget-gemma4-e4b.jsonl`,
+  `budget-qwen3-8b.jsonl`; L40S, batch size 4), 12/24 (gemma4-e4b) and 13/24
+  (qwen3-8b) decoded texts were identical and qwen3-8b changed 3 of 24
+  extracted answers, for a 1.44x speedup. The mismatches share a long prefix
+  before diverging, which is batched-matmul floating-point order flipping a
+  near-tie token, not a padding bug; but changing 3 answers in 24 is too
+  large a perturbation next to the primer effects the sweep measures.
+  `cluster/README.md` ("Two levers") has the table. The sweep runs at batch
+  size 1, through `generate`.
 
   **Padding side.** Decoder-only generation must left-pad: the model
   predicts each batch member's next token from the *last* position of its

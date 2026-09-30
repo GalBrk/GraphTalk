@@ -18,10 +18,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Generation only (scripts/run_sweep.py via graphtalk/hf_backend.py); Qwen3 needs transformers 4.51+.
+# Generation only (scripts/run_sweep.py via graphtalk/hf_backend.py). transformers
+# 4.56+ because hf_backend.load passes `dtype=` to from_pretrained, which older
+# releases reject. The TAU cluster envs that generate data/runs/ (cluster/README.md)
+# run torch 2.13.0 and transformers 5.15.0.
 gpu = [
     "torch",
-    "transformers>=4.51",
+    "transformers>=4.56",
     "accelerate",
 ]
 dev = [
