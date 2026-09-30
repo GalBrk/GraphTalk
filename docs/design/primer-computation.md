@@ -1,30 +1,31 @@
 # Primer computation
 
-> **Status: executed.** This is the plan as written, kept as the record of why
-> the design is what it is -- not a description of the current tree. Its
-> present-tense statements were true when it was written and several are now
-> stale by design: `parse_graph` has since moved to `graphtalk/graphqa.py`, and
-> `pyproject.toml` now maps both `talk_like_a_graph` and `graphtalk`, so the
-> editable-install caveat in "Constraints" no longer applies. For current
-> behaviour read `graphtalk/primers.py` and `CLAUDE.md`.
+> **Scope.** The design of `graphtalk/primers.py` and the reasons behind it.
+> It was designed and measured on GraphQA's published 5–19-node
+> `zero_shot_test` split (the pilot, `preliminary/`); every number below that
+> does not name n=40 is from that split or the generator that produced it. The
+> 40-node study renders its primers with the same code; its primer lengths are
+> in `docs/results/n40-sweep.md` §1. For the code itself, read
+> `graphtalk/primers.py`.
 
 ## Context
 
 The project's independent variable is a "primer": a short preamble of factual sentences
 about each node's local structure, prepended before the graph encoding and the question.
-This step builds the primer generation itself — the statistics, and the text they render
-into. Prompt assembly, model querying, and scoring are all later steps.
+This document covers the primer generation itself — the statistics, and the text they
+render into. Prompt assembly, model querying, and scoring are in `graphtalk/prompts.py`,
+`scripts/run_sweep.py` and `graphtalk/scoring.py`.
 
-The previous step proved we can recover a correct `networkx` graph from a GraphQA row
-(`scripts/draw_graph.py`, verified on 600 rows). Everything here builds on that.
+`graphtalk.graphqa.parse_graph` recovers a correct `networkx` graph from a GraphQA row
+(`scripts/draw_graph.py` checks it, verified on 600 rows). Everything here builds on that.
 
 Local runs are spot checks on a handful of examples; full sweeps happen on the cluster.
-So this lands as an importable module, not a script — cluster code must be able to
-`from graphtalk.primers import ...` and get output identical to what we eyeballed
+So primer generation is an importable module, not a script — cluster code does
+`from graphtalk.primers import ...` and gets output identical to what was eyeballed
 locally.
 
-That identity is **not** automatic, and an earlier draft of this plan claimed it was.
-Two things are required for it, both implemented here:
+That identity is **not** automatic. Two things are required for it, both implemented
+in `graphtalk/`:
 
 - **Canonical graphs.** The vendored encoder iterates nodes and adjacency in insertion
   order, so the same graph built two ways produces different prose. `canonical()` at the
@@ -36,44 +37,25 @@ Two things are required for it, both implemented here:
 With those two in place, every function here is a pure function of the graph and identity
 holds without seed management. Without them, it does not.
 
-## Environment and repo state
+## Repo conventions
 
-- Python lives in `.venv/` (uv, Python 3.11). Run things as `.venv/bin/python ...`.
-- Use `uv run --no-sync`, never bare `uv run` — a plain `uv run` re-syncs to the default
-  dependencies and uninstalls the optional 2 GB `[pipeline]` TensorFlow extra.
+- Setup is in the top-level `README.md` (Quickstart). Run scripts from the repo root
+  with `PYTHONPATH=.`, and tests with `uv run --no-sync pytest`.
 - `talk_like_a_graph/` is vendored Google Research code (Apache 2.0, upstream
   `36af51e`). `graph_text_encoders.encode_graph(g, "incident")` is the base encoding
   this project uses. Do not reformat or restyle that directory.
-- Anything importing `tensorflow_gnn` needs `TF_USE_LEGACY_KERAS=1`. Nothing in this
-  step does.
-- Existing Python in the repo uses 2-space indentation (upstream Google style); match it.
-- **The editable install currently maps only `talk_like_a_graph`.** Adding `graphtalk`
-  to `pyproject.toml` is necessary but not sufficient — the mapping file is written at
-  install time, so `uv pip install -e ".[dev]"` must be re-run. Until then
-  `import graphtalk` fails from `scripts/` (whose `sys.path[0]` is `scripts/`, not the
-  repo root) and under the bare `pytest` console script (which, unlike `python -m
-  pytest`, does not add the working directory). Both verification commands at the end of
-  this document depend on the reinstall.
-- **On this Mac the reinstall cannot take effect, for a reason local to the machine.**
-  Every file in `.venv/.../site-packages` carries the macOS `UF_HIDDEN` flag, and
-  CPython 3.11's `site.addpackage` skips hidden `.pth` files, so
-  `__editable__.graphtalk-0.1.0.pth` never runs (nor do `_virtualenv.pth` or
-  `distutils-precedence.pth`). `chflags nohidden` fixes it and something re-applies the
-  flag within seconds. `UF_HIDDEN` does not exist on Linux, so the cluster is unaffected;
-  locally, prefix commands with `PYTHONPATH=.`.
+- Python in the repo uses 2-space indentation (upstream Google style); match it.
 
 ## Provenance of the numbers in this document
 
-Every measurement quoted below was originally taken on
+Every measurement quoted below is on the 500 published `zero_shot_test` graphs or on
 `graph_generators.generate_graphs(500, "er", False, random_seed=1234)` — the upstream
 generator that produced the dataset, at the test-split seed, with node counts 5..19 and
-sparsity uniform on (0, 1) — because network access to the HuggingFace rows API was
-blocked (403 at the proxy) when this was written. They were recorded as provisional
-pending re-measurement on real rows.
+sparsity uniform on (0, 1).
 
-**That re-measurement is done.** `preliminary/scripts/measure_real_rows.py` fetches all 500
-`zero_shot_test` rows for all six configs (3000 rows) and re-measures every quantity
-here. The single most important thing it found:
+`preliminary/scripts/measure_real_rows.py` fetches all 500 `zero_shot_test` rows for all
+six configs (3000 rows) and re-measures every quantity here. The single most important
+thing it finds:
 
 > `generate_graphs(500, "er", False, random_seed=1234)` and the published
 > `zero_shot_test` split are the **same multiset of graphs** — 492 distinct graphs with
@@ -86,31 +68,29 @@ here. The single most important thing it found:
 So the generator was never a proxy for the graph distribution; it is the same data.
 Every graph-structural number in this document — component counts, isolation rates,
 density, node counts, primer lengths, the RWSE/degree correlation — is exact on the
-published test split, digit for digit, and is now a real-data measurement rather than a
-provisional one. All 3000 rows also round-trip: `expected_answer(parse_graph(question))`
-matches the shipped `answer` on every row of every config, and `nnodes`/`nedges` match
-the parsed graph on every row.
+published test split, digit for digit. All 3000 rows also round-trip:
+`expected_answer(parse_graph(question))` matches the shipped `answer` on every row of
+every config, and `nnodes`/`nedges` match the parsed graph on every row.
 
 What the generator cannot reproduce is the per-row **query draw**. `edge_existence`,
 `connected_nodes` and `node_degree` sample query nodes per row, and the published rows
 ship one particular draw that the generator's own `random` stream does not replay. Any
 rate quoted per row must therefore say whether it is the published draw or a resample.
 
-| quantity | generator | published rows | published graphs, resampled queries | paper | status |
+| quantity | generator | published rows | published graphs, resampled queries | paper | generator vs published |
 |---|---|---|---|---|---|
-| `edge_existence` Yes rate | 50.3% ± 2.0 | **47.0%** | 50.1% ± 1.8 | 46.0% | corrected |
-| `edge_existence` majority baseline | ≈51.6% | **53.0%**, answering "No" | 50.1% | 54.0% | corrected |
+| `edge_existence` Yes rate | 50.3% ± 2.0 | **47.0%** | 50.1% ± 1.8 | 46.0% | query draw differs |
+| `edge_existence` majority baseline | ≈51.6% | **53.0%**, answering "No" | 50.1% | 54.0% | query draw differs |
 | `cycle_check` "Yes" rate | 83.2% | **83.2%** | no query sampling | 82.0% | exact |
-| `connected_nodes` isolated target | 9.0% | **9.4%** | 8.7% ± 1.0 | — | confirmed |
+| `connected_nodes` isolated target | 9.0% | **9.4%** | 8.7% ± 1.0 | — | close |
 | RWSE/degree r, k=2 | +0.65 on 481/500 | **+0.651 on 481/500** | no query sampling | — | exact |
 | RWSE/degree r, k=3 | +0.89 on 391/500 | **+0.886 on 391/500** | no query sampling | — | exact |
 
-Only one row moved by enough to matter, and it is the `edge_existence` baseline: the
-published query draw is 3 points more "No" than a resample of the same graphs, so the
-majority baseline on the rows we will actually score is **53.0%, not ≈51.6%**. Use 53.0%
-wherever this document or `docs/design/shortcut-ceilings.md` quotes ≈51.6%. It does not
-change any verdict — the `d_a + d_b > n−1` heuristic still clears it by twenty-five
-points — but it is the number a model's `edge_existence` score has to be read against.
+Only one row differs by enough to matter, the `edge_existence` baseline: the published
+query draw is 3 points more "No" than a resample of the same graphs, so the majority
+baseline on the published rows is **53.0%**, against ≈51.6% on the generator's own draw.
+The `d_a + d_b > n−1` heuristic clears it by twenty-five points; 53.0% is the number a
+pilot model's `edge_existence` score is read against.
 
 **The paper's two class-balance figures do not reproduce on the published rows, and
 should not be used as this project's baseline.** Over all 2000 `zero_shot` rows the
@@ -124,16 +104,13 @@ HuggingFace dataset ships only ER. And both figures are exactly k/2500 (1349/250
 2049/2500), which is not the size of any published split. Treat them as all-generator
 figures for a corpus we do not have.
 
-An earlier draft of this plan recorded 58% and 86% for the first two quantities, and
-~7% for the third. All three were wrong. The paper's figures are in
-`https:::arxiv.org:pdf:2310.04560.pdf`.
+The paper's figures are in [arXiv:2310.04560](https://arxiv.org/abs/2310.04560).
 
-Still generator-derived, because they were measured on corpora other than the 500
-test graphs and were not re-run: the RWSE-misread costs in "Decisions already made",
-the 27.9% ± 1.3 forcing coverage and 79.2% ± 1.7 heuristic accuracy in the taxonomy
-table, and the 4491-row `connected_nodes` leak audit. Since the test split *is* the
-generator at seed 1234, re-running any of them against real rows is now a matter of
-choosing the corpus, not of network access.
+Generator-derived, because they are measured on corpora other than the 500 test graphs:
+the RWSE-misread costs in "Decisions already made", the 27.9% ± 1.3 forcing coverage and
+79.2% ± 1.7 heuristic accuracy in the taxonomy table, and the 4491-row `connected_nodes`
+leak audit. Since the test split *is* the generator at seed 1234, any of them can be
+re-run on real rows by choosing that corpus.
 
 ## Dataset facts worth not rediscovering
 
@@ -176,8 +153,7 @@ Facts about the vendored code that the primer design depends on:
   minimum is 5 nodes, so this cannot occur; recorded only so nobody rediscovers it.
 
 Rows are fetched over the HTTP rows API rather than the `datasets` library, deliberately:
-`datasets` brings its own `pyarrow`/`fsspec` pins and the venv holds a hand-tuned
-TensorFlow 2.20 / tf-keras / tensorflow-gnn combination that is easy to disturb.
+`datasets` brings its own `pyarrow`/`fsspec` pins, which nothing else here needs.
 
 ### Decisions already made
 
@@ -215,7 +191,7 @@ TensorFlow 2.20 / tf-keras / tensorflow-gnn combination that is easy to disturb.
   and the surrounding graph prose.
 
 > **Measured 2026-09-09: the control is inert only while the prompt is short.**
-> The corrected, content-free `filler` is neutral or slightly positive on sparse
+> The content-free `filler` is neutral or slightly positive on sparse
 > graphs and costs a thinking model **11.7 points** at n=40, p>=0.85, where a
 > `none` prompt is already 6,400 characters. So "inert length control" is not a
 > property this primer has; it is a property of this primer *in short prompts*.
@@ -227,22 +203,14 @@ TensorFlow 2.20 / tf-keras / tensorflow-gnn combination that is easy to disturb.
   contradict the edge list in the same prompt, so a drop in accuracy could mean the
   model was misled, or merely confused by an inconsistent prompt — neither of which is
   the length effect the control exists to isolate. The control states only true,
-  structurally vacuous facts. It survived three independent attempts to show it leaks
-  node count or reads as a degree claim; the decisive counter is that the encoding's
-  first line already ends `and <n-1>.`, so the filler introduces no numeral the `none`
-  arm lacks.
-
-  > **That counter was wrong, and this requirement is the one the original wording
-  > failed.** "No *new* numeral" is not the same as "no claim". `Node N has <n-1>
-  > other nodes` sits under the same `has` verb the `degree` condition uses, and
-  > models read it as a degree statement: `analysis/superseded/failure_sample.csv` (tag `pre-cleanup`) catches 8 of
-  > 9 sampled `filler` rows deriving a complete graph K_n from it. The bullet above
-  > predicted the consequence precisely — a drop in accuracy that cannot be
-  > distinguished from a length effect — and that drop was then reported as a
-  > finding about primer length in `preliminary/docs/sweep-findings.md`. Three reviews of the
-  > wording missed it; the responses did not. The lesson is the one this plan states
-  > elsewhere: measure rather than argue. A control's inertness is checkable against
-  > real completions, and was not checked until 2026-08-29.
+  structurally vacuous facts, and no number. "No *new* numeral" is not the same as
+  "no claim": a sentence such as `Node N has <n-1> other nodes` introduces no numeral
+  the encoding's first line (`... and <n-1>.`) lacks, but it sits under the same `has`
+  verb the `degree` condition uses, and models read it as a degree statement. In the
+  pilot, 8 of 9 sampled rows under that sentence derive a complete graph K_n from it
+  (`git show pre-cleanup:analysis/superseded/failure_sample.csv`); the resulting
+  accuracy drop cannot be told apart from a length effect. A control's inertness is
+  checkable against real completions, and §4 gives the wording that passes that check.
 
 - **A seventh condition: number of connected components**, with the caveats in §5.
   `docs/design/features-considered.md` records the features that were evaluated and rejected.
@@ -252,18 +220,16 @@ TensorFlow 2.20 / tf-keras / tensorflow-gnn combination that is easy to disturb.
   permutations of one 5-node graph the raw encoder produces 22 distinct texts; with
   `canonical()`, exactly 1.
 
-- **`expected_answer` moves into the package.** An earlier draft kept it in
-  `scripts/draw_graph.py` as "verification tooling, not pipeline code". That is no longer
-  true: the shortcut-ceiling work (`docs/design/shortcut-ceilings.md`) needs gold answers,
-  so it becomes pipeline code.
+- **`expected_answer` lives in the package** (`graphtalk/graphqa.py`), not in
+  `scripts/draw_graph.py`: the shortcut-ceiling work (`docs/design/shortcut-ceilings.md`)
+  needs gold answers, so it is pipeline code.
 
 ### Correction to the proposal's task taxonomy
 
-The proposal sorts tasks into primer-aligned, primer-adjacent and primer-agnostic. An
-earlier draft of this plan corrected it once, concluding that only `edge_existence`
-remained genuinely agnostic. **That conclusion is also wrong.** A systematic audit of all
-seven conditions against all six tasks found deterministic or near-deterministic routes
-into every task for the `degree` and `all` arms.
+The proposal sorts tasks into primer-aligned, primer-adjacent and primer-agnostic. **No
+task is agnostic**, `edge_existence` included: a systematic audit of all seven
+conditions against all six tasks found deterministic or near-deterministic routes into
+every task for the `degree` and `all` arms.
 
 Verified routes, measured with each task's own query sampling. Rates on tasks that draw
 query nodes are given for the published draw where it has been measured, since that is
@@ -296,37 +262,35 @@ Two findings that bound the damage rather than extend it:
   only by an absent sentence. There is no third kind, and only the second can be a primer
   effect.
 
-  This was once read as closing the question for the *primer* too, on the grounds that a
-  primer stating no adjacency cannot give away a neighbour list. That inference was wrong.
-  The stated degree sequence constrains which graphs are possible, and often to exactly
-  one: a degree-sequence peel recovers whole neighbour lists on 20.8% of rows, and the
-  full `all` primer does so on 35.2%, both at precision 1. See the reconstruction section
+  It does not close the question for the *primer*, even though a primer stating no
+  adjacency cannot give away a neighbour list directly: the stated degree sequence
+  constrains which graphs are possible, and often to exactly one. A degree-sequence peel
+  recovers whole neighbour lists on 20.8% of rows, and the full `all` primer does so on
+  35.2%, both at precision 1. See the reconstruction section
   of `docs/design/shortcut-ceilings.md`. **A primer route can exist with no stated fact
   pointing at it**, which is the general lesson and the reason that plan measures rather
   than argues.
 - **The `filler` control is inert against every *solver* route tested.** This one
   survives the above: reconstruction needs stated degrees, and the filler states none.
 
-  > Scope, added after the 2026-08-29 re-run: "inert" here means a primer-only program
-  > cannot recover structure from it. That is a different claim from being inert to a
-  > *model*, and the original wording was not — models read `Node N has <n-1> other
-  > nodes` as a degree claim and lost accuracy to it. The routes tested in this section
-  > would never have caught that, because they ask what a solver can compute, not what
-  > a reader infers. Both checks are needed; only one was run.
+  > Scope: "inert" here means a primer-only program cannot recover structure from it.
+  > That is a different claim from being inert to a *model*: models read a `Node N has
+  > <n-1> other nodes` sentence as a degree claim and lose accuracy to it, and the
+  > routes tested in this section cannot catch that, because they ask what a solver can
+  > compute, not what a reader infers. Both checks are needed.
 
 **Consequence for the design.** There is no reliable agnostic tier, so the taxonomy
 cannot be asserted; it has to be measured. That is what `docs/design/shortcut-ceilings.md`
-does, and it replaces the sampling filter an earlier draft proposed. Nothing in the
-statistics or the renderer changes as a result — suppressing the degree-0 sentence would
-make primer content depend on an encoder quirk and would break the one-renderer property.
+does. Nothing in the statistics or the renderer changes as a result — suppressing the
+degree-0 sentence would make primer content depend on an encoder quirk and would break
+the one-renderer property.
 
 ## Approach
 
-### 1. Lift shared code into a package
+### 1. Shared code lives in a package
 
-`parse_graph` currently lives in `scripts/draw_graph.py` and was written to be moved.
-Create a `graphtalk/` package and move it, along with the HTTP row fetching and the
-gold-answer logic:
+The graph parser, the HTTP row fetching and the gold-answer logic live in `graphtalk/`,
+so scripts and cluster code share one copy:
 
 - `graphtalk/graphqa.py` — `parse_graph(question)`, `canonical(graph)`,
   `fetch_rows(config, split, offset, length)`, `expected_answer(graph, config,
@@ -350,11 +314,8 @@ def canonical(graph: nx.Graph) -> nx.Graph:
   return out
 ```
 
-Then update `scripts/draw_graph.py` to import from `graphtalk.graphqa`. Its `check` and
-`draw` logic stays where it is.
-
-Add `graphtalk` to `packages` and `tests` to `testpaths` in `pyproject.toml`, then
-re-run `uv pip install -e ".[dev]"`.
+`scripts/draw_graph.py` imports from `graphtalk.graphqa` and keeps only its `check` and
+`draw` logic.
 
 ### 2. Statistics (`graphtalk/primers.py`)
 
@@ -459,10 +420,10 @@ This graph has 3 connected components.
 ```
 
 Two phrases join with `and` and no comma; three or more take the Oxford comma. Because
-the RWSE phrase now contains its own `and`, the `all` condition nests two — which parses
+the RWSE phrase contains its own `and`, the `all` condition nests two — which parses
 correctly, as the third example shows, and avoids breaking the one-sentence-per-node
-property. Dropping to two k values also removed the comma-collision problem an earlier
-draft worried about: there are no longer any commas inside the RWSE phrase.
+property. With two k values there are no commas inside the RWSE phrase, so it cannot
+collide with the Oxford comma.
 
 Use the singular when a count is 1 (`1 connected component`); a grammatical slip in a
 condition that appears in every prompt of its arm is exactly the kind of thing that
@@ -490,54 +451,31 @@ and is documented rather than fixed.
 
 ### 4. Length control
 
-**Revised.** The original wording below is preserved for provenance -- it is what the
-tracked sweep in `preliminary/data/runs/*.jsonl` was actually generated with -- but it was replaced after
-real sweep responses showed models sometimes misreading it as a connectivity claim (a
-filler-primed graph read as a clique, since `n-1` is exactly the degree every node has in
-a complete graph, and the phrase sat right after the same `has` verb `degree` uses). The
-evidence is in `analysis/superseded/failure_sample.csv` (tag `pre-cleanup`), where 8 of the 9 sampled `filler` rows show
-the misreading in the model's own words -- `gemma4-e4b-think`: *"If D_i = 12 for all 13
-nodes, the graph must be a complete graph K_13"*; `gemma4-12b-think`: *"Is it possible
-that 'Node 0 has 8 other nodes' means it's connected to all 8 other nodes?"*. What
-`preliminary/docs/sweep-findings.md` recorded at the time was that `filler` scored *below* the
-no-primer control almost everywhere. That is no longer what it records: the re-run shows
-the penalty was this wording, not primer length, and with the text below `filler` sits at
-the control's own level on accuracy and *lowest* of the seven conditions on
-non-termination. The sample above is what diagnoses why. The current wording is:
+The `filler` sentence is
 
 ```
 Node 0 is simply present within the graph G.
 ```
 
 which introduces no numeral at all, and does not share the other node-level parts'
-`Node N has ...` frame -- seeing the same problem happen twice was the reason to stop
-trying to phrase a relational-shaped sentence safely and instead make it not relational-
-shaped at all. A first attempt at the minimal fix, `"Node 0 is in G."`, was too short to
-hold the length property below (measured 200 characters unpadded, well under `degree`'s
-265) and was lengthened to the current wording for that reason -- both are true and
-structurally vacuous; the second is longer on purpose. Measured on the identical
-`generate_graphs(500, "er", False, random_seed=1234)` corpus the table below uses,
-`filler` now averages **559** characters against `degree` (265, unchanged) and
-`clustering` (497, unchanged) -- comfortably above both, restoring the property the
-original wording had. `target_chars` padding, used by neither wording in production,
-remains unnecessary for this property as a result.
+`Node N has ...` frame. A sentence in that frame, such as
+`Node 0 has 7 other nodes in this graph.`, is read as a connectivity claim: `n-1` is
+exactly the degree every node has in a complete graph, and the phrase sits after the same
+`has` verb `degree` uses. In the pilot sample
+(`git show pre-cleanup:analysis/superseded/failure_sample.csv`), 8 of the 9 `filler`
+rows under that sentence show the misreading in the model's own
+words -- `gemma4-e4b-think`: *"If D_i = 12 for all 13 nodes, the graph must be a
+complete graph K_13"*; `gemma4-12b-think`: *"Is it possible that 'Node 0 has 8 other
+nodes' means it's connected to all 8 other nodes?"*. With the sentence above, the
+pilot's `filler` sits at the no-primer control's level on accuracy and has the lowest
+non-termination rate of the seven conditions (`preliminary/docs/sweep-findings.md`).
 
-Original design, as generated:
+The sentence is long on purpose: the shorter `Node 0 is in G.` averages 200 characters
+unpadded, under `degree`'s 265, and would not hold the length property below. Both are
+true and structurally vacuous.
 
-```
-Node 0 has 7 other nodes in this graph.
-```
-
-The phrasing fit the shared `Node N has ...` template, so the control came out of the same
-renderer as everything else. It contradicted nothing in the encoding and gave away nothing
-structural — the encoding's first line already ends `and <n-1>.`, so the numeral was not
-new. (This same fact -- restated without qualification, outside the "no *new* numeral"
-framing -- is exactly what let it be misread as a degree statement; see the revision note
-above.)
-
-Measured lengths, original design, on the 500 published `zero_shot_test` graphs. These were
-first taken on the generator and are unchanged to the character, because that corpus and
-this one are the same graphs:
+Measured lengths on the 500 published `zero_shot_test` graphs (the generator at seed
+1234 gives the same figures, because it is the same corpus):
 
 | condition | mean primer chars |
 |---|---|
@@ -545,21 +483,22 @@ this one are the same graphs:
 | `components` | 37 |
 | `degree` | 265 |
 | `clustering` | 497 |
-| `filler` | 507 |
+| `filler` | 559 |
 | `rwse` | 905 |
 | `all` | 1441 |
 
-The control at 507 chars already exceeded `degree` (265) and matched `clustering` (497),
-which is the safe direction: if 507 characters of inert text move accuracy by *d*, then
-265 characters cannot have moved it by more than *d*. `rwse` and `all` are longer than
-the control, which is what the optional `target_chars` padding exists for. Always report
-achieved character counts so the mismatch is visible in analysis rather than assumed away.
+The control at 559 chars exceeds `degree` (265) and `clustering` (497), which is the safe
+direction: if 559 characters of inert text move accuracy by *d*, then 265 characters
+cannot have moved it by more than *d*. `rwse` and `all` are longer than the control,
+which is what the optional `target_chars` padding exists for; production does not use
+it. Always report achieved character counts so the mismatch is visible in analysis
+rather than assumed away.
 
-The control also did a second job nobody designed it for. It emits a sentence for every
-node, including isolated ones, without stating any structural fact about them. So
-`filler` versus `degree` on isolated-target rows separates "the model was told node 3 is
-isolated" from "node 3 was mentioned at all" — a salience control for the confound in the
-taxonomy section. This property is unaffected by the revision above.
+The control also does a second job. It emits a sentence for every node, including
+isolated ones, without stating any structural fact about them. So `filler` versus
+`degree` on isolated-target rows separates "the model was told node 3 is isolated" from
+"node 3 was mentioned at all" — a salience control for the confound in the taxonomy
+section.
 
 ### 5. The components condition
 
@@ -582,9 +521,8 @@ The case for it:
   the tail runs to 16 components, so the statement carries real variance. Confirmed on
   the published `zero_shot_test` rows, exactly.
 
-Two caveats that an earlier draft did not have. The claim "it is not the answer to any of
-the six tasks" — the reason a positive result could not be dismissed as trivial — does
-not survive:
+Two caveats. The condition does give away answers on some rows, so a positive result on
+these two tasks can be trivial:
 
 - **It states the `node_count` answer on edgeless graphs.** `c = n` exactly when `m = 0`,
   which is 1.2% of rows. And that is the worst case for the encoding: with no edges the
@@ -603,11 +541,6 @@ Note also why the variance in `c` cannot be preserved while excluding isolated n
 that contain one collapses the distribution to mean 1.01, max 2, 99% connected — 371 of
 the 500 test graphs survive.
 
-An earlier draft recorded 65%, and mean 1.02 / max 5 / 98% connected, for that
-collapse. Those came from a 1000-graph generator corpus rather than the 500 test graphs;
-on the rows the experiment will actually score, the numbers above are the right ones and
-the collapse is slightly sharper than claimed, not softer.
-
 The honest risk remains: models may simply not know the circuit-rank identity, in which
 case this condition is a null. That is still an interesting null.
 
@@ -619,12 +552,11 @@ rwse_degree_correlation(graph, k_min=2, k_max=3) -> dict[int, float | None]
 
 Pearson r per k between degree and RWSE, computed on unrounded values with
 `numpy.corrcoef`. Returns `None` for a k where either vector is constant, rather than a
-NaN. `scipy` is not a dependency and is not needed for this.
+NaN. `scipy` is not needed for this.
 
-**This is a descriptive statistic, not an implementation check.** An earlier draft used it
-as both, and it cannot do the second job: a low or negative r is also the symptom of the
-node-mapping bug in §2, so the two are indistinguishable. The ordering test in
-Verification does that job instead.
+**This is a descriptive statistic, not an implementation check.** It cannot be one: a low
+or negative r is also the symptom of the node-mapping bug in §2, so the two are
+indistinguishable. The ordering test in Verification does that job instead.
 
 **Aggregation must be named, because the choice reverses the conclusion.** Use the mean
 of per-graph r. Measured three ways at k=2, on 1000 generated graphs and again on the
@@ -664,33 +596,34 @@ feature of the three, and RWSE is the redundant one.
 
 ## Files
 
-- `graphtalk/__init__.py`, `graphtalk/graphqa.py`, `graphtalk/primers.py` — new
-- `scripts/draw_graph.py` — drop its local `parse_graph`/`fetch_rows`/`expected_answer`/
-  `normalize`, import from `graphtalk.graphqa`
-- `scripts/show_primers.py` — new; prints all seven conditions for a few real rows, plus
+- `graphtalk/graphqa.py` — `parse_graph`, `canonical`, `fetch_rows`, `expected_answer`,
+  `normalize`
+- `graphtalk/primers.py` — the statistics and the renderer
+- `scripts/draw_graph.py` — parses, checks and draws a GraphQA row, importing from
+  `graphtalk.graphqa`
+- `scripts/show_primers.py` — prints all seven conditions for a few real rows, plus
   character counts and the correlation diagnostic, for eyeballing
-- `preliminary/scripts/measure_real_rows.py` — new; re-measures every quantity in the provenance
-  section against the published rows, caching them under `.cache/graphqa_rows`. Optional
-  `--shortcut-table` re-runs the shortcut cells with real graphs as the evaluation set.
-- `tests/test_primers.py` — new
-- `tests/golden/` — new; a handful of graphs and their exact expected primer strings
-- `pyproject.toml` — add `graphtalk` to packages, `tests` to testpaths
+- `preliminary/scripts/measure_real_rows.py` — re-measures every quantity in the
+  provenance section against the published rows, caching them under
+  `.cache/graphqa_rows`. Optional `--shortcut-table` re-runs the shortcut cells with real
+  graphs as the evaluation set.
+- `tests/test_primers.py` — the tests below
+- `tests/golden/primers.json` — a handful of graphs and their exact expected primer
+  strings
 
 ## Verification
 
 Analytic tests, no network, in `tests/test_primers.py`.
 
-**Three implementations of RWSE, with distinct jobs.** This is the part an earlier draft
-got wrong, so it is spelled out.
+**Three implementations of RWSE, with distinct jobs.**
 
 - `matrix` — the production code.
 - `enumerate_weighted` — list every walk of length k and sum the walks that return,
   **each weighted by the product of 1/degree at every step it takes**. Exact; assert
-  equality with the matrix version to 1e-12. An earlier draft specified the *unweighted*
-  "return fraction", which is a different quantity: on the 5-node graph with edges
-  `[(0,1),(0,2),(2,3),(2,4)]`, node 0 at k=2 has return fraction 0.50 and return
-  probability 0.667. Implementing the wrong one would have made 33% of every RWSE number
-  in the corpus wrong, on 81% of graphs.
+  equality with the matrix version to 1e-12. The *unweighted* "return fraction" is a
+  different quantity: on the 5-node graph with edges `[(0,1),(0,2),(2,3),(2,4)]`, node 0
+  at k=2 has return fraction 0.50 and return probability 0.667. Implementing it instead
+  would make 33% of every RWSE number in the corpus wrong, on 81% of graphs.
 - `simulate` — step a walker at random with a fixed seed and count returns. Approximate;
   assert agreement within 0.03. This is the only one of the three that can catch a
   *conceptual* error, because it never expresses the weighting as code — the weighting
@@ -727,26 +660,26 @@ The rest:
   isolated node counts that node as its own component.
 - **Circuit-rank identity** — across trees, forests, cycles, disjoint unions and graphs
   with isolated nodes, `m − n + c > 0` agrees with `nx.find_cycle`. Load-bearing for §5.
-- **Singular/plural** — `1 connected component`. `filler` no longer has a count to
-  pluralize (§4, revised).
+- **Singular/plural** — `1 connected component`. `filler` has no count to pluralize
+  (§4).
 - **Length control is inert** — its text contains no degree, clustering or RWSE value,
   and is identical for any two graphs with the same node count.
 - **Rendering** — two-decimal formatting via `_fmt` only, one sentence per node, sorted
   node order, `and` with no comma at two phrases, Oxford comma at three.
-- **Format invariance** — every node-level condition's sentences match the same
-  `Node N has <phrases>.` shape. The `components` sentence is graph-level and is
-  deliberately exempt; assert that shape separately rather than asserting a single shape
-  across all seven.
+- **Format invariance** — every node-level condition's sentences except `filler`'s match
+  the same `Node N has <phrases>.` shape. `filler` (`Node N is simply present within the
+  graph G.`, §4) and the graph-level `components` sentence are deliberately exempt;
+  assert each of their shapes separately rather than asserting a single shape across all
+  seven.
 
 ```bash
-uv pip install -e ".[dev]"          # required: see Environment
-uv run --no-sync pytest tests/ -q
+uv run --no-sync pytest -q tests/test_primers.py
 ```
 
 Then a spot check against real data, which is where wording gets judged:
 
 ```bash
-.venv/bin/python scripts/show_primers.py --config node_degree --count 3
+PYTHONPATH=. python scripts/show_primers.py --config node_degree --count 3
 ```
 
 Read the printed primers and confirm the sentences are well-formed, the numbers match a
@@ -761,17 +694,17 @@ sample lands entirely inside the reference window 0.2% of the time, prints a neg
 value on 20% of runs and an undefined one on 53%. The acceptance criterion is the
 corpus-level window in §6 over at least 100 graphs, not the per-graph print.
 
-Also re-run the previous step's verification, since `scripts/draw_graph.py` is being
-refactored to import from the new package:
+Also run the parser's own check, which `scripts/draw_graph.py` does against each row's
+metadata and gold answer:
 
 ```bash
-.venv/bin/python scripts/draw_graph.py --config connected_nodes --index 0 --count 20
+PYTHONPATH=. python scripts/draw_graph.py --config connected_nodes --index 0 --count 20
 ```
 
 And the provenance check, which is the one that touches the network:
 
 ```bash
-PYTHONPATH=. .venv/bin/python preliminary/scripts/measure_real_rows.py
+PYTHONPATH=. python preliminary/scripts/measure_real_rows.py
 ```
 
 It exits non-zero if any of the 3000 rows fails to parse, disagrees with its own
