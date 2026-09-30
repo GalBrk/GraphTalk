@@ -12,11 +12,11 @@ follows R1: a truncated response is never correct.
   [rpcontrast]  discovery: phrases whose share of responses (first 12,000
                 characters) moves by 15 points or more, the same way, in three
                 or more arms. Not validated; the named patterns were read off it
-  [rpvalid]     precision of each text pattern on the labelled sample
-                (VALIDATION, drawn by --sample and labelled by hand); a pattern
-                with no labels, or under 0.9, is left out of every block after
-                this one. Numeric patterns are checked against the graph and
-                need no labels
+  [rpvalid]     precision of each text pattern on VALIDATION, the seeded sample
+                --sample draws for labelling by hand; a pattern with no labels
+                (in the committed sample, every one) or under 0.9 is left out
+                of every block after this one. Numeric patterns are checked
+                against the graph and need no labels
   [rpchain]     edge_count: the per-node values a response lists, against the
                 true degrees, and the first step at which its chain goes wrong
   [rpcycle]     cycle_check: the cycles responses write out, checked against
