@@ -32,9 +32,9 @@ while the slow n-801 stays out ([cluster/README.md](README.md)'s driver table).
 That roughly doubles how many nodes can pick up a shard.
 
 Budgets ([cluster/README.md](README.md#token-budgets)): 8192 for both arms on the
-main sweep, because the plain arm's `edge_count` truncates at 2048 from
-p = 0.35 (390 edges at p = 0.50 take ~2,700 output tokens); on the extension,
-2048 for the plain arm and 8192 for the thinking arm.
+main sweep, because the plain arm's `edge_count` runs past 2048 new tokens at
+every density (a few percent of the committed `qwen3-4b` rows at each); on the
+extension, 2048 for the plain arm and 8192 for the thinking arm.
 
 ```bash
 cd <your clone>

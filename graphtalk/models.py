@@ -138,8 +138,9 @@ MODELS = {
         #
         # 8192 rather than the module default: the budget of its main-sweep
         # (`densfull40`) rows and of the preliminary ladder screen. At 40 nodes
-        # `edge_count` outgrows 2048 from p = 0.35 (390 edges at p = 0.50 take
-        # ~2,700 output tokens).
+        # its `edge_count` responses run past 2048 new tokens at every density
+        # (over a quarter of the p = 0.10 rows, most of the p = 0.35 and 0.50
+        # ones), so 2048 would truncate them.
         ModelSpec("qwen3-1.7b", "Qwen/Qwen3-1.7B", "qwen3", "1.7B",
                   "AutoModelForCausalLM", 8,
                   {"enable_thinking": False}, {"zero_shot": 8192}, 32768),

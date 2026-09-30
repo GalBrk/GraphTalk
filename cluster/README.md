@@ -133,10 +133,11 @@ follow-up run sets `degdens40`, `degdens40hi`, `degdensfill`, `degdensrep` and
 2048 tokens, so any budget from 2048 up regenerates them; `density_followups.py`
 rebuilds their prompts.
 
-A plain arm needs 8192 on the main sweep because `edge_count` at 40 nodes
-truncates at 2048 from p = 0.35 (390 edges at p = 0.50 take ~2,700 output
-tokens). Generation still stops at EOS, so a higher cap only costs anything on
-rows that actually run long.
+A plain arm needs 8192 on the main sweep because `edge_count` at 40 nodes runs
+past 2048 new tokens at every density: in the committed `densfull40` rows, over
+a quarter of `qwen3-1.7b`'s p = 0.10 responses and a few percent of
+`qwen3-4b`'s at each density. Generation still stops at EOS, so a higher cap
+only costs anything on rows that actually run long.
 
 In `preliminary/data/runs/`, `qwen3-1.7b-think`'s `ladder_screen` and
 `retrieval_locate` rows ran at 16384, and `qwen3-1.7b`'s `ec500`, `probe100`
