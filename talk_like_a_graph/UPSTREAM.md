@@ -15,6 +15,19 @@ Upstream's `talk_like_a_graph/` package and `tutorial/` directory were copied
 here verbatim. Any local modifications made after this point are ours and are
 not reflected upstream.
 
+## What this project uses
+
+`graphtalk/` imports only `graph_generators`, `graph_text_encoders` and
+`name_dictionaries`. `graph_generators_runner.py`, `graph_tasks_generator.py`,
+`graph_tasks_utils.py` and `tutorial/` are upstream's dataset-generation
+command-line tools (the task generator writes TFRecords through `seqio` and
+`tensorflow-gnn`) and its Colab notebooks. This project does not use them and
+does not declare their dependencies (`tensorflow`, `tensorflow-gnn`, `seqio` and
+the notebooks' own imports), so `graph_tasks_generator.py` and
+`graph_tasks_utils.py` do not import here. `absl-py` is in the `dev` extra for
+the vendored tests. Upstream's `graphqa/` shell scripts were not vendored; the
+commands in `README.md` refer to the upstream repository.
+
 ## Local modifications
 
 - `graph_generators_test.py`, `graph_text_encoders_test.py`: test classes
