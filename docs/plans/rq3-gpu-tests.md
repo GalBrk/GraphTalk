@@ -1,21 +1,22 @@
 # RQ3 GPU tests: shuffled/reversed/placebo primers on `clustering`
 
-**Status:** planned, not run. No GPU work has happened yet; this documents
-the design so it is reachable outside any one conversation. The CPU-only
-findings that motivate this plan are in `docs/results/density-followups.md`
-(§2 for the effect, §8 for its selection check and the position mechanism);
-read that first. The earlier notes, with the numbered leads this plan
-implements, are in `superseded/docs/rq3-leads.md` in tag `pre-cleanup`.
+**Status:** planned, not run. The CPU findings that motivate it are in
+`docs/results/density-followups.md` (§2 for the effect, §8 for its selection
+check and the position split); read that first. There the gain survives the
+selection check and a fresh seed and is largest for queried nodes early in the
+node list, which motivates a position-based explanation without isolating one.
+The four new conditions below test it.
 
 ## Why 1.7B, plain arm only
 
-Yes, this is still worth running even restricted to one arm:
+One arm is enough to test the mechanism:
 
 - The `clustering` effect on `node_degree` is a 1.7B plain-arm effect. The
-  1.7B thinking arm gains +2.5 at p≤.50, carried by p=.20 (+5.2), and nothing
-  at p=.35 or .50 (+3.2 and −0.8, neither significant;
-  `docs/results/density-followups.md` §4). 4B shows an effect only on the dense extension (+11.3), not the
-  main sweep.
+  1.7B thinking arm gains +2.5 [ddthink] at p≤.50, carried by p=.20
+  (+5.2 [ddthink]), and nothing at p=.35 or .50 (+3.2 [ddthink] and
+  −0.8 [ddthink], neither significant; `docs/results/density-followups.md` §4).
+  Plain 4B shows an effect only on the dense extension (+11.3 [clusthi],
+  `docs/results/n40-sweep.md` §7), not the main sweep.
 - Skipping thinking mode is a large saving, not just a convenience: a
   thinking run needs an 8,192-token budget against ~141 tokens/answer for
   the plain arm, and the thinking arm has no effect at these densities to
@@ -23,8 +24,9 @@ Yes, this is still worth running even restricted to one arm:
 - The cost of restricting to one arm is generality, not correctness: this
   tells you the mechanism in one model, not whether it holds elsewhere.
   The paper already limits the claim to "one model, one task."
-- A later check on 4B's existing dense-graph rows (position split) needs
-  no new GPU time — see "CPU follow-ups" in the leads document.
+- Plain 4B's position split needs no new GPU time: `docs/primer-directions.md`
+  A4 splits each primer's `node_degree` effect by the queried node's quarter of
+  the list, over all seven densities.
 
 ## Design
 
@@ -36,7 +38,7 @@ verify zero `instance_id` collisions before running, as
 
 **Conditions:** `none` and `clustering` as anchors, plus the new primers
 below. `filler` is dropped — it already equals `none` at these densities
-(−0.5, `mid_pooled.filler_none` under `[rqselection]` in
+(−0.5 [rqselection], `mid_pooled.filler_none` in
 `outputs/density-followups/density_followups.txt`).
 
 **Why rerun the anchors instead of pairing with existing rows:**
@@ -46,8 +48,7 @@ old-GPU run would use fp16 or fp32 and produce different greedy outputs —
 the existing bf16 rows can't be paired with them. Since the anchors have
 to be regenerated anyway, running them on the fresh seed above gives a
 third out-of-sample check of the pooled effect, with the hypotheses fixed
-before the run (satisfying lead #5 in the leads document, the
-pre-registered confirmation).
+before the run: a pre-registered confirmation.
 
 ### New primer conditions
 
@@ -86,11 +87,11 @@ pre-registered confirmation).
 
 - 1,200 pairs/condition gives a 95% CI of about ±3.4 points on
   `shuffled` − `clustering` — enough to rule out losing the full effect at
-  these densities (5.88 points, `docs/results/density-followups.md` §8).
+  these densities (5.88 [rqselection] points, `docs/results/density-followups.md` §8).
 - The reversed-order test has ~0.8 power to detect a full sign flip of
   the position gradient, ~0.6 power to detect the original low/high
-  tercile gap (11.57 against 2.63 points, `docs/results/density-followups.md`
-  §8) reappearing. A continuous slope model gains
+  tercile gap (11.57 [rqhetero] against 2.63 [rqhetero] points,
+  `docs/results/density-followups.md` §8) reappearing. A continuous slope model gains
   power over the tercile split used in the CPU analysis.
 
 ## Time estimate on an old GPU
@@ -124,9 +125,3 @@ pre-registered confirmation).
   the new runs can be scored the same way as the existing dedicated
   sweep.
 - Build and spot-check the new prompts before submitting the pilot.
-
-## Relationship to the leads document
-
-This plan implements leads 1–4 of that document's "Leads" section; lead 5
-(pre-registered confirmation) is folded into this design via the fixed
-seed and the H1–H3 hypotheses above, rather than run separately.
