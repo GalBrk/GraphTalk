@@ -43,7 +43,7 @@ future work draw on them.
 | [primer-robustness.md](primer-robustness.md) | How much of each effect is prompt churn, whether the arms fail on the same questions, why responses truncate. Opens with conclusions R1–R5 | current |
 | [primer-directions.md](primer-directions.md) | Nine further questions about what primers do to the responses | exploratory; its numbers are test-checked |
 | [primer-directions-validation.md](primer-directions-validation.md) | The blind hand-validation of primer-directions' text detectors | the five pass/fail checks pass; C2 is descriptive |
-| [density-interaction.md](density-interaction.md) | Whether graph density changes each primer's effect, and whether it matters beyond task difficulty | exploratory |
+| [density-interaction.md](density-interaction.md) | Whether graph density changes each primer's effect, and whether it matters beyond task difficulty | exploratory; its numbers are test-checked |
 
 ## Design
 
@@ -54,9 +54,9 @@ future work draw on them.
 | [design/shortcut-ceilings.md](design/shortcut-ceilings.md) | The graph-blind solver: how to tell a primer that states the answer from one that helps. Its numbers are the pilot's; the 40-node bars are in [n40-sweep.md §2](results/n40-sweep.md#2-which-primers-state-the-answer) |
 | [design/graph-design-requirements.md](design/graph-design-requirements.md) | The four requirements the preliminary difficulty ladder set for a graph corpus. The main 40-node corpus meets the first (n ≥ 40) and is plain G(n,p), without the ladder's rewiring |
 
-Also here:
-[plans/rq3-gpu-tests.md](plans/rq3-gpu-tests.md), a planned GPU test of the
-`clustering` effect, not yet run.
+Also here: [plans/rq3-gpu-tests.md](plans/rq3-gpu-tests.md), a planned GPU test
+of the `clustering` effect, not yet run; and [img/](img/), the front page's
+figures (written by `scripts/readme_figures.py` and `paper/fig_headroom.py`).
 
 ## Conventions
 

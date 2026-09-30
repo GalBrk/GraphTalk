@@ -176,7 +176,7 @@ def tagged_path(path: str, scheme: str) -> str:
   """`path` unchanged for `"integer"`; `.<scheme>` inserted before the
   extension otherwise -- `preliminary/outputs/sweep-small-graph/sweep_frame.csv`
   -> `.got.csv`, matching the `.rerun.`/`.shard<i>of<n>.` dot-tag convention
-  already live in `data/runs/`.
+  of `data/runs/` and `preliminary/data/runs/`.
 
   Idempotent: a `path` that already ends in `.<scheme>` right before its
   extension is returned unchanged rather than tagged a second time. Without

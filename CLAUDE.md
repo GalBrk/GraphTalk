@@ -34,8 +34,8 @@ docstrings for `graphtalk/`, and
 uv venv --python 3.11 && uv pip install -e ".[dev]"      # add ,gpu for scripts/run_sweep.py
 ```
 
-Script docstrings spell commands as `PYTHONPATH=. python ...`, run from the repo
-root; in a fresh clone that `python` is the `.venv` one (`uv run --no-sync
+Commands in `scripts/` docstrings are spelled `PYTHONPATH=. python ...`, run from
+the repo root; in a fresh clone that `python` is the `.venv` one (`uv run --no-sync
 python` or `.venv/bin/python`). **On the lab machines there is no `.venv`**; use
 the conda env instead (`cluster/README.md` documents how it was built):
 

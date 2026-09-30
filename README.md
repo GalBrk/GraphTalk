@@ -131,6 +131,7 @@ P/T: plain/thinking. Intervals:
 | [`data/`](data/) | The committed inputs: prompts, the models' raw responses, the solver bars | [data/README.md](data/README.md) |
 | [`outputs/`](outputs/) | What the scripts print and write; the docs and paper cite these | [scripts/README.md](scripts/README.md#outputs) |
 | [`graphtalk/`](graphtalk/) | The package: primers, the graph-blind solver, prompts, scoring | module docstrings |
+| [`tests/`](tests/) | The test suite, including `test_results_docs.py`, which checks every number the results docs cite | test module docstrings |
 | [`cluster/`](cluster/) | How responses were generated on the TAU GPU cluster | [cluster/README.md](cluster/README.md) |
 | [`preliminary/`](preliminary/) | The pilot and screens that chose the 40-node settings | [preliminary/README.md](preliminary/README.md) |
 | [`talk_like_a_graph/`](talk_like_a_graph/) | Google Research's reference code, vendored | [UPSTREAM.md](talk_like_a_graph/UPSTREAM.md) |
@@ -150,12 +151,12 @@ Reproduce the main experiment's numbers from the committed responses (no GPU):
 ```bash
 export PYTHONPATH=. PYTHONUTF8=1
 uv run --no-sync python scripts/build_raw_frame.py
-uv run --no-sync python scripts/primer_findings.py --csv-dir outputs/n40-sweep > outputs/n40-sweep/primer_findings.txt
+uv run --no-sync python scripts/primer_findings.py --csv-dir outputs/n40-sweep > outputs/n40-sweep/primer_findings.txt   # about 7 minutes, silent
 uv run --no-sync pytest -q tests/test_results_docs.py
 ```
 
 <details>
-<summary><b>Reproduce every number</b> (about 20 minutes on a laptop)</summary>
+<summary><b>Reproduce every number</b> (about 15 minutes on a laptop)</summary>
 
 The analyses, in order, are in [scripts/README.md](scripts/README.md#reproduce-everything):
 they rebuild the frame, rerun each analysis into `outputs/` and rerun the density

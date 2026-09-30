@@ -111,10 +111,10 @@ python scripts/density_followups.py > outputs/density-followups/density_followup
 
 Then the paper's tables and figures: see [paper/README.md](../paper/README.md).
 A regenerated figure (in `docs/img/` or `paper/`) matches the committed one in
-content, but not byte for byte when matplotlib differs from the version that
-drew it; each committed PDF records that version (3.10.9, or 3.10.8 for
-`edge_count_outcomes.pdf`). Check a regenerated figure by eye, not with
-`git diff`.
+content but not byte for byte: the paper's figure PDFs embed the time they were
+drawn, and layout shifts slightly across matplotlib versions (each committed PDF
+records the version that drew it). Check a regenerated figure by eye or with
+`pdftotext`, not with `git diff`.
 
 ## Utilities
 
