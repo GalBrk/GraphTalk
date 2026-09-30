@@ -25,7 +25,7 @@ Files: `data/runs/qwen3-1.7b.{degdens40,degceil,degdens40hi,degdensfill,degdensr
 
     PYTHONPATH=. python scripts/density_followups.py > outputs/density-followups/density_followups.txt
 
-The forensics need `statsmodels` (the `analysis` extra). The driver rebuilds
+The forensics use `statsmodels`, a base dependency. The driver rebuilds
 the graphs and prompts of the plain, thinking and fixed-mean-degree runs with
 `scripts/build_size_sweep.py`, checks the `density40` runs against their
 prompt file, and stops if any gold answer differs from the recorded one; it
